@@ -13,13 +13,13 @@ Display name on GitHub: **Remastered Framework Survival** (repo: `Remastered-Fra
 
 | Page | For |
 |------|-----|
-| [Install](Install) | ModDatabase, custom game world, RFS Beacons B&P |
-| [Commands](Commands) | `/setup`, `/menu`, `/gensettings`, hijack, shops, cheats |
-| [Hack-Beacons](Hack-Beacons) | Beacon tiers, power, E Orders, Tinker, Master/Slave, range, color |
-| [Bot-Orders](Bot-Orders) | Rest / Defend / Farm / Collect / Oil |
-| [Known-Issues](Known-Issues) | Open polish (nametags, rename, RAID farm-range) |
-| [Modder-Hooks](Modder-Hooks) | Store / quest / feature flags (see also `MODDER_API.txt`) |
-| [Discord-Streamer](Discord-Streamer) | GitHub-only companion bot (not in Workshop) |
+| [[Install]] | ModDatabase, custom game world, RFS Beacons B&P |
+| [[Commands]] | `/setup`, `/menu`, `/gensettings`, hijack, shops, cheats |
+| [[Hack-Beacons]] | Beacon tiers, power, E Orders, Tinker, Master/Slave, range, color |
+| [[Bot-Orders]] | Rest / Defend / Farm / Collect / Oil |
+| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) |
+| [[Modder-Hooks]] | Store / quest / feature flags (see also `MODDER_API.txt`) |
+| [[Discord-Streamer]] | GitHub-only companion bot (not in Workshop) |
 
 ## Quick start
 

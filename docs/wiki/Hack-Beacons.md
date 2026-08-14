@@ -49,4 +49,4 @@ Persists on the unit (`rfsAllyColor` / ally record). Click a bot name to select 
 
 ## Related commands
 
-`/givehack`, `/hijack`, `/hijacklist`, `/unhijack` — see [Commands](Commands).
+`/givehack`, `/hijack`, `/hijacklist`, `/unhijack` — see [[Commands]].

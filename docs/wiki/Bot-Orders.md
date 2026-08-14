@@ -38,4 +38,4 @@ Each ally has a sticky `workBeaconKey` home for jobs. Infection clears tether `b
 
 ## Color
 
-See [Hack-Beacons](Hack-Beacons). Color apply uses the same listed domain allies as the Orders list.
+See [[Hack-Beacons]]. Color apply uses the same listed domain allies as the Orders list.
