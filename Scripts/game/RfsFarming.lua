@@ -27,7 +27,78 @@ local GROWING_UUID = {
 	[tostring( hvs_growing_pigmentflower )] = true,
 }
 
+-- Mature outdoor crops (MatureHarvestable) — Hay Farm harvest targets.
+local MATURE_UUID = {
+	[tostring( hvs_mature_blueberry )] = true,
+	[tostring( hvs_mature_banana )] = true,
+	[tostring( hvs_mature_redbeet )] = true,
+	[tostring( hvs_mature_carrot )] = true,
+	[tostring( hvs_mature_tomato )] = true,
+	[tostring( hvs_mature_orange )] = true,
+	[tostring( hvs_mature_potato )] = true,
+	[tostring( hvs_mature_pineapple )] = true,
+	[tostring( hvs_mature_broccoli )] = true,
+	[tostring( hvs_mature_cotton )] = true,
+	[tostring( hvs_mature_chili )] = true,
+	[tostring( hvs_mature_pigmentflower )] = true,
+}
+
 local SOIL_UUID = tostring( hvs_soil )
+
+-- Plantable seeds — same set as Survival Planter.lua / sm.item.getPlantableUuids outdoor.
+-- Static fallback UUIDs from survival_items.lua (used when ITEMS globals are late).
+local SEED_DEFS = {
+	{ name = "Banana", key = "obj_seed_banana", uuid = "22beade5-38ca-47b4-a2ee-32403f58a862" },
+	{ name = "Blueberry", key = "obj_seed_blueberry", uuid = "4b6d2bee-d0f1-4e56-96f0-d2596388cad2" },
+	{ name = "Orange", key = "obj_seed_orange", uuid = "bee966b0-b5e5-41da-b992-5d363ab85ae4" },
+	{ name = "Pineapple", key = "obj_seed_pineapple", uuid = "9edb6f7c-fb44-4348-a1c4-8afb41b92d8a" },
+	{ name = "Carrot", key = "obj_seed_carrot", uuid = "9c82a525-8a8b-4483-9595-505aaa042486" },
+	{ name = "Redbeet", key = "obj_seed_redbeet", uuid = "64051718-a3f1-422b-bda3-277efa0c4545" },
+	{ name = "Tomato", key = "obj_seed_tomato", uuid = "38e41fb5-dd50-4294-829d-a517f0282fed" },
+	{ name = "Broccoli", key = "obj_seed_broccoli", uuid = "1c6756ca-3a60-4dcb-a5d1-353edf818308" },
+	{ name = "Potato", key = "obj_seed_potato", uuid = "eb1ef696-5c05-4662-9e47-fe1e0875ff84" },
+	{ name = "Cotton", key = "obj_seed_cotton", uuid = "93c27ab2-4930-4654-ba1c-bcfe35e966f6" },
+	{ name = "Pigment Flower", key = "obj_seed_pigmentflower", uuid = "c44b27da-88cf-4e17-b872-6236a1172688" },
+	{ name = "Chili", key = "obj_seed_chili", uuid = "8883e0ee-8a6e-423a-a4e0-583d9bf105bd" },
+}
+
+local SEED_BY_UUID = nil
+local SEED_LABELS = nil
+local DEFAULT_SEED_UUID = SEED_DEFS[7].uuid -- Tomato
+
+local function rebuildSeedIndex()
+	SEED_BY_UUID = {}
+	SEED_LABELS = {}
+	for _, def in ipairs( SEED_DEFS ) do
+		local uuid = nil
+		if type( ITEMS ) == "table" and ITEMS[def.key] then
+			uuid = ITEMS[def.key]
+		else
+			local g = rawget( _G, def.key )
+			if g ~= nil then
+				uuid = g
+			else
+				local ok, u = pcall( sm.uuid.new, def.uuid )
+				if ok then
+					uuid = u
+				end
+			end
+		end
+		if uuid then
+			local s = string.lower( tostring( uuid ) )
+			SEED_BY_UUID[s] = {
+				name = def.name,
+				key = def.key,
+				uuid = uuid,
+				uuidStr = s,
+			}
+			SEED_LABELS[#SEED_LABELS + 1] = { name = def.name, uuid = uuid, uuidStr = s }
+		end
+	end
+	table.sort( SEED_LABELS, function( a, b )
+		return tostring( a.name ) < tostring( b.name )
+	end )
+end
 
 -- Water every ~2.5s while Always Watered is on (WaterRetention is ~1.5 days).
 local WATER_INTERVAL_TICKS = 100
@@ -179,8 +250,307 @@ function RfsFarming.isGrowingUuid( uuid )
 	return GROWING_UUID[tostring( uuid )] == true
 end
 
+function RfsFarming.isMatureUuid( uuid )
+	return MATURE_UUID[tostring( uuid )] == true
+end
+
 function RfsFarming.isSoilUuid( uuid )
 	return tostring( uuid ) == SOIL_UUID
+end
+
+---------------------------------------------------------------------------
+-- Plantable seeds (Hay Farm seed picker + allowlist)
+-- Source: Survival Planter.lua seedItems + survival_items.lua UUIDs.
+-- Runtime prefer sm.item.getPlantable / getPlantableUuids when available.
+---------------------------------------------------------------------------
+
+function RfsFarming.getPlantableSeeds()
+	if not SEED_LABELS then
+		rebuildSeedIndex()
+	end
+	-- Prefer engine plantable list when present (filters non-plantables).
+	local live = nil
+	pcall( function()
+		if type( sm.item.getPlantableUuids ) == "function" then
+			live = sm.item.getPlantableUuids()
+		end
+	end )
+	if type( live ) == "table" and #live > 0 then
+		local out = {}
+		local seen = {}
+		for _, uuid in ipairs( live ) do
+			local s = string.lower( tostring( uuid ) )
+			local rec = SEED_BY_UUID and SEED_BY_UUID[s]
+			if rec and not seen[s] then
+				seen[s] = true
+				out[#out + 1] = { name = rec.name, uuid = rec.uuid, uuidStr = s }
+			end
+		end
+		if #out > 0 then
+			table.sort( out, function( a, b )
+				return tostring( a.name ) < tostring( b.name )
+			end )
+			return out
+		end
+	end
+	return SEED_LABELS or {}
+end
+
+function RfsFarming.getSeedDropdownLabels()
+	local labels = {}
+	for _, rec in ipairs( RfsFarming.getPlantableSeeds() ) do
+		labels[#labels + 1] = rec.name
+	end
+	return labels
+end
+
+function RfsFarming.seedUuidFromLabel( label )
+	label = string.lower( tostring( label or "" ) )
+	for _, rec in ipairs( RfsFarming.getPlantableSeeds() ) do
+		if string.lower( tostring( rec.name ) ) == label then
+			return rec.uuid, rec.name
+		end
+	end
+	return nil, nil
+end
+
+function RfsFarming.seedLabelFromUuid( uuid )
+	if not SEED_BY_UUID then
+		rebuildSeedIndex()
+	end
+	local s = string.lower( tostring( uuid or "" ) )
+	local rec = SEED_BY_UUID[s]
+	if rec then
+		return rec.name
+	end
+	return nil
+end
+
+function RfsFarming.isPlantableSeed( uuid )
+	if not SEED_BY_UUID then
+		rebuildSeedIndex()
+	end
+	local s = string.lower( tostring( uuid or "" ) )
+	if SEED_BY_UUID[s] then
+		return true
+	end
+	local ok, data = pcall( function()
+		return sm.item.getPlantable( uuid )
+	end )
+	return ok and type( data ) == "table" and data.harvestable ~= nil
+end
+
+function RfsFarming.resolveSeedUuid( seedUuid )
+	if not SEED_BY_UUID then
+		rebuildSeedIndex()
+	end
+	if seedUuid and RfsFarming.isPlantableSeed( seedUuid ) then
+		local s = string.lower( tostring( seedUuid ) )
+		local rec = SEED_BY_UUID[s]
+		return rec and rec.uuid or seedUuid
+	end
+	local ok, u = pcall( sm.uuid.new, DEFAULT_SEED_UUID )
+	if ok then
+		return u
+	end
+	return seedUuid
+end
+
+function RfsFarming.growingUuidForSeed( seedUuid )
+	local ok, data = pcall( function()
+		return sm.item.getPlantable( seedUuid )
+	end )
+	if ok and type( data ) == "table" and data.harvestable then
+		local ok2, u = pcall( sm.uuid.new, data.harvestable )
+		if ok2 then
+			return u
+		end
+	end
+	return nil
+end
+
+---------------------------------------------------------------------------
+-- Bot plant / harvest (no player inventory; no melee crop destroy)
+---------------------------------------------------------------------------
+
+-- Plant seedUuid onto empty soil harvestable. Caller must already spend the seed.
+-- Returns true on success.
+function RfsFarming.sv_botPlant( soilHvs, seedUuid )
+	if not soilHvs or not sm.exists( soilHvs ) or not seedUuid then
+		return false
+	end
+	local uid = nil
+	pcall( function()
+		uid = soilHvs:getUuid()
+	end )
+	if not uid or not RfsFarming.isSoilUuid( uid ) then
+		return false
+	end
+	-- Skip during farm raids (matches HarvestableSoil.sv_e_plant).
+	local inRaid = false
+	pcall( function()
+		if type( RaidManager ) == "table" and RaidManager.Sv_AreaHasActiveRaid then
+			inRaid = RaidManager.Sv_AreaHasActiveRaid( soilHvs.worldPosition or soilHvs:getPosition(), soilHvs:getWorld().id )
+		end
+	end )
+	if inRaid then
+		return false
+	end
+	local growingUuid = RfsFarming.growingUuidForSeed( seedUuid )
+	if not growingUuid then
+		return false
+	end
+	RfsFarming.ensureBotFarmHooks()
+	local box = { ok = false }
+	pcall( function()
+		sm.event.sendToHarvestable( soilHvs, "sv_e_rfsBotPlant", {
+			growingUuid = growingUuid,
+			result = box,
+		} )
+	end )
+	if box.ok then
+		return true
+	end
+	-- Fallback if soil script not hooked / event missed.
+	if sm.exists( soilHvs ) then
+		return RfsFarming._sv_plantSoilInline( soilHvs, growingUuid )
+	end
+	return true
+end
+
+function RfsFarming._sv_plantSoilInline( soilHvs, growingUuid )
+	if not soilHvs or not sm.exists( soilHvs ) or not growingUuid then
+		return false
+	end
+	local planted = false
+	pcall( function()
+		local pos = soilHvs:getPosition()
+		local rot = soilHvs:getRotation()
+		local plantedHvs = sm.harvestable.createHarvestable( growingUuid, pos, rot )
+		plantedHvs:setParams( { plantedByPlayer = true } )
+		sm.effect.playEffect( "Plants - Planted", pos )
+		soilHvs:destroy()
+		planted = true
+		pcall( function()
+			local world = plantedHvs:getWorld()
+			if world and world.publicData and world.publicData.type == "Overworld" and type( RaidManager ) == "table" then
+				RaidManager.Sv_DetectCrop( plantedHvs )
+			end
+		end )
+	end )
+	return planted
+end
+
+-- Harvest a mature outdoor crop into a loot list { { uuid, qty }, ... }.
+-- Leaves soil behind. Never uses melee destroy on growing plants.
+function RfsFarming.sv_botHarvest( matureHvs )
+	if not matureHvs or not sm.exists( matureHvs ) then
+		return nil
+	end
+	local uid = nil
+	pcall( function()
+		uid = matureHvs:getUuid()
+	end )
+	if not uid or not RfsFarming.isMatureUuid( uid ) then
+		return nil
+	end
+	local result = nil
+	pcall( function()
+		local box = { loot = nil }
+		sm.event.sendToHarvestable( matureHvs, "sv_e_rfsBotHarvest", box )
+		result = box.loot
+	end )
+	return result
+end
+
+function RfsFarming.ensureBotFarmHooks()
+	-- HarvestableSoil: plant without inventory spend (seed already in bot buffer).
+	if type( HarvestableSoil ) ~= "table" then
+		pcall( function()
+			dofile( "$SURVIVAL_DATA/Scripts/game/harvestable/HarvestableSoil.lua" )
+		end )
+	end
+	if type( HarvestableSoil ) == "table" and not HarvestableSoil._rfsBotPlantRpc then
+		function HarvestableSoil.sv_e_rfsBotPlant( self, params )
+			if type( params ) ~= "table" or not params.growingUuid then
+				return
+			end
+			if type( RaidManager ) == "table" and RaidManager.Sv_AreaHasActiveRaid then
+				if RaidManager.Sv_AreaHasActiveRaid( self.harvestable.worldPosition, self.harvestable:getWorld().id ) then
+					return
+				end
+			end
+			if self.sv_plant then
+				self:sv_plant( params.growingUuid )
+				if type( params.result ) == "table" then
+					params.result.ok = true
+				end
+			end
+		end
+		HarvestableSoil._rfsBotPlantRpc = true
+		print( "[RFS] Farming bot plant hooked HarvestableSoil" )
+	end
+
+	-- MatureHarvestable: collect produce+seeds into params.loot (no player inventory).
+	if type( MatureHarvestable ) ~= "table" then
+		pcall( function()
+			dofile( "$SURVIVAL_DATA/Scripts/game/harvestable/MatureHarvestable.lua" )
+		end )
+	end
+	if type( MatureHarvestable ) == "table" and not MatureHarvestable._rfsBotHarvestRpc then
+		function MatureHarvestable.sv_e_rfsBotHarvest( self, params )
+			params = params or {}
+			if not sm.exists( self.harvestable ) then
+				return
+			end
+			self.harvestable.publicData = self.harvestable.publicData or {}
+			if self.harvestable.publicData.harvested then
+				return
+			end
+			local loot = {}
+			local harvestUuid = nil
+			local harvestQty = 1
+			local seedUuid = nil
+			local seedQty = 1
+			pcall( function()
+				harvestUuid = sm.uuid.new( self.data.harvest )
+				harvestQty = tonumber( self.data.amount ) or 1
+			end )
+			pcall( function()
+				seedUuid = sm.uuid.new( self.data.seed )
+				if type( PlantSeedDropAmount ) == "function" then
+					seedQty = PlantSeedDropAmount( seedUuid )
+				else
+					seedQty = 1
+				end
+			end )
+			if harvestUuid then
+				loot[#loot + 1] = { uuid = harvestUuid, qty = math.max( 1, harvestQty ) }
+			end
+			if seedUuid and ( tonumber( seedQty ) or 0 ) > 0 then
+				loot[#loot + 1] = { uuid = seedUuid, qty = math.max( 1, math.floor( seedQty ) ) }
+			end
+			pcall( function()
+				sm.effect.playEffect( "Plants - Picked", self.harvestable:getPosition() )
+			end )
+			pcall( function()
+				sm.harvestable.createHarvestable( hvs_soil, self.harvestable:getPosition(), self.harvestable:getRotation() )
+			end )
+			pcall( function()
+				if type( RaidManager ) == "table" and RaidManager.Sv_CropDestroyed then
+					RaidManager.Sv_CropDestroyed( self.harvestable )
+				end
+			end )
+			self.harvestable.publicData.harvested = true
+			pcall( function()
+				self.harvestable:destroy()
+			end )
+			params.loot = loot
+		end
+		MatureHarvestable._rfsBotHarvestRpc = true
+		print( "[RFS] Farming bot harvest hooked MatureHarvestable" )
+	end
+	return true
 end
 
 function RfsFarming.sv_collectWorlds( game )
@@ -653,6 +1023,10 @@ function RfsFarming.ensureHooks()
 	RfsFarming.ensureGrowHooks()
 	RfsFarming.ensureSoilBagHooks()
 	RfsFarming.ensureCornHooks()
+	RfsFarming.ensureBotFarmHooks()
+	if not SEED_LABELS then
+		rebuildSeedIndex()
+	end
 end
 
 ---------------------------------------------------------------------------

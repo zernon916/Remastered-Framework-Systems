@@ -8,11 +8,13 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsQuest.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBotHijack.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsBotOrders.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsHackBeacon.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsAreaLoader.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/ModRecipeScan.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsSetupGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsGenGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsMenuGui.lua" ) end )
 dofile( "$CONTENT_DATA/Scripts/game/RfsStreamer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsChatRelay.lua" )
@@ -417,6 +419,7 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	RfsInventory.applyGameDefault( RecipeFrameworkSurvival )
 	RfsFarming.load()
 	SurvivalGame.server_onCreate( self )
+	_G.g_rfsGame = self
 	pcall( function() RfsFarming.ensureHooks() end )
 	pcall( function() RfsBotHijack.ensureHooks() end )
 	self.sv = self.sv or {}
@@ -463,6 +466,11 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 	pcall( function()
 		if type( RfsChatRelay ) == "table" and RfsChatRelay.sv_think then
 			RfsChatRelay.sv_think( timeStep, self )
+		end
+	end )
+	pcall( function()
+		if type( RfsBotOrders ) == "table" and RfsBotOrders.sv_think then
+			RfsBotOrders.sv_think( timeStep, self )
 		end
 	end )
 	local tick = sm.game.getCurrentTick()
@@ -2421,4 +2429,129 @@ function RecipeFrameworkSurvival.cl_rfs_discordBotRequestResult( self, data )
 	if data and data.msg then
 		sm.gui.chatMessage( "[RFS] " .. tostring( data.msg ) )
 	end
+end
+
+-- ========== Beacon Orders GUI (M1 Rest/Defend + M2 Hay Farm + M3 Tote Collect) ==========
+
+function RecipeFrameworkSurvival.cl_rfs_ordersClose( self )
+	if type( RfsBeaconOrdersGui ) == "table" then
+		RfsBeaconOrdersGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersPrev( self )
+	self.cl = self.cl or {}
+	self.cl.rfsOrdersPage = math.max( 0, ( self.cl.rfsOrdersPage or 0 ) - 1 )
+	if type( RfsBeaconOrdersGui ) == "table" then
+		RfsBeaconOrdersGui.refresh( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersNext( self )
+	self.cl = self.cl or {}
+	local rows = self.cl.rfsOrdersRows or {}
+	local maxPage = math.max( 0, math.ceil( #rows / ( RfsBeaconOrdersGui and RfsBeaconOrdersGui.ROWS or 8 ) ) - 1 )
+	self.cl.rfsOrdersPage = math.min( maxPage, ( self.cl.rfsOrdersPage or 0 ) + 1 )
+	if type( RfsBeaconOrdersGui ) == "table" then
+		RfsBeaconOrdersGui.refresh( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
+	if type( RfsBeaconOrdersGui ) ~= "table" or type( RfsBeaconOrdersGui.open ) ~= "function" then
+		sm.gui.chatMessage( "[RFS] Orders GUI not loaded" )
+		return
+	end
+	RfsBeaconOrdersGui.open( self, data or {} )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersList( self, data )
+	if type( RfsBeaconOrdersGui ) == "table" then
+		RfsBeaconOrdersGui.applyList( self, data )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersSetResult( self, data )
+	if data and data.ok == false and data.msg then
+		sm.gui.chatMessage( "[RFS] Order failed: " .. tostring( data.msg ) )
+	end
+	if self.cl and self.cl.rfsOrdersBeaconKey then
+		self.network:sendToServer( "sv_rfs_ordersList", {
+			beaconKey = self.cl.rfsOrdersBeaconKey,
+		} )
+	end
+end
+
+-- DropDown callbacks ModeDrop0..7 / SeedDrop0..7 (createDropDown only passes value).
+for _rfsOrdersDropI = 0, 7 do
+	local idx = _rfsOrdersDropI
+	RecipeFrameworkSurvival["cl_rfs_ordersDrop" .. idx] = function( self, value )
+		if type( RfsBeaconOrdersGui ) == "table" then
+			RfsBeaconOrdersGui.onModeDrop( self, idx, value )
+		end
+	end
+	RecipeFrameworkSurvival["cl_rfs_ordersSeed" .. idx] = function( self, value )
+		if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onSeedDrop then
+			RfsBeaconOrdersGui.onSeedDrop( self, idx, value )
+		end
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersList( self, params, player )
+	params = params or {}
+	local beaconKey = tostring( params.beaconKey or "" )
+	if beaconKey == "" then
+		self.network:sendToClient( player, "cl_rfs_ordersList", { rows = {} } )
+		return
+	end
+	local allowHost = rfsServerPlayerIsHost( player )
+	local ownerFilter = nil
+	if not allowHost then
+		pcall( function()
+			ownerFilter = player and player.id
+		end )
+	end
+	local rows = {}
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
+		rows = RfsBotHijack.listHomeAllies( beaconKey, ownerFilter ) or {}
+	end
+	local beaconName = nil
+	pcall( function()
+		local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[beaconKey]
+		beaconName = rec and rec.name
+	end )
+	self.network:sendToClient( player, "cl_rfs_ordersList", {
+		rows = rows,
+		beaconKey = beaconKey,
+		beaconName = beaconName,
+	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersSet( self, params, player )
+	params = params or {}
+	local unitKey = tostring( params.unitKey or "" )
+	local mode = tostring( params.mode or "rest" )
+	local beaconKey = params.beaconKey and tostring( params.beaconKey ) or nil
+	local seedUuid = params.seedUuid and tostring( params.seedUuid ) or nil
+	if unitKey == "" then
+		self.network:sendToClient( player, "cl_rfs_ordersSetResult", { ok = false, msg = "no bot" } )
+		return
+	end
+	local allowHost = rfsServerPlayerIsHost( player )
+	-- Host-only set for world authority; owners may set their own bots.
+	local ok, result = false, "hijack missing"
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.setOrder then
+		ok, result = RfsBotHijack.setOrder( unitKey, {
+			mode = mode,
+			seedUuid = seedUuid,
+			beaconKey = beaconKey,
+		}, player, allowHost )
+	end
+	self.network:sendToClient( player, "cl_rfs_ordersSetResult", {
+		ok = ok and true or false,
+		msg = ( not ok ) and tostring( result ) or nil,
+		mode = ok and ( type( result ) == "table" and result.mode or mode ) or nil,
+		seedUuid = ok and ( type( result ) == "table" and result.seedUuid or seedUuid ) or nil,
+		unitKey = unitKey,
+	} )
 end

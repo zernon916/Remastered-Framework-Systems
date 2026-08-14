@@ -1,6 +1,6 @@
 # Recipe Framework Survival (GitHub)
 
-Steam/local pack docs for **Recipe Framework Survival (RFS)** — Scrap Mechanic Custom Game pack. `discord-bridge` is GitHub-only (https://github.com/zernon916/Recipe-Framework-Systems) — not included in this Steam/local tree.
+Steam/local pack docs for **Recipe Framework Survival (RFS)** — Scrap Mechanic Custom Game pack. `discord-bridge` is GitHub-only (https://github.com/zernon916/Recipe-Framework-Systems) — not included in this Steam/local tree. Community Discord: https://discord.gg/DfjDMRx9ab
 
 This tree is prepared for GitHub; it is not a Steam Workshop upload source by itself.
 

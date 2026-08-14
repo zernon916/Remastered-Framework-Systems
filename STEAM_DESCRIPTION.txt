@@ -9,7 +9,7 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 [h2]✨ Key Features[/h2]
 [list]
 [*][b]Custom Menus[/b] — Host [b]/setup[/b] (Main / Quest / Inventory / Farming), player [b]/menu[/b] (map + growth overlay), and host [b]/gensettings[/b] with tabs: [b]MAIN[/b] / [b]FEATURES[/b] / [b]STREAMERS[/b] / [b]DISCORD[/b].
-[*][b]Bot Hijack / Beacons[/b] — Powered Hack / Control / Infection Beacons (needs [b]RFS Beacons[/b] B&P). Hideout: 20 / 50 / 120 Farmers. Wire a Battery; tethered allies need power/range; infected stay loyal. Light chain convert + host/owner [b]/unhijack[/b]. Farm orders / factories still future.
+[*][b]Bot Hijack / Beacons[/b] — Powered Hack / Control / Infection Beacons (needs [b]RFS Beacons[/b] B&P). Hideout: 20 / 50 / 120 Farmers. Wire a Battery; tethered allies need power/range; infected stay loyal. Light chain convert + host/owner [b]/unhijack[/b]. Beacon [b]E[/b] Orders: Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil.
 [*][b]Expanded Inventory[/b] — Scale inventory capacity from +1 row up to +5 extra rows.
 [*][b]Advanced Farming[/b] — Instant growth options, permanent watering, soil planting, and live crop growth countdown timers.
 [*][b]Dev Tools[/b] — Full suite of built-in developer mode tools at your fingertips.
@@ -38,10 +38,20 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 
 [hr][/hr]
 
+[h2]Links[/h2]
+[list]
+[*][b]GitHub:[/b] [url]https://github.com/zernon916/Recipe-Framework-Systems[/url]
+[*][b]Discord:[/b] [url]https://discord.gg/DfjDMRx9ab[/url]
+[/list]
+
+[hr][/hr]
+
 [h2]Discord / Streamer companion (optional)[/h2]
-In-game [b]Streamer[/b] votes work via file drops in [b]%USER_DATA%/rfs_discord_bridge[/b]. The Discord bot is [b]not[/b] inside this Workshop pack — clone it from GitHub and run it separately:
+In-game [b]Streamer[/b] votes work via file drops in [b]%USER_DATA%/rfs_discord_bridge[/b]. The Discord / Streamer companion bot is [b]not[/b] bundled in this Workshop pack — it lives on GitHub only. Clone and run it separately:
 
 [url]https://github.com/zernon916/Recipe-Framework-Systems[/url] (folder [b]discord-bridge/[/b])
+
+Community Discord: [url]https://discord.gg/DfjDMRx9ab[/url]
 
 From that clone: configure [b].env[/b], then [b]npm install[/b] and [b]npm run watch[/b].
 

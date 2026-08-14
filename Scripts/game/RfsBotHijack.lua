@@ -227,6 +227,17 @@ local function shortTypeName( typeStr )
 	if unit_cablebot and tostring( typeStr ) == tostring( unit_cablebot ) then
 		return "Cablebot"
 	end
+	-- Totebot Blue = Waterbot (Collect Oil M4). Check before generic tote.
+	local blue = unit_totebot_blue or sm.uuid.new( "58992f50-ca36-44e1-8c47-4996d89d6a9a" )
+	if blue and ( typeStr == tostring( blue ) or string.lower( typeStr ) == string.lower( tostring( blue ) ) ) then
+		return "Waterbot"
+	end
+	if unit_waterbot and tostring( typeStr ) == tostring( unit_waterbot ) then
+		return "Waterbot"
+	end
+	if string.find( typeStr, "waterbot", 1, true ) or string.find( typeStr, "Waterbot", 1, true ) then
+		return "Waterbot"
+	end
 	if string.find( typeStr, "tote", 1, true ) or string.find( typeStr, "Tote", 1, true ) then
 		return "Totebot"
 	end
@@ -586,6 +597,11 @@ local function beaconLive( rec )
 	return rec.powerHoldUntil ~= nil and now < rec.powerHoldUntil
 end
 
+-- Public for RfsBotOrders job-radius / home-beacon checks.
+function RfsBotHijack.beaconLive( rec )
+	return beaconLive( rec )
+end
+
 function RfsBotHijack.registerBeacon( key, rec )
 	if not key or type( rec ) ~= "table" then
 		return
@@ -684,12 +700,22 @@ function RfsBotHijack.register( unit, ownerId, opts )
 	local firstSeen = opts.firstSeenTick or ( prev and prev.firstSeenTick ) or nowTick()
 	local displayName = opts.displayName or ( prev and prev.displayName ) or makeDisplayName( unit, t, mode )
 	local unitType = opts.unitType or ( prev and prev.unitType ) or t
+	local beaconKey = opts.beaconKey or ( prev and prev.beaconKey )
+	-- Sticky home for Rest/Defend/Farm jobs (survives infect / tether hops).
+	local workBeaconKey = opts.workBeaconKey or ( prev and prev.workBeaconKey ) or beaconKey
+	if workBeaconKey then
+		workBeaconKey = tostring( workBeaconKey )
+	end
+	local order = opts.order or opts.rfsOrder or ( prev and ( prev.order or prev.rfsOrder ) )
 	RfsBotHijack.allies[key] = {
 		type = t,
 		unitType = unitType,
 		owner = ownerId or ( prev and prev.owner ),
 		mode = mode,
-		beaconKey = opts.beaconKey or ( prev and prev.beaconKey ),
+		beaconKey = beaconKey,
+		workBeaconKey = workBeaconKey,
+		order = order,
+		rfsOrder = order, -- alias for RfsBotOrders / saved.rfsOrder naming
 		origColor = orig,
 		infectAcc = ( prev and prev.infectAcc ) or 0,
 		hijackTicks = tonumber( opts.hijackTicks ) or ( prev and prev.hijackTicks ) or 320,
@@ -708,6 +734,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		firstSeenTick = firstSeen,
 		mode = mode,
 		beaconKey = RfsBotHijack.allies[key].beaconKey,
+		workBeaconKey = RfsBotHijack.allies[key].workBeaconKey,
 		playerAlly = true,
 	} )
 	RfsBotHijack.publishGlobals()
@@ -852,15 +879,23 @@ function RfsBotHijack.tick( world )
 						local need = tonumber( rec.infectTicks ) or 320
 						if info.infectAcc >= need then
 							info.mode = "infected"
+							info.workBeaconKey = info.workBeaconKey or info.beaconKey or bkey
 							info.beaconKey = nil
 							info.infectAcc = 0
 							info.displayName = makeDisplayName( unit, info.unitType or info.type, "infected" )
+							local ord = info.rfsOrder or info.order
+							if type( ord ) == "table" then
+								ord.beaconKey = info.workBeaconKey
+								info.rfsOrder = ord
+								info.order = ord
+							end
 							pushIdentityToUnit( unit, {
 								owner = info.owner,
 								displayName = info.displayName,
 								unitType = info.unitType or info.type,
 								firstSeenTick = info.firstSeenTick,
 								mode = "infected",
+								workBeaconKey = info.workBeaconKey,
 								playerAlly = true,
 							} )
 							if unit.character and sm.exists( unit.character ) then
@@ -960,6 +995,11 @@ function RfsBotHijack.convertUnit( unit, ownerId, opts )
 		opts.displayName = makeDisplayName( unit, opts.unitType, opts.mode or "tethered" )
 	end
 	RfsBotHijack.register( unit, ownerId, opts )
+	pcall( function()
+		if type( RfsBotOrders ) == "table" and RfsBotOrders.ensureDefaultOrder then
+			RfsBotOrders.ensureDefaultOrder( unit, ownerId, opts )
+		end
+	end )
 	pcall( function()
 		sm.event.sendToUnit( unit, "sv_e_receiveTarget", { targetCharacter = nil, sendingUnit = unit } )
 	end )
@@ -1551,6 +1591,7 @@ function RfsBotHijack.tickAuto( world )
 						RfsBotHijack.convertUnit( unit, rec.ownerId or 0, {
 							mode = mode,
 							beaconKey = bkey,
+							workBeaconKey = bkey,
 							hijackTicks = rec.hijackTicks or need,
 						} )
 						setUnitTag( unit, "" )
@@ -1674,6 +1715,7 @@ function RfsBotHijack._tickChainConvert( live, now )
 							local opts = {
 								mode = ( info.mode == "infected" ) and "infected" or "tethered",
 								beaconKey = ( info.mode ~= "infected" ) and info.beaconKey or nil,
+								workBeaconKey = info.workBeaconKey or info.beaconKey,
 								hijackTicks = info.hijackTicks,
 							}
 							local ok = RfsBotHijack.convertUnit( best, info.owner or 0, opts )
@@ -1832,6 +1874,161 @@ function RfsBotHijack.linkedCount( beaconKey )
 	return n
 end
 
+-- Home beacon for jobs/orders (survives infection tether clear).
+function RfsBotHijack.homeBeaconKey( info )
+	if type( info ) ~= "table" then
+		return nil
+	end
+	if info.workBeaconKey ~= nil then
+		return tostring( info.workBeaconKey )
+	end
+	local ord = info.rfsOrder or info.order
+	if type( ord ) == "table" and ord.beaconKey ~= nil then
+		return tostring( ord.beaconKey )
+	end
+	if info.beaconKey ~= nil then
+		return tostring( info.beaconKey )
+	end
+	return nil
+end
+
+function RfsBotHijack.homeAllyCount( beaconKey )
+	if not beaconKey then
+		return 0
+	end
+	beaconKey = tostring( beaconKey )
+	local n = 0
+	for _, info in pairs( RfsBotHijack.allies ) do
+		if info.controlled and RfsBotHijack.homeBeaconKey( info ) == beaconKey then
+			n = n + 1
+		end
+	end
+	return n
+end
+
+-- Resolve unit for Orders RPCs. Prefer UnitManager — Game.lua has no world context
+-- and bare sm.unit.getAllUnits() throws there.
+function RfsBotHijack.unitByKey( key, world )
+	key = tostring( key or "" )
+	if key == "" then
+		return nil
+	end
+	if g_unitManager and type( g_unitManager.sv_getAllUnits ) == "function" then
+		local ok, units = pcall( function()
+			return g_unitManager:sv_getAllUnits()
+		end )
+		if ok and type( units ) == "table" then
+			for _, u in pairs( units ) do
+				if u and sm.exists( u ) and unitKey( u ) == key then
+					return u
+				end
+			end
+		end
+	end
+	if not world then
+		pcall( function()
+			local game = _G.g_rfsGame
+			if game and game.sv and game.sv.saved then
+				world = game.sv.saved.overworld
+			end
+		end )
+	end
+	for _, u in ipairs( allUnits( world ) ) do
+		if sm.exists( u ) and unitKey( u ) == key then
+			return u
+		end
+	end
+	return nil
+end
+
+-- Rows for Beacon Orders GUI. ownerFilterId = nil means all (host).
+function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
+	beaconKey = tostring( beaconKey or "" )
+	local rows = {}
+	if beaconKey == "" then
+		return rows
+	end
+	for key, info in pairs( RfsBotHijack.allies ) do
+		if info and info.controlled and RfsBotHijack.homeBeaconKey( info ) == beaconKey then
+			if ownerFilterId == nil or tostring( info.owner ) == tostring( ownerFilterId ) then
+				local ord = info.rfsOrder or info.order
+				local orderMode = "defend"
+				if type( ord ) == "table" and ord.mode then
+					orderMode = tostring( ord.mode )
+				end
+				rows[#rows + 1] = {
+					key = tostring( key ),
+					name = info.displayName or shortTypeName( info.unitType or info.type ),
+					unitType = info.unitType or info.type,
+					type = info.type,
+					mode = orderMode,
+					seedUuid = ( type( ord ) == "table" and ord.seedUuid ) or nil,
+					owner = info.owner,
+					allyMode = info.mode,
+				}
+			end
+		end
+	end
+	table.sort( rows, function( a, b )
+		return tostring( a.name ) < tostring( b.name )
+	end )
+	return rows
+end
+
+-- Persist saved.rfsOrder = { mode, beaconKey, owner }. Host or owner.
+function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
+	local unit = unitOrKey
+	local key = nil
+	if type( unitOrKey ) == "string" or type( unitOrKey ) == "number" then
+		key = tostring( unitOrKey )
+		unit = RfsBotHijack.unitByKey( key )
+	else
+		key = unitKey( unit )
+	end
+	if not key or not unit or not sm.exists( unit ) then
+		return false, "bot gone"
+	end
+	local info = RfsBotHijack.allies[key]
+	if not info or not info.controlled then
+		return false, "not an ally"
+	end
+	local playerId = nil
+	pcall( function()
+		playerId = player and player.id
+	end )
+	local isOwner = playerId ~= nil and info.owner ~= nil and tostring( info.owner ) == tostring( playerId )
+	if not isOwner and not allowHost then
+		return false, "not owner"
+	end
+	order = order or {}
+	-- Pass mode through; RfsBotOrders.setOrder validates type matrix (Collect=tote M3, Farm=hay M2, Oil=water M4).
+	local mode = string.lower( tostring( order.mode or "rest" ) )
+	local home = RfsBotHijack.homeBeaconKey( info ) or order.beaconKey
+	local saved = {
+		mode = mode,
+		seedUuid = order.seedUuid,
+		beaconKey = home and tostring( home ) or nil,
+		owner = info.owner,
+	}
+	if type( RfsBotOrders ) == "table" and type( RfsBotOrders.setOrder ) == "function" then
+		return RfsBotOrders.setOrder( unit, saved )
+	end
+	-- Fallback without RfsBotOrders: allow Rest/Defend/Collect/Farm/Oil strings.
+	if mode ~= "defend" and mode ~= "rest" and mode ~= "collect" and mode ~= "farm" and mode ~= "oil" then
+		mode = "rest"
+	end
+	saved.mode = mode
+	info.rfsOrder = saved
+	info.order = saved
+	if home then
+		info.workBeaconKey = info.workBeaconKey or tostring( home )
+	end
+	pcall( function()
+		sm.event.sendToUnit( unit, "sv_e_rfsOrder", saved )
+	end )
+	return true, saved
+end
+
 -- Hostiles currently mid auto-hijack under this beacon (for battery work-drain).
 function RfsBotHijack.pendingCount( beaconKey )
 	if not beaconKey then
@@ -1916,6 +2113,8 @@ function RfsBotHijack.ensureHooks()
 			RfsBotHijack.register( self.unit, self.saved.playerAllyOwner, {
 				mode = mode,
 				beaconKey = self.saved.playerAllyBeacon,
+				workBeaconKey = self.saved.playerAllyWorkBeacon or self.saved.playerAllyBeacon,
+				rfsOrder = self.saved.rfsOrder,
 				displayName = self.saved.rfsDisplayName,
 				unitType = self.saved.rfsUnitType,
 				firstSeenTick = self.saved.rfsFirstSeenTick,
@@ -1923,6 +2122,14 @@ function RfsBotHijack.ensureHooks()
 			self.saved.friendly = false
 			pcall( function()
 				self.unit.character:setColor( mode == "infected" and INFECT_COLOR or ALLY_COLOR )
+			end )
+			pcall( function()
+				if type( RfsBotOrders ) == "table" and RfsBotOrders.ensureDefaultOrder then
+					RfsBotOrders.ensureDefaultOrder( self.unit, self.saved.playerAllyOwner, {
+						beaconKey = self.saved.playerAllyBeacon,
+						workBeaconKey = self.saved.playerAllyWorkBeacon or self.saved.playerAllyBeacon,
+					} )
+				end
 			end )
 		end
 	end
@@ -2010,23 +2217,37 @@ function RfsBotHijack.ensureHooks()
 			self.saved.friendly = false
 			self.saved.playerAllyMode = info and info.mode or "tethered"
 			self.saved.playerAllyBeacon = info and info.beaconKey
+			self.saved.playerAllyWorkBeacon = info and info.workBeaconKey
 			self.saved.playerAllyOwner = info and info.owner
 			self.saved.rfsDisplayName = info and info.displayName
 			self.saved.rfsUnitType = info and ( info.unitType or info.type )
 			self.saved.rfsFirstSeenTick = info and info.firstSeenTick
+			if info and type( info.order ) == "table" then
+				self.saved.rfsOrder = info.order
+			elseif info and type( info.rfsOrder ) == "table" then
+				self.saved.rfsOrder = info.rfsOrder
+			end
 			self.isDirty = true
 			RfsBotHijack.standDown( self )
 			if self.unit and self.unit.character then
 				applyColor( self.unit.character, ( info and info.mode == "infected" ) and INFECT_COLOR or ALLY_COLOR )
 			end
 			self.eventTarget = nil
-			local hostile = closestOtherRobotCharacter( self.unit, false, ALLY_AGGRO_RANGE )
-			if hostile and sm.exists( hostile ) then
-				self.target = hostile
-				self.lastTargetPosition = hostile.worldPosition
-			else
-				self.target = nil
-				self.lastTargetPosition = nil
+			-- Rest/Defend job clamp (RfsBotOrders). Fallback = legacy full aggro.
+			local handled = false
+			if type( RfsBotOrders ) == "table" and type( RfsBotOrders.applySelect ) == "function" then
+				local okApply, did = pcall( RfsBotOrders.applySelect, self )
+				handled = okApply and did and true or false
+			end
+			if not handled then
+				local hostile = closestOtherRobotCharacter( self.unit, false, ALLY_AGGRO_RANGE )
+				if hostile and sm.exists( hostile ) then
+					self.target = hostile
+					self.lastTargetPosition = hostile.worldPosition
+				else
+					self.target = nil
+					self.lastTargetPosition = nil
+				end
 			end
 			return
 		end
@@ -2150,10 +2371,12 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.playerAlly = nil
 						self.saved.playerAllyMode = nil
 						self.saved.playerAllyBeacon = nil
+						self.saved.playerAllyWorkBeacon = nil
 						self.saved.playerAllyOwner = nil
 						self.saved.rfsDisplayName = nil
 						self.saved.rfsUnitType = nil
 						self.saved.rfsFirstSeenTick = nil
+						self.saved.rfsOrder = nil
 						self.saved.friendly = false
 						self.isDirty = true
 						return
@@ -2171,6 +2394,9 @@ function RfsBotHijack.ensureUnitHooks()
 					if params.beaconKey ~= nil then
 						self.saved.playerAllyBeacon = params.beaconKey
 					end
+					if params.workBeaconKey ~= nil then
+						self.saved.playerAllyWorkBeacon = params.workBeaconKey
+					end
 					if params.owner ~= nil then
 						self.saved.playerAllyOwner = params.owner
 					end
@@ -2183,9 +2409,50 @@ function RfsBotHijack.ensureUnitHooks()
 					if params.firstSeenTick then
 						self.saved.rfsFirstSeenTick = params.firstSeenTick
 					end
+					if type( params.rfsOrder ) == "table" then
+						self.saved.rfsOrder = params.rfsOrder
+					end
 					self.isDirty = true
 				end
 				cls._rfsHackableRpc = true
+			end
+			if not cls._rfsOrderRpc then
+				function cls.sv_e_rfsOrder( self, params )
+					self.saved = self.saved or {}
+					if type( params ) ~= "table" then
+						return
+					end
+					if params.clear then
+						self.saved.rfsOrder = nil
+						self.isDirty = true
+						return
+					end
+					self.saved.rfsOrder = {
+						mode = params.mode,
+						seedUuid = params.seedUuid,
+						beaconKey = params.beaconKey,
+						owner = params.owner,
+					}
+					if params.beaconKey ~= nil and self.saved.playerAllyWorkBeacon == nil then
+						self.saved.playerAllyWorkBeacon = params.beaconKey
+					end
+					self.isDirty = true
+					-- Mirror into ally table (setOrder also sends this event).
+					if self.unit then
+						local key = nil
+						pcall( function()
+							key = tostring( self.unit.id )
+						end )
+						if key and RfsBotHijack.allies and RfsBotHijack.allies[key] then
+							RfsBotHijack.allies[key].rfsOrder = self.saved.rfsOrder
+							RfsBotHijack.allies[key].order = self.saved.rfsOrder
+							if params.beaconKey and not RfsBotHijack.allies[key].workBeaconKey then
+								RfsBotHijack.allies[key].workBeaconKey = tostring( params.beaconKey )
+							end
+						end
+					end
+				end
+				cls._rfsOrderRpc = true
 			end
 			if type( cls.server_onUnitUpdate ) == "function" and not cls._rfsUnitHooked then
 				local orig = cls.server_onUnitUpdate

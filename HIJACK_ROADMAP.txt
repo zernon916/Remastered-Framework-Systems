@@ -46,20 +46,47 @@ Phase 2 full / still open
 - Melee-on-hit chain chance flavor
 - Intelligentia official skip paste remains optional (AUTHOR_SNIPPET)
 
-Phase 3 — Orders (hard) — FUTURE
---------------------------------
-Vanilla tote/hay/farm do NOT plant, plow, or use chests. Crop targeting is grief.
-New job states on allies only:
-  follow / stay / guard
-  harvest (player-loot rules + carry buffer — units have no inventory)
-  replant on soil
-  deposit nearest chest
-Orders via hack beacon GUI (like /setup) or chat /botorder
+Phase 3 — Orders
+----------------
+M1 SHIPPED — Beacon Orders GUI + Rest / Defend
+  - E on powered Hack/Control/Infection beacon opens Orders when home allies exist
+  - Tinker = manual hijack (same as old E when no allies)
+  - Per-bot Rest (stand down) / Defend (combat clamped to beacon jobRadius 16/32/48)
+  - Sticky workBeaconKey home
+  - Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotOrders.lua + Game RPCs
+
+M2 SHIPPED — Hay Farm
+  - Haybot only: Rest | Defend | Farm + seed picker (Farmbot/Big Red = Rest|Defend only)
+  - Persist rfsOrder = { mode="farm", seedUuid, beaconKey, owner }
+  - Job: powered home beacon radius → withdraw seeds from chests → plant soil →
+    harvest mature via bot event (NOT melee crop smash) → deposit carry buffer
+  - Seed allowlist = Survival Planter.lua 12 plantables (RfsFarming.getPlantableSeeds)
+  - Files: RfsBotOrdersFarm.lua; RfsFarming bot plant/harvest hooks
+
+M3 SHIPPED — Tote Collect
+  - Totebot dropdown: Rest | Defend | Collect
+  - Collect allowlist: components/kits, soilbag, seeds, ores/resources (see RfsBotOrdersCollect.lua)
+  - Pickup: Survival hvs_loot harvestables + single-shape dynamic loose parts in jobRadius
+  - Synthetic rfsCarry buffer → deposit into chests (chest/small/tiny/XXL) via sm.container
+  - Files: RfsBotOrdersCollect.lua (+ hooks in RfsBotOrders / GUI / Hijack setOrder)
+
+M4 SHIPPED — Waterbot Collect Oil
+  - Waterbot = Survival Totebot Blue (no unit_waterbot); shortTypeName "Waterbot"
+  - Dropdown: Rest | Defend | Collect Oil (Oil: soon removed)
+  - Persist rfsOrder = { mode="oil", beaconKey, owner }
+  - Search: oil geysers + crudeoil loot/loose in jobRadius; perm-infect ×1.5 search
+  - Deposit: chests in base beacon range only (not the 1.5× search)
+  - Stand down combat while on Oil (like Farm/Collect)
+  - Files: RfsBotOrdersOil.lua (+ RfsBotOrders / GUI / Hijack / layout)
+
+Still FUTURE:
+  chat /botorder
 Per-type flavor (author list):
-  totebot  — plants, hits stronger enemies, poor base defense
-  haybot   — plows, hits weaker enemies, good defense
+  totebot  — Collect small loot (M3); combat under Defend
+  haybot   — Farm plant/harvest (M2)
   tapebot  — ranged sentry
-  farmbot  — tank / late escort
+  farmbot  — tank / late escort (Rest+Defend only)
+  waterbot — Collect Oil (M4) — Totebot Blue
 
 Phase 4 — Factories (late game / Wonk) — FUTURE
 -----------------------------------------------

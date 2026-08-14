@@ -23,6 +23,9 @@ end )
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsFeatures.lua" )
 end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
+end )
 
 local BATTERY_UUID = sm.uuid.new( "910a7f2c-52b0-46eb-8873-ad13255539af" )
 if type( ITEMS ) == "table" and ITEMS.obj_consumable_battery then
@@ -366,6 +369,12 @@ end
 local function publish( self, extra )
 	local t = self.sv.tier or tierOf( self.shape )
 	local disabled = not hackDevicesOn()
+	local homeAllies = 0
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.homeAllyCount and self.sv and self.sv.key then
+		pcall( function()
+			homeAllies = RfsBotHijack.homeAllyCount( self.sv.key ) or 0
+		end )
+	end
 	local data = {
 		powered = ( not disabled ) and self.sv.powered and true or false,
 		disabled = disabled,
@@ -373,11 +382,13 @@ local function publish( self, extra )
 		name = t.name,
 		canInfect = t.canInfect and true or false,
 		linked = extra and extra.linked or 0,
+		homeAllies = ( extra and extra.homeAllies ~= nil ) and extra.homeAllies or homeAllies,
 		batteries = extra and extra.batteries or 0,
 		wired = extra and extra.wired and true or false,
 		hijackSec = extra and extra.hijackSec or ( ( t.hijackTicks or 320 ) / 40 ),
 		raid = extra and extra.raid and true or false,
 		raidRange = extra and extra.raidRange or t.range,
+		beaconKey = self.sv and self.sv.key or nil,
 	}
 	pcall( function()
 		self.network:setClientData( data )
@@ -539,6 +550,7 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 			hijackSec = ( t.hijackTicks or 320 ) / 40,
 			raid = inRaid,
 			raidRange = raidRange,
+			homeAllies = ( type( RfsBotHijack ) == "table" and RfsBotHijack.homeAllyCount and RfsBotHijack.homeAllyCount( self.sv.key ) ) or 0,
 		} )
 	end
 	if ( tick % 2 ) == 0 and type( RfsBotHijack ) == "table" and RfsBotHijack.pendingTagList then
@@ -987,7 +999,55 @@ function RfsHackBeacon.client_canInteract( self )
 	if pd.raid then
 		rangeTxt = tostring( math.floor( ( tonumber( pd.raidRange ) or ( range * 0.5 ) ) + 0.5 ) ) .. " m RAID"
 	end
-	sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), verb .. " " .. rangeTxt .. " / " .. tostring( sec ) .. "s  (E skip)  " .. tostring( nBat ) .. " Battery" )
+	local homeN = tonumber( pd.homeAllies ) or 0
+	local useKey = sm.gui.getKeyBinding( "Use", true )
+	-- UX: when home allies exist, E opens Orders; Tinker still hijacks (see client_canTinker).
+	if homeN > 0 then
+		sm.gui.setInteractionText(
+			"",
+			useKey,
+			"Orders (" .. tostring( homeN ) .. " allies) — " .. name
+		)
+	else
+		sm.gui.setInteractionText(
+			"",
+			useKey,
+			verb .. " " .. rangeTxt .. " / " .. tostring( sec ) .. "s  (E skip)  " .. tostring( nBat ) .. " Battery"
+		)
+	end
+	return true
+end
+
+function RfsHackBeacon.client_canTinker( self, character )
+	local pd = ( self.cl and self.cl.pd ) or {}
+	if not pd.name then
+		pcall( function()
+			local pub = self.interactable:getPublicData()
+			if type( pub ) == "table" then
+				pd = pub
+			end
+		end )
+	end
+	if pd.disabled or not pd.powered then
+		return false
+	end
+	local homeN = tonumber( pd.homeAllies ) or 0
+	if homeN <= 0 then
+		return false
+	end
+	local nBat = tonumber( pd.batteries ) or 0
+	local sec = tonumber( pd.hijackSec ) or 8
+	local verb = pd.canInfect and "Auto-infect" or "Auto-hijack"
+	local range = pd.range or 16
+	local rangeTxt = tostring( range ) .. " m"
+	if pd.raid then
+		rangeTxt = tostring( math.floor( ( tonumber( pd.raidRange ) or ( range * 0.5 ) ) + 0.5 ) ) .. " m RAID"
+	end
+	sm.gui.setInteractionText(
+		"",
+		sm.gui.getKeyBinding( "Tinker", true ),
+		verb .. " " .. rangeTxt .. " / " .. tostring( sec ) .. "s  " .. tostring( nBat ) .. " Battery"
+	)
 	return true
 end
 
@@ -1008,7 +1068,60 @@ function RfsHackBeacon.cl_botTags( self, rows )
 	cl_updateOverheads()
 end
 
+local function cl_beaconKey( self )
+	local id = nil
+	pcall( function()
+		id = self.shape and self.shape.id
+	end )
+	if id ~= nil then
+		return tostring( id )
+	end
+	local pd = self.cl and self.cl.pd
+	if pd and pd.beaconKey then
+		return tostring( pd.beaconKey )
+	end
+	return nil
+end
+
+local function cl_openOrders( self )
+	local game = _G.g_rfsGame
+	local key = cl_beaconKey( self )
+	local pd = ( self.cl and self.cl.pd ) or {}
+	if not key then
+		sm.gui.chatMessage( "[RFS] Orders: no beacon key" )
+		return
+	end
+	if type( RfsBeaconOrdersGui ) == "table" and game and RfsBeaconOrdersGui.open then
+		RfsBeaconOrdersGui.open( game, {
+			beaconKey = key,
+			beaconName = pd.name or "Hack Beacon",
+		} )
+		return
+	end
+	if game and game.cl_rfs_ordersOpen then
+		game:cl_rfs_ordersOpen( {
+			beaconKey = key,
+			beaconName = pd.name or "Hack Beacon",
+		} )
+		return
+	end
+	sm.gui.chatMessage( "[RFS] Orders GUI unavailable" )
+end
+
 function RfsHackBeacon.client_onInteract( self, character, state )
+	if not state then
+		return
+	end
+	local pd = ( self.cl and self.cl.pd ) or {}
+	local homeN = tonumber( pd.homeAllies ) or 0
+	if pd.powered and homeN > 0 then
+		cl_openOrders( self )
+		return
+	end
+	self.network:sendToServer( "sv_hijack", {} )
+end
+
+function RfsHackBeacon.client_onTinker( self, character, state )
 	if not state then
 		return
 	end
@@ -1105,6 +1218,7 @@ function RfsHackBeacon.sv_hijack( self, params, player )
 		local ok = RfsBotHijack.convertUnit( row.unit, ownerId, {
 			mode = mode,
 			beaconKey = key,
+			workBeaconKey = key,
 			hijackTicks = t.hijackTicks or 320,
 		} )
 		if ok then

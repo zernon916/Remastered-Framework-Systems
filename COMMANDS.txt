@@ -45,6 +45,8 @@ Dev / movement / survival
                        Needs RFS Beacons Blocks & Parts enabled in world Mods.
                        Wire a Battery container. Optional switch.
                        Craftbot: Hack 1 Metal. Hideout: 20 / 50 / 120 Farmers.
+                       E on powered beacon = Orders (Rest/Defend/Farm/Collect/Oil).
+                       Tinker = mass hijack. Waterbot (blue tote) = Collect Oil.
   /unhijack [range]    Voluntary release nearest owned ally (default 16 m).
                        Host may release any ally. Does NOT raid-ban the bot.
                        /gensettings FEATURES: Underground miner/cable (default ON).

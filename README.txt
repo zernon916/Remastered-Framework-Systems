@@ -69,10 +69,11 @@ Reload tip: exit to menu and reload the world after updating this Custom Game so
 
 Streamer / Discord (optional)
 -----------------------------
+GitHub: https://github.com/zernon916/Recipe-Framework-Systems
+Discord: https://discord.gg/DfjDMRx9ab
 Host /gensettings → STREAMERS / DISCORD tabs. In-game Streamer uses file drops under
-%USER_DATA%/rfs_discord_bridge. The Discord bot is NOT in the Steam Workshop pack —
-clone discord-bridge/ from:
-  https://github.com/zernon916/Recipe-Framework-Systems
+%USER_DATA%/rfs_discord_bridge. The Discord/Streamer companion is NOT in the Steam Workshop pack —
+clone discord-bridge/ from GitHub (link above) and run separately.
 Then configure .env, npm install, and npm run watch. See discord-bridge/README.md.
 
 Performance
