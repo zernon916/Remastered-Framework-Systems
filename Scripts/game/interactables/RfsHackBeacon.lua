@@ -1185,12 +1185,13 @@ local function cl_beaconKey( self )
 end
 
 local function cl_openOrders( self )
-	-- Open on the Game client instance so createGuiFromLayout binds Close/Prev/Next/
-	-- Master/Range to RecipeFrameworkSurvival (not this interactable). Do NOT call
-	-- RfsBeaconOrdersGui.open from here — that copy lives in the interactable env and
-	-- made Close dead. Prefer a direct Game method call; server bounce is fallback only.
-	-- Always also hit the server so the ally list is built in the beacon env (authoritative
-	-- RfsBotHijack.allies) and pushed to the Game GUI.
+	-- Open on the Game client so callbacks bind to RecipeFrameworkSurvival (not this
+	-- interactable sandbox). Do NOT call RfsBeaconOrdersGui.open from here.
+	--
+	-- CRITICAL: do not gui:open() inside client_onInteract — Survival tears that GUI
+	-- down when the E interact ends (flash-only). Queue a deferred Game open (2 ticks)
+	-- and always let the server push the authoritative ally list. If Game is missing,
+	-- server open RPC alone creates the panel after the interact frame.
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
@@ -1210,20 +1211,38 @@ local function cl_openOrders( self )
 			payload.pos = { x = pos.x, y = pos.y, z = pos.z }
 		end
 	end )
-	local clientOpened = false
+	local deferred = false
 	local game = _G.g_rfsGame
-	if game and type( game.cl_rfs_ordersOpen ) == "function" then
-		local ok, err = pcall( function()
-			game:cl_rfs_ordersOpen( payload )
+	if game then
+		local ok = pcall( function()
+			game.cl = game.cl or {}
+			-- If already open for this beacon, skip re-queue (E spam).
+			local gui = game.cl.rfsOrdersGui
+			local same = game.cl.rfsOrdersBeaconKey
+				and tostring( game.cl.rfsOrdersBeaconKey ) == tostring( key )
+			local active = false
+			if gui then
+				pcall( function()
+					active = gui:isActive() and true or false
+				end )
+			end
+			if gui and same and active then
+				deferred = true
+				return
+			end
+			local tick = sm.game.getCurrentTick() or 0
+			game.cl.rfsOrdersPendingOpen = payload
+			game.cl.rfsOrdersPendingOpenTick = tick + 2
+			deferred = true
 		end )
-		if ok then
-			clientOpened = true
-		else
-			print( "[RFS] cl_rfs_ordersOpen failed: " .. tostring( err ) )
+		if not ok then
+			deferred = false
+			print( "[RFS] deferred orders open queue failed" )
 		end
 	end
-	payload.clientOpened = clientOpened
-	-- Server builds the ally list + role from the live beacon hijack table.
+	-- clientOpened = deferred open queued (or already open). Server still sends open+list;
+	-- Game open() dedupes if the panel is already active.
+	payload.clientOpened = deferred and true or false
 	self.network:sendToServer( "sv_openOrdersGui", payload )
 end
 
@@ -1362,10 +1381,9 @@ local function sv_sendOrdersOpen( self, player, params )
 			end
 		end )
 	end
-	-- If the client already opened the GUI (callback binding), only push the list.
-	if params and params.clientOpened then
-		return relayOrdersToPlayer( player, nil, listPayload )
-	end
+	-- Always relay open+list. Client may have deferred-open queued; Game open() keeps a
+	-- single instance (already-open guard) so a second open never flashes the panel shut.
+	-- If clientOpened, still include openData so a missed deferred queue still recovers.
 	return relayOrdersToPlayer( player, data, listPayload )
 end
 
