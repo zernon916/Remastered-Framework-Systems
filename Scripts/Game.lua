@@ -2477,6 +2477,12 @@ function RecipeFrameworkSurvival.cl_rfs_ordersRange( self )
 	end
 end
 
+function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onColorDrop then
+		RfsBeaconOrdersGui.onColorDrop( self, value )
+	end
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
 	if type( RfsBeaconOrdersGui ) ~= "table" or type( RfsBeaconOrdersGui.open ) ~= "function" then
 		sm.gui.chatMessage( "[RFS] Orders GUI not loaded" )
@@ -2543,6 +2549,7 @@ function RecipeFrameworkSurvival.cl_rfs_ordersSetResult( self, data )
 end
 
 -- DropDown callbacks ModeDrop0..7 / SeedDrop0..7 (createDropDown only passes value).
+-- BotName0..7 select the row for Color apply.
 for _rfsOrdersDropI = 0, 7 do
 	local idx = _rfsOrdersDropI
 	RecipeFrameworkSurvival["cl_rfs_ordersDrop" .. idx] = function( self, value )
@@ -2553,6 +2560,11 @@ for _rfsOrdersDropI = 0, 7 do
 	RecipeFrameworkSurvival["cl_rfs_ordersSeed" .. idx] = function( self, value )
 		if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onSeedDrop then
 			RfsBeaconOrdersGui.onSeedDrop( self, idx, value )
+		end
+	end
+	RecipeFrameworkSurvival["cl_rfs_ordersBot" .. idx] = function( self )
+		if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onBotClick then
+			RfsBeaconOrdersGui.onBotClick( self, idx )
 		end
 	end
 end
@@ -2667,6 +2679,32 @@ function RecipeFrameworkSurvival.sv_rfs_ordersSet( self, params, player )
 		msg = ( not ok ) and tostring( result ) or nil,
 		mode = ok and ( type( result ) == "table" and result.mode or mode ) or nil,
 		seedUuid = ok and ( type( result ) == "table" and result.seedUuid or seedUuid ) or nil,
+		unitKey = unitKey,
+	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersSetColor( self, params, player )
+	params = params or {}
+	local beaconKey = params.beaconKey and tostring( params.beaconKey ) or nil
+	local unitKey = params.unitKey and tostring( params.unitKey ) or nil
+	if unitKey == "" then
+		unitKey = nil
+	end
+	local colorHex = params.colorHex and tostring( params.colorHex ) or nil
+	if not colorHex then
+		self.network:sendToClient( player, "cl_rfs_ordersSetResult", { ok = false, msg = "no color" } )
+		return
+	end
+	local allowHost = rfsServerPlayerIsHost( player )
+	local ok, result, count = false, "hijack missing", 0
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.setAllyColorDomain then
+		ok, result, count = RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost, unitKey )
+	end
+	self.network:sendToClient( player, "cl_rfs_ordersSetResult", {
+		ok = ok and true or false,
+		msg = ( not ok ) and tostring( result ) or nil,
+		colorHex = ok and colorHex or nil,
+		colorCount = count,
 		unitKey = unitKey,
 	} )
 end

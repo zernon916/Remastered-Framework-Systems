@@ -1,8 +1,9 @@
--- RfsBeaconOrdersGui.lua — Beacon Orders GUI (Rest/Defend/Farm/Collect/Oil)
+-- RfsBeaconOrdersGui.lua — Beacon Orders GUI (Rest/Defend/Farm/Collect/Oil + ally color)
 -- Author: DemonsDen126
 -- Opened from powered Hack/Control/Infection beacons when home allies exist.
 -- Hay: Rest|Defend|Farm + seed picker. Tote: Rest|Defend|Collect.
 -- Waterbot (Totebot Blue): Rest|Defend|Collect Oil. Others: Rest|Defend.
+-- Color: click bot name to select; Color drop applies to selected, or all listed if none.
 
 RfsBeaconOrdersGui = RfsBeaconOrdersGui or {}
 
@@ -17,7 +18,51 @@ local MODE_ITEMS_HAY = { "Rest", "Defend", "Farm" }
 local MODE_ITEMS_TOTE = { "Rest", "Defend", "Collect" }
 local MODE_ITEMS_WATER = { "Rest", "Defend", "Collect Oil" }
 
+-- Full-body presets (RRGGBBAA). Ally Green / Infect Green match RfsBotHijack defaults.
+local COLOR_PRESETS = {
+	{ label = "Ally Green", hex = "3dff8aff" },
+	{ label = "Infect Green", hex = "1aff6aff" },
+	{ label = "Blue", hex = "3d9effff" },
+	{ label = "Cyan", hex = "3dffffff" },
+	{ label = "Yellow", hex = "ffe03dff" },
+	{ label = "Orange", hex = "ff8a3dff" },
+	{ label = "Magenta", hex = "ff3dffff" },
+	{ label = "White", hex = "ffffffff" },
+	{ label = "Red", hex = "ff3d3dff" },
+}
+
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
+
+local function colorLabels()
+	local out = {}
+	for i, p in ipairs( COLOR_PRESETS ) do
+		out[i] = p.label
+	end
+	return out
+end
+
+local function colorHexForLabel( label )
+	label = tostring( label or "" )
+	for _, p in ipairs( COLOR_PRESETS ) do
+		if p.label == label then
+			return p.hex
+		end
+	end
+	return nil
+end
+
+local function colorLabelForHex( hex )
+	if not hex then
+		return nil
+	end
+	local h = string.lower( tostring( hex ):gsub( "^#", "" ) )
+	for _, p in ipairs( COLOR_PRESETS ) do
+		if string.lower( p.hex ) == h then
+			return p.label
+		end
+	end
+	return nil
+end
 
 local function modeLabel( mode )
 	mode = string.lower( tostring( mode or "rest" ) )
@@ -218,6 +263,28 @@ function RfsBeaconOrdersGui.refresh( host )
 		gui:setText( "BtnRange", showRange and "HIDE RANGE" or "SHOW RANGE" )
 	end )
 
+	local selectedKey = host.cl.rfsOrdersSelectedKey
+	local selectedName = nil
+	if selectedKey then
+		for _, r in ipairs( rows ) do
+			if r and tostring( r.key ) == tostring( selectedKey ) then
+				selectedName = r.name or r.key
+				break
+			end
+		end
+		if not selectedName then
+			host.cl.rfsOrdersSelectedKey = nil
+			selectedKey = nil
+		end
+	end
+	pcall( function()
+		if selectedName then
+			gui:setText( "ColorSelLabel", "Selected: " .. tostring( selectedName ) )
+		else
+			gui:setText( "ColorSelLabel", "None selected — applies to all" )
+		end
+	end )
+
 	local seeds = seedLabels()
 
 	for i = 0, ROWS - 1 do
@@ -228,7 +295,8 @@ function RfsBeaconOrdersGui.refresh( host )
 		local dropW = "ModeDrop" .. i
 		local seedW = "SeedDrop" .. i
 		if row then
-			gui:setText( nameW, tostring( row.name or row.key or "Bot" ) )
+			local mark = ( selectedKey and tostring( row.key ) == tostring( selectedKey ) ) and "> " or ""
+			gui:setText( nameW, mark .. tostring( row.name or row.key or "Bot" ) )
 			gui:setVisible( nameW, true )
 			gui:setVisible( dropW, true )
 			pcall( function()
@@ -282,7 +350,17 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	gui:setOnCloseCallback( "cl_rfs_ordersOnClosed" )
 
 	local seeds = seedLabels()
+	local colors = colorLabels()
+	pcall( function()
+		gui:createDropDown( "ColorDrop", "cl_rfs_ordersColor", colors )
+	end )
+	pcall( function()
+		gui:setSelectedDropDownItem( "ColorDrop", "Ally Green" )
+	end )
 	for i = 0, ROWS - 1 do
+		pcall( function()
+			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
+		end )
 		pcall( function()
 			gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_DEFAULT )
 		end )
@@ -322,6 +400,7 @@ function RfsBeaconOrdersGui.open( host, opts )
 	host.cl.rfsOrdersMasterKey = opts.masterKey
 	host.cl.rfsOrdersPage = 0
 	host.cl.rfsOrdersRows = {}
+	host.cl.rfsOrdersSelectedKey = nil
 
 	RfsBeaconOrdersGui.bind( host, gui )
 	RfsBeaconOrdersGui.refresh( host )
@@ -419,6 +498,7 @@ function RfsBeaconOrdersGui.applyList( host, data )
 					mode = mode,
 					seedUuid = row.seedUuid and tostring( row.seedUuid ) or nil,
 					owner = row.owner,
+					allyColor = row.allyColor and tostring( row.allyColor ) or nil,
 				}
 			end
 		end
@@ -433,6 +513,45 @@ function RfsBeaconOrdersGui.applyList( host, data )
 		host.cl.rfsOrdersMasterKey = data.masterKey
 	end
 	RfsBeaconOrdersGui.refresh( host )
+end
+
+function RfsBeaconOrdersGui.onBotClick( host, rowIdx )
+	host.cl = host.cl or {}
+	local rows = host.cl.rfsOrdersRows or {}
+	local page = host.cl.rfsOrdersPage or 0
+	local abs = page * ROWS + ( tonumber( rowIdx ) or 0 ) + 1
+	local row = rows[abs]
+	if not row or not row.key then
+		return
+	end
+	local key = tostring( row.key )
+	if host.cl.rfsOrdersSelectedKey and tostring( host.cl.rfsOrdersSelectedKey ) == key then
+		host.cl.rfsOrdersSelectedKey = nil
+	else
+		host.cl.rfsOrdersSelectedKey = key
+	end
+	RfsBeaconOrdersGui.refresh( host )
+end
+
+function RfsBeaconOrdersGui.onColorDrop( host, value )
+	host.cl = host.cl or {}
+	local hex = colorHexForLabel( value )
+	if not hex then
+		return
+	end
+	local beaconKey = host.cl.rfsOrdersBeaconKey
+	if not beaconKey then
+		return
+	end
+	local selected = host.cl.rfsOrdersSelectedKey
+	host.network:sendToServer( "sv_rfs_ordersSetColor", {
+		beaconKey = beaconKey,
+		unitKey = selected,
+		colorHex = hex,
+		colorLabel = tostring( value ),
+	} )
+	local scope = selected and "selected bot" or "all listed allies"
+	sm.gui.chatMessage( "[RFS] Color " .. tostring( value ) .. " → " .. scope )
 end
 
 function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
@@ -500,3 +619,6 @@ RfsBeaconOrdersGui.ROWS = ROWS
 RfsBeaconOrdersGui.modeLabel = modeLabel
 RfsBeaconOrdersGui.modeValue = modeValue
 RfsBeaconOrdersGui.botKind = botKind
+RfsBeaconOrdersGui.COLOR_PRESETS = COLOR_PRESETS
+RfsBeaconOrdersGui.colorHexForLabel = colorHexForLabel
+RfsBeaconOrdersGui.colorLabelForHex = colorLabelForHex

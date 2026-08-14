@@ -92,6 +92,15 @@ M4 SHIPPED — Waterbot Collect Oil
   - Stand down combat while on Oil (like Farm/Collect)
   - Files: RfsBotOrdersOil.lua (+ RfsBotOrders / GUI / Hijack / layout)
 
+M5 SHIPPED — Ally color presets (Orders GUI)
+  - Color drop on Beacon Orders: Ally Green, Infect Green, Blue, Cyan, Yellow,
+    Orange, Magenta, White, Red (full-body character:setColor)
+  - Click bot name to select; choosing a color tints selected bot, or all listed
+    home allies in the Master/Slave domain if none selected
+  - Persist saved.rfsAllyColor / allies[].allyColor (survives unit reload like other
+    hijack identity). Infect/Ally defaults until user overrides.
+  - Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotHijack.lua, Game RPCs
+
 Still FUTURE:
   chat /botorder
 Per-type flavor (author list):

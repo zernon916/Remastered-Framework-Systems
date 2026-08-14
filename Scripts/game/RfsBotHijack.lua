@@ -114,6 +114,45 @@ local function applyColor( char, color )
 	end )
 end
 
+-- Normalize stored RRGGBBAA hex (optional leading #).
+local function normalizeColorHex( hex )
+	if hex == nil then
+		return nil
+	end
+	local s = string.lower( tostring( hex ):gsub( "^#", "" ):gsub( "%s+", "" ) )
+	if s == "" then
+		return nil
+	end
+	if not string.match( s, "^%x%x%x%x%x%x%x%x$" ) and not string.match( s, "^%x%x%x%x%x%x$" ) then
+		return nil
+	end
+	if #s == 6 then
+		s = s .. "ff"
+	end
+	return s
+end
+
+-- Custom allyColor overrides infect/ally defaults once the player picks a tint.
+local function allyVisualColor( info )
+	if type( info ) == "table" then
+		local hex = normalizeColorHex( info.allyColor )
+		if hex then
+			local ok, col = pcall( sm.color.new, hex )
+			if ok and col then
+				return col
+			end
+		end
+		if info.mode == "infected" then
+			return INFECT_COLOR
+		end
+	end
+	return ALLY_COLOR
+end
+
+local function applyAllyVisualColor( char, info )
+	applyColor( char, allyVisualColor( info ) )
+end
+
 local function sameWorld( a, b )
 	local ok = true
 	pcall( function()
@@ -348,6 +387,7 @@ local function applyUnhackableToSelf( self )
 	self.saved.rfsDisplayName = nil
 	self.saved.rfsUnitType = nil
 	self.saved.rfsFirstSeenTick = nil
+	self.saved.rfsAllyColor = nil
 	self.saved.friendly = false
 	self.isDirty = true
 	if self.unit then
@@ -885,6 +925,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		workBeaconKey = tostring( workBeaconKey )
 	end
 	local order = opts.order or opts.rfsOrder or ( prev and ( prev.order or prev.rfsOrder ) )
+	local allyColor = normalizeColorHex( opts.allyColor ) or ( prev and normalizeColorHex( prev.allyColor ) )
 	RfsBotHijack.allies[key] = {
 		type = t,
 		unitType = unitType,
@@ -895,6 +936,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		order = order,
 		rfsOrder = order, -- alias for RfsBotOrders / saved.rfsOrder naming
 		origColor = orig,
+		allyColor = allyColor,
 		infectAcc = ( prev and prev.infectAcc ) or 0,
 		hijackTicks = tonumber( opts.hijackTicks ) or ( prev and prev.hijackTicks ) or 320,
 		controlled = true,
@@ -903,7 +945,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		lastTagTick = prev and prev.lastTagTick or 0,
 	}
 	if char and sm.exists( char ) then
-		applyColor( char, mode == "infected" and INFECT_COLOR or ALLY_COLOR )
+		applyAllyVisualColor( char, RfsBotHijack.allies[key] )
 	end
 	pushIdentityToUnit( unit, {
 		owner = RfsBotHijack.allies[key].owner,
@@ -913,6 +955,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		mode = mode,
 		beaconKey = RfsBotHijack.allies[key].beaconKey,
 		workBeaconKey = RfsBotHijack.allies[key].workBeaconKey,
+		allyColor = allyColor,
 		playerAlly = true,
 	} )
 	RfsBotHijack.publishGlobals()
@@ -1042,7 +1085,7 @@ function RfsBotHijack.tick( world )
 			elseif info.mode == "infected" then
 				info.controlled = true
 				if unit.character and sm.exists( unit.character ) then
-					applyColor( unit.character, INFECT_COLOR )
+					applyAllyVisualColor( unit.character, info )
 				end
 			else
 				local rec, bkey = RfsBotHijack.coveringBeacon( unit, true )
@@ -1074,16 +1117,17 @@ function RfsBotHijack.tick( world )
 								firstSeenTick = info.firstSeenTick,
 								mode = "infected",
 								workBeaconKey = info.workBeaconKey,
+								allyColor = info.allyColor,
 								playerAlly = true,
 							} )
 							if unit.character and sm.exists( unit.character ) then
-								applyColor( unit.character, INFECT_COLOR )
+								applyAllyVisualColor( unit.character, info )
 							end
 						end
 					else
 						info.infectAcc = 0
 						if unit.character and sm.exists( unit.character ) then
-							applyColor( unit.character, ALLY_COLOR )
+							applyAllyVisualColor( unit.character, info )
 						end
 					end
 				end
@@ -2223,6 +2267,7 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 						seedUuid = ( type( ord ) == "table" and ord.seedUuid ) or nil,
 						owner = info.owner,
 						allyMode = info.mode,
+						allyColor = info.allyColor,
 					}
 				end
 			end
@@ -2287,6 +2332,95 @@ function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
 	end )
 	return true, saved
 end
+
+-- Persist full-body ally tint (character:setColor). Host or owner.
+-- unitKey nil → all listed home allies in the beacon order domain (owner-filtered for non-host).
+function RfsBotHijack.setAllyColor( unitOrKey, colorHex, player, allowHost )
+	local hex = normalizeColorHex( colorHex )
+	if not hex then
+		return false, "bad color"
+	end
+	local unit = unitOrKey
+	local key = nil
+	if type( unitOrKey ) == "string" or type( unitOrKey ) == "number" then
+		key = tostring( unitOrKey )
+		unit = RfsBotHijack.unitByKey( key )
+	else
+		key = unitKey( unit )
+	end
+	if not key then
+		return false, "no bot"
+	end
+	local info = RfsBotHijack.allies[key]
+	if not info or not info.controlled then
+		return false, "not an ally"
+	end
+	local playerId = nil
+	pcall( function()
+		playerId = player and player.id
+	end )
+	local isOwner = playerId ~= nil and info.owner ~= nil and tostring( info.owner ) == tostring( playerId )
+	if not isOwner and not allowHost then
+		return false, "not owner"
+	end
+	info.allyColor = hex
+	if unit and sm.exists( unit ) and unit.character and sm.exists( unit.character ) then
+		applyAllyVisualColor( unit.character, info )
+	end
+	pushIdentityToUnit( unit, {
+		owner = info.owner,
+		displayName = info.displayName,
+		unitType = info.unitType or info.type,
+		firstSeenTick = info.firstSeenTick,
+		mode = info.mode,
+		beaconKey = info.beaconKey,
+		workBeaconKey = info.workBeaconKey,
+		allyColor = hex,
+		playerAlly = true,
+	} )
+	return true, hex
+end
+
+function RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost, unitKeyOnly )
+	local hex = normalizeColorHex( colorHex )
+	if not hex then
+		return false, "bad color", 0
+	end
+	beaconKey = tostring( beaconKey or "" )
+	if beaconKey == "" then
+		return false, "no beacon", 0
+	end
+	if unitKeyOnly and tostring( unitKeyOnly ) ~= "" then
+		local ok, result = RfsBotHijack.setAllyColor( tostring( unitKeyOnly ), hex, player, allowHost )
+		return ok, result, ok and 1 or 0
+	end
+	local ownerFilter = nil
+	if not allowHost then
+		pcall( function()
+			ownerFilter = player and player.id
+		end )
+	end
+	local rows = RfsBotHijack.listHomeAllies( beaconKey, ownerFilter ) or {}
+	local n = 0
+	local lastErr = nil
+	for _, row in ipairs( rows ) do
+		if row and row.key then
+			local ok, err = RfsBotHijack.setAllyColor( tostring( row.key ), hex, player, allowHost )
+			if ok then
+				n = n + 1
+			else
+				lastErr = err
+			end
+		end
+	end
+	if n == 0 then
+		return false, lastErr or "no bots", 0
+	end
+	return true, hex, n
+end
+
+RfsBotHijack.allyVisualColor = allyVisualColor
+RfsBotHijack.normalizeColorHex = normalizeColorHex
 
 -- Hostiles currently mid auto-hijack under this beacon (for battery work-drain).
 function RfsBotHijack.pendingCount( beaconKey )
@@ -2377,10 +2511,11 @@ function RfsBotHijack.ensureHooks()
 				displayName = self.saved.rfsDisplayName,
 				unitType = self.saved.rfsUnitType,
 				firstSeenTick = self.saved.rfsFirstSeenTick,
+				allyColor = self.saved.rfsAllyColor,
 			} )
 			self.saved.friendly = false
 			pcall( function()
-				self.unit.character:setColor( mode == "infected" and INFECT_COLOR or ALLY_COLOR )
+				applyAllyVisualColor( self.unit.character, RfsBotHijack.allies[unitKey( self.unit )] )
 			end )
 			pcall( function()
 				if type( RfsBotOrders ) == "table" and RfsBotOrders.ensureDefaultOrder then
@@ -2481,6 +2616,7 @@ function RfsBotHijack.ensureHooks()
 			self.saved.rfsDisplayName = info and info.displayName
 			self.saved.rfsUnitType = info and ( info.unitType or info.type )
 			self.saved.rfsFirstSeenTick = info and info.firstSeenTick
+			self.saved.rfsAllyColor = info and info.allyColor
 			if info and type( info.order ) == "table" then
 				self.saved.rfsOrder = info.order
 			elseif info and type( info.rfsOrder ) == "table" then
@@ -2489,7 +2625,7 @@ function RfsBotHijack.ensureHooks()
 			self.isDirty = true
 			RfsBotHijack.standDown( self )
 			if self.unit and self.unit.character then
-				applyColor( self.unit.character, ( info and info.mode == "infected" ) and INFECT_COLOR or ALLY_COLOR )
+				applyAllyVisualColor( self.unit.character, info )
 			end
 			self.eventTarget = nil
 			-- Rest/Defend job clamp (RfsBotOrders). Fallback = legacy full aggro.
@@ -2635,6 +2771,7 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.rfsDisplayName = nil
 						self.saved.rfsUnitType = nil
 						self.saved.rfsFirstSeenTick = nil
+						self.saved.rfsAllyColor = nil
 						self.saved.rfsOrder = nil
 						self.saved.friendly = false
 						self.isDirty = true
@@ -2667,6 +2804,10 @@ function RfsBotHijack.ensureUnitHooks()
 					end
 					if params.firstSeenTick then
 						self.saved.rfsFirstSeenTick = params.firstSeenTick
+					end
+					if params.allyColor ~= nil then
+						local hex = normalizeColorHex( params.allyColor )
+						self.saved.rfsAllyColor = hex
 					end
 					if type( params.rfsOrder ) == "table" then
 						self.saved.rfsOrder = params.rfsOrder
