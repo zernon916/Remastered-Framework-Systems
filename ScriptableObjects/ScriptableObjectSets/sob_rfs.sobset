@@ -1,0 +1,9 @@
+{
+	"scriptableObjectList": [
+		{
+			"filename": "$CONTENT_DATA/Scripts/game/RfsHijackHost.lua",
+			"classname": "RfsHijackHost",
+			"uuid": "a7c3e91f-2b48-4d6a-9e15-6f8d0c1a2b3c"
+		}
+	]
+}

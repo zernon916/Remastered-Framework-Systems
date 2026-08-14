@@ -1,0 +1,22 @@
+# Secrets & local runtime
+.env
+**/.env
+node_modules/
+discord-bridge/node_modules/
+discord-bridge/.env
+discord-bridge/.env.*
+!discord-bridge/.env.example
+discord-bridge/inbox/vote.json
+discord-bridge/inbox/chat.jsonl
+discord-bridge/inbox/*.json
+!discord-bridge/inbox/*.example.json
+discord-bridge/inbox/*.jsonl
+!discord-bridge/inbox/*.example.jsonl
+discord-bridge/inbox/*.tmp
+discord-bridge/*.log
+*.log
+.vs/
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp

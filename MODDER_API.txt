@@ -1,0 +1,204 @@
+Recipe Framework Survival — Modder API
+======================================
+Author: DemonsDen126
+Custom Game localId: 29c99287-1213-48c7-9471-19a4a5c12247
+
+This file documents what RFS actually exposes. For a short author checklist and
+JSON schemas for shops, start with AUTHOR_GUIDE.txt (this file goes deeper).
+
+Content paths ($CONTENT_<uuid>)
+-------------------------------
+Blocks & Parts mods are loaded as world content. Files live under:
+
+  $CONTENT_<yourModLocalId>/CraftingRecipes/...
+  $CONTENT_<yourModLocalId>/Quests/...
+  $CONTENT_<yourModLocalId>/Scripts/...
+
+RFS discovers guest mods via ModDatabase descriptions.json (do not enable
+ModDatabase as a world mod — only subscribe/install it). At world load,
+ModRecipeScan opens paths like:
+
+  $CONTENT_<localId>/CraftingRecipes/craftbot.json
+  $CONTENT_<localId>/CraftingRecipes/hideout_trades.json
+  $CONTENT_<localId>/CraftingRecipes/hideout.json          (wrapper form only)
+  $CONTENT_<localId>/CraftingRecipes/mininghub_trades.json
+  $CONTENT_<localId>/CraftingRecipes/loot.json
+
+Your mod's description.json "localId" is the UUID after $CONTENT_.
+
+
+1) Store / shop hooks (exists — primary framework feature)
+----------------------------------------------------------
+Implemented in Scripts/game/ModRecipeScan.lua + HideoutTrader / MininghubTrader.
+
+Craftbot
+  - Ship CraftingRecipes/craftbot.json (array of recipes).
+  - Merged into Craftbot as unlockable schematics (g_unlockableCraftItems).
+  - NOT auto-unlocked. Players unlock via Hideout schematic purchase, quests,
+    or host cheats (/unlockmodded) when cheats are enabled.
+
+Hideout (Farmers)
+  - Prefer CraftingRecipes/hideout_trades.json
+  - Or hideout.json ONLY when it uses { "currencyItemId", "trades": [...] }
+  - Currency is forced to Farmers:
+      8d601982-4608-4d5e-bb9e-e4041486f7c7
+  - Trades append into _G.g_extraHideoutTrades (in-memory; Survival hideout.json
+    is never written to disk).
+
+Mining Hub
+  - CraftingRecipes/mininghub_trades.json → _G.g_extraMiningHubTrades
+
+Loot (optional)
+  - CraftingRecipes/loot.json weight inject into a named loot table
+
+Dedupe is by itemId. First registered wins. Missing shapes on a peer are skipped
+(no "BLOCK NOT FOUND" ghost rows).
+
+See AUTHOR_GUIDE.txt and AUTHOR_SNIPPET/CraftingRecipes/*.EXAMPLE for schemas.
+
+
+2) Progression hooks (honest scope)
+-----------------------------------
+There is NO separate API that inserts nodes into Survival's vault / chapter
+progression tree (ProgressionManager tiers).
+
+What RFS does support for "progression":
+
+  A) Unlockable craftbot recipes
+     - Your craftbot.json items are marked unlockable (blue schematic style).
+     - They stay locked until unlocked by play (Hideout schematic trade, quest
+       reward GrantSchematics, or host /unlock* when cheats are on).
+
+  B) Hideout schematic trades
+     - Selling a schematic trade unlocks the matching craftbot recipe through
+       Survival RecipeManager (same path as vanilla Hideout schematics).
+
+  C) Quest rewards (vanilla Survival)
+     - If your quest ScriptableObject grants schematics/logs, Survival's normal
+       CompleteQuest / GrantSchematics path applies. RfsQuest.complete wraps
+       QuestManager.Sv_CompleteQuest for activation control from Lua.
+
+If you need a custom unlock gate beyond that, implement it in your own scripts
+and call RecipeManager unlock APIs / give items yourself — RFS does not ship a
+generic "progression tree editor".
+
+
+3) Feature flags — rfs_settings.json
+------------------------------------
+Path: $CONTENT_DATA/rfs_settings.json (this Custom Game root).
+
+  {
+    "frameworkOnly": false,
+    "setupQuestTab": true,
+    "cheats": true
+  }
+
+frameworkOnly (baseline / framework-only mode)
+  - Default: false
+  - When true:
+      * Forces cheats=false
+      * Forces setupQuestTab=false (RFS quest UI off)
+      * /setup still opens (host), but cheat buttons + Quest tab are hidden
+      * Chat cheats (fly/give/quest cmds/shops remote open) stay unbound
+      * Does NOT turn off hijack/beacons/area loader — use host /gensettings
+      * KEEP ALWAYS: ModRecipeScan store merge, RfsQuest API, progression inject,
+        bot hijack hooks, /map, /mods, /help, /menu
+  - Alias: "enableDefaultContent": false  (same as frameworkOnly true)
+
+setupQuestTab
+  - Pack default for /setup Quest tab (INFO / START / DONE).
+  - World /gensettings "RFS quests content" can also hide this UI (API stays on).
+
+cheats
+  - Pack default for fly/god/give/unlock/quest chat cmds and /setup cheat UI.
+  - Host /gensettings can override per-world (RfsFeatures sm.storage).
+  - Does NOT set g_survivalDev (RFS never forces that flag — it would break
+    Survival's auto tutorial / quest startup).
+
+World feature flags (/gensettings host GUI — RfsFeatures)
+  - Storage key: { "rfs", "features" }
+  - cheats, hackDevices, areaLoader, hackableRobots, streamerMode, rfsQuests
+  - Flags gate RFS gameplay content only — never ModRecipeScan / RfsQuest API hooks.
+  - Streamer / Discord vote drop (external Node bridge, no Lua HTTP):
+      discord-bridge/README.md  — host setup; RfsStreamer.lua polls the drop file.
+
+Reload the world after editing pack settings. /gensettings applies live.
+
+
+4) Quest API — _G.RfsQuest
+--------------------------
+File: Scripts/game/RfsQuest.lua (dofile'd from Scripts/Game.lua early).
+
+Thin wrappers around Survival QuestManager. Custom quest *logic* still needs a
+Survival-style quest ScriptableObject registered by the game. RFS does NOT ship
+a full custom "earn your first Hacker Device" quest ScriptableObject — use this
+API + your own quest SOs (or activate vanilla quest names for tooling).
+
+Requires QuestManager to exist (server after Survival init). Methods:
+
+  RfsQuest.isActive( questName )      → bool
+  RfsQuest.isComplete( questName )    → bool
+  RfsQuest.getStage( questName )     → stage or nil
+  RfsQuest.getActive()               → list / table of active quests
+
+  RfsQuest.activate( questName, additionalParams, hide )
+      → true | false, err
+  RfsQuest.tryActivate( questName, hide ) → bool
+  RfsQuest.complete( questName, hideCompletion ) → true | false, err
+  RfsQuest.abandon( questName ) → bool
+
+  RfsQuest.subscribeEvent( event, subscriber, methodName )
+  RfsQuest.unsubscribeEvent( event, subscriber )
+  RfsQuest.sendEvent( event, params )
+  RfsQuest.registerActivator( questName, activator )
+
+Simple Lua callbacks (no ScriptableObject required):
+
+  RfsQuest.onActivate( function( questName ) ... end )
+  RfsQuest.onComplete( function( questName ) ... end )
+
+Optional metadata loader (does NOT register a playable quest by itself):
+
+  local meta = RfsQuest.loadModQuestMeta( "<yourLocalId>" )
+  -- opens $CONTENT_<localId>/Quests/rfs_quests.json
+
+Example rfs_quests.json (metadata / notes for authors & tools):
+
+  {
+    "version": 1,
+    "quests": [
+      {
+        "name": "my_mod_intro",
+        "title": "My Intro Quest",
+        "notes": "Real quest must be a ScriptableObject registered like Survival quests. Use RfsQuest.activate('my_mod_intro') once the SO exists.",
+        "suggestActivate": false
+      }
+    ]
+  }
+
+How to add a real quest as a B&P / CG author
+  1) Create a quest ScriptableObject the same way Survival does (quest class +
+     registration in the game's scriptable object sets / managers).
+  2) From your script (or RFS), call RfsQuest.activate( "your_quest_name" ).
+  3) Optionally ship Quests/rfs_quests.json so other tools can discover names.
+  4) Listen with RfsQuest.onComplete / subscribeEvent for follow-ups.
+
+Host tooling (when cheats=true, frameworkOnly=false):
+  /questlist /questinfo /startquest /completequest /resetquest
+  /setup → Quest tab
+
+
+5) What stays on in frameworkOnly
+---------------------------------
+ON:  ModRecipeScan, hideout/mining inject, craftbot unlockable merge,
+     RfsQuest module/API, RfsBotHijack hooks, /map, /mods, /menu
+OFF: cheat chat cmds, /setup cheat buttons, /setup Quest tab
+NOT forced off by frameworkOnly (use /gensettings): beacon behavior,
+     area loader behavior, hackable robots feature flag
+
+
+6) Example snippet layout
+-------------------------
+See AUTHOR_SNIPPET/ in this mod folder:
+  CraftingRecipes/*.EXAMPLE
+  Quests/rfs_quests.json.EXAMPLE (optional metadata)

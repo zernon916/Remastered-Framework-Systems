@@ -1,0 +1,13 @@
+{
+  "id": "example-001",
+  "action": "spawn",
+  "unit": "farmbot",
+  "item": null,
+  "amount": 1,
+  "source": "discord",
+  "voter": "0",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "ts": 0,
+  "quantity": 1,
+  "note": "Copy to vote.json or use /vote in Discord. Host must enable Streamer in /gensettings."
+}

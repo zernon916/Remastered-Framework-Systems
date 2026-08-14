@@ -1,0 +1,20 @@
+[
+	{
+		"_comment": "Hack Beacon - easy placeholder. Adjust later.",
+		"itemId": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
+		"quantity": 1,
+		"craftTime": 2,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
+	},
+	{
+		"_comment": "Area Loader - pins one 64m cell via loadCellWithHandle. Units may still exist.",
+		"itemId": "e7b1f4d3-0a52-4dc4-cf61-52c4d1e9e81a",
+		"quantity": 1,
+		"craftTime": 2,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
+	}
+]

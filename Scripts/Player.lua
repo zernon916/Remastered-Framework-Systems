@@ -1,0 +1,539 @@
+-- Player.lua - Recipe Framework Survival
+-- Author: DemonsDen126
+dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalPlayer.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsHud.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
+
+Player = class( SurvivalPlayer )
+
+local RFS_MAP_LOCK_UUID = sm.uuid.new( "9a1528a6-acd2-44db-8050-b2f493362191" )
+local RFS_MAP_HEIGHT = 1200
+local RFS_MAP_DEFAULT_ZOOM = 200
+-- ~0.75s at 40 tick/s - blocks open->immediate toggle-close on double chat fire
+local RFS_MAP_OPEN_DEBOUNCE_TICKS = 30
+local RFS_MAP_SHAPE_GRACE_TICKS = 40
+
+g_rfs_mapFocus = g_rfs_mapFocus or nil
+g_rfs_mapZoom = g_rfs_mapZoom or RFS_MAP_DEFAULT_ZOOM
+g_rfs_mapHeight = g_rfs_mapHeight or RFS_MAP_HEIGHT
+g_rfs_mapLockReady = g_rfs_mapLockReady or false
+
+function Player.server_onCreate( self )
+	SurvivalPlayer.server_onCreate( self )
+	self.sv = self.sv or {}
+	self.sv.rfsFly = false
+	self.sv.rfsMapOpen = false
+	self.sv.rfsMapShape = nil
+	self.sv.rfsMapOpenTick = 0
+	self.sv.rfsMapAwaitingClient = false
+	self.sv.rfsMapUsingPart = false
+	self.sv.rfsGrowthOverlay = RfsFarming.getPlayerGrowthOverlay( self.player )
+	-- Apply saved world inventory size (after Survival creates the container).
+	-- Late joiners also get this via Game.server_onPlayerJoined.
+	pcall( function()
+		local id = RfsInventory.getSavedOptionId()
+		RfsInventory.applyGameDefault( RecipeFrameworkSurvival )
+		RfsInventory.applyToPlayer( self.player, id )
+	end )
+	-- Sync per-player Growth Time preference to this client.
+	self.network:sendToClient( self.player, "cl_rfs_growthOverlayState", {
+		enabled = self.sv.rfsGrowthOverlay and true or false,
+	} )
+end
+
+function Player.client_onCreate( self )
+	SurvivalPlayer.client_onCreate( self )
+	self.cl = self.cl or {}
+	self.cl.rfsFly = false
+	self.cl.rfsMapOpen = false
+	self.cl.rfsMapFallback = false
+	self.cl.rfsMapLockReady = false
+	self.cl.rfsMapCamPos = nil
+	self.cl.rfsMapHeight = RFS_MAP_HEIGHT
+	self.cl.rfsMapZoom = RFS_MAP_DEFAULT_ZOOM
+	self.cl.rfsGrowthOverlay = false
+	if self.player == sm.localPlayer.getPlayer() then
+		g_rfs_clientFly = false
+		RfsFarming.cl_setLocalGrowthOverlay( false )
+		RfsHud.ensure( self )
+	end
+end
+
+function Player.sv_rfs_toggleGrowthOverlay( self )
+	local enabled = RfsFarming.togglePlayerGrowthOverlay( self.player )
+	self.sv = self.sv or {}
+	self.sv.rfsGrowthOverlay = enabled
+	self.network:sendToClient( self.player, "cl_rfs_growthOverlayState", {
+		enabled = enabled,
+		msg = "Growth Time overlay: " .. ( enabled and "ON" or "OFF" ),
+	} )
+end
+
+function Player.cl_rfs_growthOverlayState( self, data )
+	self.cl = self.cl or {}
+	local enabled = false
+	if type( data ) == "table" then
+		enabled = data.enabled and true or false
+	else
+		enabled = data and true or false
+	end
+	self.cl.rfsGrowthOverlay = enabled
+	if self.player == sm.localPlayer.getPlayer() then
+		RfsFarming.cl_setLocalGrowthOverlay( enabled )
+		-- Keep Game /menu GUI in sync when open (Game owns the GUI host).
+		pcall( function()
+			local game = _G.g_rfsGame
+			if game and game.cl then
+				game.cl.rfsGrowthOverlay = enabled
+				if type( RfsMenuGui ) == "table" and game.cl.rfsMenuGui then
+					RfsMenuGui.refresh( game )
+				end
+			end
+		end )
+		if type( data ) == "table" and data.msg then
+			sm.gui.chatMessage( "[RFS] " .. tostring( data.msg ) )
+		end
+	end
+end
+
+function Player.sv_rfs_toggleFly( self )
+	local character = self.player:getCharacter()
+	if character == nil or not sm.exists( character ) then
+		return
+	end
+
+	self.sv.rfsFly = not self.sv.rfsFly
+	character:setSwimming( self.sv.rfsFly )
+	character:setDiving( self.sv.rfsFly )
+
+	if not self.sv.rfsFly then
+		character.movementSpeedFraction = 1
+		if character.publicData then
+			character.publicData.waterMovementSpeedFraction = 1
+		end
+		self.network:sendToClient( self.player, "cl_rfs_setSpeed", 1 )
+	end
+
+	self.network:sendToClient( self.player, "cl_rfs_flyState", self.sv.rfsFly )
+end
+
+function Player.cl_rfs_flyState( self, enabled )
+	self.cl = self.cl or {}
+	self.cl.rfsFly = enabled and true or false
+	if self.player == sm.localPlayer.getPlayer() then
+		g_rfs_clientFly = self.cl.rfsFly
+		sm.gui.chatMessage( "Fly Mode: " .. tostring( enabled ) )
+	end
+end
+
+function Player.cl_rfs_setSpeed( self, speed )
+	local character = self.player:getCharacter()
+	if character ~= nil and sm.exists( character ) then
+		character.movementSpeedFraction = speed
+		if character.clientPublicData then
+			character.clientPublicData.waterMovementSpeedFraction = speed
+		end
+	end
+end
+
+local function rfs_applyFlySpeed( character )
+	local speed = character:isSprinting() and 20.0 or 3.5
+	character.movementSpeedFraction = speed
+	return speed
+end
+
+-- ========== /map (top-down camera) ==========
+
+function Player.sv_rfs_mapToggle( self )
+	print( "[RFS] /map toggle  open=" .. tostring( self.sv.rfsMapOpen ) )
+	if self.sv.rfsMapOpen then
+		local tick = sm.game.getCurrentTick()
+		local openedAt = self.sv.rfsMapOpenTick or 0
+		if ( tick - openedAt ) < RFS_MAP_OPEN_DEBOUNCE_TICKS then
+			print( "[RFS] /map toggle ignored (debounce - just opened)" )
+			self.network:sendToClient( self.player, "cl_rfs_mapMsg",
+				"Map still opening - wait a moment, or use E/Esc / /mapclose to close" )
+			return
+		end
+		self:sv_rfs_mapClose( "toggle" )
+	else
+		self:sv_rfs_mapOpen()
+	end
+end
+
+function Player.sv_rfs_mapOpen( self )
+	local character = self.player:getCharacter()
+	if character == nil or not sm.exists( character ) then
+		print( "[RFS] /map open failed: no character" )
+		self.network:sendToClient( self.player, "cl_rfs_mapMsg", "Map failed: no character" )
+		return
+	end
+	if character:isDowned() then
+		print( "[RFS] /map open failed: downed" )
+		self.network:sendToClient( self.player, "cl_rfs_mapMsg", "Map failed: character is downed" )
+		return
+	end
+
+	if self.sv.rfsMapShape and sm.exists( self.sv.rfsMapShape ) then
+		pcall( function()
+			local ia = self.sv.rfsMapShape.interactable
+			if ia then
+				sm.event.sendToInteractable( ia, "sv_n_markClosing" )
+			end
+			self.sv.rfsMapShape:destroyShape( 0 )
+		end )
+		self.sv.rfsMapShape = nil
+	end
+
+	local worldPos = character.worldPosition
+	-- Spawn below the player (keeps the lock body out of the way) - placed below the player
+	local pos = worldPos - sm.vec3.new( 0, 0, 20 )
+	local ok, shape = pcall( sm.shape.createPart, RFS_MAP_LOCK_UUID, pos, sm.quat.identity(), false, true )
+	if not ok or not shape or not sm.exists( shape ) then
+		print( "[RFS] /map createPart failed: " .. tostring( shape ) )
+		self.network:sendToClient( self.player, "cl_rfs_mapMsg",
+			"Map part spawn failed (" .. tostring( shape ) .. ") - using fallback camera" )
+		self.sv.rfsMapOpen = true
+		self.sv.rfsMapOpenTick = sm.game.getCurrentTick()
+		self.sv.rfsMapAwaitingClient = false
+		self.sv.rfsMapUsingPart = false
+		self.network:sendToClient( self.player, "cl_rfs_mapFallbackOpen", {
+			x = worldPos.x, y = worldPos.y, z = worldPos.z + 96
+		} )
+		return
+	end
+
+	local interactable = shape.interactable
+	if not interactable then
+		print( "[RFS] /map createPart ok but no interactable - destroying" )
+		pcall( function() shape:destroyShape( 0 ) end )
+		self.network:sendToClient( self.player, "cl_rfs_mapMsg",
+			"Map failed: part has no interactable - using fallback camera" )
+		self.sv.rfsMapOpen = true
+		self.sv.rfsMapOpenTick = sm.game.getCurrentTick()
+		self.sv.rfsMapAwaitingClient = false
+		self.sv.rfsMapUsingPart = false
+		self.network:sendToClient( self.player, "cl_rfs_mapFallbackOpen", {
+			x = worldPos.x, y = worldPos.y, z = worldPos.z + 96
+		} )
+		return
+	end
+
+	self.sv.rfsMapShape = shape
+	self.sv.rfsMapOpen = true
+	self.sv.rfsMapOpenTick = sm.game.getCurrentTick()
+	self.sv.rfsMapAwaitingClient = true
+	self.sv.rfsMapUsingPart = true
+	pcall( function() character:setImmovable( true ) end )
+
+	-- Handshake step 1: tell client the part is spawned; client confirms before lock/camera bind
+	self.network:sendToClient( self.player, "cl_rfs_mapAwaitLock", {
+		x = worldPos.x,
+		y = worldPos.y,
+		height = RFS_MAP_HEIGHT,
+		zoom = RFS_MAP_DEFAULT_ZOOM
+	} )
+	print( "[RFS] /map part spawned - awaiting client ready" )
+	self.network:sendToClient( self.player, "cl_rfs_mapMsg", "Map: lock part spawned, syncing to client..." )
+end
+
+-- Client confirmed part/network path is ready -> now bind lock + camera (step 2)
+function Player.sv_rfs_mapClientReady( self )
+	if not self.sv.rfsMapOpen then
+		print( "[RFS] /map clientReady ignored: map not open" )
+		return
+	end
+	local shape = self.sv.rfsMapShape
+	if not shape or not sm.exists( shape ) or not shape.interactable then
+		print( "[RFS] /map clientReady: shape missing - fallback" )
+		self.sv.rfsMapAwaitingClient = false
+		self.sv.rfsMapUsingPart = false
+		local character = self.player:getCharacter()
+		local wp = character and character.worldPosition or sm.vec3.new( 0, 0, 0 )
+		self.network:sendToClient( self.player, "cl_rfs_mapMsg", "Map: lock lost after spawn - fallback camera" )
+		self.network:sendToClient( self.player, "cl_rfs_mapFallbackOpen", {
+			x = wp.x, y = wp.y, z = wp.z + 96
+		} )
+		return
+	end
+
+	self.sv.rfsMapAwaitingClient = false
+	local character = self.player:getCharacter()
+	local wp = character and character.worldPosition or sm.vec3.new( 0, 0, 0 )
+	sm.event.sendToInteractable( shape.interactable, "sv_n_setOwner", {
+		player = self.player,
+		x = wp.x,
+		y = wp.y,
+		height = RFS_MAP_HEIGHT,
+		zoom = RFS_MAP_DEFAULT_ZOOM
+	} )
+	print( "[RFS] /map clientReady -> setOwner on lock part" )
+end
+
+function Player.sv_rfs_mapClose( self, reason )
+	reason = reason or "close"
+	print( "[RFS] /map close (" .. tostring( reason ) .. ")" )
+	local wasOpen = self.sv.rfsMapOpen
+	local shape = self.sv.rfsMapShape
+	self.sv.rfsMapShape = nil
+	self.sv.rfsMapOpen = false
+	self.sv.rfsMapAwaitingClient = false
+	self.sv.rfsMapUsingPart = false
+
+	local character = self.player:getCharacter()
+	if character and sm.exists( character ) then
+		pcall( function() character:setImmovable( false ) end )
+	end
+
+	if shape and sm.exists( shape ) then
+		pcall( function()
+			local ia = shape.interactable
+			if ia then
+				sm.event.sendToInteractable( ia, "sv_n_markClosing" )
+			end
+			shape:destroyShape( 0 )
+		end )
+	end
+
+	if wasOpen or shape then
+		self.network:sendToClient( self.player, "cl_rfs_mapClosed", { reason = reason } )
+	end
+end
+
+function Player.sv_rfs_mapPartDestroyed( self )
+	if not self.sv.rfsMapOpen and not self.sv.rfsMapShape then
+		return
+	end
+	print( "[RFS] /map part destroyed unexpectedly" )
+	self.sv.rfsMapShape = nil
+	self.sv.rfsMapOpen = false
+	self.sv.rfsMapAwaitingClient = false
+	self.sv.rfsMapUsingPart = false
+	local character = self.player:getCharacter()
+	if character and sm.exists( character ) then
+		pcall( function() character:setImmovable( false ) end )
+	end
+	self.network:sendToClient( self.player, "cl_rfs_mapClosed", { reason = "part_destroyed" } )
+end
+
+function Player.cl_rfs_mapAwaitLock( self, params )
+	self.cl = self.cl or {}
+	self.cl.rfsMapOpen = true
+	self.cl.rfsMapFallback = false
+	self.cl.rfsMapLockReady = false
+	self.cl.rfsMapHeight = ( params and params.height ) or RFS_MAP_HEIGHT
+	self.cl.rfsMapZoom = ( params and params.zoom ) or RFS_MAP_DEFAULT_ZOOM
+	local x = ( params and params.x ) or 0
+	local y = ( params and params.y ) or 0
+	local z = math.max( 12, self.cl.rfsMapHeight - self.cl.rfsMapZoom )
+	self.cl.rfsMapCamPos = sm.vec3.new( x, y, z )
+	g_rfs_mapFocus = self.cl.rfsMapCamPos
+	g_rfs_mapZoom = self.cl.rfsMapZoom
+	g_rfs_mapHeight = self.cl.rfsMapHeight
+
+	-- Start forcing camera immediately while lock replicates (one-shot alone is ignored)
+	self:cl_rfs_applyMapCamera()
+	sm.gui.chatMessage( "[RFS] Map opening - camera armed, binding lock..." )
+	print( "[RFS] /map client awaitLock - confirming to server" )
+	self.network:sendToServer( "sv_rfs_mapClientReady" )
+end
+
+function Player.cl_rfs_mapLockReady( self, params )
+	self.cl = self.cl or {}
+	self.cl.rfsMapLockReady = true
+	self.cl.rfsMapOpen = true
+	self.cl.rfsMapFallback = false
+	if params then
+		self.cl.rfsMapHeight = params.height or self.cl.rfsMapHeight
+		self.cl.rfsMapZoom = params.zoom or self.cl.rfsMapZoom
+		if params.x and params.y and params.z then
+			self.cl.rfsMapCamPos = sm.vec3.new( params.x, params.y, params.z )
+			g_rfs_mapFocus = self.cl.rfsMapCamPos
+		end
+	end
+	print( "[RFS] /map client lock ready" )
+end
+
+function Player.cl_rfs_mapFallbackOpen( self, params )
+	self.cl = self.cl or {}
+	self.cl.rfsMapOpen = true
+	self.cl.rfsMapFallback = true
+	self.cl.rfsMapLockReady = false
+	local character = self.player:getCharacter()
+	local pos = character and character.worldPosition or sm.vec3.new( 0, 0, 0 )
+	local x = ( params and params.x ) or pos.x
+	local y = ( params and params.y ) or pos.y
+	local z = ( params and params.z ) or ( pos.z + 96 )
+	self.cl.rfsMapCamPos = sm.vec3.new( x, y, z )
+	self.cl.rfsMapHeight = z + RFS_MAP_DEFAULT_ZOOM
+	self.cl.rfsMapZoom = RFS_MAP_DEFAULT_ZOOM
+	g_rfs_mapFocus = self.cl.rfsMapCamPos
+	local ok, err = pcall( function()
+		self:cl_rfs_applyMapCamera()
+	end )
+	if ok then
+		sm.gui.chatMessage( "[RFS] Map open (fallback camera - no lock part). Esc or /mapclose to close." )
+		print( "[RFS] /map fallback camera active" )
+	else
+		sm.gui.chatMessage( "[RFS] Map failed completely: " .. tostring( err ) )
+		print( "[RFS] /map fallback failed: " .. tostring( err ) )
+		self.cl.rfsMapOpen = false
+		self.cl.rfsMapFallback = false
+	end
+end
+
+function Player.cl_rfs_applyMapCamera( self )
+	local focus = g_rfs_mapFocus or self.cl.rfsMapCamPos
+	if not focus then
+		return
+	end
+	local dir = sm.vec3.new( 0, 0, -1 )
+	if sm.camera.getCameraState() ~= sm.camera.state.cutsceneTP then
+		sm.camera.setCameraState( sm.camera.state.cutsceneTP )
+	end
+	sm.camera.setDirection( dir )
+	sm.camera.setPosition( focus )
+	sm.render.setCinematic( true )
+	if self.player.clientPublicData then
+		self.player.clientPublicData.interactableCameraData = {
+			hideGui = false,
+			cameraState = sm.camera.state.cutsceneTP,
+			cameraPosition = focus,
+			cameraDirection = dir,
+			cameraFov = sm.camera.getDefaultFov(),
+			lockedControls = false
+		}
+	end
+	self.cl.rfsMapCamPos = focus
+end
+
+function Player.cl_rfs_mapClosed( self, params )
+	self.cl = self.cl or {}
+	self.cl.rfsMapOpen = false
+	self.cl.rfsMapFallback = false
+	self.cl.rfsMapLockReady = false
+	self.cl.rfsMapCamPos = nil
+	g_rfs_mapFocus = nil
+	g_rfs_mapLockReady = false
+	local character = self.player:getCharacter()
+	if character and sm.exists( character ) then
+		pcall( function() character:setLockingInteractable( nil ) end )
+	end
+	if self.player.clientPublicData then
+		self.player.clientPublicData.interactableCameraData = nil
+	end
+	pcall( function()
+		sm.camera.setCameraState( sm.camera.state.default )
+		sm.render.setCinematic( false )
+		sm.localPlayer.setLockedControls( false )
+	end )
+	local reason = params and params.reason
+	if reason and reason ~= "toggle" and reason ~= "close" then
+		sm.gui.chatMessage( "[RFS] Map closed (" .. tostring( reason ) .. ")" )
+	else
+		sm.gui.chatMessage( "[RFS] Map closed" )
+	end
+	print( "[RFS] /map closed reason=" .. tostring( reason ) )
+end
+
+function Player.cl_rfs_mapMsg( self, msg )
+	sm.gui.chatMessage( "[RFS] " .. tostring( msg ) )
+	print( "[RFS] /map msg: " .. tostring( msg ) )
+end
+
+function Player.client_onCancel( self )
+	if self.cl and self.cl.rfsMapOpen then
+		if self.cl.rfsMapFallback then
+			self:cl_rfs_mapClosed( { reason = "cancel" } )
+			self.network:sendToServer( "sv_rfs_mapClose" )
+			return
+		end
+		self.network:sendToServer( "sv_rfs_mapClose" )
+		return
+	end
+	SurvivalPlayer.client_onCancel( self )
+end
+
+function Player.server_onFixedUpdate( self, dt )
+	SurvivalPlayer.server_onFixedUpdate( self, dt )
+
+	if self.sv and self.sv.rfsMapOpen then
+		local character = self.player:getCharacter()
+		local dead = ( character == nil ) or ( not sm.exists( character ) ) or character:isDowned()
+		local tick = sm.game.getCurrentTick()
+		local grace = ( tick - ( self.sv.rfsMapOpenTick or 0 ) ) < RFS_MAP_SHAPE_GRACE_TICKS
+		if dead then
+			self:sv_rfs_mapClose( "downed" )
+		elseif self.sv.rfsMapUsingPart and not grace then
+			local shapeGone = ( self.sv.rfsMapShape == nil ) or ( not sm.exists( self.sv.rfsMapShape ) )
+			if shapeGone then
+				self:sv_rfs_mapClose( "shape_gone" )
+			end
+		end
+	end
+
+	if not ( self.sv and self.sv.rfsFly ) then
+		return
+	end
+
+	local character = self.player:getCharacter()
+	if not character or not sm.exists( character ) then
+		return
+	end
+
+	if not character:isSwimming() or not character:isDiving() then
+		character:setSwimming( true )
+		character:setDiving( true )
+	end
+
+	local speed = rfs_applyFlySpeed( character )
+	if character.publicData then
+		character.publicData.waterMovementSpeedFraction = speed
+	end
+	self.network:sendToClient( self.player, "cl_rfs_setSpeed", speed )
+
+	pcall( function()
+		sm.event.sendToPlayer( self.player, "sv_e_debug", { breath = 100 } )
+	end )
+end
+
+function Player.client_onUpdate( self, dt )
+	SurvivalPlayer.client_onUpdate( self, dt )
+
+	if self.player == sm.localPlayer.getPlayer() then
+		RfsHud.update( self )
+	end
+
+	-- Force top-down camera every frame while map is open (continuous camera set)
+	if self.cl and self.cl.rfsMapOpen and self.player == sm.localPlayer.getPlayer() then
+		if g_rfs_mapLockReady then
+			self.cl.rfsMapLockReady = true
+		end
+		if g_rfs_mapFocus then
+			self.cl.rfsMapCamPos = g_rfs_mapFocus
+		end
+		pcall( function()
+			self:cl_rfs_applyMapCamera()
+		end )
+	end
+
+	if not ( self.cl and self.cl.rfsFly ) then
+		return
+	end
+
+	local character = self.player:getCharacter()
+	if not character or not sm.exists( character ) then
+		return
+	end
+
+	if not character:isSwimming() or not character:isDiving() then
+		character:setSwimming( true )
+		character:setDiving( true )
+	end
+
+	local speed = rfs_applyFlySpeed( character )
+	if character.clientPublicData then
+		character.clientPublicData.waterMovementSpeedFraction = speed
+	end
+end

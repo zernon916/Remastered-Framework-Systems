@@ -1,0 +1,18 @@
+{
+	"allow_add_mods" : true,
+	"custom_icons" : true,
+	"dependencies" : 
+	[
+		{
+			"fileId" : 2504530003,
+			"localId" : "40639a2c-bb9f-4d4f-b88c-41bfe264ffa8",
+			"name" : "ModDatabase"
+		}
+	],
+	"description" : "[h1]Recipe Framework Survival[/h1]A Survival Custom Game and modder framework: bot hijack gameplay plus store / quest hooks for Blocks & Parts mods.[b]Key Features[/b][list][*]Custom menus, expanded inventory, advanced farming, and host dev tools[*]Hack Beacons / tile loaders for hijack gameplay[*]Store hooks — craftbot.json, hideout_trades.json, mininghub_trades.json via ModDatabase[*]Unlockable schematic progression (not a vault-tree editor)[*]RfsQuest API around Survival QuestManager (see MODDER_API.txt)[*]frameworkOnly flag in rfs_settings.json for baseline / framework-only mode[/list][b]Install[/b][list][*]Subscribe to ModDatabase (keep installed; do not enable as a world mod)[*]Create a new world with [b]Recipe Framework Survival[/b][*]Enable your Blocks & Parts mods[/list][b]For mod authors[/b]See AUTHOR_GUIDE.txt and MODDER_API.txt in the mod folder.[b]Author:[/b] DemonsDen126",
+	"fileId" : 3782487760,
+	"localId" : "29c99287-1213-48c7-9471-19a4a5c12247",
+	"name" : "Recipe Framework Survival",
+	"type" : "Custom Game",
+	"version" : 1
+}

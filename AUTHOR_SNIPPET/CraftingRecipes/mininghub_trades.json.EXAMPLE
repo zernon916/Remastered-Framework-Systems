@@ -1,0 +1,18 @@
+{
+	"_comment": "EXAMPLE mininghub_trades.json \u2014 use Mining Hub currency UUIDs",
+	"trades": [
+		{
+			"itemId": "00000000-0000-0000-0000-000000000000",
+			"quantity": 1,
+			"craftTime": 0,
+			"ingredientList": [
+				{
+					"quantity": 500,
+					"itemId": "efb2837c-f1d2-412b-bff1-a210b3426fd9"
+				}
+			],
+			"schematic": true,
+			"_title": "Example Part"
+		}
+	]
+}

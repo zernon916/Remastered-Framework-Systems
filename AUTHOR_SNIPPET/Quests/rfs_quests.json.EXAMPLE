@@ -1,0 +1,12 @@
+﻿{
+  "version": 1,
+  "_comment": "Metadata only. RfsQuest.loadModQuestMeta(localId) reads this. A playable quest still needs a Survival-style ScriptableObject.",
+  "quests": [
+    {
+      "name": "example_mod_quest",
+      "title": "Example Mod Quest",
+      "notes": "Register a real quest SO, then call RfsQuest.activate(\"example_mod_quest\") from your script or from RFS.",
+      "suggestActivate": false
+    }
+  ]
+}

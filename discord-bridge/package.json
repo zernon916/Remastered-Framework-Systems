@@ -1,0 +1,20 @@
+{
+  "name": "rfs-discord-bridge",
+  "version": "1.1.0",
+  "description": "External Discord → Scrap Mechanic vote drop for Recipe Framework Survival Streamer mode. Lua cannot HTTP; this process writes a local JSON inbox.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "register": "node src/register-commands.js",
+    "clean": "node -e \"const fs=require('fs');const path=require('path');for (const f of ['vote.json','chat.jsonl','chat_inbox.json']){const p=path.join('inbox',f);try{fs.unlinkSync(p);console.log('Removed',p)}catch(e){console.log('No',f,'to remove')}}\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "private": true
+}

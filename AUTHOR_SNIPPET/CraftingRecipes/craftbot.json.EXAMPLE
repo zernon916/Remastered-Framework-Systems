@@ -1,0 +1,14 @@
+[
+	{
+		"_comment": "EXAMPLE craftbot entry",
+		"itemId": "00000000-0000-0000-0000-000000000000",
+		"quantity": 1.0,
+		"craftTime": 6.0,
+		"ingredientList": [
+			{
+				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf",
+				"quantity": 6.0
+			}
+		]
+	}
+]

@@ -1,0 +1,133 @@
+Recipe Framework Survival — Author Guide
+========================================
+Custom Game author: DemonsDen126
+
+Full API reference (hooks, settings, quests)
+--------------------------------------------
+See MODDER_API.txt in this mod folder for:
+  - Store / shop inject details and globals
+  - Honest progression scope (unlockable schematics — not a vault-tree editor)
+  - rfs_settings.json flags including frameworkOnly (baseline mode)
+  - RfsQuest API (activate / complete / events / callbacks / rfs_quests.json)
+  - $CONTENT_<uuid> path conventions
+
+Opt-in checklist for Blocks & Parts mods
+----------------------------------------
+[ ] Subscribe players use Recipe Framework Survival as the Custom Game
+[ ] Subscribe ModDatabase (dependency of the Custom Game)
+[ ] Ship CraftingRecipes/ under your mod root
+[ ] craftbot.json — craftbot recipe array (required for Craftbot inject)
+[ ] hideout_trades.json OR hideout.json — Hideout schematic trades (optional)
+[ ] mininghub_trades.json — Mining Hub trades (optional)
+[ ] loot.json — rare loot weights (optional)
+[ ] Optional Quests/rfs_quests.json metadata (see MODDER_API.txt — not a full quest SO)
+[ ] Use Farmers UUID for Hideout costs (see below)
+[ ] Unique itemId UUIDs (duplicates are skipped)
+
+Scan paths (ModDatabase)
+------------------------
+At world load the Custom Game opens:
+
+  $CONTENT_<yourLocalId>/CraftingRecipes/craftbot.json
+  $CONTENT_<yourLocalId>/CraftingRecipes/hideout_trades.json
+    (fallback: hideout.json — flat array or { trades: [...] })
+  $CONTENT_<yourLocalId>/CraftingRecipes/mininghub_trades.json
+  $CONTENT_<yourLocalId>/CraftingRecipes/loot.json
+  $CONTENT_<yourLocalId>/Quests/rfs_quests.json   (optional metadata only)
+
+Dedupe is by itemId. First registered wins; later mods skip duplicates.
+
+Farmers currency UUID
+---------------------
+  8d601982-4608-4d5e-bb9e-e4041486f7c7
+
+craftbot.json schema
+--------------------
+Array of recipes:
+
+  [
+    {
+      "itemId": "<part uuid>",
+      "quantity": 1,
+      "craftTime": 6,
+      "ingredientList": [
+        { "itemId": "<ingredient uuid>", "quantity": 6 }
+      ]
+    }
+  ]
+
+Recipes are merged into Craftbot as unlockables. They are NOT auto-unlocked.
+
+hideout_trades.json schema
+--------------------------
+Preferred wrapper:
+
+  {
+    "currencyItemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7",
+    "trades": [
+      {
+        "itemId": "<schematic/part uuid>",
+        "quantity": 1,
+        "craftTime": 0,
+        "ingredientList": [
+          { "quantity": 2, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+        ],
+        "schematic": true
+      }
+    ]
+  }
+
+Also accepted: a flat JSON array of trade objects (hideout.json style).
+
+mininghub_trades.json schema
+----------------------------
+Same shape as hideout_trades.json ({ trades: [...] } or flat array).
+
+loot.json schema
+----------------
+  {
+    "addToLootTable": "loottable_interactive_01",
+    "defaultLootWeight": 0.03,
+    "items": {
+      "<uuid>": { "lootWeight": 0.05, "addToLoot": true, "title": "Nice Part" }
+    }
+  }
+
+Quest API (pointer)
+------------------
+_G.RfsQuest is loaded from Scripts/game/RfsQuest.lua at Custom Game start.
+
+  RfsQuest.activate / tryActivate / complete / abandon
+  RfsQuest.isActive / isComplete / getStage / getActive
+  RfsQuest.subscribeEvent / sendEvent / registerActivator
+  RfsQuest.onActivate / onComplete
+  RfsQuest.loadModQuestMeta( localId )
+
+Full method notes + rfs_quests.json schema: MODDER_API.txt section 4.
+Playable quests still need Survival-style quest ScriptableObjects — metadata
+JSON alone does not start a quest line.
+
+Baseline / framework-only
+-------------------------
+Set "frameworkOnly": true in rfs_settings.json to disable default RFS cheat and
+Quest tooling while keeping store hooks, RfsQuest API, and hijack hooks.
+frameworkOnly does NOT turn off beacons/area loader — use host /gensettings.
+Details: MODDER_API.txt section 3.
+
+Example files
+-------------
+See AUTHOR_SNIPPET/CraftingRecipes/ in this mod folder.
+Optional: AUTHOR_SNIPPET/Quests/rfs_quests.json.EXAMPLE
+
+Common vanilla ingredient UUIDs
+-------------------------------
+  Component   5530e6a0-4748-4926-b134-50ca9ecb9dcf
+  Controller  598d865c-324c-4129-9c57-21a6abd2cb2e
+  Logic Gate  9f0f56e8-2c31-4d83-996c-d00a9b296c3f
+  Sensor      1d4793af-cb66-4628-804a-9d7404712643
+  Farmers     8d601982-4608-4d5e-bb9e-e4041486f7c7
+
+Notes
+-----
+- Intelligentia already ships these files and works as a guest B&P mod.
+- Stock Survival does not scan ModDatabase by itself — this Custom Game does.

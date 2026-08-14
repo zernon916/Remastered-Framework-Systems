@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+	<!-- Recipe Framework Survival /menu — player panel (Recipe Radar style skins). Author: DemonsDen126 -->
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+		<Property key="NeedKey" value="false"/>
+		<Property key="NeedMouse" value="true"/>
+
+		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.30 0.22 0.40 0.48" name="MainPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="true"/>
+			<Property key="InheritsAlpha" value="false"/>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.04 0.68 0.10" name="Title">
+				<Property key="Caption" value="RFS MENU"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.04 0.22 0.10" name="CloseButton">
+				<Property key="Caption" value="CLOSE"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.16 0.92 0.08" name="Status">
+				<Property key="Caption" value="Per-player options — available to everyone"/>
+				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+
+			<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.30 0.80 0.14" name="BtnMap">
+				<Property key="Caption" value="Map"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.48 0.80 0.14" name="BtnGrowthOverlay">
+				<Property key="Caption" value="Growth Time: OFF"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.68 0.92 0.26" name="MenuHint">
+				<Property key="Caption" value="Map: same as /map (WASD pan, scroll zoom). Growth Time: timer floats above growing plants for you only."/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left Top"/>
+				<Property key="WordWrap" value="true"/>
+			</Widget>
+		</Widget>
+	</Widget>
+</MyGUI>

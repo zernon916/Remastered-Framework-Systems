@@ -1,0 +1,73 @@
+{
+	"partList": [
+		{
+			"uuid": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
+			"name": "obj_rfs_hackbeacon",
+			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_logicgate.rend",
+			"color": "d02525",
+			"box": { "x": 1, "y": 1, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y+X-X-Z+Z",
+			"ratings": {
+				"buoyancy": 2,
+				"density": 2,
+				"durability": 3,
+				"friction": 5
+			},
+			"scripted": {
+				"classname": "RfsHackBeacon",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsHackBeacon.lua"
+			}
+		},
+		{
+			"uuid": "c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8",
+			"name": "obj_rfs_controlbeacon",
+			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_timer.rend",
+			"color": "e07a12",
+			"box": { "x": 1, "y": 1, "z": 1 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y+X-X-Z+Z",
+			"ratings": {
+				"buoyancy": 2,
+				"density": 2,
+				"durability": 3,
+				"friction": 5
+			},
+			"scripted": {
+				"classname": "RfsHackBeacon",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsHackBeacon.lua"
+			}
+		},
+		{
+			"uuid": "d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709",
+			"name": "obj_rfs_infectbeacon",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive_upgradeable/obj_interactiveupgradeable_sensor01.rend",
+			"color": "7b1fa2",
+			"box": { "x": 1, "y": 1, "z": 1 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y+X-X-Z+Z",
+			"ratings": {
+				"buoyancy": 2,
+				"density": 2,
+				"durability": 3,
+				"friction": 5
+			},
+			"scripted": {
+				"classname": "RfsHackBeacon",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsHackBeacon.lua"
+			}
+		}
+	]
+}

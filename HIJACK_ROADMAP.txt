@@ -1,0 +1,74 @@
+Recipe Framework Survival — Robot hijack roadmap
+================================================
+Author: DemonsDen126
+Home: RFS Custom Game (wraps Survival RobotSelectTarget).
+Intelligentia is optional (turret skip + later craftable tiers). Original RFS only.
+
+Phase 1 (SHIPPED)
+-----------------
+- /hijack [range] — convert nearest hostile robot (cheat = permanent infect)
+- /hijacklist — tethered vs infected counts
+- /givehack — Hack / Control / Infection Beacons
+- Allies ignore players and attack other robots
+- Hostiles can peel onto nearby allies (defense)
+- Green ally / deeper green infected
+- Persist playerAlly on the unit's own saved table (reload of that unit)
+- _G.g_rfsIsPlayerAlly(unit) for Intelligentia
+
+Beacon computer (author idea — SHIPPED)
+---------------------------------------
+Beacons are the computer source. Wire a Battery container (electricity).
+Optional logic switch as on/off. Unpowered or out of range → tethered bots revert.
+
+  Hack Beacon (red)       16 m  tether only
+    Craftbot: 1 Metal (placeholder). Hideout: 20 Farmers (item, not schematic).
+  Control / Infection beacons: planned later (not in shop yet).
+
+Tethered bots can hop to another powered beacon in range if theirs dies.
+Infected bots no longer need a beacon. /hijack cheat infects immediately.
+
+NOT in Phase 1: chain convert, harvest/replant/chest, factories, identities,
+per-type farm roles.
+
+Phase 2 — Identity + chain (mid)
+--------------------------------
+- Named identities after hijack (storage: owner, name, type, first-seen tick)
+- Optional nametag overlay (same billboard idea as Growth Time)
+- Chain convert: ally bots in radius convert hostiles (slow, chance, or on melee)
+- Intelligentia official skip of g_rfsIsPlayerAlly
+
+Phase 3 — Orders (hard)
+-----------------------
+Vanilla tote/hay/farm do NOT plant, plow, or use chests. Crop targeting is grief.
+New job states on allies only:
+  follow / stay / guard
+  harvest (player-loot rules + carry buffer — units have no inventory)
+  replant on soil
+  deposit nearest chest
+Orders via hack beacon GUI (like /setup) or chat /botorder
+Per-type flavor (author list):
+  totebot  — plants, hits stronger enemies, poor base defense
+  haybot   — plows, hits weaker enemies, good defense
+  tapebot  — ranged sentry
+  farmbot  — tank / late escort
+
+Phase 4 — Factories (late game / Wonk)
+--------------------------------------
+- Craftable factory interactable (Intelligentia or RFS part)
+- Spend resources to sm.unit.createUnit(uuid, pos, yaw, { playerAlly=true, color=..., tetherPoint=... })
+- Capsules stay hostile (vanilla); factory is the ally spawner
+- Caps on army size
+- Optional: tapebot assembly line, haybot "barn", farmbot "garage"
+
+Phase 5 — Polish
+----------------
+- Underground bots (miner/cable) opt-in
+- Don't friendly-fire other allies
+- Raid interaction (allies help vs raiders)
+- Un-hijack / release
+
+Collaboration
+-------------
+Intelligentia author: paste AUTHOR_SNIPPET/Intelligentia_ally_skip.lua into
+tracker / IntelligentiaEnemies.isHostile so Wonk turrets do not shoot allies.
+Beacon art/tiers live in RFS for now; Intelligentia can restyle later. RFS remains the AI host.

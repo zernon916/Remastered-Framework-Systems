@@ -1,0 +1,15 @@
+-- Intelligentia_ally_skip.lua
+-- Optional paste for Intelligentia Enemy Tracking (author: apply in tracker / isHostile).
+-- Recipe Framework Survival publishes:
+--   _G.g_rfsIsPlayerAlly(unit)  -- true if this Survival unit was hijacked
+--   _G.g_rfsPlayerAllies        -- table of ally records
+--
+-- In tracker.server_getEnemies (or IntelligentiaEnemies.isHostile usage), skip allies:
+--
+--   if _G.g_rfsIsPlayerAlly and _G.g_rfsIsPlayerAlly(unit) then
+--       -- do not add to turret target list
+--   else
+--       -- existing hostile UUID whitelist
+--   end
+--
+-- Without this snippet, turrets still shoot converted bots (same vanilla UUID).

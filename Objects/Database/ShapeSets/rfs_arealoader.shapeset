@@ -1,0 +1,27 @@
+{
+	"partList": [
+		{
+			"uuid": "e7b1f4d3-0a52-4dc4-cf61-52c4d1e9e81a",
+			"name": "obj_rfs_arealoader",
+			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_radio.rend",
+			"color": "3a8fd4",
+			"box": { "x": 1, "y": 1, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y+X-X-Z+Z",
+			"ratings": {
+				"buoyancy": 2,
+				"density": 2,
+				"durability": 3,
+				"friction": 5
+			},
+			"scripted": {
+				"classname": "RfsAreaLoader",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsAreaLoader.lua"
+			}
+		}
+	]
+}

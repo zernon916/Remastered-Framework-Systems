@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Secrets — never commit real Discord tokens
+.env
+.env.*
+!.env.example
+
+# Runtime inbox drops (keep examples)
+inbox/*.json
+!inbox/*.example.json
+inbox/*.jsonl
+!inbox/*.example.jsonl
+inbox/*.tmp
+
+# Logs / OS junk
+*.log
+npm-debug.log*
+*.cleanpreview
+.DS_Store
+Thumbs.db

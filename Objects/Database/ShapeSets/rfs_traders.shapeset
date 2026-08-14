@@ -1,0 +1,125 @@
+{
+	"partList": [
+		{
+			"uuid": "614c3193-13da-40f4-9b03-37f26e760fd6",
+			"name": "obj_hideout_questgiver",
+			"renderable": "$SURVIVAL_DATA/Character/Char_Hideoutfarmer/char_hideoutfarmer.rend",
+			"color": "ffffff",
+			"box": { "x": 20, "y": 17, "z": 12 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Metal",
+			"flammable": false,
+			"showInInventory": false,
+			"ratings": {
+				"density": 5,
+				"durability": 10,
+				"friction": 5,
+				"buoyancy": 5
+			},
+			"restrictions": {
+				"buildable": false,
+				"connectable": false,
+				"convertibleToDynamic": false,
+				"destructable": false,
+				"erasable": false,
+				"liftable": false,
+				"paintable": false,
+				"usable": true
+			},
+			"scripted": {
+				"classname": "HideoutTrader",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/HideoutTrader.lua",
+				"data": {
+					"animationList": [
+						{ "looping": true, "name": "Idle" },
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Close" },
+							"name": "Close"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Open" },
+							"name": "Open",
+							"nextAnimation": "Idle"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Accept" },
+							"name": "Confirm01",
+							"nextAnimation": "Idle"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Accept" },
+							"name": "Confirm02",
+							"nextAnimation": "Idle"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Accept" },
+							"name": "Confirm03",
+							"nextAnimation": "Idle"
+						}
+					]
+				}
+			}
+		},
+		{
+			"uuid": "90762ac2-5082-461d-9028-480d38a7da10",
+			"name": "obj_survivalobject_vendor",
+			"renderable": "$SURVIVAL_DATA/Character/char_vendor/char_vendor.rend",
+			"color": "ffffff",
+			"box": { "x": 5, "y": 10, "z": 5 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Metal",
+			"flammable": false,
+			"showInInventory": false,
+			"ratings": {
+				"density": 5,
+				"durability": 10,
+				"friction": 5,
+				"buoyancy": 5
+			},
+			"restrictions": {
+				"buildable": false,
+				"connectable": false,
+				"convertibleToDynamic": false,
+				"destructable": false,
+				"erasable": false,
+				"liftable": false,
+				"paintable": false,
+				"usable": true
+			},
+			"scripted": {
+				"classname": "MininghubTrader",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/MininghubTrader.lua",
+				"data": {
+					"animationList": [
+						{ "looping": true, "name": "Idle" },
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Close" },
+							"name": "Close"
+						},
+						{ "looping": true, "name": "Offline" },
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Open" },
+							"name": "Open",
+							"nextAnimation": "Idle"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Accept" },
+							"name": "Confirm01",
+							"nextAnimation": "Idle"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Accept" },
+							"name": "Confirm02",
+							"nextAnimation": "Idle"
+						},
+						{
+							"effect": { "joint": "root_jnt", "name": "Farmerhideout - Accept" },
+							"name": "Confirm03",
+							"nextAnimation": "Idle"
+						}
+					]
+				}
+			}
+		}
+	]
+}

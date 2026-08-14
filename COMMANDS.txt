@@ -1,0 +1,98 @@
+Recipe Framework Survival — Commands
+====================================
+Author: DemonsDen126
+
+Host / single-player. Dev cheats default ON via rfs_settings.json
+("cheats": true). Set "cheats": false for public Workshop builds.
+Set "setupQuestTab": false to hide the /setup Quest tab.
+
+Help
+----
+  /menu                Open player menu (Map + Growth Time overlay) — all players
+  /help
+  /commands
+  /setup               Host-only world setup (Main / Farming / Quest / Inventory)
+  /gensettings         Host-only gen settings (cheats, modded blocks, features,
+                       Streamer mode for Discord vote drops — see below)
+  /map                 Toggle top-down camera map (WASD pan, scroll zoom)
+  /mapclose            Close the map camera
+  /rfsmap              Alias of /map
+
+Cheats default from rfs_settings.json; host /gensettings can override per world.
+Set "frameworkOnly": true for baseline mode (cheats + quest UI off; hooks stay on).
+
+Dev / movement / survival
+-------------------------
+  /god
+  /fly                 toggle fly mode (swim/dive freefly — Space/Ctrl up/down)
+  /flymode             alias of /fly
+  /rfsfly              alias of /fly
+  /limited
+  /unlimited
+  /die
+  /unstuck
+  /sethp <hp>
+  /setbreath <breath>
+  /timeofday [0..1)
+  /timeprogress [bool]
+  /weather [name]      best-effort via WeatherManager
+  /clearinv
+  /cleanup [radius]    default radius 50
+  /killall
+  /hijack [range]      Permanently infect nearest hostile robot (cheat, default 16 m)
+  /hijacklist          Count ally robots (tethered vs infected)
+  /givehack            Give a Hack Beacon (cheat)
+                       Wire a Battery container. Optional switch.
+                       Craftbot: 1 Metal. Hideout: 20 Farmers.
+  /noaggro [bool]
+  /aggroall
+  /give <uuid> [qty]
+  /farmers [qty]       default 10 — Hideout currency
+  /tshop               Open Farmers Hideout trader GUI remotely
+                       (same as E on hideout; bypasses quest unlock gate)
+                       Requires hideout cell loaded — visit once if "not loaded"
+  /mshop               Open Mining Hub trader GUI remotely
+                       (same as E on hub; bypasses hub activation gate)
+                       Requires mining hub cell loaded — visit once if "not loaded"
+  /components [qty]
+  /ammo [qty]
+  /foodplease
+  /seedsplease
+  /spawn <unit> [amount]
+  /goto [start|marker]
+
+Recipes
+-------
+  /unlockrecipe <uuid|name>
+  /unlockmodded
+  /unlockvanilla
+  /mods
+
+Quests
+------
+  /questlist
+  /rfsquestlist        alias of /questlist
+  /questinfo <name>
+  /completequest <name>   completes, grants rewards (schematics/logs/items),
+                          and activates next main-story quest when mapped
+  /startquest <name>      QuestManager.Sv_TryActivateQuest
+  /resetquest <name>      abandons if active; full reset N/A (no API)
+
+Map (/map)
+----------
+  Toggle open/close with /map again.
+  While open: WASD pan, scroll zoom, RMB or LMB recenter on you, E / Esc / Jump close.
+  Character is locked (immovable) while the map is open. No craftable map tool.
+
+Streamer / Discord
+------------------
+  Host /gensettings → Streamer ON, then run the Node bridge on the same PC.
+  Discord /vote writes a local JSON drop; RfsStreamer polls and spawn/gives.
+  Full host setup (Node, .env, DROP_PATH, Workshop vs C:\sm\RFS):
+    discord-bridge/README.md
+
+Also available from Survival (when bound)
+----------------------------------------
+  /kick /ban /spudgun /gatling /shotgun /sunshake /baguette /keycard
+  /powercore /glowsticks /tumble /starterkit /stopraid /disableraids
+  /exportmultishape

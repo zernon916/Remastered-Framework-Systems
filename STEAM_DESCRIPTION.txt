@@ -1,0 +1,39 @@
+[h1]Recipe Framework Survival[/h1]
+
+A complete overhaul for Scrap Mechanic! The bots have been hijacked by a rogue virus, but you now have the tools to fight back. Deploy Hacker Devices to take control of the bots and turn them into your allies—just be careful, because the corrupted code will fight back when threatened.
+
+Designed both as an action-packed survival / game mode and as a modular framework for other modders!
+
+[hr][/hr]
+
+[h2]✨ Key Features[/h2]
+[list]
+[*][b]Custom Menus[/b] — Integrated custom game menu, dev/cheat menu, and growth menu.
+[*][b]Expanded Inventory[/b] — Scale inventory capacity from +1 row up to +5 extra rows.
+[*][b]Advanced Farming[/b] — Instant growth options, permanent watering, soil planting, and live crop growth countdown timers.
+[*][b]Dev Tools[/b] — Full suite of built-in developer mode tools at your fingertips.
+[*][b]Anchor Devices / Tile Loaders[/b] — Keep distant areas active ([i]⚠️ Loading more than 2–3 tiles can severely impact performance, even on high-end PCs[/i]).
+[/list]
+
+[hr][/hr]
+
+[h2]🧰 Built for Modders (Framework Features)[/h2]
+[list]
+[*][b]Store Hooks[/b] — Seamlessly inject custom items into Craftbot, Farmers Hideout, and Mining Hub shops via JSON.
+[*][b]Progression Hooks[/b] — Mark your craftbot recipes as unlockable schematics and sell them at the Hideout (vanilla schematic unlock path — not a custom vault-tree editor).
+[*][b]Quest API[/b] — Open [b]RfsQuest[/b] wrappers around Survival QuestManager so mods can activate, complete, and hook quests (see [b]MODDER_API.txt[/b] in the mod folder). Bring your own quest ScriptableObjects.
+[*][b]Baseline / Framework Toggle[/b] — Set [b]frameworkOnly[/b] in [b]rfs_settings.json[/b] to turn off default cheat/quest tooling while keeping store hooks, the quest API, and hijack hooks. Host [b]/gensettings[/b] controls beacons/loader/features per world.
+[/list]
+
+[hr][/hr]
+
+[h2]Install[/h2]
+[olist]
+[*]Subscribe to [b]ModDatabase[/b] (keep installed; do [b]not[/b] enable it as a world mod).
+[*]Create a new world with [b]Recipe Framework Survival[/b].
+[*]Enable the Blocks & Parts mods you want (e.g. Intelligentia, Scrap Computers).
+[/olist]
+
+[b]Author:[/b] DemonsDen126
+
+If you enjoy this project, please consider leaving a Thumbs Up 👍 and Favorite ⭐ on the Steam Workshop! Feedback and bug reports are always welcome in the comments.

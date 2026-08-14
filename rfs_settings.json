@@ -1,0 +1,24 @@
+{
+
+	"_comment": "Recipe Framework Survival pack defaults (not Axolot config.json). Edit and reload world for new defaults. Host /gensettings overrides live in world sm.storage.",
+
+	"frameworkOnly": false,
+
+	"setupQuestTab": true,
+
+	"cheats": true,
+
+	"_help": {
+
+		"frameworkOnly": "If true, baseline/framework mode: forces cheats=false and setupQuestTab=false (and RFS quest UI off). Does NOT turn off hijack/beacons/area loader — use host /gensettings for those. ALWAYS keeps ModRecipeScan store hooks, RfsQuest API, progression inject, /map, /mods. Alias: set enableDefaultContent=false instead.",
+
+		"setupQuestTab": "Pack default for /setup Quest tab (INFO/START/DONE). Ignored when frameworkOnly=true. World /gensettings 'RFS quests content' can also hide this UI without disabling RfsQuest API.",
+
+		"cheats": "Pack default for fly/god/unlimited/give/farmers/tshop/mshop/quest commands and /setup cheat buttons. Host /gensettings can override per-world. Forced false when frameworkOnly=true. Keep /setup /gensettings /menu /map /mods /help.",
+
+		"worldFlags": "Live world flags (cheats, hackDevices, areaLoader, hackableRobots, streamerMode, streamerCooldownSec, streamerAnnounce, streamerChatRelay, rfsQuests) are stored via RfsFeatures in sm.storage key {rfs,features}. Toggle with host /gensettings."
+
+	}
+
+}
+

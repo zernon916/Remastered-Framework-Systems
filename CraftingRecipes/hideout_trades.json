@@ -1,0 +1,33 @@
+{
+	"_comment": "RFS Hideout trades. Farmers currency. schematic=false = buy the item.",
+	"currencyItemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7",
+	"trades": [
+		{
+			"itemId": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": false,
+			"ingredientList": [
+				{ "quantity": 20, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": false,
+			"ingredientList": [
+				{ "quantity": 50, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": false,
+			"ingredientList": [
+				{ "quantity": 120, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		}
+	]
+}

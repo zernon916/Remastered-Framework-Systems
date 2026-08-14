@@ -1,0 +1,27 @@
+{
+	"partList": [
+		{
+			"uuid": "9a1528a6-acd2-44db-8050-b2f493362191",
+			"name": "obj_rfs_maplock",
+			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_logicgate.rend",
+			"color": "000000",
+			"box": { "x": 1, "y": 1, "z": 1 },
+			"rotationSet": "PropFull",
+			"physicsMaterial": "Mechanical",
+			"flammable": false,
+			"density": 250.0,
+			"stackSize": 1,
+			"showInInventory": false,
+			"ratings": {
+				"density": 10,
+				"durability": 10,
+				"friction": 10,
+				"buoyancy": 10
+			},
+			"scripted": {
+				"classname": "RfsMapLock",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsMapLock.lua"
+			}
+		}
+	]
+}

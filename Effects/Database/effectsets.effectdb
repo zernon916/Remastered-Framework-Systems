@@ -1,0 +1,9 @@
+{
+	"effectSetList" :
+	[
+		{
+			"path" : "$CONTENT_DATA/Effects/Database/EffectSets/rfs_farming.effectset",
+			"showInEditor" : true
+		}
+	]
+}

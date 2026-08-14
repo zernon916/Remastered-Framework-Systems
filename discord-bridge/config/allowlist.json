@@ -1,0 +1,38 @@
+{
+  "units": [
+    "farmbot",
+    "f",
+    "haybot",
+    "h",
+    "totebot",
+    "green",
+    "t",
+    "totered",
+    "red",
+    "tr",
+    "tapebot",
+    "tb",
+    "redtapebot",
+    "rtb",
+    "woc",
+    "worm"
+  ],
+  "items": [
+    {
+      "alias": "farmers",
+      "uuid": "8d601982-4608-4d5e-bb9e-e4041486f7c7",
+      "name": "Farmer's boxes"
+    },
+    {
+      "alias": "battery",
+      "uuid": "910a7f2c-52b0-46eb-8873-ad13255539af",
+      "name": "Battery"
+    },
+    {
+      "alias": "corn",
+      "uuid": "fe8bfeba-850b-4827-9785-10e2468c9c23",
+      "name": "Corn"
+    }
+  ],
+  "note": "Host may edit this file. /vote spawn unit must match units[]. /vote give item must match items[].alias or items[].uuid."
+}

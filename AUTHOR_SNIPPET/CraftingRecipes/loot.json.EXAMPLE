@@ -1,0 +1,12 @@
+{
+	"_comment": "EXAMPLE loot.json",
+	"addToLootTable": "loottable_interactive_01",
+	"defaultLootWeight": 0.03,
+	"items": {
+		"00000000-0000-0000-0000-000000000000": {
+			"title": "Example Part",
+			"lootWeight": 0.02,
+			"addToLoot": true
+		}
+	}
+}

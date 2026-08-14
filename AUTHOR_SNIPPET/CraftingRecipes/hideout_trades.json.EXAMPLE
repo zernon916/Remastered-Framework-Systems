@@ -1,0 +1,19 @@
+{
+	"_comment": "EXAMPLE hideout_trades.json \u2014 copy into your mod CraftingRecipes/",
+	"currencyItemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7",
+	"trades": [
+		{
+			"itemId": "00000000-0000-0000-0000-000000000000",
+			"quantity": 1,
+			"craftTime": 0,
+			"ingredientList": [
+				{
+					"quantity": 2,
+					"itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7"
+				}
+			],
+			"schematic": true,
+			"_title": "Example Part"
+		}
+	]
+}

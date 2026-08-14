@@ -1,0 +1,90 @@
+{
+	"RfsGrowText" :
+	{
+		"effectList" :
+		[
+			{
+				"delay" : 0.0,
+				"direction" :
+				{
+					"x" : 0.0,
+					"y" : 1.0,
+					"z" : 0.0
+				},
+				"name" : "text",
+				"type" : "text",
+				"Color" : [ 1.0, 1.0, 1.0, 1.0 ],
+				"TextContent" : "0:00",
+				"TextMaterial" : "InWorldText",
+				"FontName" : "SM_IntlText",
+				"FontSize" : 22,
+				"lineOfSight" : false,
+				"distanceFade" : true,
+				"maxRenderDistance" : 32.0,
+				"distanceFadeRange" : 8.0,
+				"shadow" : true,
+				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
+				"shadowOffset" : [ 1.0, -1.0 ],
+				"anchor" : "CENTER"
+			}
+		],
+		"parameterList" :
+		{
+			"ASG" :
+			[
+				0.0,
+				0.0,
+				1.0
+			],
+			"Color" : [ 1.0, 1.0, 1.0, 1.0 ],
+			"FontName" : "SM_IntlText",
+			"TextContent" : "0:00",
+			"TextMaterial" : "InWorldText",
+			"anchor" : "CENTER"
+		}
+	},
+	"RfsHackText" :
+	{
+		"effectList" :
+		[
+			{
+				"delay" : 0.0,
+				"direction" :
+				{
+					"x" : 0.0,
+					"y" : 1.0,
+					"z" : 0.0
+				},
+				"name" : "text",
+				"type" : "text",
+				"Color" : [ 1.0, 0.72, 0.08, 1.0 ],
+				"TextContent" : "HACK 8.0",
+				"TextMaterial" : "InWorldText",
+				"FontName" : "SM_IntlText",
+				"FontSize" : 48,
+				"lineOfSight" : false,
+				"distanceFade" : true,
+				"maxRenderDistance" : 56.0,
+				"distanceFadeRange" : 12.0,
+				"shadow" : true,
+				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
+				"shadowOffset" : [ 1.0, -1.0 ],
+				"anchor" : "CENTER"
+			}
+		],
+		"parameterList" :
+		{
+			"ASG" :
+			[
+				0.0,
+				0.0,
+				1.0
+			],
+			"Color" : [ 1.0, 0.72, 0.08, 1.0 ],
+			"FontName" : "SM_IntlText",
+			"TextContent" : "HACK 8.0",
+			"TextMaterial" : "InWorldText",
+			"anchor" : "CENTER"
+		}
+	}
+}
