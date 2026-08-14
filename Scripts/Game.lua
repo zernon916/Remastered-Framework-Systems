@@ -2485,6 +2485,36 @@ function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
 	RfsBeaconOrdersGui.open( self, data or {} )
 end
 
+-- Server bounce from Hack Beacon when client cannot reach g_rfsGame directly.
+function RecipeFrameworkSurvival.sv_rfs_ordersOpenForPlayer( self, params )
+	params = params or {}
+	local player = params.player
+	if not player then
+		return
+	end
+	self.network:sendToClient( player, "cl_rfs_ordersOpen", {
+		beaconKey = params.beaconKey,
+		beaconName = params.beaconName or "Hack Beacon",
+		role = params.role or "independent",
+		masterKey = params.masterKey,
+		range = params.range or 16,
+	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersRelayToPlayer( self, params )
+	params = params or {}
+	local player = params.player
+	if not player then
+		return
+	end
+	if params.setResult then
+		self.network:sendToClient( player, "cl_rfs_ordersSetResult", params.setResult )
+	end
+	if params.role then
+		self.network:sendToClient( player, "cl_rfs_ordersRole", params.role )
+	end
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersList( self, data )
 	if type( RfsBeaconOrdersGui ) == "table" then
 		RfsBeaconOrdersGui.applyList( self, data )

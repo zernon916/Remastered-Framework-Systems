@@ -1163,25 +1163,40 @@ local function cl_beaconKey( self )
 end
 
 local function cl_openOrders( self )
-	-- Open via Game client RPC so createGuiFromLayout binds callbacks to Game
-	-- (Close/Prev/Next/Master/Range). Creating the GUI from this interactable
-	-- stack made button callbacks look for methods on RfsHackBeacon — close was dead.
+	-- Open on the Game client instance so createGuiFromLayout binds Close/Prev/Next/
+	-- Master/Range to RecipeFrameworkSurvival (not this interactable). Do NOT call
+	-- RfsBeaconOrdersGui.open from here — that copy lives in the interactable env and
+	-- made Close dead. Prefer a direct Game method call; server bounce is fallback only.
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
 		sm.gui.chatMessage( "[RFS] Orders: no beacon key" )
 		return
 	end
-	self.network:sendToServer( "sv_openOrdersGui", {
+	local payload = {
 		beaconKey = key,
 		beaconName = pd.name or "Hack Beacon",
-	} )
+		role = pd.role or "independent",
+		masterKey = pd.masterKey,
+		range = tonumber( pd.range ) or 16,
+	}
+	local game = _G.g_rfsGame
+	if game and type( game.cl_rfs_ordersOpen ) == "function" then
+		local ok, err = pcall( function()
+			game:cl_rfs_ordersOpen( payload )
+		end )
+		if ok then
+			return
+		end
+		print( "[RFS] cl_rfs_ordersOpen failed: " .. tostring( err ) )
+	end
+	-- Fallback: server enriches role and sends Game client RPC.
+	self.network:sendToServer( "sv_openOrdersGui", payload )
 end
 
-function RfsHackBeacon.sv_openOrdersGui( self, params, player )
-	local game = _G.g_rfsGame
-	if not game or not player then
-		return
+local function sv_sendOrdersOpen( self, player, params )
+	if not player then
+		return false
 	end
 	local t = self.sv and self.sv.tier or tierOf( self.shape )
 	local role, masterKey = "independent", nil
@@ -1190,13 +1205,42 @@ function RfsHackBeacon.sv_openOrdersGui( self, params, player )
 			role, masterKey = RfsBotHijack.effectiveBeaconRole( self.sv.key )
 		end )
 	end
-	game.network:sendToClient( player, "cl_rfs_ordersOpen", {
+	local data = {
 		beaconKey = self.sv and self.sv.key or ( params and params.beaconKey ),
 		beaconName = ( params and params.beaconName ) or ( t and t.name ) or "Hack Beacon",
 		role = role,
 		masterKey = masterKey,
 		range = t and t.range or 16,
-	} )
+	}
+	local game = _G.g_rfsGame
+	if game and game.network and game.network.sendToClient then
+		local ok = pcall( function()
+			game.network:sendToClient( player, "cl_rfs_ordersOpen", data )
+		end )
+		if ok then
+			return true
+		end
+	end
+	-- SM-canonical path when interactable sandbox cannot see g_rfsGame.
+	local okEvent = pcall( function()
+		sm.event.sendToGame( "sv_rfs_ordersOpenForPlayer", {
+			player = player,
+			beaconKey = data.beaconKey,
+			beaconName = data.beaconName,
+			role = data.role,
+			masterKey = data.masterKey,
+			range = data.range,
+		} )
+	end )
+	return okEvent and true or false
+end
+
+function RfsHackBeacon.sv_openOrdersGui( self, params, player )
+	if not sv_sendOrdersOpen( self, player, params ) then
+		pcall( function()
+			self.network:sendToClients( "cl_rfsMsg", "Orders: Game host missing — reopen world / check custom game" )
+		end )
+	end
 end
 
 function RfsHackBeacon.sv_setMaster( self, params, player )
@@ -1215,20 +1259,37 @@ function RfsHackBeacon.sv_setMaster( self, params, player )
 		self.sv.masterKey = nil
 		saveBeaconRole( self )
 	end
+	local result = {
+		ok = ok and true or false,
+		msg = ok and nil or tostring( err or "claim failed" ),
+		master = ok and true or false,
+	}
+	local rolePayload = nil
+	if ok then
+		rolePayload = {
+			beaconKey = self.sv.key,
+			role = "master",
+			masterKey = nil,
+		}
+	end
 	local game = _G.g_rfsGame
-	if game and player then
-		game.network:sendToClient( player, "cl_rfs_ordersSetResult", {
-			ok = ok and true or false,
-			msg = ok and nil or tostring( err or "claim failed" ),
-			master = ok and true or false,
-		} )
-		if ok then
-			game.network:sendToClient( player, "cl_rfs_ordersRole", {
-				beaconKey = self.sv.key,
-				role = "master",
-				masterKey = nil,
+	if game and player and game.network then
+		pcall( function()
+			game.network:sendToClient( player, "cl_rfs_ordersSetResult", result )
+			if rolePayload then
+				game.network:sendToClient( player, "cl_rfs_ordersRole", rolePayload )
+			end
+		end )
+		return
+	end
+	if player then
+		pcall( function()
+			sm.event.sendToGame( "sv_rfs_ordersRelayToPlayer", {
+				player = player,
+				setResult = result,
+				role = rolePayload,
 			} )
-		end
+		end )
 	end
 end
 
