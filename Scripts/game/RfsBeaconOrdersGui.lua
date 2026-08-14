@@ -33,6 +33,81 @@ local COLOR_PRESETS = {
 
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
 
+-- Fallback range ring drawn on the Game client when the beacon interactable
+-- cannot see Game's _G.g_rfsBeaconRangeVisible (separate script sandbox).
+local RING_BLOCK = sm.uuid.new( "073f92af-f37e-4aff-96b3-d66284d5081c" )
+local RING_SEG_SPACING = 1.75
+local RING_SEG_MIN = 24
+local RING_SEG_MAX = 72
+
+local function destroyHostRangeRing( host )
+	local ring = host.cl and host.cl.rfsOrdersRangeRing
+	if type( ring ) ~= "table" then
+		return
+	end
+	for _, fx in ipairs( ring ) do
+		pcall( function()
+			if fx and sm.exists( fx ) then
+				fx:stop()
+				fx:destroy()
+			end
+		end )
+	end
+	host.cl.rfsOrdersRangeRing = nil
+end
+
+local function groundZ( x, y, fallbackZ )
+	local hit, result
+	local ok = pcall( function()
+		hit, result = sm.physics.raycast(
+			sm.vec3.new( x, y, fallbackZ + 24 ),
+			sm.vec3.new( x, y, fallbackZ - 80 )
+		)
+	end )
+	if ok and hit and result and result.pointWorld then
+		return result.pointWorld.z + 0.06
+	end
+	return fallbackZ
+end
+
+local function buildHostRangeRing( host, range, color )
+	destroyHostRangeRing( host )
+	host.cl = host.cl or {}
+	local pos = host.cl.rfsOrdersBeaconPos
+	if type( pos ) ~= "table" or pos.x == nil then
+		return
+	end
+	range = tonumber( range ) or tonumber( host.cl.rfsOrdersRange ) or 16
+	if range < 1 then
+		return
+	end
+	local n = math.floor( ( 2 * math.pi * range ) / RING_SEG_SPACING + 0.5 )
+	if n < RING_SEG_MIN then n = RING_SEG_MIN end
+	if n > RING_SEG_MAX then n = RING_SEG_MAX end
+	local ring = {}
+	local col = color or sm.color.new( 0.55, 0.95, 0.25, 1.0 )
+	local scale = sm.vec3.new( 0.28, 0.28, 0.08 )
+	for i = 0, n - 1 do
+		local ang = ( i / n ) * math.pi * 2
+		local x = pos.x + math.cos( ang ) * range
+		local y = pos.y + math.sin( ang ) * range
+		local z = groundZ( x, y, pos.z )
+		local ok, fx = pcall( sm.effect.createEffect, "ShapeRenderable" )
+		if ok and fx then
+			pcall( function()
+				fx:setParameter( "uuid", RING_BLOCK )
+				fx:setParameter( "color", col )
+				fx:setScale( scale )
+				fx:setPosition( sm.vec3.new( x, y, z ) )
+				fx:setRotation( sm.quat.identity() )
+				fx:start()
+			end )
+			ring[#ring + 1] = fx
+		end
+	end
+	host.cl.rfsOrdersRangeRing = ring
+end
+
 local function colorLabels()
 	local out = {}
 	for i, p in ipairs( COLOR_PRESETS ) do
@@ -398,12 +473,32 @@ function RfsBeaconOrdersGui.open( host, opts )
 	host.cl.rfsOrdersBeaconName = opts.beaconName or "Hack Beacon"
 	host.cl.rfsOrdersRole = opts.role or "independent"
 	host.cl.rfsOrdersMasterKey = opts.masterKey
+	host.cl.rfsOrdersRange = tonumber( opts.range ) or 16
+	host.cl.rfsOrdersBeaconPos = nil
+	if type( opts.pos ) == "table" and opts.pos.x ~= nil then
+		host.cl.rfsOrdersBeaconPos = {
+			x = tonumber( opts.pos.x ) or 0,
+			y = tonumber( opts.pos.y ) or 0,
+			z = tonumber( opts.pos.z ) or 0,
+		}
+	end
 	host.cl.rfsOrdersPage = 0
 	host.cl.rfsOrdersRows = {}
 	host.cl.rfsOrdersSelectedKey = nil
 
 	RfsBeaconOrdersGui.bind( host, gui )
-	RfsBeaconOrdersGui.refresh( host )
+	-- Server may already include rows (beacon-built list); apply before refresh.
+	if type( opts.rows ) == "table" and #opts.rows > 0 then
+		RfsBeaconOrdersGui.applyList( host, {
+			rows = opts.rows,
+			beaconKey = opts.beaconKey,
+			beaconName = opts.beaconName,
+			role = opts.role,
+			masterKey = opts.masterKey,
+		} )
+	else
+		RfsBeaconOrdersGui.refresh( host )
+	end
 	gui:open()
 	host.network:sendToServer( "sv_rfs_ordersList", {
 		beaconKey = host.cl.rfsOrdersBeaconKey,
@@ -413,6 +508,7 @@ end
 
 function RfsBeaconOrdersGui.close( host )
 	local gui = host.cl and host.cl.rfsOrdersGui
+	destroyHostRangeRing( host )
 	-- Nil first so OnClose callback is a no-op.
 	if host.cl then
 		host.cl.rfsOrdersGui = nil
@@ -423,6 +519,7 @@ function RfsBeaconOrdersGui.close( host )
 end
 
 function RfsBeaconOrdersGui.onClosed( host )
+	destroyHostRangeRing( host )
 	if host.cl then
 		host.cl.rfsOrdersGui = nil
 	end
@@ -454,6 +551,22 @@ function RfsBeaconOrdersGui.toggleRange( host )
 	local on = not ( _G.g_rfsBeaconRangeVisible[key] == true )
 	_G.g_rfsBeaconRangeVisible[key] = on
 	host.cl.rfsOrdersShowRange = on
+	-- Server mirrors onto beacon clientData.showRange so the interactable client
+	-- (separate sandbox from Game GUI) actually draws/clears the ring.
+	if host.network and host.network.sendToServer then
+		pcall( function()
+			host.network:sendToServer( "sv_rfs_ordersRange", {
+				beaconKey = key,
+				show = on,
+			} )
+		end )
+	end
+	-- Game-client fallback ring (works even when beacon never sees Game's _G).
+	if on then
+		buildHostRangeRing( host, host.cl.rfsOrdersRange )
+	else
+		destroyHostRangeRing( host )
+	end
 	RfsBeaconOrdersGui.refresh( host )
 	sm.gui.chatMessage( on and "[RFS] Range shown" or "[RFS] Range hidden" )
 end

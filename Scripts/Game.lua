@@ -2504,6 +2504,8 @@ function RecipeFrameworkSurvival.sv_rfs_ordersOpenForPlayer( self, params )
 		role = params.role or "independent",
 		masterKey = params.masterKey,
 		range = params.range or 16,
+		rows = params.rows,
+		pos = params.pos,
 	} )
 end
 
@@ -2519,6 +2521,50 @@ function RecipeFrameworkSurvival.sv_rfs_ordersRelayToPlayer( self, params )
 	if params.role then
 		self.network:sendToClient( player, "cl_rfs_ordersRole", params.role )
 	end
+	if params.list then
+		self.network:sendToClient( player, "cl_rfs_ordersList", params.list )
+	end
+end
+
+-- Beacon env may differ from Game; merge serializable ally snapshots so Orders
+-- set/color RPCs on Game can resolve the same unit keys the list just showed.
+function RecipeFrameworkSurvival.sv_rfs_mirrorAllies( self, params )
+	params = params or {}
+	if type( RfsBotHijack ) ~= "table" then
+		return
+	end
+	RfsBotHijack.allies = RfsBotHijack.allies or {}
+	local snap = params.allies
+	if type( snap ) ~= "table" then
+		return
+	end
+	for key, info in pairs( snap ) do
+		if key and type( info ) == "table" then
+			local k = tostring( key )
+			local prev = RfsBotHijack.allies[k] or {}
+			RfsBotHijack.allies[k] = {
+				type = info.type or prev.type,
+				unitType = info.unitType or prev.unitType,
+				owner = info.owner ~= nil and info.owner or prev.owner,
+				mode = info.mode or prev.mode,
+				beaconKey = info.beaconKey or prev.beaconKey,
+				workBeaconKey = info.workBeaconKey or prev.workBeaconKey,
+				controlled = true,
+				displayName = info.displayName or prev.displayName,
+				allyColor = info.allyColor or prev.allyColor,
+				rfsOrder = type( info.rfsOrder ) == "table" and info.rfsOrder or prev.rfsOrder,
+				order = type( info.rfsOrder ) == "table" and info.rfsOrder or prev.order,
+				origColor = prev.origColor,
+				infectAcc = prev.infectAcc,
+				hijackTicks = prev.hijackTicks,
+				firstSeenTick = prev.firstSeenTick,
+				lastTagTick = prev.lastTagTick,
+			}
+		end
+	end
+	pcall( function()
+		RfsBotHijack.publishGlobals()
+	end )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_ordersList( self, data )
@@ -2576,6 +2622,16 @@ function RecipeFrameworkSurvival.sv_rfs_ordersList( self, params, player )
 		self.network:sendToClient( player, "cl_rfs_ordersList", { rows = {} } )
 		return
 	end
+	-- Prefer the live Hack Beacon interactable (authoritative allies table).
+	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.beaconScripts ) == "table" then
+		local beacon = RfsBotHijack.beaconScripts[beaconKey]
+		if beacon and type( beacon.sv_ordersList ) == "function" then
+			pcall( function()
+				beacon:sv_ordersList( params, player )
+			end )
+			return
+		end
+	end
 	local allowHost = rfsServerPlayerIsHost( player )
 	local ownerFilter = nil
 	if not allowHost then
@@ -2602,6 +2658,28 @@ function RecipeFrameworkSurvival.sv_rfs_ordersList( self, params, player )
 		role = role,
 		masterKey = masterKey,
 	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersRange( self, params, player )
+	params = params or {}
+	local beaconKey = tostring( params.beaconKey or "" )
+	if beaconKey == "" then
+		return
+	end
+	local show = params.show and true or false
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.setRangeVisible then
+		RfsBotHijack.setRangeVisible( beaconKey, show )
+	end
+	-- Ask the live beacon to republish clientData.showRange immediately.
+	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.beaconScripts ) == "table" then
+		local beacon = RfsBotHijack.beaconScripts[beaconKey]
+		if beacon and type( beacon.sv_setShowRange ) == "function" then
+			pcall( function()
+				beacon:sv_setShowRange( { show = show }, player )
+			end )
+			return
+		end
+	end
 end
 
 function RecipeFrameworkSurvival.sv_rfs_ordersSetMaster( self, params, player )

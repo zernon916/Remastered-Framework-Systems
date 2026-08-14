@@ -401,6 +401,10 @@ local function publish( self, extra )
 		beaconKey = self.sv and self.sv.key or nil,
 		role = role,
 		masterKey = masterKey,
+		-- Orders GUI SHOW RANGE — mirrored from RfsBotHijack.rangeVisible (Game client
+		-- and interactable client may not share the same _G table).
+		showRange = ( type( RfsBotHijack ) == "table" and RfsBotHijack.isRangeVisible
+			and self.sv and self.sv.key and RfsBotHijack.isRangeVisible( self.sv.key ) ) and true or false,
 	}
 	pcall( function()
 		self.network:setClientData( data )
@@ -442,11 +446,22 @@ function RfsHackBeacon.server_onCreate( self )
 	self.sv.powered = false
 	self.sv.drainAcc = 0
 	self.sv.key = beaconKey( self.shape )
+	if type( RfsBotHijack ) == "table" and self.sv.key then
+		RfsBotHijack.beaconScripts = RfsBotHijack.beaconScripts or {}
+		RfsBotHijack.beaconScripts[tostring( self.sv.key )] = self
+	end
 end
 
 function RfsHackBeacon.server_onDestroy( self )
 	if type( RfsBotHijack ) == "table" and self.sv and self.sv.key then
-		RfsBotHijack.unregisterBeacon( self.sv.key )
+		local key = tostring( self.sv.key )
+		RfsBotHijack.unregisterBeacon( key )
+		if RfsBotHijack.beaconScripts and RfsBotHijack.beaconScripts[key] == self then
+			RfsBotHijack.beaconScripts[key] = nil
+		end
+		if RfsBotHijack.setRangeVisible then
+			RfsBotHijack.setRangeVisible( key, false )
+		end
 	end
 end
 
@@ -458,6 +473,10 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 		return
 	end
 	self.sv.key = self.sv.key or beaconKey( shape )
+	if type( RfsBotHijack ) == "table" and self.sv.key then
+		RfsBotHijack.beaconScripts = RfsBotHijack.beaconScripts or {}
+		RfsBotHijack.beaconScripts[tostring( self.sv.key )] = self
+	end
 	local devicesOn = hackDevicesOn()
 	local wasPowered = self.sv.powered and true or false
 
@@ -718,26 +737,29 @@ end
 
 local function cl_updateRangeRing( self )
 	self.cl = self.cl or {}
+	local pd = self.cl.pd or {}
 	local key = nil
 	pcall( function()
 		key = self.shape and self.shape.id
 	end )
 	if key ~= nil then
 		key = tostring( key )
-	else
-		local pd0 = self.cl and self.cl.pd
-		if pd0 and pd0.beaconKey then
-			key = tostring( pd0.beaconKey )
-		end
+	elseif pd.beaconKey then
+		key = tostring( pd.beaconKey )
 	end
-	-- Range ring is opt-in via Orders GUI "Show Range" toggle (per beacon key).
-	local showMap = _G.g_rfsBeaconRangeVisible
-	local show = key and type( showMap ) == "table" and showMap[tostring( key )] == true
+	-- Range ring is opt-in via Orders GUI "Show Range". Prefer networked
+	-- clientData.showRange (crosses Game↔interactable sandbox); fall back to _G.
+	local show = false
+	if pd.showRange == true then
+		show = true
+	else
+		local showMap = _G.g_rfsBeaconRangeVisible
+		show = key and type( showMap ) == "table" and showMap[tostring( key )] == true
+	end
 	if not show then
 		cl_destroyRangeRing( self )
 		return
 	end
-	local pd = self.cl.pd or {}
 	local t = tierOf( self.shape )
 	local range = tonumber( pd.range ) or t.range
 	if pd.raid then
@@ -1167,6 +1189,8 @@ local function cl_openOrders( self )
 	-- Master/Range to RecipeFrameworkSurvival (not this interactable). Do NOT call
 	-- RfsBeaconOrdersGui.open from here — that copy lives in the interactable env and
 	-- made Close dead. Prefer a direct Game method call; server bounce is fallback only.
+	-- Always also hit the server so the ally list is built in the beacon env (authoritative
+	-- RfsBotHijack.allies) and pushed to the Game GUI.
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
@@ -1180,18 +1204,139 @@ local function cl_openOrders( self )
 		masterKey = pd.masterKey,
 		range = tonumber( pd.range ) or 16,
 	}
+	pcall( function()
+		local pos = self.shape and self.shape.worldPosition
+		if pos then
+			payload.pos = { x = pos.x, y = pos.y, z = pos.z }
+		end
+	end )
+	local clientOpened = false
 	local game = _G.g_rfsGame
 	if game and type( game.cl_rfs_ordersOpen ) == "function" then
 		local ok, err = pcall( function()
 			game:cl_rfs_ordersOpen( payload )
 		end )
 		if ok then
-			return
+			clientOpened = true
+		else
+			print( "[RFS] cl_rfs_ordersOpen failed: " .. tostring( err ) )
 		end
-		print( "[RFS] cl_rfs_ordersOpen failed: " .. tostring( err ) )
 	end
-	-- Fallback: server enriches role and sends Game client RPC.
+	payload.clientOpened = clientOpened
+	-- Server builds the ally list + role from the live beacon hijack table.
 	self.network:sendToServer( "sv_openOrdersGui", payload )
+end
+
+local function relayOrdersToPlayer( player, openData, listData )
+	if not player then
+		return false
+	end
+	local game = _G.g_rfsGame
+	if game and game.network and game.network.sendToClient then
+		local ok = pcall( function()
+			if openData then
+				game.network:sendToClient( player, "cl_rfs_ordersOpen", openData )
+			end
+			if listData then
+				game.network:sendToClient( player, "cl_rfs_ordersList", listData )
+			end
+		end )
+		if ok then
+			return true
+		end
+	end
+	local okEvent = pcall( function()
+		if openData then
+			sm.event.sendToGame( "sv_rfs_ordersOpenForPlayer", {
+				player = player,
+				beaconKey = openData.beaconKey,
+				beaconName = openData.beaconName,
+				role = openData.role,
+				masterKey = openData.masterKey,
+				range = openData.range,
+				rows = openData.rows,
+			} )
+		end
+		if listData then
+			sm.event.sendToGame( "sv_rfs_ordersRelayToPlayer", {
+				player = player,
+				list = listData,
+			} )
+		end
+	end )
+	return okEvent and true or false
+end
+
+local function buildOrdersListPayload( self, player )
+	local key = self.sv and self.sv.key
+	if not key then
+		return { rows = {} }
+	end
+	local ownerFilter = nil
+	local allowHost = false
+	pcall( function()
+		local all = sm.player.getAllPlayers()
+		if type( all ) == "table" and all[1] and player then
+			allowHost = ( all[1] == player ) or ( all[1].id ~= nil and player.id ~= nil and all[1].id == player.id )
+		end
+	end )
+	if not allowHost and player then
+		pcall( function()
+			ownerFilter = player.id
+		end )
+	end
+	local rows = {}
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
+		pcall( function()
+			rows = RfsBotHijack.listHomeAllies( key, ownerFilter ) or {}
+		end )
+	end
+	-- Mirror listed allies into Game's RfsBotHijack so Color/setOrder RPCs
+	-- (which run on Game) can resolve unit keys after a sandbox split.
+	pcall( function()
+		local snap = {}
+		for _, row in ipairs( rows ) do
+			if row and row.key and RfsBotHijack.allies then
+				local info = RfsBotHijack.allies[tostring( row.key )]
+				if info then
+					snap[tostring( row.key )] = {
+						type = info.type and tostring( info.type ) or nil,
+						unitType = info.unitType and tostring( info.unitType ) or nil,
+						owner = info.owner,
+						mode = info.mode and tostring( info.mode ) or nil,
+						beaconKey = info.beaconKey and tostring( info.beaconKey ) or nil,
+						workBeaconKey = info.workBeaconKey and tostring( info.workBeaconKey ) or nil,
+						controlled = true,
+						displayName = info.displayName and tostring( info.displayName ) or nil,
+						allyColor = info.allyColor and tostring( info.allyColor ) or nil,
+						rfsOrder = type( info.rfsOrder ) == "table" and {
+							mode = info.rfsOrder.mode,
+							seedUuid = info.rfsOrder.seedUuid and tostring( info.rfsOrder.seedUuid ) or nil,
+							beaconKey = info.rfsOrder.beaconKey and tostring( info.rfsOrder.beaconKey ) or nil,
+							owner = info.rfsOrder.owner,
+						} or nil,
+					}
+				end
+			end
+		end
+		if next( snap ) then
+			sm.event.sendToGame( "sv_rfs_mirrorAllies", { allies = snap } )
+		end
+	end )
+	local role, masterKey = "independent", nil
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.effectiveBeaconRole then
+		pcall( function()
+			role, masterKey = RfsBotHijack.effectiveBeaconRole( key )
+		end )
+	end
+	local t = self.sv and self.sv.tier or tierOf( self.shape )
+	return {
+		rows = rows,
+		beaconKey = tostring( key ),
+		beaconName = t and t.name or "Hack Beacon",
+		role = role,
+		masterKey = masterKey,
+	}
 end
 
 local function sv_sendOrdersOpen( self, player, params )
@@ -1199,40 +1344,29 @@ local function sv_sendOrdersOpen( self, player, params )
 		return false
 	end
 	local t = self.sv and self.sv.tier or tierOf( self.shape )
-	local role, masterKey = "independent", nil
-	if type( RfsBotHijack ) == "table" and RfsBotHijack.effectiveBeaconRole and self.sv and self.sv.key then
-		pcall( function()
-			role, masterKey = RfsBotHijack.effectiveBeaconRole( self.sv.key )
-		end )
-	end
+	local listPayload = buildOrdersListPayload( self, player )
 	local data = {
 		beaconKey = self.sv and self.sv.key or ( params and params.beaconKey ),
-		beaconName = ( params and params.beaconName ) or ( t and t.name ) or "Hack Beacon",
-		role = role,
-		masterKey = masterKey,
+		beaconName = ( params and params.beaconName ) or listPayload.beaconName or ( t and t.name ) or "Hack Beacon",
+		role = listPayload.role or "independent",
+		masterKey = listPayload.masterKey,
 		range = t and t.range or 16,
+		rows = listPayload.rows,
+		pos = params and params.pos or nil,
 	}
-	local game = _G.g_rfsGame
-	if game and game.network and game.network.sendToClient then
-		local ok = pcall( function()
-			game.network:sendToClient( player, "cl_rfs_ordersOpen", data )
+	if not data.pos then
+		pcall( function()
+			local pos = self.shape and self.shape.worldPosition
+			if pos then
+				data.pos = { x = pos.x, y = pos.y, z = pos.z }
+			end
 		end )
-		if ok then
-			return true
-		end
 	end
-	-- SM-canonical path when interactable sandbox cannot see g_rfsGame.
-	local okEvent = pcall( function()
-		sm.event.sendToGame( "sv_rfs_ordersOpenForPlayer", {
-			player = player,
-			beaconKey = data.beaconKey,
-			beaconName = data.beaconName,
-			role = data.role,
-			masterKey = data.masterKey,
-			range = data.range,
-		} )
-	end )
-	return okEvent and true or false
+	-- If the client already opened the GUI (callback binding), only push the list.
+	if params and params.clientOpened then
+		return relayOrdersToPlayer( player, nil, listPayload )
+	end
+	return relayOrdersToPlayer( player, data, listPayload )
 end
 
 function RfsHackBeacon.sv_openOrdersGui( self, params, player )
@@ -1241,6 +1375,28 @@ function RfsHackBeacon.sv_openOrdersGui( self, params, player )
 			self.network:sendToClients( "cl_rfsMsg", "Orders: Game host missing — reopen world / check custom game" )
 		end )
 	end
+end
+
+-- Game GUI refresh path: build list here (beacon env) when Game forwards the key.
+function RfsHackBeacon.sv_ordersList( self, params, player )
+	local listPayload = buildOrdersListPayload( self, player )
+	relayOrdersToPlayer( player, nil, listPayload )
+end
+
+function RfsHackBeacon.sv_setShowRange( self, params, player )
+	params = params or {}
+	local key = self.sv and self.sv.key
+	if not key then
+		return
+	end
+	local show = params.show and true or false
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.setRangeVisible then
+		RfsBotHijack.setRangeVisible( key, show )
+	end
+	-- Immediate clientData refresh so the ring appears without waiting a tick.
+	pcall( function()
+		publish( self, {} )
+	end )
 end
 
 function RfsHackBeacon.sv_setMaster( self, params, player )

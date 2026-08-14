@@ -63,6 +63,10 @@ RfsBotHijack.beacons = RfsBotHijack.beacons or {} -- [beaconKey] = record
 RfsBotHijack.pending = RfsBotHijack.pending or {} -- [unitKey] = { startTick, need, beaconKey, text }
 RfsBotHijack.banned = RfsBotHijack.banned or {} -- [unitKey] = true, raid breakout, until death
 RfsBotHijack.chain = RfsBotHijack.chain or {} -- [hostileKey] = { startTick, need, sourceKey, text }
+-- Client range ring opt-in (server mirrors onto beacon clientData.showRange).
+RfsBotHijack.rangeVisible = RfsBotHijack.rangeVisible or {} -- [beaconKey] = true
+-- Live interactable script refs (same Lua env) so Game RPCs can ask the beacon.
+RfsBotHijack.beaconScripts = RfsBotHijack.beaconScripts or {} -- [beaconKey] = interactable self
 RfsBotHijack._hooked = false
 RfsBotHijack._autoTick = -1
 
@@ -778,6 +782,114 @@ function RfsBotHijack.orderDomainKeys( beaconKey )
 	return keys
 end
 
+-- Rebind orphan / out-of-domain allies onto the Master (or Independent) home key.
+-- Includes bots still on old Independent keys of beacons now in this Master's range,
+-- and owned bots physically inside the domain with no usable home key.
+function RfsBotHijack.migrateDomainAllies( beaconKey, ownerFilterId )
+	beaconKey = tostring( beaconKey or "" )
+	if beaconKey == "" then
+		return 0
+	end
+	local domain = RfsBotHijack.orderDomainKeys( beaconKey )
+	local masterKey = RfsBotHijack.orderDomainMasterKey( beaconKey ) or beaconKey
+	local masterRec = RfsBotHijack.beacons[masterKey]
+	local n = 0
+	for key, info in pairs( RfsBotHijack.allies ) do
+		if info and info.controlled then
+			if ownerFilterId ~= nil and tostring( info.owner ) ~= tostring( ownerFilterId ) then
+				-- skip
+			else
+				local home = RfsBotHijack.homeBeaconKey( info )
+				local inDomain = home ~= nil and domain[home] == true
+				if not inDomain then
+					local adopt = false
+					-- Home points at a live beacon currently inside this Master's range
+					-- (orphan Independent key before SET MASTER).
+					if home and masterRec and beaconLive( masterRec ) then
+						local homeRec = RfsBotHijack.beacons[home]
+						if homeRec and beaconLive( homeRec ) and beaconRecsInMasterRange( masterRec, homeRec ) then
+							adopt = true
+						end
+					end
+					-- Physically inside a domain beacon's range (incl. no home /hijack orphans).
+					if not adopt then
+						local unit = RfsBotHijack.unitByKey( key )
+						if unit and sm.exists( unit ) and unit.character and sm.exists( unit.character ) then
+							for dk, _ in pairs( domain ) do
+								local drec = RfsBotHijack.beacons[dk]
+								if drec and beaconLive( drec ) and drec.pos then
+									local okWorld = true
+									if drec.world then
+										pcall( function()
+											okWorld = ( unit.character:getWorld() == drec.world )
+										end )
+									end
+									if okWorld then
+										local r = tonumber( drec.range ) or DEFAULT_RANGE
+										local d2 = ( unit.character.worldPosition - drec.pos ):length2()
+										if d2 <= r * r then
+											adopt = true
+											break
+										end
+									end
+								end
+							end
+						end
+					end
+					if adopt then
+						info.workBeaconKey = tostring( masterKey )
+						local ord = info.rfsOrder or info.order
+						if type( ord ) == "table" then
+							ord.beaconKey = info.workBeaconKey
+							info.rfsOrder = ord
+							info.order = ord
+						end
+						local unit = RfsBotHijack.unitByKey( key )
+						if unit and sm.exists( unit ) then
+							pushIdentityToUnit( unit, {
+								owner = info.owner,
+								displayName = info.displayName,
+								unitType = info.unitType or info.type,
+								firstSeenTick = info.firstSeenTick,
+								mode = info.mode,
+								beaconKey = info.beaconKey,
+								workBeaconKey = info.workBeaconKey,
+								allyColor = info.allyColor,
+								playerAlly = true,
+							} )
+						end
+						n = n + 1
+					end
+				end
+			end
+		end
+	end
+	if n > 0 then
+		RfsBotHijack.publishGlobals()
+	end
+	return n
+end
+
+function RfsBotHijack.setRangeVisible( beaconKey, show )
+	beaconKey = tostring( beaconKey or "" )
+	if beaconKey == "" then
+		return false
+	end
+	RfsBotHijack.rangeVisible = RfsBotHijack.rangeVisible or {}
+	if show then
+		RfsBotHijack.rangeVisible[beaconKey] = true
+	else
+		RfsBotHijack.rangeVisible[beaconKey] = nil
+	end
+	return true
+end
+
+function RfsBotHijack.isRangeVisible( beaconKey )
+	beaconKey = tostring( beaconKey or "" )
+	local map = RfsBotHijack.rangeVisible
+	return beaconKey ~= "" and type( map ) == "table" and map[beaconKey] == true
+end
+
 -- Player claims Master on beaconKey. Demotes other Masters in range to Independent
 -- (they become Slaves via effectiveBeaconRole while in range).
 function RfsBotHijack.claimMaster( beaconKey )
@@ -801,6 +913,10 @@ function RfsBotHijack.claimMaster( beaconKey )
 	rec.masterKey = nil
 	rec._roleDirty = true
 	RfsBotHijack.pendingRole[beaconKey] = { role = "master" }
+	-- Pull orphan Independent homes (and in-range owned allies) onto this Master.
+	pcall( function()
+		RfsBotHijack.migrateDomainAllies( beaconKey )
+	end )
 	return true, "master"
 end
 
@@ -1865,10 +1981,16 @@ function RfsBotHijack.tickAuto( world )
 					end
 					if spent then
 						local mode = rec.canInfect and "infected" or "tethered"
+						local workKey = bkey
+						if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
+							pcall( function()
+								workKey = RfsBotHijack.orderDomainMasterKey( bkey ) or bkey
+							end )
+						end
 						RfsBotHijack.convertUnit( unit, rec.ownerId or 0, {
 							mode = mode,
 							beaconKey = bkey,
-							workBeaconKey = bkey,
+							workBeaconKey = workKey,
 							hijackTicks = rec.hijackTicks or need,
 						} )
 						setUnitTag( unit, "" )
@@ -2237,42 +2359,105 @@ end
 
 -- Rows for Beacon Orders GUI. ownerFilterId = nil means all (host).
 -- Uses Master/Slave order domain so nearby linked beacons share the ally pool.
+-- Falls back to in-range owned allies when domain homes are empty/orphaned, and
+-- migrates those homes onto the domain master so Color/orders keep working.
 function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 	beaconKey = tostring( beaconKey or "" )
 	local rows = {}
 	if beaconKey == "" then
 		return rows
 	end
+	-- Adopt orphans before listing (Master / Independent open path).
+	pcall( function()
+		RfsBotHijack.migrateDomainAllies( beaconKey, ownerFilterId )
+	end )
 	local domain = RfsBotHijack.orderDomainKeys and RfsBotHijack.orderDomainKeys( beaconKey ) or { [beaconKey] = true }
+	local matched = {}
+
+	local function ownerOk( info )
+		return ownerFilterId == nil or tostring( info.owner ) == tostring( ownerFilterId )
+	end
+
+	local function appendRow( key, info )
+		if matched[key] then
+			return
+		end
+		local ord = info.rfsOrder or info.order
+		local orderMode = "defend"
+		if type( ord ) == "table" and ord.mode then
+			orderMode = tostring( ord.mode )
+		end
+		local seedUuid = nil
+		if type( ord ) == "table" and ord.seedUuid ~= nil then
+			seedUuid = tostring( ord.seedUuid )
+		end
+		rows[#rows + 1] = {
+			key = tostring( key ),
+			name = tostring( info.displayName or shortTypeName( info.unitType or info.type ) or "Bot" ),
+			unitType = info.unitType ~= nil and tostring( info.unitType ) or ( info.type ~= nil and tostring( info.type ) or nil ),
+			type = info.type ~= nil and tostring( info.type ) or nil,
+			mode = orderMode,
+			seedUuid = seedUuid,
+			owner = info.owner,
+			allyMode = info.mode ~= nil and tostring( info.mode ) or nil,
+			allyColor = info.allyColor ~= nil and tostring( info.allyColor ) or nil,
+		}
+		matched[key] = true
+	end
+
 	for key, info in pairs( RfsBotHijack.allies ) do
-		if info and info.controlled then
+		if info and info.controlled and ownerOk( info ) then
 			local home = RfsBotHijack.homeBeaconKey( info )
 			local match = home ~= nil and domain[home] == true
 			if not match and home == nil and info.beaconKey and domain[tostring( info.beaconKey )] then
 				match = true
 			end
 			if match then
-				if ownerFilterId == nil or tostring( info.owner ) == tostring( ownerFilterId ) then
-					local ord = info.rfsOrder or info.order
-					local orderMode = "defend"
-					if type( ord ) == "table" and ord.mode then
-						orderMode = tostring( ord.mode )
+				appendRow( key, info )
+			end
+		end
+	end
+
+	-- Fallback: still empty → any owned ally inside a domain beacon's range
+	-- (covers /hijack orphans and pre-Master Independent homes that missed migrate).
+	if #rows == 0 then
+		for key, info in pairs( RfsBotHijack.allies ) do
+			if info and info.controlled and ownerOk( info ) and not matched[key] then
+				local unit = RfsBotHijack.unitByKey( key )
+				local inRange = false
+				if unit and sm.exists( unit ) and unit.character and sm.exists( unit.character ) then
+					for dk, _ in pairs( domain ) do
+						local drec = RfsBotHijack.beacons[dk]
+						if drec and beaconLive( drec ) and drec.pos then
+							local okWorld = true
+							if drec.world then
+								pcall( function()
+									okWorld = ( unit.character:getWorld() == drec.world )
+								end )
+							end
+							if okWorld then
+								local r = tonumber( drec.range ) or DEFAULT_RANGE
+								local d2 = ( unit.character.worldPosition - drec.pos ):length2()
+								if d2 <= r * r then
+									inRange = true
+									break
+								end
+							end
+						end
 					end
-					rows[#rows + 1] = {
-						key = tostring( key ),
-						name = info.displayName or shortTypeName( info.unitType or info.type ),
-						unitType = info.unitType or info.type,
-						type = info.type,
-						mode = orderMode,
-						seedUuid = ( type( ord ) == "table" and ord.seedUuid ) or nil,
-						owner = info.owner,
-						allyMode = info.mode,
-						allyColor = info.allyColor,
-					}
+				end
+				if inRange then
+					local masterKey = RfsBotHijack.orderDomainMasterKey( beaconKey ) or beaconKey
+					info.workBeaconKey = tostring( masterKey )
+					appendRow( key, info )
 				end
 			end
 		end
 	end
+
+	-- Last resort intentionally omitted: listing every ally on every beacon would
+	-- mix unrelated bases. In-range fallback above covers orphan homes.
+
 	table.sort( rows, function( a, b )
 		return tostring( a.name ) < tostring( b.name )
 	end )
