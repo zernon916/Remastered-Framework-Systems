@@ -1,11 +1,12 @@
 ﻿/**
- * RFS Discord Bridge â€” Streamer mode vote dropper
+ * RFS Discord Bridge — Streamer mode vote dropper
  *
- * Runs on the same PC as the Scrap Mechanic host. Lua cannot HTTP, so this
- * process writes vote.json into a path RfsStreamer.lua polls.
+ * Runs beside the Scrap Mechanic host (Windows / Linux; Mac OK for bot-only).
+ * Lua cannot HTTP, so this process writes vote.json into a path RfsStreamer.lua polls.
  *
  * Usage:
- *   copy .env.example â†’ .env, set DISCORD_TOKEN + CLIENT_ID (+ GUILD_ID)
+ *   cp .env.example .env  (Windows cmd: copy .env.example .env)
+ *   set DISCORD_TOKEN + CLIENT_ID (+ GUILD_ID); prefer explicit DROP_PATH
  *   npm install && npm run register && npm start
  */
 

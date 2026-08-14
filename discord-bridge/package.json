@@ -1,7 +1,7 @@
 {
   "name": "rfs-discord-bridge",
   "version": "1.2.0",
-  "description": "External Discord → Scrap Mechanic vote drop for Recipe Framework Survival Streamer mode. Lua cannot HTTP; this process writes a local JSON inbox.",
+  "description": "Cross-platform Discord → Scrap Mechanic vote drop for Recipe Framework Survival Streamer mode (Windows/Linux/macOS Node). Lua cannot HTTP; this process writes a local JSON inbox.",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
@@ -13,6 +13,11 @@
   "engines": {
     "node": ">=18"
   },
+  "os": [
+    "win32",
+    "linux",
+    "darwin"
+  ],
   "dependencies": {
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5"

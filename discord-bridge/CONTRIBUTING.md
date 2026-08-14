@@ -4,7 +4,7 @@ How this folder fits a **clean GitHub** copy of Recipe Framework Survival.
 
 ## What this folder is
 
-Standalone Node helper beside the Scrap Mechanic host. It does **not** change framework Lua hooks (`ModRecipeScan`, `RfsQuest`, etc.). In-game Streamer polling is `Scripts/game/RfsStreamer.lua`; this package writes the Discord vote drop file.
+Standalone Node helper beside the Scrap Mechanic host (Windows / Linux; macOS OK for bot-only). It does **not** change framework Lua hooks (`ModRecipeScan`, `RfsQuest`, etc.). In-game Streamer polling is `Scripts/game/RfsStreamer.lua`; this package writes the Discord vote drop file. Prefer explicit `DROP_PATH` so Lua and Node agree across OSes.
 
 ## Keep the repo clean
 
