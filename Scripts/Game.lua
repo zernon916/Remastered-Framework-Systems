@@ -596,6 +596,12 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	if self.cl and self.cl.rfsGenGui and ( sm.game.getCurrentTick() % 40 ) == 0 then
 		RfsGenGui.refresh( self )
 	end
+	-- Beacon Orders: never gui:open inside E-interact — Survival tears it down
+	-- (flash). Pump deferred open a few ticks later.
+	if self.cl and self.cl.rfsOrdersPendingOpen and type( RfsBeaconOrdersGui ) == "table"
+		and RfsBeaconOrdersGui.pumpPendingOpen then
+		RfsBeaconOrdersGui.pumpPendingOpen( self )
+	end
 end
 
 function RecipeFrameworkSurvival.loadCraftingRecipes( self )
@@ -2484,11 +2490,20 @@ function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
-	if type( RfsBeaconOrdersGui ) ~= "table" or type( RfsBeaconOrdersGui.open ) ~= "function" then
+	if type( RfsBeaconOrdersGui ) ~= "table" then
 		sm.gui.chatMessage( "[RFS] Orders GUI not loaded" )
 		return
 	end
-	RfsBeaconOrdersGui.open( self, data or {} )
+	data = data or {}
+	-- Server open RPC can arrive during/near E-interact. Always defer so Survival
+	-- cannot tear the panel down on interact end.
+	if RfsBeaconOrdersGui.queueDeferredOpen then
+		RfsBeaconOrdersGui.queueDeferredOpen( self, data, 3 )
+		return
+	end
+	if type( RfsBeaconOrdersGui.open ) == "function" then
+		RfsBeaconOrdersGui.open( self, data )
+	end
 end
 
 -- Server bounce from Hack Beacon when client cannot reach g_rfsGame directly.

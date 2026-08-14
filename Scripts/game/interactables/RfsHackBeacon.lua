@@ -1185,10 +1185,9 @@ local function cl_beaconKey( self )
 end
 
 local function cl_openOrders( self )
-	-- Open once on Game (callbacks bind to RecipeFrameworkSurvival). Pre-2161581
-	-- this returned after a successful Game open and the panel stayed up.
-	-- 2161581 always bounced open again via server → destroy+recreate flash.
-	-- Keep the beacon-built ally list: after client open, server pushes LIST ONLY.
+	-- CRITICAL: never gui:open() inside client_onInteract. Survival tears that
+	-- GUI down when E ends → flash-only panel. Queue a deferred Game open
+	-- (ticks later) and ask the server for LIST ONLY (ally table lives here).
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
@@ -1208,21 +1207,29 @@ local function cl_openOrders( self )
 			payload.pos = { x = pos.x, y = pos.y, z = pos.z }
 		end
 	end )
-	local clientOpened = false
+	local deferred = false
 	local game = _G.g_rfsGame
-	if game and type( game.cl_rfs_ordersOpen ) == "function" then
-		local ok, err = pcall( function()
-			game:cl_rfs_ordersOpen( payload )
+	if game and type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.queueDeferredOpen then
+		local ok = pcall( function()
+			RfsBeaconOrdersGui.queueDeferredOpen( game, payload, 3 )
 		end )
-		if ok then
-			clientOpened = true
-		else
-			print( "[RFS] cl_rfs_ordersOpen failed: " .. tostring( err ) )
+		deferred = ok and true or false
+		if not ok then
+			print( "[RFS] deferred orders open queue failed" )
 		end
+	elseif game then
+		-- Fallback: set pending fields directly if Gui module not in this env.
+		local ok = pcall( function()
+			game.cl = game.cl or {}
+			local tick = sm.game.getCurrentTick() or 0
+			game.cl.rfsOrdersPendingOpen = payload
+			game.cl.rfsOrdersPendingOpenTick = tick + 3
+		end )
+		deferred = ok and true or false
 	end
-	payload.clientOpened = clientOpened
-	-- Always ask beacon server for the authoritative ally list. When clientOpened,
-	-- server must NOT send cl_rfs_ordersOpen again (that recreates and flashes).
+	-- listOnly: server must NOT send cl_rfs_ordersOpen (would race interact frame).
+	payload.listOnly = deferred and true or false
+	payload.clientOpened = deferred and true or false
 	self.network:sendToServer( "sv_openOrdersGui", payload )
 end
 
@@ -1361,12 +1368,12 @@ local function sv_sendOrdersOpen( self, player, params )
 			end
 		end )
 	end
-	-- clientOpened: panel already created on Game — push list in-place only.
-	-- Otherwise open once with rows embedded (fallback when g_rfsGame missing).
-	if params and params.clientOpened then
+	-- Deferred client queue / already-open: LIST ONLY. Never second open.
+	-- Fallback (no Game on client): open once with rows embedded via Game RPC.
+	if params and ( params.listOnly or params.clientOpened ) then
 		return relayOrdersToPlayer( player, nil, listPayload )
 	end
-	return relayOrdersToPlayer( player, data, listPayload )
+	return relayOrdersToPlayer( player, data, nil )
 end
 
 function RfsHackBeacon.sv_openOrdersGui( self, params, player )
