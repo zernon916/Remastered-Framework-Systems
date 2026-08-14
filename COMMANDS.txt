@@ -1,6 +1,6 @@
 Recipe Framework Survival — Commands
 ====================================
-Author: DemonsDen126
+Author: Zernon916
 
 Host / single-player. Dev cheats default ON via rfs_settings.json
 ("cheats": true). Set "cheats": false for public Workshop builds.

@@ -1,6 +1,6 @@
 Recipe Framework Survival — Modder API
 ======================================
-Author: DemonsDen126
+Author: Zernon916
 Custom Game localId: 29c99287-1213-48c7-9471-19a4a5c12247
 
 This file documents what RFS actually exposes. For a short author checklist and

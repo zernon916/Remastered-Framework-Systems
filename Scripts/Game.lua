@@ -539,7 +539,10 @@ function RecipeFrameworkSurvival.client_onClientDataUpdate( self, clientData, ch
 			self.cl.gotoLocations = clientData.gotoLocations
 		end
 		-- RFS binder (not SurvivalGame.bindChatCommands) - cheats without g_survivalDev.
-		self:rfs_bindCommands()
+		-- Skip if already bound; rfs_bindCommands also no-ops when cheats gate unchanged.
+		if not ( self.cl and self.cl.rfsCmdsBound ) then
+			self:rfs_bindCommands()
+		end
 	elseif channel == 2 and type( clientData ) == "table" then
 		self.cl = self.cl or {}
 		self.cl.time = clientData.time
@@ -550,7 +553,6 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	SurvivalGame.client_onUpdate( self, dt )
 	-- Fallback: if create/clientData paths skipped binding, catch it on first tick.
 	if not ( self.cl and self.cl.rfsCmdsBound ) then
-		print( "[RFS] client_onUpdate fallback - binding commands" )
 		self:rfs_bindCommands()
 	end
 	-- Character countdown hooks must run on the client (unit globals are server-only).
@@ -798,14 +800,26 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 end
 
 -- Bind one chat command with pcall so a single failure cannot abort the rest.
+-- Quiet by default: no OK spam. Reserved fails are swallowed; other fails print once.
 function RecipeFrameworkSurvival.rfs_bindOne( self, name, args, desc )
 	local ok, err = pcall( function()
 		sm.game.bindChatCommand( name, args or {}, "cl_onChatCommand", desc or "" )
 	end )
-	if ok then
-		print( "[RFS] bind " .. name .. " OK" )
-	else
-		print( "[RFS] bind " .. name .. " FAIL: " .. tostring( err ) )
+	if not ok then
+		self.cl = self.cl or {}
+		local errStr = tostring( err )
+		local reserved = string.find( string.lower( errStr ), "reserved", 1, true ) ~= nil
+		if reserved then
+			if name == "/help" then
+				self.cl.rfsHelpReserved = true
+			end
+		else
+			self.cl.rfsBindFailLogged = self.cl.rfsBindFailLogged or {}
+			if not self.cl.rfsBindFailLogged[name] then
+				self.cl.rfsBindFailLogged[name] = true
+				print( "[RFS] bind " .. name .. " FAIL: " .. errStr )
+			end
+		end
 	end
 	return ok
 end
@@ -817,14 +831,20 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self.cl = self.cl or {}
 	RfsSettings.load()
 	local cheats = RfsSettings.cheatsEnabled()
+	-- Avoid full rebind storms from clientData / features sync when nothing changed.
+	if self.cl.rfsCmdsBound and self.cl.rfsCmdsCheatsBound == cheats then
+		return
+	end
 
 	if sm.isHost then
 		self:rfs_bindOne( "/kick", { { "string", "player name", false } }, "Kick a player from server" )
 		self:rfs_bindOne( "/ban", { { "string", "player name", false } }, "Ban a player from server" )
 	end
 
-	-- Always available
-	self:rfs_bindOne( "/help", {}, "List Recipe Framework Survival commands" )
+	-- Always available (/help is often engine-reserved; skip after first reserved fail)
+	if not self.cl.rfsHelpReserved then
+		self:rfs_bindOne( "/help", {}, "List Recipe Framework Survival commands" )
+	end
 	self:rfs_bindOne( "/commands", {}, "Alias of /help" )
 	self:rfs_bindOne( "/menu", {}, "Open player menu (map + growth overlay)" )
 	self:rfs_bindOne( "/setup", {}, "Open RFS host setup GUI (host only)" )
@@ -908,6 +928,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	end
 
 	self.cl.rfsCmdsBound = true
+	self.cl.rfsCmdsCheatsBound = cheats
 	if not self.cl.rfsCmdsReadyMsg then
 		self.cl.rfsCmdsReadyMsg = true
 		pcall( function()
@@ -926,7 +947,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 				sm.gui.chatMessage( "[RFS] Enable local mod 'RFS Beacons' in the Mods list so Hack/Control/Infection show in /unlimited." )
 			end
 		end )
-		print( "[RFS] commands ready (cheats=" .. tostring( cheats ) .. ")" )
+		print( "[RFS] chat commands ready" )
 	end
 end
 
@@ -1450,8 +1471,9 @@ end
 function RecipeFrameworkSurvival.sv_rfs_listMods( self )
 	local scan = ModRecipeScan.getLast() or ModRecipeScan.run()
 	rfsMsg( self, string.format(
-		"RFS mods scanned=%d sources=%d craft=%d hide+=%d mine+=%d loot=%d",
-		scan.modsScanned or 0, #( scan.sources or {} ), scan.craftRecipeCount or 0,
+		"RFS catalog=%d loaded=%d scanned=%d sources=%d craft=%d hide+=%d mine+=%d loot=%d",
+		scan.modsCatalog or 0, scan.modsLoaded or 0, scan.modsScanned or 0,
+		#( scan.sources or {} ), scan.craftRecipeCount or 0,
 		scan.hideoutAdded or 0, scan.miningAdded or 0, scan.lootApplied or 0
 	) )
 	for _, s in ipairs( scan.sources or {} ) do
@@ -2069,6 +2091,22 @@ function RecipeFrameworkSurvival.cl_rfs_genClose( self )
 	RfsGenGui.close( self )
 end
 
+function RecipeFrameworkSurvival.cl_rfs_genTabMain( self )
+	RfsGenGui.showTab( self, "main" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_genTabFeatures( self )
+	RfsGenGui.showTab( self, "features" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_genTabStreamer( self )
+	RfsGenGui.showTab( self, "streamer" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_genTabDiscord( self )
+	RfsGenGui.showTab( self, "discord" )
+end
+
 function RecipeFrameworkSurvival.cl_rfs_genToggleCheats( self )
 	if not rfsClientIsHost() then return end
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "cheats" } )
@@ -2109,6 +2147,17 @@ function RecipeFrameworkSurvival.cl_rfs_genToggleStreamerChatRelay( self )
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "streamerChatRelay" } )
 end
 
+-- Lua cannot spawn Node/exe. Writes a request file for discord-bridge `npm run watch`.
+function RecipeFrameworkSurvival.cl_rfs_genDiscordStartBot( self )
+	if not rfsClientIsHost() then return end
+	self.network:sendToServer( "sv_rfs_discordBotRequest", { action = "start" } )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_genDiscordStopBot( self )
+	if not rfsClientIsHost() then return end
+	self.network:sendToServer( "sv_rfs_discordBotRequest", { action = "stop" } )
+end
+
 function RecipeFrameworkSurvival.cl_rfs_genReloadAllowlist( self )
 	if not rfsClientIsHost() then return end
 	self.network:sendToServer( "sv_rfs_allowlistReload" )
@@ -2121,7 +2170,7 @@ function RecipeFrameworkSurvival.cl_rfs_genCycleAllowlistUnit( self )
 	local info = self.cl.rfsAllowlistInfo
 	local names = info and info.unitNames
 	if type( names ) ~= "table" or #names == 0 then
-		sm.gui.chatMessage( "[RFS] Allowlist empty â€” edit discord-bridge/config/allowlist.json then Reload." )
+		sm.gui.chatMessage( "[RFS] Allowlist empty — edit discord-bridge/config/allowlist.json then Reload." )
 		return
 	end
 	local idx = tonumber( self.cl.rfsAllowlistCycleIdx ) or 1
@@ -2156,9 +2205,12 @@ function RecipeFrameworkSurvival.cl_rfs_featuresSync( self, data )
 	if type( data ) == "table" and type( RfsFeatures ) == "table" and RfsFeatures.applySnapshot then
 		RfsFeatures.applySnapshot( data )
 	end
-	-- Rebind chat cmds when cheats flag changes.
-	self.cl.rfsCmdsBound = false
-	self:rfs_bindCommands()
+	-- Rebind only when cheats gate changed (or not yet bound). No OK spam either way.
+	RfsSettings.load()
+	local cheats = RfsSettings.cheatsEnabled()
+	if not self.cl.rfsCmdsBound or self.cl.rfsCmdsCheatsBound ~= cheats then
+		self:rfs_bindCommands()
+	end
 	if self.cl.rfsGenGui then
 		RfsGenGui.refresh( self )
 	end
@@ -2280,11 +2332,64 @@ function RecipeFrameworkSurvival.sv_rfs_allowlistReload( self, _, player )
 	local info = rfsAllowlistInfoPayload( true )
 	local src = info.source == "builtin" and "builtin defaults" or tostring( info.path or "file" )
 	info.msg = string.format(
-		"Allowlist reloaded â€” Units: %d | Items: %d (%s)",
+		"Allowlist reloaded — Units: %d | Items: %d (%s)",
 		tonumber( info.unitCount ) or 0,
 		tonumber( info.itemCount ) or 0,
 		src
 	)
 	print( "[RFS] " .. info.msg )
 	self.network:sendToClient( player, "cl_rfs_allowlistInfo", info )
+end
+
+-- Discord bot start/stop: USER_DATA only. Bot/watcher live on GitHub (not in Steam pack).
+-- Lua cannot spawn Node — discord-bridge `npm run watch` polls these files.
+local RFS_DISCORD_BOT_REQUEST_FILES = {
+	start = "$USER_DATA/rfs_discord_bridge/start_request.json",
+	stop = "$USER_DATA/rfs_discord_bridge/stop_request.json",
+}
+
+function RecipeFrameworkSurvival.sv_rfs_discordBotRequest( self, params, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player or not rfsServerPlayerIsHost( player ) then
+		return
+	end
+	local action = params and tostring( params.action or "" ):lower() or ""
+	if action ~= "start" and action ~= "stop" then
+		return
+	end
+	local path = RFS_DISCORD_BOT_REQUEST_FILES[action]
+	local ts = 0
+	pcall( function()
+		ts = os.time and os.time() or 0
+	end )
+	local tick = 0
+	pcall( function()
+		tick = sm.game.getCurrentTick() or 0
+	end )
+	local payload = {
+		action = action,
+		ts = ts,
+		id = tostring( tick ) .. "-" .. tostring( math.random( 1000, 9999 ) ),
+		source = "gensettings",
+	}
+	local wrote = pcall( sm.json.save, payload, path )
+	local msg
+	if wrote then
+		if action == "start" then
+			msg = "Start request written — discord-bridge watcher will launch the bot if running"
+		else
+			msg = "Stop request written — discord-bridge watcher will stop the bot if running"
+		end
+		print( "[RFS] Discord bot " .. action .. " request → " .. tostring( path ) )
+	else
+		msg = "Failed to write Discord bot " .. action .. " request ($USER_DATA/rfs_discord_bridge)"
+		print( "[RFS] " .. msg )
+	end
+	self.network:sendToClient( player, "cl_rfs_discordBotRequestResult", { ok = wrote, msg = msg, action = action } )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_discordBotRequestResult( self, data )
+	if data and data.msg then
+		sm.gui.chatMessage( "[RFS] " .. tostring( data.msg ) )
+	end
 end

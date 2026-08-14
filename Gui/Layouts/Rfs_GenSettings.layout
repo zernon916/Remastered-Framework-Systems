@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MyGUI type="Layout" version="3.2.0">
-	<!-- Recipe Framework Survival /gensettings — host world feature flags. Author: DemonsDen126 -->
+	<!-- Recipe Framework Survival /gensettings — host world feature flags (tabbed). Author: DemonsDen126 -->
 	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
 		<Property key="NeedKey" value="false"/>
 		<Property key="NeedMouse" value="true"/>
@@ -21,105 +21,190 @@
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.055 0.92 0.032" name="Status">
+			<!-- Tabs (InventoryTab skins — same as /setup) -->
+			<Widget type="Button" skin="InventoryTab" position_real="0.04 0.060 0.15 0.045" name="TabMain">
+				<Property key="Caption" value="MAIN"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="InventoryTab" position_real="0.20 0.060 0.18 0.045" name="TabFeatures">
+				<Property key="Caption" value="FEATURES"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="InventoryTab" position_real="0.39 0.060 0.20 0.045" name="TabStreamer">
+				<Property key="Caption" value="STREAMERS"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="InventoryTab" position_real="0.60 0.060 0.18 0.045" name="TabDiscord">
+				<Property key="Caption" value="DISCORD"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.115 0.92 0.035" name="Status">
 				<Property key="Caption" value="Host only — world flags (sm.storage). Framework hooks always stay on."/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
-			<!-- Cheats -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.095 0.92 0.028" name="SecCheats">
-				<Property key="Caption" value="CHEATS"/>
-				<Property key="FontName" value="SM_Header"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.125 0.84 0.05" name="BtnCheats">
-				<Property key="Caption" value="Cheats: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
+			<!-- ===== MAIN TAB — cheats + modded blocks ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="MainTab">
+				<Property key="NeedMouse" value="true"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecCheats">
+					<Property key="Caption" value="CHEATS"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.08 0.88 0.08" name="BtnCheats">
+					<Property key="Caption" value="Cheats: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.20 0.96 0.05" name="SecBlocks">
+					<Property key="Caption" value="MODDED BLOCKS"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.26 0.88 0.08" name="BtnHackDevices">
+					<Property key="Caption" value="Hack devices (beacons): ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.36 0.88 0.08" name="BtnAreaLoader">
+					<Property key="Caption" value="Anchor / Area loader: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.50 0.96 0.42" name="MainFooter">
+					<Property key="Caption" value="Cheats gate fly/god/give/quest cmds. Block toggles gate gameplay only — ModRecipeScan, RfsQuest API, and store inject always run. frameworkOnly still forces cheats + quest UI off."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
 			</Widget>
 
-			<!-- Modded blocks -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.185 0.92 0.028" name="SecBlocks">
-				<Property key="Caption" value="MODDED BLOCKS"/>
-				<Property key="FontName" value="SM_Header"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.215 0.84 0.05" name="BtnHackDevices">
-				<Property key="Caption" value="Hack devices (beacons): ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.270 0.84 0.05" name="BtnAreaLoader">
-				<Property key="Caption" value="Anchor / Area loader: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
+			<!-- ===== FEATURES TAB — robots + quests ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="FeaturesTab">
+				<Property key="NeedMouse" value="true"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecFeatures">
+					<Property key="Caption" value="FEATURES"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.10 0.88 0.08" name="BtnHackableRobots">
+					<Property key="Caption" value="Hackable robots: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.20 0.88 0.08" name="BtnRfsQuests">
+					<Property key="Caption" value="RFS quests content: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.36 0.96 0.50" name="FeaturesFooter">
+					<Property key="Caption" value="Feature toggles gate gameplay only. Framework hooks (quest API, store inject, recipe scan) stay on even when content UI is OFF."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
 			</Widget>
 
-			<!-- Features -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.330 0.92 0.028" name="SecFeatures">
-				<Property key="Caption" value="FEATURES"/>
-				<Property key="FontName" value="SM_Header"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.360 0.84 0.05" name="BtnHackableRobots">
-				<Property key="Caption" value="Hackable robots: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.415 0.84 0.05" name="BtnRfsQuests">
-				<Property key="Caption" value="RFS quests content: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
+			<!-- ===== STREAMERS TAB ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="StreamerTab">
+				<Property key="NeedMouse" value="true"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecStreamer">
+					<Property key="Caption" value="STREAMER"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.08 0.88 0.075" name="BtnStreamerMode">
+					<Property key="Caption" value="Streamer mode: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.17 0.88 0.075" name="BtnStreamerCooldown">
+					<Property key="Caption" value="Vote cooldown: 10s"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.26 0.88 0.075" name="BtnStreamerAnnounce">
+					<Property key="Caption" value="Vote announce: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.36 0.96 0.05" name="TextAllowlistSummary">
+					<Property key="Caption" value="Allowlist: Units: — | Items: —"/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.42 0.43 0.07" name="BtnStreamerAllowlistReload">
+					<Property key="Caption" value="Reload allowlist"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.51 0.42 0.43 0.07" name="BtnStreamerAllowlistCycle">
+					<Property key="Caption" value="Unit: (reload)"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.54 0.96 0.40" name="StreamerFooter">
+					<Property key="Caption" value="Vote cooldown cycles 5/10/15/20/30s. Vote announce = chat feedback on apply. Edit allowlist in discord-bridge/config/allowlist.json (or USER_DATA/rfs_discord_bridge/allowlist.json); this tab only previews. Discord chat relay lives on the Discord tab."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
 			</Widget>
 
-			<!-- Streamer -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.475 0.92 0.028" name="SecStreamer">
-				<Property key="Caption" value="STREAMER"/>
-				<Property key="FontName" value="SM_Header"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.505 0.84 0.05" name="BtnStreamerMode">
-				<Property key="Caption" value="Streamer mode: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.560 0.84 0.05" name="BtnStreamerCooldown">
-				<Property key="Caption" value="Vote cooldown: 10s"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.615 0.84 0.05" name="BtnStreamerAnnounce">
-				<Property key="Caption" value="Vote announce: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.670 0.84 0.05" name="BtnStreamerChatRelay">
-				<Property key="Caption" value="Discord chat relay: OFF"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.725 0.92 0.028" name="TextAllowlistSummary">
-				<Property key="Caption" value="Allowlist: Units: — | Items: —"/>
-				<Property key="FontName" value="SM_TextLabel"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.755 0.41 0.042" name="BtnStreamerAllowlistReload">
-				<Property key="Caption" value="Reload allowlist"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.51 0.755 0.41 0.042" name="BtnStreamerAllowlistCycle">
-				<Property key="Caption" value="Unit: (reload)"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
+			<!-- ===== DISCORD TAB ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="DiscordTab">
+				<Property key="NeedMouse" value="true"/>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.805 0.92 0.16" name="Footer">
-				<Property key="Caption" value="Cheats gate fly/god/give/quest cmds. Block/feature toggles gate gameplay only — ModRecipeScan, RfsQuest API, and store inject always run. Streamer cooldown cycles 5/10/15/20/30s. Vote announce = chat feedback on apply. Chat relay reads Discord drops in-game. Edit allowlist in discord-bridge/config/allowlist.json (or USER_DATA/rfs_discord_bridge/allowlist.json override); /gensettings only previews. frameworkOnly still forces cheats + quest UI off."/>
-				<Property key="FontName" value="SM_Text"/>
-				<Property key="TextAlign" value="Left Top"/>
-				<Property key="WordWrap" value="true"/>
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecDiscord">
+					<Property key="Caption" value="DISCORD BRIDGE"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.08 0.88 0.075" name="BtnStreamerChatRelay">
+					<Property key="Caption" value="Discord chat relay: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.18 0.96 0.12" name="TextDiscordStatus">
+					<Property key="Caption" value="DROP: $USER_DATA/rfs_discord_bridge/ — bot on host PC only. Clone discord-bridge from github.com/zernon916/Recipe-Framework-Systems and run npm run watch"/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.32 0.43 0.08" name="BtnDiscordStartBot">
+					<Property key="Caption" value="Start Discord bot"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.51 0.32 0.43 0.08" name="BtnDiscordStopBot">
+					<Property key="Caption" value="Stop Discord bot"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.46 0.96 0.48" name="DiscordFooter">
+					<Property key="Caption" value="Chat relay = Discord→game (needs bot Message Content Intent). Game→Discord uses /say or /d when Streamer + relay are ON. Start/Stop write $USER_DATA/rfs_discord_bridge/*_request.json only — discord-bridge is NOT in the Steam pack; clone from GitHub and run npm run watch once at login. Framework hooks stay on."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
 			</Widget>
 		</Widget>
 	</Widget>

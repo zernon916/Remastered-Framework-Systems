@@ -34,6 +34,6 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 [*]Enable the Blocks & Parts mods you want (e.g. Intelligentia, Scrap Computers).
 [/olist]
 
-[b]Author:[/b] DemonsDen126
+[b]Author:[/b] Zernon916
 
 If you enjoy this project, please consider leaving a Thumbs Up 👍 and Favorite ⭐ on the Steam Workshop! Feedback and bug reports are always welcome in the comments.

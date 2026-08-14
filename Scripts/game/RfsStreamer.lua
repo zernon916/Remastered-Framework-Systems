@@ -14,6 +14,9 @@ local MIN_COOLDOWN_SEC = 0
 local MAX_COOLDOWN_SEC = 300
 local MIN_AMOUNT = 1
 local MAX_AMOUNT = 20
+-- Missing/unreadable bridge paths spam DirectoryManager if probed every poll; back off per path.
+local OPEN_BACKOFF_MIN = 5
+local OPEN_BACKOFF_MAX = 30
 
 -- Prefer writable USER_DATA (Workshop content is often read-only). CONTENT paths work for local C:\sm\RFS.
 local VOTE_PATHS = {
@@ -333,23 +336,93 @@ local function resolveUnitUuid( name )
 	return nil
 end
 
+local function tickPathBackoff( dt )
+	local map = RfsStreamer._pathBackoff
+	if type( map ) ~= "table" then
+		return
+	end
+	dt = tonumber( dt ) or 0
+	if dt <= 0 then
+		return
+	end
+	for path, left in pairs( map ) do
+		left = ( tonumber( left ) or 0 ) - dt
+		if left <= 0 then
+			map[path] = nil
+		else
+			map[path] = left
+		end
+	end
+end
+
+local function pathInBackoff( path )
+	local map = RfsStreamer._pathBackoff
+	return type( map ) == "table" and ( tonumber( map[path] ) or 0 ) > 0
+end
+
+-- Escalate 5 → 10 → 20 → 30s so missing vote.json is not opened every think.
+local function markPathBackoff( path )
+	if type( path ) ~= "string" or path == "" then
+		return
+	end
+	RfsStreamer._pathBackoff = RfsStreamer._pathBackoff or {}
+	RfsStreamer._pathFailCount = RfsStreamer._pathFailCount or {}
+	local n = ( RfsStreamer._pathFailCount[path] or 0 ) + 1
+	RfsStreamer._pathFailCount[path] = n
+	local sec = OPEN_BACKOFF_MIN * ( 2 ^ math.min( n - 1, 3 ) )
+	if sec > OPEN_BACKOFF_MAX then
+		sec = OPEN_BACKOFF_MAX
+	end
+	local cur = tonumber( RfsStreamer._pathBackoff[path] ) or 0
+	if sec > cur then
+		RfsStreamer._pathBackoff[path] = sec
+	end
+end
+
+local function clearPathBackoff( path )
+	if type( path ) ~= "string" or path == "" then
+		return
+	end
+	if type( RfsStreamer._pathBackoff ) == "table" then
+		RfsStreamer._pathBackoff[path] = nil
+	end
+	if type( RfsStreamer._pathFailCount ) == "table" then
+		RfsStreamer._pathFailCount[path] = nil
+	end
+end
+
 local function openVote()
 	for _, path in ipairs( VOTE_PATHS ) do
-		local okExists, exists = pcall( function()
-			if sm.json.fileExists then
-				return sm.json.fileExists( path )
-			end
-			return true
-		end )
-		if okExists and exists == false then
-			-- skip missing
+		if pathInBackoff( path ) then
+			-- Silent skip until backoff expires.
 		else
-			local ok, data = pcall( sm.json.open, path )
-			-- Accept new schema (item/createdAt/voter) and legacy (uuid/ts/quantity).
-			-- Ignore consumed markers (no action/unit/item/uuid).
-			if ok and type( data ) == "table" and data.consumed ~= true
-				and ( data.action or data.unit or data.uuid or data.item ) then
-				return data, path
+			local skipOpen = false
+			if sm.json.fileExists then
+				local okExists, exists = pcall( sm.json.fileExists, path )
+				if okExists and exists == false then
+					-- Missing: do not open (engine logs Unable to replace key).
+					markPathBackoff( path )
+					skipOpen = true
+				elseif not okExists then
+					-- fileExists path resolve failed — same as missing/unreadable.
+					markPathBackoff( path )
+					skipOpen = true
+				end
+			end
+			if not skipOpen then
+				local ok, data = pcall( sm.json.open, path )
+				if not ok then
+					-- Unreadable / missing without fileExists — back off, no print.
+					markPathBackoff( path )
+				elseif type( data ) == "table" and data.consumed ~= true
+					and ( data.action or data.unit or data.uuid or data.item ) then
+					-- Accept new schema (item/createdAt/voter) and legacy (uuid/ts/quantity).
+					clearPathBackoff( path )
+					return data, path
+				else
+					-- File readable but empty/consumed — keep polling at normal interval.
+					clearPathBackoff( path )
+				end
 			end
 		end
 	end
@@ -429,9 +502,15 @@ local function writeVoteResult( votePath, payload )
 		add( p )
 	end
 	for _, path in ipairs( candidates ) do
-		local ok = pcall( sm.json.save, payload, path )
-		if ok then
-			return path
+		if pathInBackoff( path ) then
+			-- Skip recently failed write roots.
+		else
+			local ok = pcall( sm.json.save, payload, path )
+			if ok then
+				clearPathBackoff( path )
+				return path
+			end
+			markPathBackoff( path )
 		end
 	end
 	return nil
@@ -464,9 +543,8 @@ local function emitVoteResult( votePath, data, okApply, errInfo, verb, detail )
 	local written = writeVoteResult( votePath, body )
 	if written then
 		print( "[RFS] vote_result written: " .. tostring( written ) )
-	else
-		print( "[RFS] vote_result write failed (no writable path)" )
 	end
+	-- Write failures: path backoff only — no per-tick print spam.
 end
 
 local function hostPlayer()
@@ -613,6 +691,7 @@ function RfsStreamer.sv_think( dt, game )
 
 		dt = tonumber( dt ) or 0
 		RfsStreamer._cdLeft = math.max( 0, ( RfsStreamer._cdLeft or 0 ) - dt )
+		tickPathBackoff( dt )
 
 		RfsStreamer._accum = ( RfsStreamer._accum or 0 ) + dt
 		if RfsStreamer._accum < POLL_INTERVAL then

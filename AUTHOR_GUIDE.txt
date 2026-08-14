@@ -1,6 +1,6 @@
 Recipe Framework Survival — Author Guide
 ========================================
-Custom Game author: DemonsDen126
+Custom Game author: Zernon916
 
 Full API reference (hooks, settings, quests)
 --------------------------------------------

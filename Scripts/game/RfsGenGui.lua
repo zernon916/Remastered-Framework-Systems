@@ -1,4 +1,4 @@
--- RfsGenGui.lua — /gensettings host-only world feature flags GUI
+-- RfsGenGui.lua — /gensettings host-only world feature flags GUI (tabbed)
 -- Author: DemonsDen126
 
 RfsGenGui = RfsGenGui or {}
@@ -37,6 +37,29 @@ local function allowlistSummaryText( host )
 	)
 end
 
+local function refreshStatus( gui, snap )
+	local cheats = snap.cheats == true
+	local hackDev = snap.hackDevices ~= false
+	local area = snap.areaLoader ~= false
+	local robots = snap.hackableRobots ~= false
+	local streamer = snap.streamerMode ~= false
+	local cooldown = tonumber( snap.streamerCooldownSec ) or 10
+	local announce = snap.streamerAnnounce ~= false
+	local chatRelay = snap.streamerChatRelay == true
+	local quests = snap.rfsQuests ~= false
+
+	local fw = ( type( RfsSettings ) == "table" and RfsSettings.frameworkOnly and RfsSettings.frameworkOnly() )
+	if fw then
+		gui:setText( "Status", "frameworkOnly=true — cheats + RFS quest UI forced OFF (hooks stay on)" )
+	else
+		gui:setText( "Status", string.format(
+			"World flags | cheats=%s | beacons=%s | loader=%s | robots=%s | streamer=%s/%ss | announce=%s | chat=%s | questsUI=%s",
+			onOff( cheats ), onOff( hackDev ), onOff( area ), onOff( robots ),
+			onOff( streamer ), tostring( cooldown ), onOff( announce ), onOff( chatRelay ), onOff( quests )
+		) )
+	end
+end
+
 function RfsGenGui.refresh( host )
 	local gui = host.cl and host.cl.rfsGenGui
 	if not gui then return end
@@ -64,6 +87,12 @@ function RfsGenGui.refresh( host )
 	gui:setText( "TextAllowlistSummary", allowlistSummaryText( host ) )
 	gui:setText( "BtnStreamerAllowlistReload", "Reload allowlist" )
 	gui:setText( "BtnStreamerAllowlistCycle", allowlistCycleLabel( host ) )
+	gui:setText(
+		"TextDiscordStatus",
+		"DROP: $USER_DATA/rfs_discord_bridge/ — bot on host PC only. Clone discord-bridge from github.com/zernon916/Recipe-Framework-Systems and run npm run watch"
+	)
+	gui:setText( "BtnDiscordStartBot", "Start Discord bot" )
+	gui:setText( "BtnDiscordStopBot", "Stop Discord bot" )
 
 	pcall( function()
 		gui:setButtonState( "BtnCheats", cheats )
@@ -76,23 +105,47 @@ function RfsGenGui.refresh( host )
 		gui:setButtonState( "BtnStreamerChatRelay", chatRelay )
 	end )
 
-	local fw = ( type( RfsSettings ) == "table" and RfsSettings.frameworkOnly and RfsSettings.frameworkOnly() )
-	if fw then
-		gui:setText( "Status", "frameworkOnly=true — cheats + RFS quest UI forced OFF (hooks stay on)" )
-	else
-		gui:setText( "Status", string.format(
-			"World flags | cheats=%s | beacons=%s | loader=%s | robots=%s | streamer=%s/%ss | announce=%s | chat=%s | questsUI=%s",
-			onOff( cheats ), onOff( hackDev ), onOff( area ), onOff( robots ),
-			onOff( streamer ), tostring( cooldown ), onOff( announce ), onOff( chatRelay ), onOff( quests )
-		) )
+	refreshStatus( gui, snap )
+end
+
+function RfsGenGui.showTab( host, tab )
+	local gui = host.cl and host.cl.rfsGenGui
+	if not gui then return end
+
+	host.cl.rfsGenTab = tab or "main"
+	local t = host.cl.rfsGenTab
+	local main = t == "main"
+	local features = t == "features"
+	local streamer = t == "streamer"
+	local discord = t == "discord"
+
+	gui:setVisible( "MainTab", main )
+	gui:setVisible( "FeaturesTab", features )
+	gui:setVisible( "StreamerTab", streamer )
+	gui:setVisible( "DiscordTab", discord )
+	pcall( function()
+		gui:setButtonState( "TabMain", main )
+		gui:setButtonState( "TabFeatures", features )
+		gui:setButtonState( "TabStreamer", streamer )
+		gui:setButtonState( "TabDiscord", discord )
+	end )
+
+	RfsGenGui.refresh( host )
+	if streamer then
+		host.network:sendToServer( "sv_rfs_allowlistGet" )
 	end
 end
 
 function RfsGenGui.bind( host, gui )
 	host.cl = host.cl or {}
 	host.cl.rfsGenGui = gui
+	host.cl.rfsGenTab = host.cl.rfsGenTab or "main"
 
 	gui:setButtonCallback( "CloseButton", "cl_rfs_genClose" )
+	gui:setButtonCallback( "TabMain", "cl_rfs_genTabMain" )
+	gui:setButtonCallback( "TabFeatures", "cl_rfs_genTabFeatures" )
+	gui:setButtonCallback( "TabStreamer", "cl_rfs_genTabStreamer" )
+	gui:setButtonCallback( "TabDiscord", "cl_rfs_genTabDiscord" )
 	gui:setButtonCallback( "BtnCheats", "cl_rfs_genToggleCheats" )
 	gui:setButtonCallback( "BtnHackDevices", "cl_rfs_genToggleHackDevices" )
 	gui:setButtonCallback( "BtnAreaLoader", "cl_rfs_genToggleAreaLoader" )
@@ -104,6 +157,8 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnStreamerChatRelay", "cl_rfs_genToggleStreamerChatRelay" )
 	gui:setButtonCallback( "BtnStreamerAllowlistReload", "cl_rfs_genReloadAllowlist" )
 	gui:setButtonCallback( "BtnStreamerAllowlistCycle", "cl_rfs_genCycleAllowlistUnit" )
+	gui:setButtonCallback( "BtnDiscordStartBot", "cl_rfs_genDiscordStartBot" )
+	gui:setButtonCallback( "BtnDiscordStopBot", "cl_rfs_genDiscordStopBot" )
 	gui:setOnCloseCallback( "cl_rfs_genClose" )
 end
 
@@ -127,7 +182,7 @@ function RfsGenGui.open( host )
 	end
 
 	RfsGenGui.bind( host, gui )
-	RfsGenGui.refresh( host )
+	RfsGenGui.showTab( host, host.cl.rfsGenTab or "main" )
 	gui:open()
 	host.network:sendToServer( "sv_rfs_featuresGet" )
 	host.network:sendToServer( "sv_rfs_allowlistGet" )

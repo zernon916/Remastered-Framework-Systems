@@ -28,14 +28,41 @@ Framework Lua hooks stay unchanged. This folder is only the external bridge.
 ## Quick start
 
 ```bat
-cd discord-bridge
+git clone https://github.com/zernon916/Recipe-Framework-Systems.git
+cd Recipe-Framework-Systems\discord-bridge
 copy .env.example .env
 npm install
 npm run register
+```
+
+**Option A — keep the bot running yourself:**
+
+```bat
 npm start
 ```
 
-Then in-game: host world Ã¢â€ â€™ **`/gensettings`** Ã¢â€ â€™ **Streamer ON** Ã¢â€ â€™ Discord `/vote action:spawn unit:farmbot amount:1`.
+**Option B — one-click Start from in-game `/gensettings` → Discord tab:**
+
+```bat
+npm run watch
+```
+
+Run `npm run watch` once at Windows login. Lua **cannot** launch Node; the Discord tab only writes `$USER_DATA/rfs_discord_bridge/start_request.json` / `stop_request.json`. The watcher polls that folder and runs `npm start` / stops the child.
+
+This `discord-bridge` folder is **GitHub-only** — it is **not** included in the Steam Workshop / `C:\sm\RFS` mod pack.
+
+Then in-game: host world → **`/gensettings`** → **STREAMERS** tab → Streamer ON → Discord `/vote action:spawn unit:farmbot amount:1`.
+
+---
+
+## In-game `/gensettings` tabs
+
+| Tab | Contents |
+|-----|----------|
+| **MAIN** | Cheats, hack devices (beacons), anchor / area loader |
+| **FEATURES** | Hackable robots, RFS quests content |
+| **STREAMERS** | Streamer mode, vote cooldown, vote announce, allowlist summary / reload / unit cycle |
+| **DISCORD** | Discord→game chat relay, Start/Stop bot request files, DROP path hint |
 
 ---
 
@@ -163,27 +190,29 @@ Point `DROP_PATH` at **one** file the host can read. Prefer **#1** when Workshop
 |--------|--------|
 | `npm run register` | Deploy `/ping` and `/vote` (`src/register-commands.js`) |
 | `npm start` | Run the bot; also re-registers when `CLIENT_ID` is set |
-| `npm run clean` | Delete `inbox/vote.json`, `inbox/vote_result.json`, `inbox/chat.jsonl`, and `inbox/chat_inbox.json` |
+| `npm run watch` | Poll `$USER_DATA/rfs_discord_bridge/start_request.json` / `stop_request.json` and spawn/stop the bot (for `/gensettings` Discord tab) |
+| `npm run clean` | Delete inbox runtime JSON files |
 
 ```bat
 npm run register
-npm start
+npm run watch
 ```
 
-Keep `npm start` running while you host. Startup logs the resolved drop path, cooldown, and `ALLOW_EVERYONE_VOTES`.
+Keep `npm run watch` (or `npm start`) running while you host. Startup logs the resolved drop path, cooldown, and `ALLOW_EVERYONE_VOTES`.
 
 ---
 
 ## 5. Enable Streamer in-game
 
 1. Host a **Recipe Framework Survival** world.
-2. Open **`/gensettings`** (host-only) Ã¢â€ â€™ turn **Streamer** **ON**.
-3. `RfsFeatures.streamerModeEnabled()` gates polling; off Ã¢â€ â€™ votes ignored (safe no-op).
-4. Only the **host** runs `RfsStreamer.sv_think` (~0.5s).
+2. Open **`/gensettings`** (host-only) → **STREAMERS** → turn **Streamer mode** **ON**.
+3. Optional: **DISCORD** tab → chat relay ON; **Start Discord bot** if `npm run watch` is already running.
+4. `RfsFeatures.streamerModeEnabled()` gates polling; off → votes ignored (safe no-op).
+5. Only the **host** runs `RfsStreamer.sv_think` (~0.5s).
 
 ---
 
-## 6. Test: `/vote` Ã¢â€ â€™ Farmbot
+## 6. Test: `/vote` → Farmbot
 
 Units/items must appear in `config/allowlist.json` (Lua caches after load; use `/gensettings` â†’ Reload allowlist after edits).
 
@@ -236,7 +265,7 @@ Within ~0.5s, host chat should show `[RFS] Streamer vote: spawn farmbot` and a F
 
 ### Phase C â€” preview / reload in `/gensettings`
 
-Host **`/gensettings` â†’ STREAMER** shows:
+Host **`/gensettings` → STREAMERS** shows:
 
 | Control | Behavior |
 |---------|----------|
@@ -324,7 +353,7 @@ Transient failures (no player / spawn error) leave the vote file and do **not** 
 | `CHAT_CHANNEL_ID` | Required to actually listen; if unset while enabled â†’ safe no-op. |
 | `CHAT_RELAY_PATH` | Optional absolute path (default `inbox/chat.jsonl`). Companion is sibling `chat_inbox.json`. |
 
-**In-game:** `/gensettings` â†’ **Discord chat relay: ON** (`RfsFeatures.streamerChatRelayEnabled()`, default OFF). Host-only `RfsChatRelay.sv_think` polls ~0.5s.
+**In-game:** `/gensettings` → **DISCORD** → **Discord chat relay: ON** (`RfsFeatures.streamerChatRelayEnabled()`, default OFF). Host-only `RfsChatRelay.sv_think` polls ~0.5s.
 
 ### Exact paths `RfsChatRelay.lua` tries (in order)
   RfsChatOutbox.lua
@@ -361,23 +390,26 @@ discord-bridge/
   config/
     allowlist.json      â† host-editable; safe to commit defaults
   src/
-    index.js            â† /ping + /vote + optional chat relay + vote resolve
+    index.js            ← /ping + /vote + optional chat relay + vote resolve
+    start-watcher.js    ← poll USER_DATA start/stop_request.json (GitHub-only; npm run watch)
     register-commands.js
-    permissions.js      â† VOTE_CHANNEL_ID / STREAMER_ROLE_ID / ALLOW_EVERYONE_VOTES
-    chat-relay.js       â† Discord â†’ chat.jsonl + chat_inbox.json
+    permissions.js      ← VOTE_CHANNEL_ID / STREAMER_ROLE_ID / ALLOW_EVERYONE_VOTES
+    chat-relay.js       ← Discord → chat.jsonl + chat_inbox.json
     chat-outbox.js      ← game → Discord (Phase D)
-    vote-resolve.js     â† vote_result.json â†’ Discord announce
+    vote-resolve.js     ← vote_result.json → Discord announce
   inbox/
     vote.example.json
     vote_result.example.json
     chat.example.jsonl
-    vote.json / vote_result.json / chat.jsonl / chat_inbox.json / chat_outbox.json   â† runtime only
+    vote.json / vote_result.json / chat.jsonl / chat_inbox.json / chat_outbox.json   ← runtime only
 Scripts/game/
   RfsFeatures.lua
   RfsStreamer.lua
   RfsChatRelay.lua
   RfsChatOutbox.lua
 ```
+
+**Not in Steam Workshop / `C:\sm\RFS`:** this entire `discord-bridge/` folder. Clone from GitHub for the bot + watcher.
 
 Also: root `COMMANDS.txt` / `MODDER_API.txt` / `PHASES.md` point here for Streamer / Discord.
 
@@ -390,7 +422,7 @@ Scrap Mechanic cannot hook freeform player chat. Use **`/say your message`** or 
 |-------|------|
 | `Scripts/game/RfsChatOutbox.lua` | Host writes `$USER_DATA/rfs_discord_bridge/chat_outbox.json` (and CONTENT fallbacks) as `{ messages:[{id,author,content,ts,source:"game",direction:"out"}] }` |
 | `src/chat-outbox.js` | Polls outbox ~1s, posts to `CHAT_CHANNEL_ID` (or `OUT_CHANNEL_ID`), tracks last `id` |
-| Gate | **Streamer ON** + **Discord chat relay ON** in `/gensettings` (`streamerChatRelay`) |
+| Gate | **Streamer ON** + **Discord chat relay ON** in `/gensettings` **DISCORD** tab (`streamerChatRelay`) |
 
 **Bot env:** `CHAT_OUTBOX_ENABLED` defaults to follow `CHAT_RELAY_ENABLED` when unset. Set `CHAT_OUTBOX_PATH` if the outbox is under USER_DATA (same folder as `vote.json`).
 

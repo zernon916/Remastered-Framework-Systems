@@ -1,6 +1,6 @@
 Recipe Framework Survival — Robot hijack roadmap
 ================================================
-Author: DemonsDen126
+Author: Zernon916
 Home: RFS Custom Game (wraps Survival RobotSelectTarget).
 Intelligentia is optional (turret skip + later craftable tiers). Original RFS only.
 
