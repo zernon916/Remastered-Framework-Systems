@@ -1,0 +1,8 @@
+{
+  "id": "example-vote-id",
+  "ok": true,
+  "action": "spawn",
+  "detail": "spawned farmbot x1",
+  "error": null,
+  "ts": "2026-08-14T15:00:00Z"
+}

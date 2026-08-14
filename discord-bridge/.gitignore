@@ -19,3 +19,5 @@ npm-debug.log*
 *.cleanpreview
 .DS_Store
 Thumbs.db
+
+inbox/chat_outbox.json

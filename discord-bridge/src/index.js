@@ -1,11 +1,11 @@
-/**
- * RFS Discord Bridge — Streamer mode vote dropper
+﻿/**
+ * RFS Discord Bridge â€” Streamer mode vote dropper
  *
  * Runs on the same PC as the Scrap Mechanic host. Lua cannot HTTP, so this
  * process writes vote.json into a path RfsStreamer.lua polls.
  *
  * Usage:
- *   copy .env.example → .env, set DISCORD_TOKEN + CLIENT_ID (+ GUILD_ID)
+ *   copy .env.example â†’ .env, set DISCORD_TOKEN + CLIENT_ID (+ GUILD_ID)
  *   npm install && npm run register && npm start
  */
 
@@ -20,6 +20,8 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const { registerCommands } = require('./register-commands');
 const { checkVotePermission, describeLocks } = require('./permissions');
 const chatRelay = require('./chat-relay');
+const voteResolve = require('./vote-resolve');
+const chatOutbox = require('./chat-outbox');
 
 const TOKEN = process.env.DISCORD_TOKEN || '';
 const CLIENT_ID = process.env.CLIENT_ID || process.env.DISCORD_CLIENT_ID || '';
@@ -189,7 +191,7 @@ async function handleVote(interaction) {
       const sample = [...allowlist.units].slice(0, 8).join(', ');
       await interaction.reply({
         content: `Unknown unit \`${key}\`. Allowed: ${sample}${
-          allowlist.units.size > 8 ? ', …' : ''
+          allowlist.units.size > 8 ? ', â€¦' : ''
         } (edit config/allowlist.json).`,
         ephemeral: true,
       });
@@ -233,7 +235,7 @@ async function handleVote(interaction) {
         `Vote written.\n` +
         `\`\`\`json\n${JSON.stringify(written, null, 2)}\n\`\`\`\n` +
         `File: \`${DROP_PATH}\`\n` +
-        `In-game: Streamer ON + host world → RfsStreamer applies on next poll.`,
+        `In-game: Streamer ON + host world â†’ RfsStreamer applies on next poll.`,
       ephemeral: true,
     });
   } catch (err) {
@@ -293,7 +295,7 @@ async function main() {
     try {
       if (interaction.commandName === 'ping') {
         await interaction.reply({
-          content: 'Pong — RFS Discord bridge is online.',
+          content: 'Pong â€” RFS Discord bridge is online.',
           ephemeral: true,
         });
         return;
@@ -318,6 +320,10 @@ async function main() {
   });
 
   chatRelay.attachChatRelay(client);
+  voteResolve.attachVoteResolve(client, { voteDropPath: DROP_PATH });
+  chatOutbox.attachChatOutbox(client, {
+    chatRelayPath: chatRelay.chatDropPath(),
+  });
 
   await client.login(TOKEN);
 }

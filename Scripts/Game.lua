@@ -1,4 +1,4 @@
--- Game.lua - Recipe Framework Survival Custom Game
+﻿-- Game.lua - Recipe Framework Survival Custom Game
 -- Based on Axolot Survival Custom Game template + original RFS scan/commands.
 
 dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalGame.lua" )
@@ -16,6 +16,7 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsGenGui.lua" )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsMenuGui.lua" ) end )
 dofile( "$CONTENT_DATA/Scripts/game/RfsStreamer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsChatRelay.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsChatOutbox.lua" )
 
 -- Unique class name (config.json gameScript.class). Avoids collisions with a generic "Game".
 RecipeFrameworkSurvival = class( SurvivalGame )
@@ -61,7 +62,7 @@ local function rfsOpenPlayerMenu( game )
 		RfsMenuGui.open( game )
 		return true
 	end
-	sm.gui.chatMessage( "[RFS] /menu — player menu not ready yet (RfsMenuGui)." )
+	sm.gui.chatMessage( "[RFS] /menu â€” player menu not ready yet (RfsMenuGui)." )
 	return false
 end
 
@@ -74,16 +75,16 @@ do
 		local p = tostring( path or "" )
 		local norm = p:gsub( "\\", "/" )
 		if string.find( norm, "hideout.json", 1, true ) then
-			print( "[RFS] blocked sm.json.save(" .. p .. ") — hideout merge is in-memory only" )
+			print( "[RFS] blocked sm.json.save(" .. p .. ") â€” hideout merge is in-memory only" )
 			return
 		end
 		if string.find( norm, "craftbot_other_rfs.json", 1, true ) then
-			print( "[RFS] blocked sm.json.save(" .. p .. ") — workshop craftbot stub stays []" )
+			print( "[RFS] blocked sm.json.save(" .. p .. ") â€” workshop craftbot stub stays []" )
 			return
 		end
 		if string.find( norm, "CraftingRecipes", 1, true ) then
 			if string.find( norm, "$SURVIVAL_DATA", 1, true ) or string.find( norm, "/Survival/CraftingRecipes", 1, true ) then
-				print( "[RFS] blocked sm.json.save(" .. p .. ") — Survival craftbot JSON is read-only" )
+				print( "[RFS] blocked sm.json.save(" .. p .. ") â€” Survival craftbot JSON is read-only" )
 				return
 			end
 		end
@@ -139,7 +140,7 @@ local function rfsSaveCraftbotLocal( mergedSafe )
 			end
 		end
 	end
-	print( "[RFS] craftbot_other GUI file save failed — relying on sm.json.open hook" )
+	print( "[RFS] craftbot_other GUI file save failed â€” relying on sm.json.open hook" )
 	return nil
 end
 
@@ -197,7 +198,7 @@ local function rfsClientOpenTraderShop( registryKey, shapeUuid, label )
 		end )
 		return ok
 	end
-	sm.gui.chatMessage( "[RFS] " .. label .. " not loaded — visit once (or fly closer) so the cell loads, then retry" )
+	sm.gui.chatMessage( "[RFS] " .. label .. " not loaded â€” visit once (or fly closer) so the cell loads, then retry" )
 	return false
 end
 
@@ -252,7 +253,7 @@ local function rfsScheduleForceTrack( self, questName, tickDelay )
 end
 
 -- Vanilla handoff: spawn DelayedScriptableActivation so TryActivateQuest runs after
--- prior quest client teardown (tracker slot free â†’ markers / HUD appear).
+-- prior quest client teardown (tracker slot free Ã¢â€ â€™ markers / HUD appear).
 local function rfsQueueNextQuestActivation( self, completedName, nextName )
 	local delaySec = 1
 	pcall( function()
@@ -676,7 +677,7 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 		end
 	end
 
-	-- RFS own recipes (Hack Beacon, etc.) — always-available, not schematic-locked.
+	-- RFS own recipes (Hack Beacon, etc.) â€” always-available, not schematic-locked.
 	do
 		local okRfs, rfsCraft = pcall( sm.json.open, "$CONTENT_DATA/CraftingRecipes/craftbot_rfs.json" )
 		if okRfs and type( rfsCraft ) == "table" then
@@ -702,7 +703,7 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 	_G.g_rfsCraftbotMergedSafe = mergedSafe
 	_G.g_rfsCraftbotMerged = true
 
-	-- Serve merged craftbot recipes in-memory. Never sm.json.save into $CONTENT_DATA —
+	-- Serve merged craftbot recipes in-memory. Never sm.json.save into $CONTENT_DATA â€”
 	-- that rewrites Workshop files on the host and breaks multiplayer checksums.
 	local mergedPath = "$CONTENT_DATA/CraftingRecipes/craftbot_other_rfs.json"
 	recipeSets.craftbot_other = mergedPath
@@ -717,7 +718,7 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 	print( "[RFS] craftbot_other in-memory merge modRecipes+=" .. tostring( modAdded ) .. " total=" .. tostring( #merged ) .. " host=" .. tostring( hostFlag ) )
 
 	-- Survival's LoadCraftingRecipes unconditionally sm.json.open(hideout.json).
-	-- If Survival's file is missing, return {} — do NOT write hideout.json to disk.
+	-- If Survival's file is missing, return {} â€” do NOT write hideout.json to disk.
 	-- Hook craftbot_other_rfs.json by filename suffix (engine may resolve $CONTENT_DATA).
 	local SURV_HIDEOUT = "$SURVIVAL_DATA/CraftingRecipes/hideout.json"
 	local _jsonOpen = sm.json.open
@@ -730,7 +731,7 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 			return result
 		end
 		if path == SURV_HIDEOUT then
-			print( "[RFS] Survival hideout.json missing — empty trade list (in-memory only)" )
+			print( "[RFS] Survival hideout.json missing â€” empty trade list (in-memory only)" )
 			return {}
 		end
 		error( result )
@@ -833,6 +834,14 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self:rfs_bindOne( "/rfsmap", {}, "Alias of /map" )
 	self:rfs_bindOne( "/mods", {}, "List scanned mod recipe sources" )
 
+	-- Phase D: game → Discord (requires Streamer + chat relay in /gensettings)
+	local sayArgs = {}
+	for i = 1, 24 do
+		sayArgs[i] = { "string", "w" .. tostring( i ), true }
+	end
+	self:rfs_bindOne( "/say", sayArgs, "Send chat to Discord (Streamer + chat relay)" )
+	self:rfs_bindOne( "/d", sayArgs, "Alias of /say (game → Discord)" )
+
 	if cheats then
 		-- Survival cheat set
 		self:rfs_bindOne( "/ammo", { { "int", "quantity", true } }, "Give ammo (default 100)" )
@@ -934,12 +943,12 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		local lines
 		if RfsSettings.frameworkOnly() then
 			lines = {
-				"RFS framework-only: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /help",
+				"RFS framework-only: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /help",
 				"Store scan + RfsQuest hooks stay on. Cheats/quest tooling forced off. Beacons/loader use /gensettings.",
 			}
 		elseif cheats then
 			lines = {
-				"RFS: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath /limited /unlimited",
+				"RFS: /menu /setup(host) /gensettings(host) /map /say /d /mapclose /rfsmap /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath /limited /unlimited",
 				"/timeofday /timeprogress /weather /goto /spawn /give /farmers /tshop /mshop /components /ammo",
 				"/foodplease /seedsplease /clearinv /cleanup /killall /hijack /hijacklist /givehack /noaggro /aggroall",
 				"/unlockrecipe /unlockmodded /unlockvanilla /mods",
@@ -947,7 +956,7 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 			}
 		else
 			lines = {
-				"RFS commands (cheats OFF): /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /help",
+				"RFS commands (cheats OFF): /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /help",
 				"Toggle cheats in host /gensettings (or pack rfs_settings.json) for fly/give/quests/shops.",
 			}
 		end
@@ -1000,6 +1009,27 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 
+	-- Phase D: game → Discord outbox (/say /d). Does not require cheats.
+	if cmd == "/say" or cmd == "/d" then
+		local parts = {}
+		for i = 2, #params do
+			local w = params[i]
+			if w ~= nil and tostring( w ) ~= "" then
+				parts[#parts + 1] = tostring( w )
+			end
+		end
+		local text = table.concat( parts, " " )
+		if text == "" then
+			sm.gui.chatMessage( "[RFS] Usage: /say your message here  (needs Streamer + Discord chat relay)" )
+			return
+		end
+		self.network:sendToServer( "sv_rfs_chatOutbox", {
+			text = text,
+			player = sm.localPlayer.getPlayer(),
+		} )
+		return
+	end
+
 	-- Everything below requires cheats enabled (pack and/or /gensettings)
 	if not cheats then
 		sm.gui.chatMessage( "[RFS] Cheats are OFF (pack or /gensettings)." )
@@ -1039,7 +1069,7 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 	if cmd == "/hijack" then
-		sm.gui.chatMessage( "[RFS] /hijack — looking for a hostile robot..." )
+		sm.gui.chatMessage( "[RFS] /hijack â€” looking for a hostile robot..." )
 		self.network:sendToServer( "sv_rfs_hijack", {
 			range = params[2] or 16,
 			player = sm.localPlayer.getPlayer(),
@@ -1052,7 +1082,7 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 	if cmd == "/givehack" then
-		sm.gui.chatMessage( "[RFS] /givehack — spawning beacons..." )
+		sm.gui.chatMessage( "[RFS] /givehack â€” spawning beacons..." )
 		self.network:sendToServer( "sv_rfs_givehack", { player = sm.localPlayer.getPlayer() } )
 		return
 	end
@@ -1246,7 +1276,7 @@ function RecipeFrameworkSurvival.sv_rfs_sendHijackEvent( self, event, payload )
 		rfsMsg( self, "Hijack send error: " .. tostring( err ) )
 		return false
 	end
-	rfsMsg( self, "Hijack: hideout not loaded — use /tshop once, then retry" )
+	rfsMsg( self, "Hijack: hideout not loaded â€” use /tshop once, then retry" )
 	return false
 end
 
@@ -1305,7 +1335,7 @@ function RecipeFrameworkSurvival.sv_rfs_givehack( self, params, player )
 	if given > 0 and okEnd then
 		rfsMsg( self, "Gave " .. tostring( given ) .. " beacon(s). Wire a Battery container. Optional switch." )
 	else
-		rfsMsg( self, "Givehack collected 0 — enable local Blocks & Parts mod 'RFS Beacons' in the world Mods list, then reload. failed=" .. tostring( #failed ) )
+		rfsMsg( self, "Givehack collected 0 â€” enable local Blocks & Parts mod 'RFS Beacons' in the world Mods list, then reload. failed=" .. tostring( #failed ) )
 	end
 end
 
@@ -1432,6 +1462,19 @@ function RecipeFrameworkSurvival.sv_rfs_listMods( self )
 	end
 end
 
+function RecipeFrameworkSurvival.sv_rfs_chatOutbox( self, params, player )
+	local text = ""
+	if type( params ) == "table" then
+		text = tostring( params.text or params.msg or params.message or "" )
+		if ( not player or not sm.exists( player ) ) and params.player then
+			player = params.player
+		end
+	end
+	if type( RfsChatOutbox ) == "table" and RfsChatOutbox.sv_fromPlayer then
+		RfsChatOutbox.sv_fromPlayer( self, player, text )
+	end
+end
+
 function RecipeFrameworkSurvival.sv_rfs_questList( self )
 	local active = QuestManager.Sv_GetActiveQuests and QuestManager.Sv_GetActiveQuests() or {}
 	local completed = {}
@@ -1519,7 +1562,7 @@ function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params )
 	-- Survival CompleteQuest reward path (schematics / logs / additional item popups).
 	local schematicCount, logCount, otherCount = rfsGrantQuestRewards( self, name )
 
-	-- Tutorial â†’ mechanic station: vanilla grants log mid-quest (not via quest rewards) and
+	-- Tutorial Ã¢â€ â€™ mechanic station: vanilla grants log mid-quest (not via quest rewards) and
 	-- highlights it so the logbook waypoint can be set. Cheat DONE skips those stages.
 	local logNote = ""
 	if name == "quest_tutorial" then
@@ -1531,10 +1574,10 @@ function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params )
 	local nextNote = "none"
 	if nextName then
 		if QuestManager.Sv_IsQuestComplete( nextName ) then
-			nextNote = nextName .. " (already complete — not activated)"
+			nextNote = nextName .. " (already complete â€” not activated)"
 		elseif QuestManager.Sv_IsQuestActive( nextName ) then
 			rfsForceTrackQuest( nextName )
-			nextNote = nextName .. " (already active — forced tracker/markers)"
+			nextNote = nextName .. " (already active â€” forced tracker/markers)"
 		else
 			-- Do NOT call TryActivateQuest in the same frame as CompleteQuest: client main-quest
 			-- tracker still holds the previous quest, so Cl_OnQuestCreated skips auto-track and
@@ -1542,7 +1585,7 @@ function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params )
 			local ok, result = pcall( rfsQueueNextQuestActivation, self, name, nextName )
 			if ok then
 				nextNote = string.format(
-					"%s (Survival delayed activator in %s ticks — tracker/markers follow)",
+					"%s (Survival delayed activator in %s ticks â€” tracker/markers follow)",
 					nextName,
 					tostring( result )
 				)
@@ -1568,7 +1611,7 @@ function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params )
 		logNote
 	) )
 	if name == "quest_tutorial" and nextName == "quest_mechanicstation" then
-		rfsMsg( self, "Open Logbook â†’ Mechanic Station log â†’ Set Waypoint for the compass marker (vanilla tutorial path)." )
+		rfsMsg( self, "Open Logbook Ã¢â€ â€™ Mechanic Station log Ã¢â€ â€™ Set Waypoint for the compass marker (vanilla tutorial path)." )
 	end
 end
 
@@ -1580,12 +1623,12 @@ function RecipeFrameworkSurvival.sv_rfs_startQuest( self, params )
 	end
 	name = tostring( name )
 	if QuestManager.Sv_IsQuestComplete( name ) then
-		rfsMsg( self, "Cannot start " .. name .. " — already complete" )
+		rfsMsg( self, "Cannot start " .. name .. " â€” already complete" )
 		return
 	end
 	if QuestManager.Sv_IsQuestActive( name ) then
 		rfsForceTrackQuest( name )
-		rfsMsg( self, "Already active — forced tracker: " .. name )
+		rfsMsg( self, "Already active â€” forced tracker: " .. name )
 		return
 	end
 	QuestManager.Sv_TryActivateQuest( name )
@@ -1776,7 +1819,7 @@ function RecipeFrameworkSurvival.sv_rfs_farmingInstant( self, _, player )
 	if not RfsSettings.cheatsEnabled() then
 		if player then
 			local payload = RfsFarming.snapshot()
-			payload.msg = "Cheats OFF — Instant Farm locked"
+			payload.msg = "Cheats OFF â€” Instant Farm locked"
 			self.network:sendToClient( player, "cl_rfs_farmingSync", payload )
 		end
 		return
@@ -2066,6 +2109,43 @@ function RecipeFrameworkSurvival.cl_rfs_genToggleStreamerChatRelay( self )
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "streamerChatRelay" } )
 end
 
+function RecipeFrameworkSurvival.cl_rfs_genReloadAllowlist( self )
+	if not rfsClientIsHost() then return end
+	self.network:sendToServer( "sv_rfs_allowlistReload" )
+end
+
+-- Client-only cycle of allowlisted unit names (preview; no JSON edit).
+function RecipeFrameworkSurvival.cl_rfs_genCycleAllowlistUnit( self )
+	if not rfsClientIsHost() then return end
+	self.cl = self.cl or {}
+	local info = self.cl.rfsAllowlistInfo
+	local names = info and info.unitNames
+	if type( names ) ~= "table" or #names == 0 then
+		sm.gui.chatMessage( "[RFS] Allowlist empty â€” edit discord-bridge/config/allowlist.json then Reload." )
+		return
+	end
+	local idx = tonumber( self.cl.rfsAllowlistCycleIdx ) or 1
+	idx = ( idx % #names ) + 1
+	self.cl.rfsAllowlistCycleIdx = idx
+	if self.cl.rfsGenGui then
+		RfsGenGui.refresh( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_allowlistInfo( self, info )
+	self.cl = self.cl or {}
+	if type( info ) == "table" then
+		self.cl.rfsAllowlistInfo = info
+		self.cl.rfsAllowlistCycleIdx = 1
+	end
+	if self.cl.rfsGenGui then
+		RfsGenGui.refresh( self )
+	end
+	if info and info.msg then
+		sm.gui.chatMessage( "[RFS] " .. tostring( info.msg ) )
+	end
+end
+
 function RecipeFrameworkSurvival.cl_rfs_genToggleRfsQuests( self )
 	if not rfsClientIsHost() then return end
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "rfsQuests" } )
@@ -2116,7 +2196,7 @@ function RecipeFrameworkSurvival.sv_rfs_featuresSet( self, params, player )
 
 	if toggle == "cheats" then
 		if RfsSettings.frameworkOnly() then
-			msg = "frameworkOnly=true — cheats stay OFF"
+			msg = "frameworkOnly=true â€” cheats stay OFF"
 		else
 			local on = not RfsFeatures.cheatsEnabled()
 			RfsFeatures.setCheats( on )
@@ -2156,7 +2236,7 @@ function RecipeFrameworkSurvival.sv_rfs_featuresSet( self, params, player )
 		msg = "Discord chat relay: " .. ( on and "ON" or "OFF" )
 	elseif toggle == "rfsQuests" then
 		if RfsSettings.frameworkOnly() then
-			msg = "frameworkOnly=true — RFS quest UI stays OFF"
+			msg = "frameworkOnly=true â€” RFS quest UI stays OFF"
 		else
 			local on = not RfsFeatures.rfsQuestsEnabled()
 			RfsFeatures.setRfsQuestsEnabled( on )
@@ -2167,4 +2247,44 @@ function RecipeFrameworkSurvival.sv_rfs_featuresSet( self, params, player )
 	end
 
 	self:sv_rfs_featuresBroadcast( msg )
+end
+
+local function rfsAllowlistInfoPayload( reload )
+	local info = nil
+	if type( RfsStreamer ) == "table" then
+		if reload and RfsStreamer.reloadAllowlist then
+			info = RfsStreamer.reloadAllowlist()
+		elseif RfsStreamer.getAllowlistInfo then
+			info = RfsStreamer.getAllowlistInfo()
+		end
+	end
+	if type( info ) ~= "table" then
+		info = { unitCount = 0, itemCount = 0, unitNames = {}, source = "builtin" }
+	end
+	return info
+end
+
+function RecipeFrameworkSurvival.sv_rfs_allowlistGet( self, _, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player or not rfsServerPlayerIsHost( player ) then
+		return
+	end
+	self.network:sendToClient( player, "cl_rfs_allowlistInfo", rfsAllowlistInfoPayload( false ) )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_allowlistReload( self, _, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player or not rfsServerPlayerIsHost( player ) then
+		return
+	end
+	local info = rfsAllowlistInfoPayload( true )
+	local src = info.source == "builtin" and "builtin defaults" or tostring( info.path or "file" )
+	info.msg = string.format(
+		"Allowlist reloaded â€” Units: %d | Items: %d (%s)",
+		tonumber( info.unitCount ) or 0,
+		tonumber( info.itemCount ) or 0,
+		src
+	)
+	print( "[RFS] " .. info.msg )
+	self.network:sendToClient( player, "cl_rfs_allowlistInfo", info )
 end

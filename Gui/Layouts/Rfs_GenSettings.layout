@@ -99,9 +99,24 @@
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.725 0.92 0.028" name="TextAllowlistSummary">
+				<Property key="Caption" value="Allowlist: Units: — | Items: —"/>
+				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.755 0.41 0.042" name="BtnStreamerAllowlistReload">
+				<Property key="Caption" value="Reload allowlist"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.51 0.755 0.41 0.042" name="BtnStreamerAllowlistCycle">
+				<Property key="Caption" value="Unit: (reload)"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.735 0.92 0.22" name="Footer">
-				<Property key="Caption" value="Cheats gate fly/god/give/quest cmds. Block/feature toggles gate gameplay only — ModRecipeScan, RfsQuest API, and store inject always run. Streamer cooldown cycles 5/10/15/20/30s. Vote announce = chat feedback on apply. Chat relay reads Discord drops in-game. frameworkOnly in rfs_settings.json still forces cheats + quest UI off."/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.805 0.92 0.16" name="Footer">
+				<Property key="Caption" value="Cheats gate fly/god/give/quest cmds. Block/feature toggles gate gameplay only — ModRecipeScan, RfsQuest API, and store inject always run. Streamer cooldown cycles 5/10/15/20/30s. Vote announce = chat feedback on apply. Chat relay reads Discord drops in-game. Edit allowlist in discord-bridge/config/allowlist.json (or USER_DATA/rfs_discord_bridge/allowlist.json override); /gensettings only previews. frameworkOnly still forces cheats + quest UI off."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>

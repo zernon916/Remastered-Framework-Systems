@@ -9,6 +9,34 @@ local function onOff( v )
 	return v and "ON" or "OFF"
 end
 
+local function allowlistCycleLabel( host )
+	local info = host.cl and host.cl.rfsAllowlistInfo
+	local names = info and info.unitNames
+	if type( names ) ~= "table" or #names == 0 then
+		return "Unit: (none)"
+	end
+	local idx = tonumber( host.cl.rfsAllowlistCycleIdx ) or 1
+	if idx < 1 or idx > #names then
+		idx = 1
+		host.cl.rfsAllowlistCycleIdx = 1
+	end
+	return string.format( "Unit: %s (%d/%d)", tostring( names[idx] ), idx, #names )
+end
+
+local function allowlistSummaryText( host )
+	local info = host.cl and host.cl.rfsAllowlistInfo
+	if type( info ) ~= "table" then
+		return "Allowlist: Units: — | Items: — (loading…)"
+	end
+	local src = info.source == "builtin" and "builtin" or "file"
+	return string.format(
+		"Allowlist: Units: %d | Items: %d (%s)",
+		tonumber( info.unitCount ) or 0,
+		tonumber( info.itemCount ) or 0,
+		src
+	)
+end
+
 function RfsGenGui.refresh( host )
 	local gui = host.cl and host.cl.rfsGenGui
 	if not gui then return end
@@ -33,6 +61,9 @@ function RfsGenGui.refresh( host )
 	gui:setText( "BtnStreamerCooldown", "Vote cooldown: " .. tostring( cooldown ) .. "s" )
 	gui:setText( "BtnStreamerAnnounce", "Vote announce: " .. onOff( announce ) )
 	gui:setText( "BtnStreamerChatRelay", "Discord chat relay: " .. onOff( chatRelay ) )
+	gui:setText( "TextAllowlistSummary", allowlistSummaryText( host ) )
+	gui:setText( "BtnStreamerAllowlistReload", "Reload allowlist" )
+	gui:setText( "BtnStreamerAllowlistCycle", allowlistCycleLabel( host ) )
 
 	pcall( function()
 		gui:setButtonState( "BtnCheats", cheats )
@@ -71,6 +102,8 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnStreamerCooldown", "cl_rfs_genCycleStreamerCooldown" )
 	gui:setButtonCallback( "BtnStreamerAnnounce", "cl_rfs_genToggleStreamerAnnounce" )
 	gui:setButtonCallback( "BtnStreamerChatRelay", "cl_rfs_genToggleStreamerChatRelay" )
+	gui:setButtonCallback( "BtnStreamerAllowlistReload", "cl_rfs_genReloadAllowlist" )
+	gui:setButtonCallback( "BtnStreamerAllowlistCycle", "cl_rfs_genCycleAllowlistUnit" )
 	gui:setOnCloseCallback( "cl_rfs_genClose" )
 end
 
@@ -97,6 +130,7 @@ function RfsGenGui.open( host )
 	RfsGenGui.refresh( host )
 	gui:open()
 	host.network:sendToServer( "sv_rfs_featuresGet" )
+	host.network:sendToServer( "sv_rfs_allowlistGet" )
 	sm.gui.chatMessage( "RFS Gen Settings opened" )
 end
 

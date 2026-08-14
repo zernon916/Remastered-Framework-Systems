@@ -1,6 +1,7 @@
 -- RfsStreamer.lua — poll Discord bridge vote inbox; spawn/give when Streamer mode is on.
 -- Lua cannot HTTP. External Node bot writes a local JSON file the host polls.
 -- Phase B: host-only, allowlist, clamp, cooldown, consume vote file, safe pcall.
+-- Phase C: after apply/permanent reject, write vote_result.json for Discord announce.
 -- Author: DemonsDen126
 
 RfsStreamer = RfsStreamer or {}
@@ -20,6 +21,14 @@ local VOTE_PATHS = {
 	"$TEMP_DATA/rfs_discord_bridge/vote.json",
 	"$CONTENT_DATA/discord-bridge/inbox/vote.json",
 	"$CONTENT_" .. RFS_LOCAL_ID .. "/discord-bridge/inbox/vote.json",
+}
+
+-- Phase C: resolve feedback for the Node bot (same bridge roots as votes).
+local RESULT_PATHS = {
+	"$USER_DATA/rfs_discord_bridge/vote_result.json",
+	"$TEMP_DATA/rfs_discord_bridge/vote_result.json",
+	"$CONTENT_DATA/discord-bridge/inbox/vote_result.json",
+	"$CONTENT_" .. RFS_LOCAL_ID .. "/discord-bridge/inbox/vote_result.json",
 }
 
 -- World override first, then pack config.
@@ -214,7 +223,28 @@ local function parseAllowlist( data )
 	return al
 end
 
-local function loadAllowlist()
+local function countKeys( t )
+	local n = 0
+	if type( t ) == "table" then
+		for _ in pairs( t ) do
+			n = n + 1
+		end
+	end
+	return n
+end
+
+local function sortedKeys( t )
+	local list = {}
+	if type( t ) == "table" then
+		for k in pairs( t ) do
+			list[#list + 1] = tostring( k )
+		end
+	end
+	table.sort( list )
+	return list
+end
+
+local function loadAllowlistRaw()
 	for _, path in ipairs( ALLOWLIST_PATHS ) do
 		local ok, data = pcall( sm.json.open, path )
 		if ok and type( data ) == "table" then
@@ -222,6 +252,37 @@ local function loadAllowlist()
 		end
 	end
 	return builtInAllowlist(), nil
+end
+
+-- Cached allowlist for votes + /gensettings preview. Cleared by reloadAllowlist().
+local function loadAllowlist()
+	if type( RfsStreamer._allowlistCache ) == "table" then
+		return RfsStreamer._allowlistCache, RfsStreamer._allowlistPath
+	end
+	local al, path = loadAllowlistRaw()
+	RfsStreamer._allowlistCache = al
+	RfsStreamer._allowlistPath = path
+	return al, path
+end
+
+-- Host GenSettings: summary + sorted unit names for cycle preview.
+function RfsStreamer.getAllowlistInfo()
+	local al, path = loadAllowlist()
+	local units = sortedKeys( al and al.units )
+	local itemCount = countKeys( al and al.itemUuids )
+	return {
+		unitCount = #units,
+		itemCount = itemCount,
+		unitNames = units,
+		path = path,
+		source = path and "file" or "builtin",
+	}
+end
+
+function RfsStreamer.reloadAllowlist()
+	RfsStreamer._allowlistCache = nil
+	RfsStreamer._allowlistPath = nil
+	return RfsStreamer.getAllowlistInfo()
 end
 
 local function unitAllowed( al, name )
@@ -322,6 +383,90 @@ local function consumeVote( path, data )
 		appliedTick = snapshot.appliedTick,
 	}
 	pcall( sm.json.save, marker, path )
+end
+
+local function resultTimestamp()
+	local ts = nil
+	pcall( function()
+		if type( os ) == "table" and type( os.date ) == "function" then
+			ts = os.date( "!%Y-%m-%dT%H:%M:%SZ" )
+		end
+	end )
+	if type( ts ) == "string" and ts ~= "" then
+		return ts
+	end
+	local tick = nil
+	pcall( function()
+		tick = sm.game.getCurrentTick()
+	end )
+	return tostring( tick or "" )
+end
+
+-- Drop vote_result.json for the Node bot (Discord announce). Prefer beside the
+-- consumed vote (same root Node DROP_PATH uses), then USER_DATA / TEMP / CONTENT.
+-- Overwrite is fine — SM has no delete API.
+local function writeVoteResult( votePath, payload )
+	if type( payload ) ~= "table" then
+		return nil
+	end
+	local candidates = {}
+	local seen = {}
+	local function add( p )
+		if type( p ) == "string" and p ~= "" and not seen[p] then
+			seen[p] = true
+			candidates[#candidates + 1] = p
+		end
+	end
+	-- Same folder as the vote the bot wrote (Node polls sibling vote_result.json).
+	if type( votePath ) == "string" and votePath ~= "" then
+		local beside = tostring( votePath ):gsub( "vote%.json$", "vote_result.json" )
+		if beside ~= votePath then
+			add( beside )
+		end
+	end
+	-- Fallback / Workshop-safe roots (USER_DATA first).
+	for _, p in ipairs( RESULT_PATHS ) do
+		add( p )
+	end
+	for _, path in ipairs( candidates ) do
+		local ok = pcall( sm.json.save, payload, path )
+		if ok then
+			return path
+		end
+	end
+	return nil
+end
+
+local function emitVoteResult( votePath, data, okApply, errInfo, verb, detail )
+	local action = string.lower( tostring( ( type( data ) == "table" and data.action ) or "spawn" ) )
+	if action ~= "spawn" and action ~= "give" then
+		action = tostring( ( type( data ) == "table" and data.action ) or action )
+	end
+	local id = ""
+	if type( data ) == "table" then
+		id = tostring( data.id or data.ts or data.createdAt or "" )
+	end
+	local detailStr = nil
+	if okApply then
+		detailStr = tostring( verb or "applied" )
+		if detail and tostring( detail ) ~= "" then
+			detailStr = detailStr .. " " .. tostring( detail )
+		end
+	end
+	local body = {
+		id = id ~= "" and id or nil,
+		ok = okApply and true or false,
+		action = action,
+		detail = detailStr,
+		error = okApply and nil or tostring( errInfo or "rejected" ),
+		ts = resultTimestamp(),
+	}
+	local written = writeVoteResult( votePath, body )
+	if written then
+		print( "[RFS] vote_result written: " .. tostring( written ) )
+	else
+		print( "[RFS] vote_result write failed (no writable path)" )
+	end
 end
 
 local function hostPlayer()
@@ -496,6 +641,7 @@ function RfsStreamer.sv_think( dt, game )
 			RfsStreamer._lastId = id
 			RfsStreamer._cdLeft = cooldownSec()
 			pcall( consumeVote, path, data )
+			pcall( emitVoteResult, path, data, true, nil, verb, detail )
 			local msg = "Streamer vote: " .. tostring( verb or "applied" ) .. " " .. tostring( detail or "" )
 			print( "[RFS] " .. msg .. " from " .. tostring( path ) )
 			chatFeedback( game, "[RFS] " .. msg )
@@ -505,6 +651,7 @@ function RfsStreamer.sv_think( dt, game )
 				or info == "unit not allowlisted" or info == "item not allowlisted" then
 				RfsStreamer._lastId = id
 				pcall( consumeVote, path, data )
+				pcall( emitVoteResult, path, data, false, info, nil, nil )
 				print( "[RFS] Streamer vote skipped: " .. tostring( info ) )
 			else
 				-- Transient (no player / spawn fail): leave file, retry after cooldown slice.
