@@ -2439,6 +2439,14 @@ function RecipeFrameworkSurvival.cl_rfs_ordersClose( self )
 	end
 end
 
+function RecipeFrameworkSurvival.cl_rfs_ordersOnClosed( self )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onClosed then
+		RfsBeaconOrdersGui.onClosed( self )
+	elseif self.cl then
+		self.cl.rfsOrdersGui = nil
+	end
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersPrev( self )
 	self.cl = self.cl or {}
 	self.cl.rfsOrdersPage = math.max( 0, ( self.cl.rfsOrdersPage or 0 ) - 1 )
@@ -2457,6 +2465,18 @@ function RecipeFrameworkSurvival.cl_rfs_ordersNext( self )
 	end
 end
 
+function RecipeFrameworkSurvival.cl_rfs_ordersMaster( self )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.setMaster then
+		RfsBeaconOrdersGui.setMaster( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersRange( self )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.toggleRange then
+		RfsBeaconOrdersGui.toggleRange( self )
+	end
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
 	if type( RfsBeaconOrdersGui ) ~= "table" or type( RfsBeaconOrdersGui.open ) ~= "function" then
 		sm.gui.chatMessage( "[RFS] Orders GUI not loaded" )
@@ -2471,9 +2491,19 @@ function RecipeFrameworkSurvival.cl_rfs_ordersList( self, data )
 	end
 end
 
+function RecipeFrameworkSurvival.cl_rfs_ordersRole( self, data )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.applyRole then
+		RfsBeaconOrdersGui.applyRole( self, data )
+	end
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersSetResult( self, data )
 	if data and data.ok == false and data.msg then
 		sm.gui.chatMessage( "[RFS] Order failed: " .. tostring( data.msg ) )
+	elseif data and data.ok and data.master then
+		sm.gui.chatMessage( "[RFS] Beacon set as Master — nearby powered devices become Slaves" )
+	elseif data and data.ok and data.clearedMaster then
+		sm.gui.chatMessage( "[RFS] Master cleared — device is Independent" )
 	end
 	if self.cl and self.cl.rfsOrdersBeaconKey then
 		self.network:sendToServer( "sv_rfs_ordersList", {
@@ -2515,16 +2545,71 @@ function RecipeFrameworkSurvival.sv_rfs_ordersList( self, params, player )
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
 		rows = RfsBotHijack.listHomeAllies( beaconKey, ownerFilter ) or {}
 	end
-	local beaconName = nil
+	local beaconName, role, masterKey = nil, "independent", nil
 	pcall( function()
 		local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[beaconKey]
 		beaconName = rec and rec.name
+		if RfsBotHijack.effectiveBeaconRole then
+			role, masterKey = RfsBotHijack.effectiveBeaconRole( beaconKey )
+		end
 	end )
 	self.network:sendToClient( player, "cl_rfs_ordersList", {
 		rows = rows,
 		beaconKey = beaconKey,
 		beaconName = beaconName,
+		role = role,
+		masterKey = masterKey,
 	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersSetMaster( self, params, player )
+	params = params or {}
+	local beaconKey = tostring( params.beaconKey or "" )
+	if beaconKey == "" or type( RfsBotHijack ) ~= "table" or not RfsBotHijack.claimMaster then
+		self.network:sendToClient( player, "cl_rfs_ordersSetResult", { ok = false, msg = "no beacon" } )
+		return
+	end
+	local ok, err = RfsBotHijack.claimMaster( beaconKey )
+	self.network:sendToClient( player, "cl_rfs_ordersSetResult", {
+		ok = ok and true or false,
+		msg = ( not ok ) and tostring( err or "claim failed" ) or nil,
+		master = ok and true or false,
+	} )
+	if ok then
+		self.network:sendToClient( player, "cl_rfs_ordersRole", {
+			beaconKey = beaconKey,
+			role = "master",
+			masterKey = nil,
+		} )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersClearMaster( self, params, player )
+	params = params or {}
+	local beaconKey = tostring( params.beaconKey or "" )
+	if beaconKey == "" or type( RfsBotHijack ) ~= "table" or not RfsBotHijack.clearMaster then
+		self.network:sendToClient( player, "cl_rfs_ordersSetResult", { ok = false, msg = "no beacon" } )
+		return
+	end
+	local ok, err = RfsBotHijack.clearMaster( beaconKey )
+	self.network:sendToClient( player, "cl_rfs_ordersSetResult", {
+		ok = ok and true or false,
+		msg = ( not ok ) and tostring( err or "clear failed" ) or nil,
+		clearedMaster = ok and true or false,
+	} )
+	if ok then
+		local role, masterKey = "independent", nil
+		pcall( function()
+			if RfsBotHijack.effectiveBeaconRole then
+				role, masterKey = RfsBotHijack.effectiveBeaconRole( beaconKey )
+			end
+		end )
+		self.network:sendToClient( player, "cl_rfs_ordersRole", {
+			beaconKey = beaconKey,
+			role = role,
+			masterKey = masterKey,
+		} )
+	end
 end
 
 function RecipeFrameworkSurvival.sv_rfs_ordersSet( self, params, player )

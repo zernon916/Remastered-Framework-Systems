@@ -375,6 +375,16 @@ local function publish( self, extra )
 			homeAllies = RfsBotHijack.homeAllyCount( self.sv.key ) or 0
 		end )
 	end
+	local role = "independent"
+	local masterKey = nil
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.effectiveBeaconRole and self.sv and self.sv.key then
+		pcall( function()
+			role, masterKey = RfsBotHijack.effectiveBeaconRole( self.sv.key )
+		end )
+	else
+		role = self.sv and self.sv.role or "independent"
+		masterKey = self.sv and self.sv.masterKey or nil
+	end
 	local data = {
 		powered = ( not disabled ) and self.sv.powered and true or false,
 		disabled = disabled,
@@ -389,6 +399,8 @@ local function publish( self, extra )
 		raid = extra and extra.raid and true or false,
 		raidRange = extra and extra.raidRange or t.range,
 		beaconKey = self.sv and self.sv.key or nil,
+		role = role,
+		masterKey = masterKey,
 	}
 	pcall( function()
 		self.network:setClientData( data )
@@ -401,8 +413,31 @@ local function publish( self, extra )
 	end )
 end
 
+local function saveBeaconRole( self )
+	if not self or not self.storage then
+		return
+	end
+	pcall( function()
+		self.storage:save( {
+			role = self.sv and self.sv.role or "independent",
+			masterKey = self.sv and self.sv.masterKey or nil,
+		} )
+	end )
+end
+
 function RfsHackBeacon.server_onCreate( self )
 	self.sv = self.sv or {}
+	local loaded = nil
+	pcall( function()
+		loaded = self.storage:load()
+	end )
+	if type( loaded ) == "table" then
+		self.sv.role = loaded.role or "independent"
+		self.sv.masterKey = loaded.masterKey
+	else
+		self.sv.role = "independent"
+		self.sv.masterKey = nil
+	end
 	self.sv.tier = tierOf( self.shape )
 	self.sv.powered = false
 	self.sv.drainAcc = 0
@@ -482,11 +517,28 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 				powered = self.sv.powered,
 				name = t.name,
 				ownerId = ownerId,
+				role = self.sv.role or "independent",
+				masterKey = self.sv.masterKey,
 				spendOne = function()
 					return spendOneBattery( self )
 				end,
 			} )
 		end )
+		-- Accept claimMaster demotes / compute Slave while a Master is in range.
+		if RfsBotHijack.applyBeaconRoleState then
+			local prevRole = self.sv.role
+			local prevMaster = self.sv.masterKey
+			local newRole, newMaster = RfsBotHijack.applyBeaconRoleState(
+				self.sv.key,
+				self.sv.role,
+				self.sv.masterKey
+			)
+			self.sv.role = newRole or "independent"
+			self.sv.masterKey = newMaster
+			if prevRole ~= self.sv.role or tostring( prevMaster or "" ) ~= tostring( newMaster or "" ) then
+				saveBeaconRole( self )
+			end
+		end
 		if world then
 			pcall( function()
 				RfsBotHijack.ensureHooks()
@@ -666,6 +718,25 @@ end
 
 local function cl_updateRangeRing( self )
 	self.cl = self.cl or {}
+	local key = nil
+	pcall( function()
+		key = self.shape and self.shape.id
+	end )
+	if key ~= nil then
+		key = tostring( key )
+	else
+		local pd0 = self.cl and self.cl.pd
+		if pd0 and pd0.beaconKey then
+			key = tostring( pd0.beaconKey )
+		end
+	end
+	-- Range ring is opt-in via Orders GUI "Show Range" toggle (per beacon key).
+	local showMap = _G.g_rfsBeaconRangeVisible
+	local show = key and type( showMap ) == "table" and showMap[tostring( key )] == true
+	if not show then
+		cl_destroyRangeRing( self )
+		return
+	end
 	local pd = self.cl.pd or {}
 	local t = tierOf( self.shape )
 	local range = tonumber( pd.range ) or t.range
@@ -1001,18 +1072,26 @@ function RfsHackBeacon.client_canInteract( self )
 	end
 	local homeN = tonumber( pd.homeAllies ) or 0
 	local useKey = sm.gui.getKeyBinding( "Use", true )
-	-- UX: when home allies exist, E opens Orders; Tinker still hijacks (see client_canTinker).
+	-- UX: powered → Orders (list + Master/Range). Tinker still hijacks.
+	-- No rename/naming menu yet (PENDING Phase 2 polish).
+	local role = tostring( pd.role or "independent" )
+	local roleTxt = ""
+	if role == "master" then
+		roleTxt = " [MASTER]"
+	elseif role == "slave" then
+		roleTxt = " [SLAVE]"
+	end
 	if homeN > 0 then
 		sm.gui.setInteractionText(
 			"",
 			useKey,
-			"Orders (" .. tostring( homeN ) .. " allies) — " .. name
+			"Orders (" .. tostring( homeN ) .. " allies)" .. roleTxt .. " — " .. name
 		)
 	else
 		sm.gui.setInteractionText(
 			"",
 			useKey,
-			verb .. " " .. rangeTxt .. " / " .. tostring( sec ) .. "s  (E skip)  " .. tostring( nBat ) .. " Battery"
+			"Orders" .. roleTxt .. " / " .. verb .. " " .. rangeTxt .. " — " .. tostring( nBat ) .. " Battery"
 		)
 	end
 	return true
@@ -1084,28 +1163,73 @@ local function cl_beaconKey( self )
 end
 
 local function cl_openOrders( self )
-	local game = _G.g_rfsGame
+	-- Open via Game client RPC so createGuiFromLayout binds callbacks to Game
+	-- (Close/Prev/Next/Master/Range). Creating the GUI from this interactable
+	-- stack made button callbacks look for methods on RfsHackBeacon — close was dead.
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
 		sm.gui.chatMessage( "[RFS] Orders: no beacon key" )
 		return
 	end
-	if type( RfsBeaconOrdersGui ) == "table" and game and RfsBeaconOrdersGui.open then
-		RfsBeaconOrdersGui.open( game, {
-			beaconKey = key,
-			beaconName = pd.name or "Hack Beacon",
-		} )
+	self.network:sendToServer( "sv_openOrdersGui", {
+		beaconKey = key,
+		beaconName = pd.name or "Hack Beacon",
+	} )
+end
+
+function RfsHackBeacon.sv_openOrdersGui( self, params, player )
+	local game = _G.g_rfsGame
+	if not game or not player then
 		return
 	end
-	if game and game.cl_rfs_ordersOpen then
-		game:cl_rfs_ordersOpen( {
-			beaconKey = key,
-			beaconName = pd.name or "Hack Beacon",
-		} )
+	local t = self.sv and self.sv.tier or tierOf( self.shape )
+	local role, masterKey = "independent", nil
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.effectiveBeaconRole and self.sv and self.sv.key then
+		pcall( function()
+			role, masterKey = RfsBotHijack.effectiveBeaconRole( self.sv.key )
+		end )
+	end
+	game.network:sendToClient( player, "cl_rfs_ordersOpen", {
+		beaconKey = self.sv and self.sv.key or ( params and params.beaconKey ),
+		beaconName = ( params and params.beaconName ) or ( t and t.name ) or "Hack Beacon",
+		role = role,
+		masterKey = masterKey,
+		range = t and t.range or 16,
+	} )
+end
+
+function RfsHackBeacon.sv_setMaster( self, params, player )
+	if not self.sv or not self.sv.key then
 		return
 	end
-	sm.gui.chatMessage( "[RFS] Orders GUI unavailable" )
+	if type( RfsBotHijack ) ~= "table" or not RfsBotHijack.claimMaster then
+		return
+	end
+	-- Ensure we are registered before claim.
+	self.sv.role = "master"
+	self.sv.masterKey = nil
+	local ok, err = RfsBotHijack.claimMaster( self.sv.key )
+	if ok then
+		self.sv.role = "master"
+		self.sv.masterKey = nil
+		saveBeaconRole( self )
+	end
+	local game = _G.g_rfsGame
+	if game and player then
+		game.network:sendToClient( player, "cl_rfs_ordersSetResult", {
+			ok = ok and true or false,
+			msg = ok and nil or tostring( err or "claim failed" ),
+			master = ok and true or false,
+		} )
+		if ok then
+			game.network:sendToClient( player, "cl_rfs_ordersRole", {
+				beaconKey = self.sv.key,
+				role = "master",
+				masterKey = nil,
+			} )
+		end
+	end
 end
 
 function RfsHackBeacon.client_onInteract( self, character, state )
@@ -1113,8 +1237,8 @@ function RfsHackBeacon.client_onInteract( self, character, state )
 		return
 	end
 	local pd = ( self.cl and self.cl.pd ) or {}
-	local homeN = tonumber( pd.homeAllies ) or 0
-	if pd.powered and homeN > 0 then
+	-- Powered → Orders (Master/Range/list). Tinker remains mass hijack.
+	if pd.powered then
 		cl_openOrders( self )
 		return
 	end
@@ -1211,6 +1335,13 @@ function RfsHackBeacon.sv_hijack( self, params, player )
 
 	local mode = t.canInfect and "infected" or "tethered"
 	local converted = 0
+	-- New allies home to the Master/Slave order domain (Master key when Slave).
+	local workKey = key
+	if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
+		pcall( function()
+			workKey = RfsBotHijack.orderDomainMasterKey( key ) or key
+		end )
+	end
 	for _, row in ipairs( hostiles ) do
 		if converted >= have then
 			break
@@ -1218,7 +1349,7 @@ function RfsHackBeacon.sv_hijack( self, params, player )
 		local ok = RfsBotHijack.convertUnit( row.unit, ownerId, {
 			mode = mode,
 			beaconKey = key,
-			workBeaconKey = key,
+			workBeaconKey = workKey,
 			hijackTicks = t.hijackTicks or 320,
 		} )
 		if ok then

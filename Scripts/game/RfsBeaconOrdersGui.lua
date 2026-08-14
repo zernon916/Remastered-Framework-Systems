@@ -180,13 +180,43 @@ function RfsBeaconOrdersGui.refresh( host )
 
 	local beaconName = host.cl.rfsOrdersBeaconName or "Beacon"
 	local key = host.cl.rfsOrdersBeaconKey or "?"
+	local role = string.lower( tostring( host.cl.rfsOrdersRole or "independent" ) )
+	local roleTxt = "Independent"
+	if role == "master" then
+		roleTxt = "Master"
+	elseif role == "slave" then
+		local mk = host.cl.rfsOrdersMasterKey
+		roleTxt = mk and ( "Slave of " .. tostring( mk ) ) or "Slave"
+	end
 	gui:setText( "Status", string.format(
-		"%s — %d home ally(ies) | key %s",
+		"%s — %d ally(ies) | %s | key %s",
 		tostring( beaconName ),
 		#rows,
+		roleTxt,
 		tostring( key )
 	) )
 	gui:setText( "PageLabel", string.format( "Page %d / %d", page + 1, maxPage + 1 ) )
+	pcall( function()
+		gui:setText( "RoleLabel", "Role: " .. roleTxt )
+	end )
+	pcall( function()
+		if role == "master" then
+			gui:setText( "BtnMaster", "CLEAR MASTER" )
+		elseif role == "slave" then
+			gui:setText( "BtnMaster", "SET MASTER" )
+		else
+			gui:setText( "BtnMaster", "SET MASTER" )
+		end
+	end )
+	local showRange = false
+	local map = _G.g_rfsBeaconRangeVisible
+	if type( map ) == "table" and key and map[tostring( key )] == true then
+		showRange = true
+	end
+	host.cl.rfsOrdersShowRange = showRange
+	pcall( function()
+		gui:setText( "BtnRange", showRange and "HIDE RANGE" or "SHOW RANGE" )
+	end )
 
 	local seeds = seedLabels()
 
@@ -242,10 +272,14 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	host.cl.rfsOrdersPage = host.cl.rfsOrdersPage or 0
 	host.cl.rfsOrdersRows = host.cl.rfsOrdersRows or {}
 
+	-- Callbacks must resolve on the Game host (GUI is opened via Game client RPC).
 	gui:setButtonCallback( "CloseButton", "cl_rfs_ordersClose" )
 	gui:setButtonCallback( "BtnPrev", "cl_rfs_ordersPrev" )
 	gui:setButtonCallback( "BtnNext", "cl_rfs_ordersNext" )
-	gui:setOnCloseCallback( "cl_rfs_ordersClose" )
+	gui:setButtonCallback( "BtnMaster", "cl_rfs_ordersMaster" )
+	gui:setButtonCallback( "BtnRange", "cl_rfs_ordersRange" )
+	-- Separate OnClose so CloseButton → close() does not re-enter close.
+	gui:setOnCloseCallback( "cl_rfs_ordersOnClosed" )
 
 	local seeds = seedLabels()
 	for i = 0, ROWS - 1 do
@@ -269,8 +303,9 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 
 	if host.cl and host.cl.rfsOrdersGui then
-		pcall( function() host.cl.rfsOrdersGui:close() end )
+		local old = host.cl.rfsOrdersGui
 		host.cl.rfsOrdersGui = nil
+		pcall( function() old:close() end )
 	end
 
 	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
@@ -283,6 +318,8 @@ function RfsBeaconOrdersGui.open( host, opts )
 	host.cl = host.cl or {}
 	host.cl.rfsOrdersBeaconKey = tostring( opts.beaconKey )
 	host.cl.rfsOrdersBeaconName = opts.beaconName or "Hack Beacon"
+	host.cl.rfsOrdersRole = opts.role or "independent"
+	host.cl.rfsOrdersMasterKey = opts.masterKey
 	host.cl.rfsOrdersPage = 0
 	host.cl.rfsOrdersRows = {}
 
@@ -297,11 +334,62 @@ end
 
 function RfsBeaconOrdersGui.close( host )
 	local gui = host.cl and host.cl.rfsOrdersGui
+	-- Nil first so OnClose callback is a no-op.
+	if host.cl then
+		host.cl.rfsOrdersGui = nil
+	end
 	if gui then
 		pcall( function() gui:close() end )
 	end
+end
+
+function RfsBeaconOrdersGui.onClosed( host )
 	if host.cl then
 		host.cl.rfsOrdersGui = nil
+	end
+end
+
+function RfsBeaconOrdersGui.applyRole( host, data )
+	host.cl = host.cl or {}
+	if data and data.beaconKey and host.cl.rfsOrdersBeaconKey
+		and tostring( data.beaconKey ) ~= tostring( host.cl.rfsOrdersBeaconKey ) then
+		return
+	end
+	if data and data.role then
+		host.cl.rfsOrdersRole = data.role
+	end
+	if data then
+		host.cl.rfsOrdersMasterKey = data.masterKey
+	end
+	RfsBeaconOrdersGui.refresh( host )
+end
+
+function RfsBeaconOrdersGui.toggleRange( host )
+	host.cl = host.cl or {}
+	local key = host.cl.rfsOrdersBeaconKey
+	if not key then
+		return
+	end
+	key = tostring( key )
+	_G.g_rfsBeaconRangeVisible = _G.g_rfsBeaconRangeVisible or {}
+	local on = not ( _G.g_rfsBeaconRangeVisible[key] == true )
+	_G.g_rfsBeaconRangeVisible[key] = on
+	host.cl.rfsOrdersShowRange = on
+	RfsBeaconOrdersGui.refresh( host )
+	sm.gui.chatMessage( on and "[RFS] Range shown" or "[RFS] Range hidden" )
+end
+
+function RfsBeaconOrdersGui.setMaster( host )
+	host.cl = host.cl or {}
+	local key = host.cl.rfsOrdersBeaconKey
+	if not key then
+		return
+	end
+	local role = string.lower( tostring( host.cl.rfsOrdersRole or "independent" ) )
+	if role == "master" then
+		host.network:sendToServer( "sv_rfs_ordersClearMaster", { beaconKey = key } )
+	else
+		host.network:sendToServer( "sv_rfs_ordersSetMaster", { beaconKey = key } )
 	end
 end
 
@@ -337,6 +425,12 @@ function RfsBeaconOrdersGui.applyList( host, data )
 	end
 	if data and data.beaconName then
 		host.cl.rfsOrdersBeaconName = data.beaconName
+	end
+	if data and data.role then
+		host.cl.rfsOrdersRole = data.role
+	end
+	if data and data.masterKey ~= nil then
+		host.cl.rfsOrdersMasterKey = data.masterKey
 	end
 	RfsBeaconOrdersGui.refresh( host )
 end

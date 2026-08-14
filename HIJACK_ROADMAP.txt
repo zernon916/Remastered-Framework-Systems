@@ -36,23 +36,36 @@ Phase 2 lite (SHIPPED — one-pass / Phase F)
 -------------------------------------------
 - Named identities after hijack (unit saved: owner, displayName, unitType, firstSeenTick)
 - Nametag / overhead via existing pushTag hooks (idle name; HACK/DROP/CHAIN take priority)
+  NOTE: numbers above bots still incomplete / missing — see Phase 2 full OPEN
 - Light chain convert: allies/infected slowly convert nearby hostiles (~15 s, 10 m)
   Respects hackableRobots + underground flag; skips new chains in raid; never undoes raid bans
 - Intelligentia ally path unchanged (_G.g_rfsIsPlayerAlly / FindAllies faction filter)
 
 Phase 2 full / still open
 -------------------------
-- Richer identity UI / rename
+OPEN BUGS / polish (also in PENDING_FIXES.md):
+- Numbers above bots still missing — nametag/number display above hijacked
+  bots is incomplete or not showing (Phase 2 lite claimed overhead via pushTag;
+  verify idle name + number actually render)
+- Bot naming — need a way to name bots (allowed: E on bot to create/set a name,
+  OR rename via hack device). Names should show above the head with the numbers
+  (extends "Richer identity UI / rename" below)
+- Richer identity UI / rename (see bot naming above)
 - Melee-on-hit chain chance flavor
 - Intelligentia official skip paste remains optional (AUTHOR_SNIPPET)
 
 Phase 3 — Orders
 ----------------
 M1 SHIPPED — Beacon Orders GUI + Rest / Defend
-  - E on powered Hack/Control/Infection beacon opens Orders when home allies exist
-  - Tinker = manual hijack (same as old E when no allies)
+  - E on powered Hack/Control/Infection beacon opens Orders (always when powered)
+  - Tinker = manual hijack (same as old E when no allies / unpowered)
   - Per-bot Rest (stand down) / Defend (combat clamped to beacon jobRadius 16/32/48)
   - Sticky workBeaconKey home
+  - Master/Slave: SET MASTER on one device; other powered hack beacons in its range
+    become Slaves and share the Master's order-domain ally pool (list + new homes).
+    One Master per linked group; CLEAR MASTER returns Independent.
+  - SHOW RANGE / HIDE RANGE toggles the ground range ring (client, per beacon)
+  - GUI opens via Game client RPC so Close/buttons bind correctly
   - Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotOrders.lua + Game RPCs
 
 M2 SHIPPED — Hay Farm
@@ -104,8 +117,13 @@ Phase 5 lite (SHIPPED — one-pass / Phase F)
 
 Phase 5 full / still open
 -------------------------
+OPEN BUGS / polish (also in PENDING_FIXES.md):
+- RAID range filter — bots that are out of range of farms must NOT be affected
+  by the RAID stuff that was added. Keep out-of-range farm bots out of RAID
+  behavior (ties to raid callouts / jam / range mul in RfsBotHijack)
 - Richer raid help / callouts
 - More polish on identity tags / release UI
+  (cross-ref Phase 2: numbers above bots + bot naming)
 
 Collaboration
 -------------

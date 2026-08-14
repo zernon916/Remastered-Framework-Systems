@@ -2,7 +2,7 @@
 
 Author: Zernon916  
 Workshop: 3782487760  
-Date: 2026-08-13  
+Date: 2026-08-14  
 SM: 1.0.5  
 
 ---
@@ -39,6 +39,24 @@ Easy to miss: scale 0.25, `maxViewDistance` 15 m. Look at ground in **orange aut
 
 ---
 
-## 3) Other parked items
+## 3) Hijack / Phase 2–5 polish — **OPEN** (doc only; not implemented yet)
 
-None.
+Logged in `HIJACK_ROADMAP.txt` under Phase 2 full / Phase 5 full. Do not treat as shipped.
+
+### 3a) Numbers above bots still missing — **OPEN** (Phase 2 identity / nametag)
+
+Nametag/number display above hijacked bots is incomplete or not showing.
+Phase 2 lite claims overhead via `pushTag` (idle name; HACK/DROP/CHAIN priority) —
+verify numbers + idle identity actually render on clients.
+
+### 3b) Bot naming — **OPEN** (Phase 2 richer identity UI / rename)
+
+Need a way to name bots:
+- Allowed: **E on bot** to create/set a name, **OR** rename via **hack device**
+- Names should show above the head **with the numbers** (same overhead as 3a)
+
+### 3c) RAID range filter — **OPEN** (Phase 5 raid callouts / raid behavior)
+
+Bots that are **out of range of farms** should **NOT** be affected by the RAID
+stuff that was added. Keep out-of-range farm bots out of RAID behavior
+(jam / range mul / raid notes in `RfsBotHijack`).

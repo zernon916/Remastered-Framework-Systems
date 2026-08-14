@@ -61,7 +61,7 @@
 				"TextContent" : "HACK 8.0",
 				"TextMaterial" : "InWorldText",
 				"FontName" : "SM_IntlText",
-				"FontSize" : 48,
+				"FontSize" : 24,
 				"lineOfSight" : false,
 				"distanceFade" : true,
 				"maxRenderDistance" : 56.0,

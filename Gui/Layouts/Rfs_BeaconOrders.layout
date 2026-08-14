@@ -21,149 +21,165 @@
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.070 0.92 0.035" name="Status">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.065 0.92 0.030" name="Status">
 				<Property key="Caption" value="Home allies — Rest / Defend / Farm (hay) / Collect (tote) / Collect Oil (water)."/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.110 0.92 0.040" name="Hint">
-				<Property key="Caption" value="E = Orders when allies home here. Tinker = Hijack. Waterbot (blue tote): Collect Oil → geysers/crudeoil → chests. Perm-infect search 1.5×."/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.095 0.92 0.035" name="Hint">
+				<Property key="Caption" value="E = Orders when powered. Tinker = Hijack. Master links nearby devices; Slaves share ally list. Waterbot: Collect Oil."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>
 			</Widget>
 
 			<!-- Row 0 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.170 0.36 0.055" name="BotName0">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.145 0.36 0.050" name="BotName0">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.170 0.22 0.055" name="ModeDrop0"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.170 0.18 0.055" name="SeedDrop0"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.170 0.30 0.055" name="Soon0">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.145 0.22 0.050" name="ModeDrop0"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.145 0.18 0.050" name="SeedDrop0"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.145 0.30 0.050" name="Soon0">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 1 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.240 0.36 0.055" name="BotName1">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.205 0.36 0.050" name="BotName1">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.240 0.22 0.055" name="ModeDrop1"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.240 0.18 0.055" name="SeedDrop1"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.240 0.30 0.055" name="Soon1">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.205 0.22 0.050" name="ModeDrop1"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.205 0.18 0.050" name="SeedDrop1"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.205 0.30 0.050" name="Soon1">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 2 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.310 0.36 0.055" name="BotName2">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.265 0.36 0.050" name="BotName2">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.310 0.22 0.055" name="ModeDrop2"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.310 0.18 0.055" name="SeedDrop2"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.310 0.30 0.055" name="Soon2">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.265 0.22 0.050" name="ModeDrop2"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.265 0.18 0.050" name="SeedDrop2"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.265 0.30 0.050" name="Soon2">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 3 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.380 0.36 0.055" name="BotName3">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.325 0.36 0.050" name="BotName3">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.380 0.22 0.055" name="ModeDrop3"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.380 0.18 0.055" name="SeedDrop3"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.380 0.30 0.055" name="Soon3">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.325 0.22 0.050" name="ModeDrop3"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.325 0.18 0.050" name="SeedDrop3"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.325 0.30 0.050" name="Soon3">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 4 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.450 0.36 0.055" name="BotName4">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.385 0.36 0.050" name="BotName4">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.450 0.22 0.055" name="ModeDrop4"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.450 0.18 0.055" name="SeedDrop4"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.450 0.30 0.055" name="Soon4">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.385 0.22 0.050" name="ModeDrop4"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.385 0.18 0.050" name="SeedDrop4"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.385 0.30 0.050" name="Soon4">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 5 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.520 0.36 0.055" name="BotName5">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.445 0.36 0.050" name="BotName5">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.520 0.22 0.055" name="ModeDrop5"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.520 0.18 0.055" name="SeedDrop5"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.520 0.30 0.055" name="Soon5">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.445 0.22 0.050" name="ModeDrop5"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.445 0.18 0.050" name="SeedDrop5"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.445 0.30 0.050" name="Soon5">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 6 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.590 0.36 0.055" name="BotName6">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.505 0.36 0.050" name="BotName6">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.590 0.22 0.055" name="ModeDrop6"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.590 0.18 0.055" name="SeedDrop6"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.590 0.30 0.055" name="Soon6">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.505 0.22 0.050" name="ModeDrop6"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.505 0.18 0.050" name="SeedDrop6"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.505 0.30 0.050" name="Soon6">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 7 -->
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.660 0.36 0.055" name="BotName7">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.565 0.36 0.050" name="BotName7">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.660 0.22 0.055" name="ModeDrop7"/>
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.660 0.18 0.055" name="SeedDrop7"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.660 0.30 0.055" name="Soon7">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.565 0.22 0.050" name="ModeDrop7"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.565 0.18 0.050" name="SeedDrop7"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.565 0.30 0.050" name="Soon7">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.750 0.20 0.055" name="BtnPrev">
+			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.630 0.18 0.050" name="BtnPrev">
 				<Property key="Caption" value="PREV"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="TextBox" skin="TextBox" position_real="0.28 0.750 0.44 0.055" name="PageLabel">
+			<Widget type="TextBox" skin="TextBox" position_real="0.24 0.630 0.28 0.050" name="PageLabel">
 				<Property key="Caption" value="Page 1"/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.76 0.750 0.20 0.055" name="BtnNext">
+			<Widget type="Button" skin="PrimaryButton" position_real="0.54 0.630 0.18 0.050" name="BtnNext">
 				<Property key="Caption" value="NEXT"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.630 0.22 0.050" name="BtnRange">
+				<Property key="Caption" value="SHOW RANGE"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.830 0.92 0.130" name="Footer">
-				<Property key="Caption" value="Hay Farm / Tote Collect / Water Collect Oil deposit into chests in beacon range. Oil search is 1.5× when permanently infected. Farm/Collect/Oil bots stand down (no combat). Big Red = Rest|Defend only."/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.695 0.44 0.050" name="BtnMaster">
+				<Property key="Caption" value="SET MASTER"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.50 0.695 0.46 0.050" name="RoleLabel">
+				<Property key="Caption" value="Role: Independent"/>
+				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.760 0.92 0.200" name="Footer">
+				<Property key="Caption" value="Master forces nearby powered hack devices into Slave — they share this Orders ally pool. Hay Farm / Tote Collect / Water Collect Oil deposit into chests in beacon range. Farm/Collect/Oil bots stand down (no combat)."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>

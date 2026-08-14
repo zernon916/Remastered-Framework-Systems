@@ -602,6 +602,40 @@ function RfsBotHijack.beaconLive( rec )
 	return beaconLive( rec )
 end
 
+-- ---------------------------------------------------------------------------
+-- Master / Slave beacon groups
+--
+-- role = independent | master | slave (per powered hack device).
+-- Player sets Master on one device (Orders GUI). That Master forces other
+-- powered hack beacons within its range into Slave mode (one Master per
+-- linked group; claiming Master demotes any other Master in range).
+--
+-- Slaves share the Master's order domain: Orders list / homeAllyCount /
+-- new workBeaconKey assignments use the Master's key (plus every slave key
+-- in the group) so allies hijacked on a nearby device still appear when
+-- opening Orders on any linked beacon. Tether/power still uses each device's
+-- own beaconKey; only the ally/order pool is aggregated.
+-- ---------------------------------------------------------------------------
+
+local function normalizeBeaconRole( role )
+	role = string.lower( tostring( role or "independent" ) )
+	if role == "master" or role == "slave" then
+		return role
+	end
+	return "independent"
+end
+
+local function beaconRecsInMasterRange( masterRec, otherRec )
+	if not masterRec or not otherRec or not masterRec.pos or not otherRec.pos then
+		return false
+	end
+	if masterRec.world and otherRec.world and masterRec.world ~= otherRec.world then
+		return false
+	end
+	local r = tonumber( masterRec.range ) or DEFAULT_RANGE
+	return ( masterRec.pos - otherRec.pos ):length2() <= ( r * r )
+end
+
 function RfsBotHijack.registerBeacon( key, rec )
 	if not key or type( rec ) ~= "table" then
 		return
@@ -617,6 +651,31 @@ function RfsBotHijack.registerBeacon( key, rec )
 	elseif prev and prev.powerHoldUntil then
 		rec.powerHoldUntil = prev.powerHoldUntil
 	end
+	-- Preserve Master/Slave fields when caller omits them for a tick.
+	if rec.role == nil and prev and prev.role ~= nil then
+		rec.role = prev.role
+	end
+	if rec.masterKey == nil and prev and prev.masterKey ~= nil then
+		rec.masterKey = prev.masterKey
+	end
+	rec.role = normalizeBeaconRole( rec.role )
+	if rec.role ~= "slave" then
+		rec.masterKey = nil
+	elseif rec.masterKey then
+		rec.masterKey = tostring( rec.masterKey )
+	end
+	-- Apply pending claimMaster / demote before publishing the live record.
+	RfsBotHijack.pendingRole = RfsBotHijack.pendingRole or {}
+	local pending = RfsBotHijack.pendingRole[key]
+	if type( pending ) == "table" then
+		rec.role = normalizeBeaconRole( pending.role )
+		rec.masterKey = pending.masterKey and tostring( pending.masterKey ) or nil
+		if rec.role ~= "slave" then
+			rec.masterKey = nil
+		end
+		rec._roleDirty = true
+		RfsBotHijack.pendingRole[key] = nil
+	end
 	RfsBotHijack.beacons[key] = rec
 end
 
@@ -624,6 +683,125 @@ function RfsBotHijack.unregisterBeacon( key )
 	if key then
 		RfsBotHijack.beacons[tostring( key )] = nil
 	end
+end
+
+-- Effective role for listing/linking (slaves are computed from live Masters in range).
+function RfsBotHijack.effectiveBeaconRole( beaconKey )
+	beaconKey = tostring( beaconKey or "" )
+	local rec = RfsBotHijack.beacons[beaconKey]
+	if not rec then
+		return "independent", nil
+	end
+	local stored = normalizeBeaconRole( rec.role )
+	if stored == "master" and beaconLive( rec ) then
+		return "master", nil
+	end
+	-- Forced slave: any live Master in range claims this device.
+	for mk, m in pairs( RfsBotHijack.beacons ) do
+		if mk ~= beaconKey and normalizeBeaconRole( m.role ) == "master" and beaconLive( m ) then
+			if beaconRecsInMasterRange( m, rec ) and beaconLive( rec ) then
+				return "slave", tostring( mk )
+			end
+		end
+	end
+	return "independent", nil
+end
+
+-- Master key for order/ally domain (self if independent or master).
+function RfsBotHijack.orderDomainMasterKey( beaconKey )
+	beaconKey = tostring( beaconKey or "" )
+	local role, masterKey = RfsBotHijack.effectiveBeaconRole( beaconKey )
+	if role == "slave" and masterKey then
+		return masterKey
+	end
+	return beaconKey
+end
+
+-- Keys whose home allies appear when opening Orders on beaconKey.
+function RfsBotHijack.orderDomainKeys( beaconKey )
+	beaconKey = tostring( beaconKey or "" )
+	local keys = {}
+	if beaconKey == "" then
+		return keys
+	end
+	local masterKey = RfsBotHijack.orderDomainMasterKey( beaconKey )
+	keys[masterKey] = true
+	keys[beaconKey] = true
+	local masterRec = RfsBotHijack.beacons[masterKey]
+	if masterRec and normalizeBeaconRole( masterRec.role ) == "master" and beaconLive( masterRec ) then
+		for k, rec in pairs( RfsBotHijack.beacons ) do
+			if k ~= masterKey and beaconLive( rec ) and beaconRecsInMasterRange( masterRec, rec ) then
+				keys[tostring( k )] = true
+			end
+		end
+	end
+	return keys
+end
+
+-- Player claims Master on beaconKey. Demotes other Masters in range to Independent
+-- (they become Slaves via effectiveBeaconRole while in range).
+function RfsBotHijack.claimMaster( beaconKey )
+	beaconKey = tostring( beaconKey or "" )
+	local rec = RfsBotHijack.beacons[beaconKey]
+	if not rec or not beaconLive( rec ) then
+		return false, "beacon gone or unpowered"
+	end
+	RfsBotHijack.pendingRole = RfsBotHijack.pendingRole or {}
+	for k, other in pairs( RfsBotHijack.beacons ) do
+		if k ~= beaconKey and normalizeBeaconRole( other.role ) == "master" then
+			if beaconRecsInMasterRange( rec, other ) or beaconRecsInMasterRange( other, rec ) then
+				other.role = "independent"
+				other.masterKey = nil
+				other._roleDirty = true
+				RfsBotHijack.pendingRole[tostring( k )] = { role = "independent" }
+			end
+		end
+	end
+	rec.role = "master"
+	rec.masterKey = nil
+	rec._roleDirty = true
+	RfsBotHijack.pendingRole[beaconKey] = { role = "master" }
+	return true, "master"
+end
+
+function RfsBotHijack.clearMaster( beaconKey )
+	beaconKey = tostring( beaconKey or "" )
+	local rec = RfsBotHijack.beacons[beaconKey]
+	if not rec then
+		return false, "beacon gone"
+	end
+	rec.role = "independent"
+	rec.masterKey = nil
+	rec._roleDirty = true
+	RfsBotHijack.pendingRole = RfsBotHijack.pendingRole or {}
+	RfsBotHijack.pendingRole[beaconKey] = { role = "independent" }
+	return true, "independent"
+end
+
+-- Sync persisted role onto the live beacon record after register (and accept demotes).
+function RfsBotHijack.applyBeaconRoleState( beaconKey, role, masterKey )
+	beaconKey = tostring( beaconKey or "" )
+	local rec = RfsBotHijack.beacons[beaconKey]
+	if not rec then
+		return role or "independent", masterKey
+	end
+	if rec._roleDirty then
+		rec._roleDirty = nil
+		return normalizeBeaconRole( rec.role ), rec.masterKey
+	end
+	role = normalizeBeaconRole( role )
+	rec.role = role
+	if role == "slave" and masterKey then
+		rec.masterKey = tostring( masterKey )
+	else
+		rec.masterKey = nil
+	end
+	-- Recompute effective slave for non-masters so storage can catch up.
+	local effRole, effMaster = RfsBotHijack.effectiveBeaconRole( beaconKey )
+	if role ~= "master" then
+		return effRole, effMaster
+	end
+	return "master", nil
 end
 
 -- fullRange=true: already-hacked bots keep the beacon's real range (no raid 50% flicker).
@@ -995,6 +1173,10 @@ function RfsBotHijack.convertUnit( unit, ownerId, opts )
 		opts.displayName = makeDisplayName( unit, opts.unitType, opts.mode or "tethered" )
 	end
 	RfsBotHijack.register( unit, ownerId, opts )
+	-- Captured raiders leave the raid list immediately (same as destroy).
+	pcall( function()
+		sm.event.sendToUnit( unit, "sv_e_rfsLeaveRaid", {} )
+	end )
 	pcall( function()
 		if type( RfsBotOrders ) == "table" and RfsBotOrders.ensureDefaultOrder then
 			RfsBotOrders.ensureDefaultOrder( unit, ownerId, opts )
@@ -1317,10 +1499,12 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 				fx:start()
 			end
 		end )
+	else
+		-- Fallback only when world text FX is unavailable (avoid double huge debug text).
+		pcall( function()
+			sm.gui.setCharacterDebugText( self.character, text )
+		end )
 	end
-	pcall( function()
-		sm.gui.setCharacterDebugText( self.character, text )
-	end )
 end
 
 function RfsBotHijack.ensureCharHooks()
@@ -1335,6 +1519,24 @@ function RfsBotHijack.ensureCharHooks()
 		end
 		function cls.cl_e_rfsTag( self, params )
 			RfsBotHijack.cl_applyCharTag( self, params )
+		end
+		function cls.sv_e_rfsUnmarkRaid( self, params )
+			pcall( function()
+				self.network:sendToClients( "cl_e_rfsUnmarkRaid", params or {} )
+			end )
+		end
+		function cls.cl_e_rfsUnmarkRaid( self, params )
+			self.cl = self.cl or {}
+			local raidKey = ( params and params.raidKey ) or self.cl.raidKey
+			if raidKey and self.character then
+				pcall( function()
+					if type( RaidManager ) == "table" and RaidManager.Cl_RemoveTrackedRaidEnemy then
+						RaidManager.Cl_RemoveTrackedRaidEnemy( raidKey, self.character )
+					end
+				end )
+			end
+			self.cl.raidKey = nil
+			self.cl.markedRaider = nil
 		end
 		if cls._rfsTagRpc then
 			return
@@ -1371,13 +1573,48 @@ function RfsBotHijack.ensureCharHooks()
 	end
 end
 
+-- Drop this unit from RaidManager as if destroyed (capture / convert / stand-down).
+-- Must run BEFORE clearing saved.raidKey — otherwise RobotOnDestroy never removes them
+-- and the raid timer keeps running with "ghost" enemies.
+function RfsBotHijack.leaveRaidList( self )
+	if not self or not self.saved then
+		return false
+	end
+	local raidKey = self.saved.raidKey
+	if not raidKey then
+		return false
+	end
+	local unit = self.unit
+	if unit and sm.exists( unit ) then
+		pcall( function()
+			if type( RaidManager ) == "table" and RaidManager.Sv_RemoveRaider then
+				RaidManager.Sv_RemoveRaider( raidKey, unit )
+			end
+		end )
+		-- Clear client raid compass / tracked enemy while the bot is still alive.
+		pcall( function()
+			local char = unit.character
+			if char and sm.exists( char ) then
+				sm.event.sendToCharacter( char, "sv_e_rfsUnmarkRaid", { raidKey = raidKey } )
+			end
+		end )
+	end
+	self.saved.raidKey = nil
+	return true
+end
+
 -- Abort raid wall-smash. Raiders keep punching creations until raider/raidPosition is cleared.
+-- Captured/hijacked bots also leave the raid list here (same as destroy).
 function RfsBotHijack.standDown( self )
 	if not self then
 		return
 	end
 	self.saved = self.saved or {}
 	local dirty = false
+	if self.saved.raidKey then
+		RfsBotHijack.leaveRaidList( self )
+		dirty = true
+	end
 	if self.saved.raider then
 		self.saved.raider = false
 		dirty = true
@@ -1388,10 +1625,6 @@ function RfsBotHijack.standDown( self )
 	end
 	if self.saved.raidCenter ~= nil then
 		self.saved.raidCenter = nil
-		dirty = true
-	end
-	if self.saved.raidKey ~= nil then
-		self.saved.raidKey = nil
 		dirty = true
 	end
 	if self.saved.destroyShapes then
@@ -1897,10 +2130,27 @@ function RfsBotHijack.homeAllyCount( beaconKey )
 		return 0
 	end
 	beaconKey = tostring( beaconKey )
+	local domain = nil
+	if RfsBotHijack.orderDomainKeys then
+		domain = RfsBotHijack.orderDomainKeys( beaconKey )
+	end
 	local n = 0
 	for _, info in pairs( RfsBotHijack.allies ) do
-		if info.controlled and RfsBotHijack.homeBeaconKey( info ) == beaconKey then
-			n = n + 1
+		if info.controlled then
+			local home = RfsBotHijack.homeBeaconKey( info )
+			local match = false
+			if domain then
+				match = home ~= nil and domain[home] == true
+				-- Fallback: tethered to a domain beacon but home key never set.
+				if not match and home == nil and info.beaconKey and domain[tostring( info.beaconKey )] then
+					match = true
+				end
+			else
+				match = home == beaconKey
+			end
+			if match then
+				n = n + 1
+			end
 		end
 	end
 	return n
@@ -1942,30 +2192,39 @@ function RfsBotHijack.unitByKey( key, world )
 end
 
 -- Rows for Beacon Orders GUI. ownerFilterId = nil means all (host).
+-- Uses Master/Slave order domain so nearby linked beacons share the ally pool.
 function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 	beaconKey = tostring( beaconKey or "" )
 	local rows = {}
 	if beaconKey == "" then
 		return rows
 	end
+	local domain = RfsBotHijack.orderDomainKeys and RfsBotHijack.orderDomainKeys( beaconKey ) or { [beaconKey] = true }
 	for key, info in pairs( RfsBotHijack.allies ) do
-		if info and info.controlled and RfsBotHijack.homeBeaconKey( info ) == beaconKey then
-			if ownerFilterId == nil or tostring( info.owner ) == tostring( ownerFilterId ) then
-				local ord = info.rfsOrder or info.order
-				local orderMode = "defend"
-				if type( ord ) == "table" and ord.mode then
-					orderMode = tostring( ord.mode )
+		if info and info.controlled then
+			local home = RfsBotHijack.homeBeaconKey( info )
+			local match = home ~= nil and domain[home] == true
+			if not match and home == nil and info.beaconKey and domain[tostring( info.beaconKey )] then
+				match = true
+			end
+			if match then
+				if ownerFilterId == nil or tostring( info.owner ) == tostring( ownerFilterId ) then
+					local ord = info.rfsOrder or info.order
+					local orderMode = "defend"
+					if type( ord ) == "table" and ord.mode then
+						orderMode = tostring( ord.mode )
+					end
+					rows[#rows + 1] = {
+						key = tostring( key ),
+						name = info.displayName or shortTypeName( info.unitType or info.type ),
+						unitType = info.unitType or info.type,
+						type = info.type,
+						mode = orderMode,
+						seedUuid = ( type( ord ) == "table" and ord.seedUuid ) or nil,
+						owner = info.owner,
+						allyMode = info.mode,
+					}
 				end
-				rows[#rows + 1] = {
-					key = tostring( key ),
-					name = info.displayName or shortTypeName( info.unitType or info.type ),
-					unitType = info.unitType or info.type,
-					type = info.type,
-					mode = orderMode,
-					seedUuid = ( type( ord ) == "table" and ord.seedUuid ) or nil,
-					owner = info.owner,
-					allyMode = info.mode,
-				}
 			end
 		end
 	end
@@ -2414,7 +2673,14 @@ function RfsBotHijack.ensureUnitHooks()
 					end
 					self.isDirty = true
 				end
+				function cls.sv_e_rfsLeaveRaid( self, params )
+					RfsBotHijack.standDown( self )
+				end
 				cls._rfsHackableRpc = true
+			elseif not cls.sv_e_rfsLeaveRaid then
+				function cls.sv_e_rfsLeaveRaid( self, params )
+					RfsBotHijack.standDown( self )
+				end
 			end
 			if not cls._rfsOrderRpc then
 				function cls.sv_e_rfsOrder( self, params )
