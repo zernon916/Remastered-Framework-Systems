@@ -596,11 +596,6 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	if self.cl and self.cl.rfsGenGui and ( sm.game.getCurrentTick() % 40 ) == 0 then
 		RfsGenGui.refresh( self )
 	end
-	-- Beacon Orders: open after interact ends (queued from RfsHackBeacon).
-	if self.cl and self.cl.rfsOrdersPendingOpen and type( RfsBeaconOrdersGui ) == "table"
-		and RfsBeaconOrdersGui.pumpPendingOpen then
-		RfsBeaconOrdersGui.pumpPendingOpen( self )
-	end
 end
 
 function RecipeFrameworkSurvival.loadCraftingRecipes( self )

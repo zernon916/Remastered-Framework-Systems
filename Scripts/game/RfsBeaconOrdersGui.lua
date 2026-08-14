@@ -479,6 +479,20 @@ local function guiIsActive( gui )
 	return active
 end
 
+local function applyRowsOrRefresh( host, opts )
+	if type( opts.rows ) == "table" then
+		RfsBeaconOrdersGui.applyList( host, {
+			rows = opts.rows,
+			beaconKey = opts.beaconKey,
+			beaconName = opts.beaconName,
+			role = opts.role,
+			masterKey = opts.masterKey,
+		} )
+	else
+		RfsBeaconOrdersGui.refresh( host )
+	end
+end
+
 function RfsBeaconOrdersGui.open( host, opts )
 	opts = opts or {}
 	if not opts.beaconKey then
@@ -487,26 +501,17 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 
 	host.cl = host.cl or {}
-	-- Clear any deferred-open queue once we actually open.
-	host.cl.rfsOrdersPendingOpen = nil
-	host.cl.rfsOrdersPendingOpenTick = nil
-
 	local key = tostring( opts.beaconKey )
 	local existing = host.cl.rfsOrdersGui
 	local sameKey = host.cl.rfsOrdersBeaconKey and tostring( host.cl.rfsOrdersBeaconKey ) == key
-	-- Deduplicate: second open (server bounce / E spam) must not destroy the live panel.
-	if existing and sameKey and guiIsActive( existing ) then
+
+	-- NEVER destroy+recreate for the same beacon. Ally-list / server bounce must
+	-- refresh in-place — recreate is what made the panel flash after 2161581.
+	if existing and sameKey then
 		applyOpenMeta( host, opts )
-		if type( opts.rows ) == "table" then
-			RfsBeaconOrdersGui.applyList( host, {
-				rows = opts.rows,
-				beaconKey = key,
-				beaconName = opts.beaconName,
-				role = opts.role,
-				masterKey = opts.masterKey,
-			} )
-		else
-			RfsBeaconOrdersGui.refresh( host )
+		applyRowsOrRefresh( host, opts )
+		if not guiIsActive( existing ) then
+			pcall( function() existing:open() end )
 		end
 		return
 	end
@@ -527,18 +532,11 @@ function RfsBeaconOrdersGui.open( host, opts )
 	applyOpenMeta( host, opts )
 	host.cl.rfsOrdersRange = tonumber( opts.range ) or host.cl.rfsOrdersRange or 16
 	host.cl.rfsOrdersPage = 0
-	-- Keep rows already pushed by a list RPC that arrived before create.
-	local keepRows = ( type( opts.rows ) ~= "table" or #opts.rows == 0 )
-		and type( host.cl.rfsOrdersRows ) == "table"
-		and #host.cl.rfsOrdersRows > 0
-		and sameKey
-	if not keepRows then
-		host.cl.rfsOrdersRows = {}
-	end
+	host.cl.rfsOrdersRows = {}
 	host.cl.rfsOrdersSelectedKey = nil
 
 	RfsBeaconOrdersGui.bind( host, gui )
-	-- Server may already include rows (beacon-built list); apply before refresh.
+	-- Beacon-built rows may arrive embedded; otherwise wait for list-only RPC.
 	if type( opts.rows ) == "table" and #opts.rows > 0 then
 		RfsBeaconOrdersGui.applyList( host, {
 			rows = opts.rows,
@@ -551,7 +549,12 @@ function RfsBeaconOrdersGui.open( host, opts )
 		RfsBeaconOrdersGui.refresh( host )
 	end
 	gui:open()
+	-- Do not request list here when rows already present — that double-push is fine
+	-- for data but open()+list must never recreate. Client open path relies on
+	-- beacon sv_openOrdersGui(clientOpened) to push the list once.
 	if type( opts.rows ) ~= "table" or #opts.rows == 0 then
+		-- Fallback-only: opened via server RPC without rows yet.
+		-- Prefer beacon list path; Game may still resolve via sv_rfs_ordersList.
 		host.network:sendToServer( "sv_rfs_ordersList", {
 			beaconKey = host.cl.rfsOrdersBeaconKey,
 		} )
@@ -565,8 +568,6 @@ function RfsBeaconOrdersGui.close( host )
 	-- Nil first so OnClose callback is a no-op.
 	if host.cl then
 		host.cl.rfsOrdersGui = nil
-		host.cl.rfsOrdersPendingOpen = nil
-		host.cl.rfsOrdersPendingOpenTick = nil
 	end
 	if gui then
 		pcall( function() gui:close() end )
@@ -577,29 +578,7 @@ function RfsBeaconOrdersGui.onClosed( host )
 	destroyHostRangeRing( host )
 	if host.cl then
 		host.cl.rfsOrdersGui = nil
-		host.cl.rfsOrdersPendingOpen = nil
-		host.cl.rfsOrdersPendingOpenTick = nil
 	end
-end
-
--- Called from Game.client_onUpdate after interact ends (same-frame open flashes shut).
-function RfsBeaconOrdersGui.pumpPendingOpen( host )
-	host.cl = host.cl or {}
-	local pending = host.cl.rfsOrdersPendingOpen
-	if not pending then
-		return
-	end
-	local due = tonumber( host.cl.rfsOrdersPendingOpenTick ) or 0
-	local tick = 0
-	pcall( function()
-		tick = sm.game.getCurrentTick() or 0
-	end )
-	if tick < due then
-		return
-	end
-	host.cl.rfsOrdersPendingOpen = nil
-	host.cl.rfsOrdersPendingOpenTick = nil
-	RfsBeaconOrdersGui.open( host, pending )
 end
 
 function RfsBeaconOrdersGui.applyRole( host, data )
