@@ -1,4 +1,4 @@
--- Game.lua - Recipe Framework Survival Custom Game
+﻿-- Game.lua - Recipe Framework Survival Custom Game
 -- Based on Axolot Survival Custom Game template + original RFS scan/commands.
 
 dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalGame.lua" )
@@ -861,6 +861,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	end
 	self:rfs_bindOne( "/say", sayArgs, "Send chat to Discord (Streamer + chat relay)" )
 	self:rfs_bindOne( "/d", sayArgs, "Alias of /say (game → Discord)" )
+	self:rfs_bindOne( "/unhijack", { { "number", "range", true } }, "Release nearest owned ally robot (host can release any)" )
 
 	if cheats then
 		-- Survival cheat set
@@ -964,20 +965,20 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		local lines
 		if RfsSettings.frameworkOnly() then
 			lines = {
-				"RFS framework-only: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /help",
+				"RFS framework-only: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
 				"Store scan + RfsQuest hooks stay on. Cheats/quest tooling forced off. Beacons/loader use /gensettings.",
 			}
 		elseif cheats then
 			lines = {
 				"RFS: /menu /setup(host) /gensettings(host) /map /say /d /mapclose /rfsmap /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath /limited /unlimited",
 				"/timeofday /timeprogress /weather /goto /spawn /give /farmers /tshop /mshop /components /ammo",
-				"/foodplease /seedsplease /clearinv /cleanup /killall /hijack /hijacklist /givehack /noaggro /aggroall",
+				"/foodplease /seedsplease /clearinv /cleanup /killall /hijack /hijacklist /givehack /unhijack /noaggro /aggroall",
 				"/unlockrecipe /unlockmodded /unlockvanilla /mods",
 				"/questlist /rfsquestlist /questinfo /completequest /startquest /resetquest /help",
 			}
 		else
 			lines = {
-				"RFS commands (cheats OFF): /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /help",
+				"RFS commands (cheats OFF): /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
 				"Toggle cheats in host /gensettings (or pack rfs_settings.json) for fly/give/quests/shops.",
 			}
 		end
@@ -1046,6 +1047,15 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		end
 		self.network:sendToServer( "sv_rfs_chatOutbox", {
 			text = text,
+			player = sm.localPlayer.getPlayer(),
+		} )
+		return
+	end
+
+	if cmd == "/unhijack" then
+		sm.gui.chatMessage( "[RFS] /unhijack — releasing nearest owned ally..." )
+		self.network:sendToServer( "sv_rfs_unhijack", {
+			range = params[2] or 16,
 			player = sm.localPlayer.getPlayer(),
 		} )
 		return
@@ -1316,6 +1326,16 @@ end
 function RecipeFrameworkSurvival.sv_rfs_hijackList( self, params, player )
 	player = player or ( params and params.player )
 	self:sv_rfs_sendHijackEvent( "sv_e_rfsHijackList", { player = player } )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_unhijack( self, params, player )
+	player = player or ( params and params.player ) or sm.player.getAllPlayers()[1]
+	local allowAny = rfsServerPlayerIsHost( player )
+	self:sv_rfs_sendHijackEvent( "sv_e_rfsUnhijack", {
+		player = player,
+		range = ( params and params.range ) or 16,
+		allowAny = allowAny,
+	} )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_givehack( self, params, player )
@@ -2127,6 +2147,11 @@ function RecipeFrameworkSurvival.cl_rfs_genToggleHackableRobots( self )
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "hackableRobots" } )
 end
 
+function RecipeFrameworkSurvival.cl_rfs_genToggleHackUnderground( self )
+	if not rfsClientIsHost() then return end
+	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "hackUndergroundBots" } )
+end
+
 function RecipeFrameworkSurvival.cl_rfs_genToggleStreamerMode( self )
 	if not rfsClientIsHost() then return end
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "streamerMode" } )
@@ -2266,6 +2291,10 @@ function RecipeFrameworkSurvival.sv_rfs_featuresSet( self, params, player )
 		local on = not RfsFeatures.hackableRobotsEnabled()
 		RfsFeatures.setHackableRobotsEnabled( on )
 		msg = "Hackable robots: " .. ( on and "ON" or "OFF" )
+	elseif toggle == "hackUndergroundBots" then
+		local on = not RfsFeatures.hackUndergroundBotsEnabled()
+		RfsFeatures.setHackUndergroundBotsEnabled( on )
+		msg = "Underground miner/cable hijack: " .. ( on and "ON" or "OFF" )
 	elseif toggle == "streamerMode" then
 		local on = not RfsFeatures.streamerModeEnabled()
 		RfsFeatures.setStreamerModeEnabled( on )

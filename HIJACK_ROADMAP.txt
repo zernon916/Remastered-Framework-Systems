@@ -8,7 +8,7 @@ Phase 1 (SHIPPED)
 -----------------
 - /hijack [range] — convert nearest hostile robot (cheat = permanent infect)
 - /hijacklist — tethered vs infected counts
-- /givehack — Hack / Control / Infection Beacons
+- /givehack — Hack / Control / Infection Beacons (needs RFS Beacons Blocks & Parts enabled)
 - Allies ignore players and attack other robots
 - Hostiles can peel onto nearby allies (defense)
 - Green ally / deeper green infected
@@ -20,25 +20,34 @@ Beacon computer (author idea — SHIPPED)
 Beacons are the computer source. Wire a Battery container (electricity).
 Optional logic switch as on/off. Unpowered or out of range → tethered bots revert.
 
-  Hack Beacon (red)       16 m  tether only
-    Craftbot: 1 Metal (placeholder). Hideout: 20 Farmers (item, not schematic).
-  Control / Infection beacons: planned later (not in shop yet).
+  Hack Beacon (red)       16 m  tether only — Hideout: 20 Farmers
+  Control Beacon          32 m  faster tether — Hideout: 50 Farmers
+  Infection Beacon        48 m  can permanently submit — Hideout: 120 Farmers
+
+All three are Hideout item trades (not schematics) when RFS Beacons B&P is enabled.
+Craftbot still has Hack Beacon (1 Metal placeholder). Control / Infection stay hideout-only.
 
 Tethered bots can hop to another powered beacon in range if theirs dies.
 Infected bots no longer need a beacon. /hijack cheat infects immediately.
 
-NOT in Phase 1: chain convert, harvest/replant/chest, factories, identities,
-per-type farm roles.
+NOT in Phase 1: harvest/replant/chest, factories, per-type farm roles.
 
-Phase 2 — Identity + chain (mid)
+Phase 2 lite (SHIPPED — one-pass / Phase F)
+-------------------------------------------
+- Named identities after hijack (unit saved: owner, displayName, unitType, firstSeenTick)
+- Nametag / overhead via existing pushTag hooks (idle name; HACK/DROP/CHAIN take priority)
+- Light chain convert: allies/infected slowly convert nearby hostiles (~15 s, 10 m)
+  Respects hackableRobots + underground flag; skips new chains in raid; never undoes raid bans
+- Intelligentia ally path unchanged (_G.g_rfsIsPlayerAlly / FindAllies faction filter)
+
+Phase 2 full / still open
+-------------------------
+- Richer identity UI / rename
+- Melee-on-hit chain chance flavor
+- Intelligentia official skip paste remains optional (AUTHOR_SNIPPET)
+
+Phase 3 — Orders (hard) — FUTURE
 --------------------------------
-- Named identities after hijack (storage: owner, name, type, first-seen tick)
-- Optional nametag overlay (same billboard idea as Growth Time)
-- Chain convert: ally bots in radius convert hostiles (slow, chance, or on melee)
-- Intelligentia official skip of g_rfsIsPlayerAlly
-
-Phase 3 — Orders (hard)
------------------------
 Vanilla tote/hay/farm do NOT plant, plow, or use chests. Crop targeting is grief.
 New job states on allies only:
   follow / stay / guard
@@ -52,20 +61,24 @@ Per-type flavor (author list):
   tapebot  — ranged sentry
   farmbot  — tank / late escort
 
-Phase 4 — Factories (late game / Wonk)
---------------------------------------
+Phase 4 — Factories (late game / Wonk) — FUTURE
+-----------------------------------------------
 - Craftable factory interactable (Intelligentia or RFS part)
 - Spend resources to sm.unit.createUnit(uuid, pos, yaw, { playerAlly=true, color=..., tetherPoint=... })
 - Capsules stay hostile (vanilla); factory is the ally spawner
 - Caps on army size
 - Optional: tapebot assembly line, haybot "barn", farmbot "garage"
 
-Phase 5 — Polish
-----------------
-- Underground bots (miner/cable) opt-in
-- Don't friendly-fire other allies
-- Raid interaction (allies help vs raiders)
-- Un-hijack / release
+Phase 5 lite (SHIPPED — one-pass / Phase F)
+-------------------------------------------
+- /unhijack [range] — host or owner voluntary release (NOT raid releaseHack ban semantics)
+- Underground miner/cable: host /gensettings flag hackUndergroundBots (default ON = current)
+- Ally friendly-fire already gated (opposingFactions damage + ally target filter) — verified OK
+
+Phase 5 full / still open
+-------------------------
+- Richer raid help / callouts
+- More polish on identity tags / release UI
 
 Collaboration
 -------------

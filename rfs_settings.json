@@ -16,7 +16,7 @@
 
 		"cheats": "Pack default for fly/god/unlimited/give/farmers/tshop/mshop/quest commands and /setup cheat buttons. Host /gensettings can override per-world. Forced false when frameworkOnly=true. Keep /setup /gensettings /menu /map /mods /help.",
 
-		"worldFlags": "Live world flags (cheats, hackDevices, areaLoader, hackableRobots, streamerMode, streamerCooldownSec, streamerAnnounce, streamerChatRelay, rfsQuests) are stored via RfsFeatures in sm.storage key {rfs,features}. Toggle with host /gensettings."
+		"worldFlags": "Live world flags (cheats, hackDevices, areaLoader, hackableRobots, hackUndergroundBots, streamerMode, streamerCooldownSec, streamerAnnounce, streamerChatRelay, rfsQuests) are stored via RfsFeatures in sm.storage key {rfs,features}. Toggle with host /gensettings. hackUndergroundBots default ON (current miner/cable hijack); set OFF to exclude them."
 
 	}
 

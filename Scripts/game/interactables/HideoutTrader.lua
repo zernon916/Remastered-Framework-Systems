@@ -1159,6 +1159,25 @@ function HideoutTrader.sv_e_rfsHijackList( self, params )
 	sm.gui.chatMessage( "[RFS] Ally robots: " .. tostring( n or 0 ) .. " (tethered " .. tostring( tethered or 0 ) .. ", infected " .. tostring( infected or 0 ) .. ")" )
 end
 
+function HideoutTrader.sv_e_rfsUnhijack( self, params )
+	params = params or {}
+	if type( RfsBotHijack ) ~= "table" then
+		sm.gui.chatMessage( "[RFS] Unhijack failed: RfsBotHijack not loaded" )
+		return
+	end
+	RfsBotHijack.ensureHooks()
+	local world = nil
+	pcall( function()
+		world = self.shape.body:getWorld()
+	end )
+	local n, info = RfsBotHijack.unhijackNearest( params.player, params.range or 16, world, params.allowAny == true )
+	if n and n > 0 then
+		sm.gui.chatMessage( "[RFS] Released " .. tostring( info ) .. " (voluntary — still hackable)" )
+	else
+		sm.gui.chatMessage( "[RFS] Unhijack failed: " .. tostring( info ) )
+	end
+end
+
 function HideoutTrader.server_onCreate( self )
 	self.sv = {}
 	_G.g_rfsHideoutTraderSv = self

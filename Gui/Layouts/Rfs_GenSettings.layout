@@ -102,14 +102,19 @@
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.20 0.88 0.08" name="BtnRfsQuests">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.20 0.88 0.08" name="BtnHackUnderground">
+					<Property key="Caption" value="Underground miner/cable: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.30 0.88 0.08" name="BtnRfsQuests">
 					<Property key="Caption" value="RFS quests content: ON"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
 
-				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.36 0.96 0.50" name="FeaturesFooter">
-					<Property key="Caption" value="Feature toggles gate gameplay only. Framework hooks (quest API, store inject, recipe scan) stay on even when content UI is OFF."/>
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.42 0.96 0.50" name="FeaturesFooter">
+					<Property key="Caption" value="Feature toggles gate gameplay only. Underground miner/cable default ON (current). Turn OFF to exclude them from hijack. Framework hooks stay on."/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>
 					<Property key="WordWrap" value="true"/>
@@ -158,7 +163,7 @@
 				</Widget>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.54 0.96 0.40" name="StreamerFooter">
-					<Property key="Caption" value="Vote cooldown cycles 5/10/15/20/30s. Vote announce = chat feedback on apply. Edit allowlist in discord-bridge/config/allowlist.json (or USER_DATA/rfs_discord_bridge/allowlist.json); this tab only previews. Discord chat relay lives on the Discord tab."/>
+					<Property key="Caption" value="Vote cooldown cycles 5/10/15/20/30s. Vote announce = chat feedback on apply. Edit allowlist in the GitHub discord-bridge clone (config/allowlist.json) or USER_DATA/rfs_discord_bridge/allowlist.json; this tab only previews. Discord chat relay lives on the Discord tab."/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>
 					<Property key="WordWrap" value="true"/>

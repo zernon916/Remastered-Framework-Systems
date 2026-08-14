@@ -50,6 +50,7 @@ local function defaultsFromPack()
 		hackDevices = true,
 		areaLoader = true,
 		hackableRobots = true,
+		hackUndergroundBots = true, -- default ON = current (miner/cable in g_robots); host may opt out
 		streamerMode = true,
 		streamerCooldownSec = DEFAULT_STREAMER_COOLDOWN_SEC,
 		streamerAnnounce = true,
@@ -74,6 +75,9 @@ local function applyLoadedTable( cfg, data )
 	end
 	if data.hackableRobots ~= nil then
 		cfg.hackableRobots = data.hackableRobots and true or false
+	end
+	if data.hackUndergroundBots ~= nil then
+		cfg.hackUndergroundBots = data.hackUndergroundBots and true or false
 	end
 	if data.streamerMode ~= nil then
 		cfg.streamerMode = data.streamerMode and true or false
@@ -116,12 +120,13 @@ function RfsFeatures.load( force )
 	RfsFeatures.state = cfg
 	publishGlobals()
 	print( string.format(
-		"[RFS] features loaded cheats=%s(override=%s) hackDevices=%s areaLoader=%s hackableRobots=%s streamer=%s cd=%ss announce=%s chatRelay=%s rfsQuests=%s",
+		"[RFS] features loaded cheats=%s(override=%s) hackDevices=%s areaLoader=%s hackableRobots=%s underground=%s streamer=%s cd=%ss announce=%s chatRelay=%s rfsQuests=%s",
 		tostring( RfsFeatures.cheatsEnabled() ),
 		tostring( cfg.cheatsOverride ),
 		tostring( cfg.hackDevices ),
 		tostring( cfg.areaLoader ),
 		tostring( cfg.hackableRobots ),
+		tostring( cfg.hackUndergroundBots ),
 		tostring( cfg.streamerMode ),
 		tostring( cfg.streamerCooldownSec ),
 		tostring( cfg.streamerAnnounce ),
@@ -137,6 +142,7 @@ function RfsFeatures.save()
 		hackDevices = cfg.hackDevices ~= false,
 		areaLoader = cfg.areaLoader ~= false,
 		hackableRobots = cfg.hackableRobots ~= false,
+		hackUndergroundBots = cfg.hackUndergroundBots ~= false,
 		streamerMode = cfg.streamerMode ~= false,
 		streamerCooldownSec = normalizeStreamerCooldownSec( cfg.streamerCooldownSec ),
 		streamerAnnounce = cfg.streamerAnnounce ~= false,
@@ -162,6 +168,7 @@ function RfsFeatures.snapshot()
 		hackDevices = RfsFeatures.hackDevicesEnabled(),
 		areaLoader = RfsFeatures.areaLoaderEnabled(),
 		hackableRobots = RfsFeatures.hackableRobotsEnabled(),
+		hackUndergroundBots = RfsFeatures.hackUndergroundBotsEnabled(),
 		streamerMode = RfsFeatures.streamerModeEnabled(),
 		streamerCooldownSec = RfsFeatures.streamerCooldownSec(),
 		streamerAnnounce = RfsFeatures.streamerAnnounceEnabled(),
@@ -192,6 +199,9 @@ function RfsFeatures.applySnapshot( data )
 	end
 	if data.hackableRobots ~= nil then
 		cfg.hackableRobots = data.hackableRobots and true or false
+	end
+	if data.hackUndergroundBots ~= nil then
+		cfg.hackUndergroundBots = data.hackUndergroundBots and true or false
 	end
 	if data.streamerMode ~= nil then
 		cfg.streamerMode = data.streamerMode and true or false
@@ -263,6 +273,18 @@ function RfsFeatures.setHackableRobotsEnabled( enabled )
 	cfg.hackableRobots = enabled and true or false
 	RfsFeatures.save()
 	return cfg.hackableRobots
+end
+
+-- Miner/cable bots. Default ON keeps current g_robots hijack behavior; host may opt out.
+function RfsFeatures.hackUndergroundBotsEnabled()
+	return RfsFeatures.get().hackUndergroundBots ~= false
+end
+
+function RfsFeatures.setHackUndergroundBotsEnabled( enabled )
+	local cfg = RfsFeatures.get()
+	cfg.hackUndergroundBots = enabled and true or false
+	RfsFeatures.save()
+	return cfg.hackUndergroundBots
 end
 
 function RfsFeatures.streamerModeEnabled()
@@ -360,6 +382,8 @@ function RfsFeatures.set( key, value )
 		return RfsFeatures.setAreaLoaderEnabled( value )
 	elseif key == "hackableRobots" then
 		return RfsFeatures.setHackableRobotsEnabled( value )
+	elseif key == "hackUndergroundBots" then
+		return RfsFeatures.setHackUndergroundBotsEnabled( value )
 	elseif key == "streamerMode" then
 		return RfsFeatures.setStreamerModeEnabled( value )
 	elseif key == "streamerCooldownSec" then
@@ -384,6 +408,8 @@ function RfsFeatures.toggle( key )
 		cur = RfsFeatures.areaLoaderEnabled()
 	elseif key == "hackableRobots" then
 		cur = RfsFeatures.hackableRobotsEnabled()
+	elseif key == "hackUndergroundBots" then
+		cur = RfsFeatures.hackUndergroundBotsEnabled()
 	elseif key == "streamerMode" then
 		cur = RfsFeatures.streamerModeEnabled()
 	elseif key == "streamerCooldownSec" then

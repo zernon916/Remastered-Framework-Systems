@@ -42,6 +42,7 @@ local function refreshStatus( gui, snap )
 	local hackDev = snap.hackDevices ~= false
 	local area = snap.areaLoader ~= false
 	local robots = snap.hackableRobots ~= false
+	local underground = snap.hackUndergroundBots ~= false
 	local streamer = snap.streamerMode ~= false
 	local cooldown = tonumber( snap.streamerCooldownSec ) or 10
 	local announce = snap.streamerAnnounce ~= false
@@ -53,8 +54,8 @@ local function refreshStatus( gui, snap )
 		gui:setText( "Status", "frameworkOnly=true — cheats + RFS quest UI forced OFF (hooks stay on)" )
 	else
 		gui:setText( "Status", string.format(
-			"World flags | cheats=%s | beacons=%s | loader=%s | robots=%s | streamer=%s/%ss | announce=%s | chat=%s | questsUI=%s",
-			onOff( cheats ), onOff( hackDev ), onOff( area ), onOff( robots ),
+			"World flags | cheats=%s | beacons=%s | loader=%s | robots=%s | ug=%s | streamer=%s/%ss | announce=%s | chat=%s | questsUI=%s",
+			onOff( cheats ), onOff( hackDev ), onOff( area ), onOff( robots ), onOff( underground ),
 			onOff( streamer ), tostring( cooldown ), onOff( announce ), onOff( chatRelay ), onOff( quests )
 		) )
 	end
@@ -69,6 +70,7 @@ function RfsGenGui.refresh( host )
 	local hackDev = snap.hackDevices ~= false
 	local area = snap.areaLoader ~= false
 	local robots = snap.hackableRobots ~= false
+	local underground = snap.hackUndergroundBots ~= false
 	local streamer = snap.streamerMode ~= false
 	local cooldown = tonumber( snap.streamerCooldownSec ) or 10
 	local announce = snap.streamerAnnounce ~= false
@@ -79,6 +81,7 @@ function RfsGenGui.refresh( host )
 	gui:setText( "BtnHackDevices", "Hack devices (beacons): " .. onOff( hackDev ) )
 	gui:setText( "BtnAreaLoader", "Anchor / Area loader: " .. onOff( area ) )
 	gui:setText( "BtnHackableRobots", "Hackable robots: " .. onOff( robots ) )
+	gui:setText( "BtnHackUnderground", "Underground miner/cable: " .. onOff( underground ) )
 	gui:setText( "BtnRfsQuests", "RFS quests content: " .. onOff( quests ) )
 	gui:setText( "BtnStreamerMode", "Streamer mode: " .. onOff( streamer ) )
 	gui:setText( "BtnStreamerCooldown", "Vote cooldown: " .. tostring( cooldown ) .. "s" )
@@ -99,6 +102,7 @@ function RfsGenGui.refresh( host )
 		gui:setButtonState( "BtnHackDevices", hackDev )
 		gui:setButtonState( "BtnAreaLoader", area )
 		gui:setButtonState( "BtnHackableRobots", robots )
+		gui:setButtonState( "BtnHackUnderground", underground )
 		gui:setButtonState( "BtnRfsQuests", quests )
 		gui:setButtonState( "BtnStreamerMode", streamer )
 		gui:setButtonState( "BtnStreamerAnnounce", announce )
@@ -150,6 +154,7 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnHackDevices", "cl_rfs_genToggleHackDevices" )
 	gui:setButtonCallback( "BtnAreaLoader", "cl_rfs_genToggleAreaLoader" )
 	gui:setButtonCallback( "BtnHackableRobots", "cl_rfs_genToggleHackableRobots" )
+	gui:setButtonCallback( "BtnHackUnderground", "cl_rfs_genToggleHackUnderground" )
 	gui:setButtonCallback( "BtnRfsQuests", "cl_rfs_genToggleRfsQuests" )
 	gui:setButtonCallback( "BtnStreamerMode", "cl_rfs_genToggleStreamerMode" )
 	gui:setButtonCallback( "BtnStreamerCooldown", "cl_rfs_genCycleStreamerCooldown" )

@@ -69,3 +69,18 @@ function RfsHijackHost.sv_e_hijackList( self, params )
 	local n, tethered, infected = RfsBotHijack.count( self.world )
 	sm.gui.chatMessage( "[RFS] Ally robots: " .. tostring( n or 0 ) .. " (tethered " .. tostring( tethered or 0 ) .. ", infected " .. tostring( infected or 0 ) .. ")" )
 end
+
+function RfsHijackHost.sv_e_unhijack( self, params )
+	params = params or {}
+	if type( RfsBotHijack ) ~= "table" then
+		sm.gui.chatMessage( "[RFS] Unhijack failed: RfsBotHijack not loaded" )
+		return
+	end
+	RfsBotHijack.ensureHooks()
+	local n, info = RfsBotHijack.unhijackNearest( params.player, params.range or 16, self.world, params.allowAny == true )
+	if n and n > 0 then
+		sm.gui.chatMessage( "[RFS] Released " .. tostring( info ) .. " (voluntary — still hackable)" )
+	else
+		sm.gui.chatMessage( "[RFS] Unhijack failed: " .. tostring( info ) )
+	end
+end

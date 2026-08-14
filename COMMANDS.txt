@@ -41,9 +41,13 @@ Dev / movement / survival
   /killall
   /hijack [range]      Permanently infect nearest hostile robot (cheat, default 16 m)
   /hijacklist          Count ally robots (tethered vs infected)
-  /givehack            Give a Hack Beacon (cheat)
+  /givehack            Give Hack + Control + Infection Beacons (cheat)
+                       Needs RFS Beacons Blocks & Parts enabled in world Mods.
                        Wire a Battery container. Optional switch.
-                       Craftbot: 1 Metal. Hideout: 20 Farmers.
+                       Craftbot: Hack 1 Metal. Hideout: 20 / 50 / 120 Farmers.
+  /unhijack [range]    Voluntary release nearest owned ally (default 16 m).
+                       Host may release any ally. Does NOT raid-ban the bot.
+                       /gensettings FEATURES: Underground miner/cable (default ON).
   /noaggro [bool]
   /aggroall
   /give <uuid> [qty]
@@ -86,10 +90,21 @@ Map (/map)
 
 Streamer / Discord
 ------------------
-  Host /gensettings → Streamer ON, then run the Node bridge on the same PC.
-  Discord /vote writes a local JSON drop; RfsStreamer polls and spawn/gives.
-  Full host setup (Node, .env, DROP_PATH, Workshop vs C:\sm\RFS):
-    discord-bridge/README.md
+  In-game Streamer still works via file drops in %USER_DATA%/rfs_discord_bridge
+  (RfsStreamer polls vote/chat JSON there). The Discord/streamer companion bot is
+  NOT shipped inside the Steam/Workshop pack.
+
+  Companion lives on GitHub only:
+    https://github.com/zernon916/Recipe-Framework-Systems
+    (discord-bridge/ folder in that repo)
+
+  Host setup: clone the GitHub repo, configure discord-bridge/.env, then from
+  discord-bridge run: npm install && npm run watch
+  (watcher polls start/stop requests written by /gensettings Discord tab).
+
+  Host /gensettings -> Streamer ON (+ Discord chat relay if wanted). Discord /vote
+  writes a local JSON drop; RfsStreamer polls and spawn/gives.
+
 
 Also available from Survival (when bound)
 ----------------------------------------

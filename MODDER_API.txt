@@ -120,7 +120,10 @@ World feature flags (/gensettings host GUI — RfsFeatures)
   - cheats, hackDevices, areaLoader, hackableRobots, streamerMode, rfsQuests
   - Flags gate RFS gameplay content only — never ModRecipeScan / RfsQuest API hooks.
   - Streamer / Discord vote drop (external Node bridge, no Lua HTTP):
-      discord-bridge/README.md  — host setup; RfsStreamer.lua polls the drop file.
+      Companion on GitHub only: https://github.com/zernon916/Recipe-Framework-Systems (discord-bridge/)
+      In-game Streamer reads %USER_DATA%/rfs_discord_bridge (not a discord-bridge
+      folder inside the Steam mod). See discord-bridge/README.md in the GitHub clone;
+      RfsStreamer.lua polls the drop file.
 
 Reload the world after editing pack settings. /gensettings applies live.
 
