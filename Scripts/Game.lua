@@ -1,4 +1,4 @@
-﻿-- Game.lua - Recipe Framework Survival Custom Game
+-- Game.lua - Recipe Framework Survival Custom Game
 -- Based on Axolot Survival Custom Game template + original RFS scan/commands.
 
 dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalGame.lua" )
@@ -2147,7 +2147,7 @@ function RecipeFrameworkSurvival.cl_rfs_genToggleStreamerChatRelay( self )
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "streamerChatRelay" } )
 end
 
--- Lua cannot spawn Node/exe. Writes a request file for discord-bridge `npm run watch`.
+-- Lua cannot spawn Node/exe. Writes USER_DATA request for GitHub discord-bridge `npm run watch`.
 function RecipeFrameworkSurvival.cl_rfs_genDiscordStartBot( self )
 	if not rfsClientIsHost() then return end
 	self.network:sendToServer( "sv_rfs_discordBotRequest", { action = "start" } )
@@ -2170,7 +2170,7 @@ function RecipeFrameworkSurvival.cl_rfs_genCycleAllowlistUnit( self )
 	local info = self.cl.rfsAllowlistInfo
 	local names = info and info.unitNames
 	if type( names ) ~= "table" or #names == 0 then
-		sm.gui.chatMessage( "[RFS] Allowlist empty — edit discord-bridge/config/allowlist.json then Reload." )
+		sm.gui.chatMessage( "[RFS] Allowlist empty — edit allowlist.json in GitHub discord-bridge clone or USER_DATA/rfs_discord_bridge, then Reload." )
 		return
 	end
 	local idx = tonumber( self.cl.rfsAllowlistCycleIdx ) or 1
@@ -2376,9 +2376,9 @@ function RecipeFrameworkSurvival.sv_rfs_discordBotRequest( self, params, player 
 	local msg
 	if wrote then
 		if action == "start" then
-			msg = "Start request written — discord-bridge watcher will launch the bot if running"
+			msg = "Start request written to USER_DATA/rfs_discord_bridge — clone discord-bridge from GitHub and run npm run watch"
 		else
-			msg = "Stop request written — discord-bridge watcher will stop the bot if running"
+			msg = "Stop request written to USER_DATA/rfs_discord_bridge — watcher (npm run watch from GitHub clone) will stop the bot if running"
 		end
 		print( "[RFS] Discord bot " .. action .. " request → " .. tostring( path ) )
 	else

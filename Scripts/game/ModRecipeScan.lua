@@ -1,18 +1,185 @@
 -- ModRecipeScan.lua
--- Recipe Framework Survival — original ModDatabase scanner.
--- One pass at world load: craftbot, hideout trades, mining hub trades, optional loot.
+-- Recipe Framework Survival — ModDatabase-backed recipe scanner.
+-- Only probes CraftingRecipes under CONTENT packs that are actually loaded.
+-- Never calls sm.json.open / fileExists on unmounted $CONTENT_<uuid> roots
+-- (those log DirectoryManager "Unable to replace key" + Lua tracebacks).
 
 ModRecipeScan = ModRecipeScan or {}
 
 local MD_LOCAL = "40639a2c-bb9f-4d4f-b88c-41bfe264ffa8"
 local MD_DESC = "$CONTENT_40639a2c-bb9f-4d4f-b88c-41bfe264ffa8/Scripts/data/descriptions.json"
+local MD_SHAPES = "$CONTENT_40639a2c-bb9f-4d4f-b88c-41bfe264ffa8/Scripts/data/shapesets.json"
+local MD_TOOLS = "$CONTENT_40639a2c-bb9f-4d4f-b88c-41bfe264ffa8/Scripts/data/toolsets.json"
 local FARMERS_UUID = "8d601982-4608-4d5e-bb9e-e4041486f7c7"
 
-local function fileExists( path )
-	local ok, exists = pcall( function()
-		return sm.json.fileExists( path )
-	end )
-	return ok and exists == true
+-- Session caches: never re-probe known-missing paths / unmounted content roots.
+local missingPath = {}
+local contentMounted = {}
+
+local function openKnownJson( path )
+	-- Path must already be under a known-mounted root (ModDatabase itself, or verified lid).
+	local ok, data = pcall( sm.json.open, path )
+	if ok and type( data ) == "table" then
+		return data
+	end
+	return nil
+end
+
+local function fileExistsSafe( path )
+	if missingPath[path] then
+		return false
+	end
+	if not sm.json.fileExists then
+		return nil
+	end
+	local ok, exists = pcall( sm.json.fileExists, path )
+	if not ok then
+		missingPath[path] = true
+		return false
+	end
+	if exists ~= true then
+		missingPath[path] = true
+		return false
+	end
+	return true
+end
+
+-- Only call after content root is known mounted. Never open when missing.
+local function openJson( path )
+	if missingPath[path] then
+		return nil
+	end
+	local ex = fileExistsSafe( path )
+	if ex == false then
+		return nil
+	end
+	-- ex == true, or fileExists unavailable (nil): try open once.
+	local ok, data = pcall( sm.json.open, path )
+	if ok and type( data ) == "table" then
+		return data
+	end
+	missingPath[path] = true
+	return nil
+end
+
+local function contentPath( localId, rel )
+	return "$CONTENT_" .. tostring( localId ) .. "/" .. rel
+end
+
+-- True if this localId's CONTENT root is mounted. Uses one description.json probe
+-- only after shape/tool UUID evidence suggests the mod is loaded.
+local function isContentMounted( lid )
+	lid = tostring( lid )
+	local cached = contentMounted[lid]
+	if cached ~= nil then
+		return cached
+	end
+	local descPath = contentPath( lid, "description.json" )
+	local ex = fileExistsSafe( descPath )
+	if ex == true then
+		contentMounted[lid] = true
+		return true
+	end
+	if ex == false then
+		contentMounted[lid] = false
+		return false
+	end
+	-- No fileExists API: one open attempt, then cache.
+	local data = openKnownJson( descPath )
+	contentMounted[lid] = ( type( data ) == "table" )
+	if not contentMounted[lid] then
+		missingPath[descPath] = true
+	end
+	return contentMounted[lid]
+end
+
+-- Silent loaded check: shape UUID presence only (no fileExists / open).
+-- Early-out false on first missing UUID — same idea as ModDatabase.isModLoaded
+-- but without the shapeset fileExists that spams DirectoryManager on collisions.
+local function shapesSuggestLoaded( shapeUuids )
+	if type( shapeUuids ) ~= "table" then
+		return false
+	end
+	for _, shapeUuid in ipairs( shapeUuids ) do
+		local okUuid, uuid = pcall( sm.uuid.new, tostring( shapeUuid ) )
+		if not okUuid or not uuid then
+			return false
+		end
+		local exists = false
+		pcall( function()
+			if sm.shape.uuidExists and sm.shape.uuidExists( uuid ) then
+				exists = true
+			end
+		end )
+		if not exists then
+			return false
+		end
+		return true
+	end
+	return false
+end
+
+local function toolsSuggestLoaded( toolUuids )
+	if type( toolUuids ) ~= "table" then
+		return false
+	end
+	for _, toolUuid in ipairs( toolUuids ) do
+		local okUuid, uuid = pcall( sm.uuid.new, tostring( toolUuid ) )
+		if not okUuid or not uuid then
+			return false
+		end
+		local exists = false
+		pcall( function()
+			if sm.item and sm.item.isTool and sm.item.isTool( uuid ) then
+				exists = true
+			elseif sm.tool and sm.tool.uuidExists and sm.tool.uuidExists( uuid ) then
+				exists = true
+			end
+		end )
+		if not exists then
+			return false
+		end
+		return true
+	end
+	return false
+end
+
+local function collectLoadedLocalIds( shapesets, toolsets )
+	local candidates = {}
+	if type( shapesets ) == "table" then
+		for lid, sets in pairs( shapesets ) do
+			lid = tostring( lid )
+			if lid ~= MD_LOCAL and type( sets ) == "table" then
+				for _, shapeUuids in pairs( sets ) do
+					if shapesSuggestLoaded( shapeUuids ) then
+						candidates[lid] = true
+						break
+					end
+				end
+			end
+		end
+	end
+	if type( toolsets ) == "table" then
+		for lid, sets in pairs( toolsets ) do
+			lid = tostring( lid )
+			if lid ~= MD_LOCAL and not candidates[lid] and type( sets ) == "table" then
+				for _, toolUuids in pairs( sets ) do
+					if toolsSuggestLoaded( toolUuids ) then
+						candidates[lid] = true
+						break
+					end
+				end
+			end
+		end
+	end
+
+	local loaded = {}
+	for lid in pairs( candidates ) do
+		if isContentMounted( lid ) then
+			loaded[#loaded + 1] = lid
+		end
+	end
+	return loaded
 end
 
 local function itemPresentOnPeer( itemId )
@@ -51,25 +218,6 @@ local function itemPresentOnPeer( itemId )
 		end
 	end
 	return true
-end
-
-local function openJson( path )
-	if not fileExists( path ) then
-		local ok, data = pcall( sm.json.open, path )
-		if ok and type( data ) == "table" then
-			return data
-		end
-		return nil
-	end
-	local ok, data = pcall( sm.json.open, path )
-	if ok and type( data ) == "table" then
-		return data
-	end
-	return nil
-end
-
-local function contentPath( localId, rel )
-	return "$CONTENT_" .. tostring( localId ) .. "/" .. rel
 end
 
 local function extractTradeList( cfg )
@@ -198,6 +346,8 @@ end
 function ModRecipeScan.run()
 	local result = {
 		modsScanned = 0,
+		modsCatalog = 0,
+		modsLoaded = 0,
 		sources = {},
 		craftPaths = {},
 		craftRecipeCount = 0,
@@ -209,12 +359,23 @@ function ModRecipeScan.run()
 		skippedDupes = 0,
 	}
 
-	local md = openJson( MD_DESC )
+	local md = openKnownJson( MD_DESC )
 	if type( md ) ~= "table" then
 		print( "[RFS] ModDatabase descriptions.json not found — subscribe ModDatabase (do not enable as world mod)." )
 		ModRecipeScan._last = result
 		return result
 	end
+
+	local catalogCount = 0
+	for _ in pairs( md ) do
+		catalogCount = catalogCount + 1
+	end
+	result.modsCatalog = catalogCount
+
+	local shapesets = openKnownJson( MD_SHAPES )
+	local toolsets = openKnownJson( MD_TOOLS )
+	local loadedList = collectLoadedLocalIds( shapesets, toolsets )
+	result.modsLoaded = #loadedList
 
 	local hideSeen = {}
 	local mineSeen = {}
@@ -236,109 +397,103 @@ function ModRecipeScan.run()
 
 	g_unlockableCraftItems = g_unlockableCraftItems or {}
 
-	for lid, meta in pairs( md ) do
-		lid = tostring( lid )
-		if lid ~= MD_LOCAL then
-			result.modsScanned = result.modsScanned + 1
-			local name = ( type( meta ) == "table" and ( meta.name or meta.title ) ) or lid
-			local source = { localId = lid, name = tostring( name ), craft = 0, hideout = 0, mining = 0, loot = 0 }
+	for _, lid in ipairs( loadedList ) do
+		result.modsScanned = result.modsScanned + 1
+		local meta = md[lid]
+		local name = ( type( meta ) == "table" and ( meta.name or meta.title ) ) or lid
+		local source = { localId = lid, name = tostring( name ), craft = 0, hideout = 0, mining = 0, loot = 0 }
 
-			local craftPath = contentPath( lid, "CraftingRecipes/craftbot.json" )
-			local recipes = openJson( craftPath )
-			if type( recipes ) == "table" then
-				-- Index-style craftbot.json (name -> path) is rare for B&P mods; support both.
-				local list = recipes
-				if recipes.craftbot_beams or recipes.craftbot_core then
-					list = {}
-					for _, subPath in pairs( recipes ) do
-						if type( subPath ) == "string" then
-							local sub = openJson( subPath )
-							if type( sub ) == "table" then
-								for _, r in ipairs( sub ) do
-									list[#list + 1] = r
-								end
-							end
-						end
-					end
-				end
-				local n = 0
-				for _, recipe in ipairs( list ) do
-					if type( recipe ) == "table" and recipe.itemId then
-						local id = tostring( recipe.itemId )
-						-- Mark unlockable; do NOT auto-unlock (blue schematic progression).
-						g_unlockableCraftItems[id] = true
-						n = n + 1
-					end
-				end
-				if n > 0 then
-					source.craft = n
-					result.craftRecipeCount = result.craftRecipeCount + n
-					result.craftPaths[#result.craftPaths + 1] = craftPath
-				end
-			end
-
-			local hideCfg = openJson( contentPath( lid, "CraftingRecipes/hideout_trades.json" ) )
-			-- Prefer hideout_trades.json only. Full hideout.json dumps from other games/mods
-			-- can inject unknown UUIDs that show as "BLOCK NOT FOUND" in the shop.
-			if hideCfg == nil then
-				-- Allow hideout.json only when it declares currencyItemId / trades wrapper (RFS author format)
-				local rawHide = openJson( contentPath( lid, "CraftingRecipes/hideout.json" ) )
-				if type( rawHide ) == "table" and ( rawHide.trades or rawHide.currencyItemId ) then
-					hideCfg = rawHide
-				end
-			end
-			local hideList = extractTradeList( hideCfg )
-			if type( hideList ) == "table" then
-				for _, raw in ipairs( hideList ) do
-					local entry = normalizeTrade( raw, lid )
-					if entry then
-						if not itemPresentOnPeer( entry.itemId ) then
-							-- Missing mod/shape on this peer — do not publish a ghost shop row.
-						elseif hideSeen[entry.itemId] then
-							result.skippedDupes = result.skippedDupes + 1
-						elseif dedupeAppend( result.hideoutTrades, hideSeen, entry ) then
-							source.hideout = source.hideout + 1
-							result.hideoutAdded = result.hideoutAdded + 1
-							if entry.schematic ~= false then
-								_G.g_extraHideoutSchematicUnlocks[entry.itemId] = true
+		local craftPath = contentPath( lid, "CraftingRecipes/craftbot.json" )
+		local recipes = openJson( craftPath )
+		if type( recipes ) == "table" then
+			-- Index-style craftbot.json (name -> path) is rare for B&P mods; support both.
+			local list = recipes
+			if recipes.craftbot_beams or recipes.craftbot_core then
+				list = {}
+				for _, subPath in pairs( recipes ) do
+					if type( subPath ) == "string" then
+						local sub = openJson( subPath )
+						if type( sub ) == "table" then
+							for _, r in ipairs( sub ) do
+								list[#list + 1] = r
 							end
 						end
 					end
 				end
 			end
+			local n = 0
+			for _, recipe in ipairs( list ) do
+				if type( recipe ) == "table" and recipe.itemId then
+					local id = tostring( recipe.itemId )
+					-- Mark unlockable; do NOT auto-unlock (blue schematic progression).
+					g_unlockableCraftItems[id] = true
+					n = n + 1
+				end
+			end
+			if n > 0 then
+				source.craft = n
+				result.craftRecipeCount = result.craftRecipeCount + n
+				result.craftPaths[#result.craftPaths + 1] = craftPath
+			end
+		end
 
-			local mineCfg = openJson( contentPath( lid, "CraftingRecipes/mininghub_trades.json" ) )
-			local mineList = extractTradeList( mineCfg )
-			if type( mineList ) == "table" then
-				for _, raw in ipairs( mineList ) do
-					local entry = normalizeTrade( raw, lid )
-					if entry then
-						if not itemPresentOnPeer( entry.itemId ) then
-							-- Missing mod/shape on this peer — do not publish a ghost shop row.
-						elseif mineSeen[entry.itemId] then
-							result.skippedDupes = result.skippedDupes + 1
-						elseif dedupeAppend( result.miningTrades, mineSeen, entry ) then
-							source.mining = source.mining + 1
-							result.miningAdded = result.miningAdded + 1
+		local hideCfg = openJson( contentPath( lid, "CraftingRecipes/hideout_trades.json" ) )
+		-- Prefer hideout_trades.json only. Full hideout.json dumps from other games/mods
+		-- can inject unknown UUIDs that show as "BLOCK NOT FOUND" in the shop.
+		if hideCfg == nil then
+			-- Allow hideout.json only when it declares currencyItemId / trades wrapper (RFS author format)
+			local rawHide = openJson( contentPath( lid, "CraftingRecipes/hideout.json" ) )
+			if type( rawHide ) == "table" and ( rawHide.trades or rawHide.currencyItemId ) then
+				hideCfg = rawHide
+			end
+		end
+		local hideList = extractTradeList( hideCfg )
+		if type( hideList ) == "table" then
+			for _, raw in ipairs( hideList ) do
+				local entry = normalizeTrade( raw, lid )
+				if entry then
+					if not itemPresentOnPeer( entry.itemId ) then
+						-- Missing mod/shape on this peer — do not publish a ghost shop row.
+					elseif hideSeen[entry.itemId] then
+						result.skippedDupes = result.skippedDupes + 1
+					elseif dedupeAppend( result.hideoutTrades, hideSeen, entry ) then
+						source.hideout = source.hideout + 1
+						result.hideoutAdded = result.hideoutAdded + 1
+						if entry.schematic ~= false then
+							_G.g_extraHideoutSchematicUnlocks[entry.itemId] = true
 						end
 					end
 				end
 			end
+		end
 
-			local lootCfg = openJson( contentPath( lid, "CraftingRecipes/loot.json" ) )
-			if type( lootCfg ) == "table" then
-				local added = applyLootForMod( recipes, lootCfg )
-				source.loot = added
-				result.lootApplied = result.lootApplied + added
+		local mineCfg = openJson( contentPath( lid, "CraftingRecipes/mininghub_trades.json" ) )
+		local mineList = extractTradeList( mineCfg )
+		if type( mineList ) == "table" then
+			for _, raw in ipairs( mineList ) do
+				local entry = normalizeTrade( raw, lid )
+				if entry then
+					if not itemPresentOnPeer( entry.itemId ) then
+						-- Missing mod/shape on this peer — do not publish a ghost shop row.
+					elseif mineSeen[entry.itemId] then
+						result.skippedDupes = result.skippedDupes + 1
+					elseif dedupeAppend( result.miningTrades, mineSeen, entry ) then
+						source.mining = source.mining + 1
+						result.miningAdded = result.miningAdded + 1
+					end
+				end
 			end
+		end
 
-			if source.craft > 0 or source.hideout > 0 or source.mining > 0 or source.loot > 0 then
-				result.sources[#result.sources + 1] = source
-				print( string.format(
-					"[RFS] mod=%s craft=%d hideout=%d mining=%d loot=%d",
-					source.name, source.craft, source.hideout, source.mining, source.loot
-				) )
-			end
+		local lootCfg = openJson( contentPath( lid, "CraftingRecipes/loot.json" ) )
+		if type( lootCfg ) == "table" then
+			local added = applyLootForMod( recipes, lootCfg )
+			source.loot = added
+			result.lootApplied = result.lootApplied + added
+		end
+
+		if source.craft > 0 or source.hideout > 0 or source.mining > 0 or source.loot > 0 then
+			result.sources[#result.sources + 1] = source
 		end
 	end
 
@@ -354,9 +509,10 @@ function ModRecipeScan.run()
 	_G.g_miningHubExtraTradesDirty = true
 	_G.g_miningHubExtraTradesMerged = false
 
+	-- One summary line only (per-mod prints removed — use /mods for details).
 	print( string.format(
-		"[RFS] scan done mods=%d sources=%d craftRecipes=%d hideout+=%d mining+=%d loot=%d dupesSkipped=%d",
-		result.modsScanned, #result.sources, result.craftRecipeCount,
+		"[RFS] scan done catalog=%d loaded=%d scanned=%d sources=%d craftRecipes=%d hideout+=%d mining+=%d loot=%d dupesSkipped=%d",
+		result.modsCatalog, result.modsLoaded, result.modsScanned, #result.sources, result.craftRecipeCount,
 		result.hideoutAdded, result.miningAdded, result.lootApplied, result.skippedDupes
 	) )
 
