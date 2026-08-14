@@ -27,8 +27,9 @@ How to start a world
 
 Quick host commands
 -------------------
-  /menu              open player menu (map + per-player growth overlay)
-  /setup             open setup GUI (Main / Quest / Inventory size tabs; cheats gate Inventory)
+  /menu              open player menu (map + per-player growth overlay) — all players
+  /setup             open host setup GUI (Main / Quest / Inventory / Farming)
+  /gensettings       open host gen settings (tabs: MAIN / FEATURES / STREAMERS / DISCORD)
   /map               top-down live camera map (toggle)
   /help              command summary
   /fly               toggle fly-like climbing mode
@@ -62,10 +63,21 @@ Chat `/map` opens a top-down cutscene camera over the live world (not a craftabl
 WASD pans, scroll zooms, RMB/LMB recenters on you, E or Esc closes (or `/map` again).
 Reload tip: exit to menu and reload the world after updating this Custom Game so Scripts/Objects refresh.
 
+Streamer / Discord (optional)
+-----------------------------
+Host /gensettings → STREAMERS / DISCORD tabs. In-game Streamer uses file drops under
+%USER_DATA%/rfs_discord_bridge. The Discord bot is NOT in the Steam Workshop pack —
+clone discord-bridge/ from:
+  https://github.com/zernon916/Recipe-Framework-Systems
+Then configure .env, npm install, and npm run watch. See discord-bridge/README.md.
+
+Performance
+-----------
+Recipe scan avoids shapeset fileExists spam for quieter console / faster loads.
+
 See COMMANDS.txt for the full list.
 
 Currency
 --------
 Hideout schematic trades use Farmers (farmerball):
   8d601982-4608-4d5e-bb9e-e4041486f7c7
-
