@@ -492,7 +492,7 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 						retried = true,
 					}
 					if not pend.retried then
-						rfsMsg( self, "HACK 3.5e-orders open retry" )
+						rfsMsg( self, "HACK 3.5f-orders open retry" )
 					end
 				end
 			end

@@ -38,8 +38,10 @@ local COLOR_PRESETS = {
 }
 
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
--- Icons: Survival setImage with custom/missing PNGs shows red-triangle placeholders
--- (pcall still succeeds). Prefer letter+number badges on BotName; hide ImageBox.
+-- HACK 3.5f: icon + number on existing rows (additive paint only).
+-- Prefer RFS copies of Survival NodeIcons. Avoid icon_farmraid_compass_bot.png —
+-- that sprite itself looks like the red-triangle error placeholder.
+-- If every setImage path fails → hide ImageBox and use letter+number (H1/T2).
 
 -- Fallback range ring drawn on the Game client when the beacon interactable
 -- cannot see Game's _G.g_rfsBeaconRangeVisible (separate script sandbox).
@@ -252,11 +254,74 @@ local function rowDisplayIndex( row )
 	return tonumber( num )
 end
 
--- Always use type letter + number (H1, T2, W3…). Never setImage — broken paths
--- render as red triangles even when pcall succeeds.
-local function rowListLabel( row, selected )
+-- Prefer RFS NodeIcon copies, then Survival paths / short names.
+local function iconPathsForKind( kind )
+	kind = tostring( kind or "other" )
+	if kind == "hay" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_haybot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/HaybotIcon.png",
+			"HaybotIcon.png",
+		}
+	end
+	if kind == "tote" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_totebot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TotebotYellowIcon.png",
+			"TotebotYellowIcon.png",
+		}
+	end
+	if kind == "water" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_waterbot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TotebotBlueIcon.png",
+			"TotebotBlueIcon.png",
+		}
+	end
+	if kind == "farmbot" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_farmbot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/FarmbotIcon.png",
+			"notification_warning_icon_farmbot.png",
+			"icon_farmraid_raidmarkerboticon.png",
+			"FarmbotIcon.png",
+		}
+	end
+	if kind == "tape" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_tapebot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TapebotIcon.png",
+			"TapebotIcon.png",
+		}
+	end
+	return {
+		"$CONTENT_DATA/Gui/Icons/rfs_icon_bot.png",
+		"$SURVIVAL_DATA/Gui/NodeIcons/TotebotYellowIcon.png",
+		"icon_farmraid_raidmarkerboticon.png",
+	}
+end
+
+-- True when setImage pcall accepts a candidate path.
+local function setBotIcon( gui, widget, kind )
+	local paths = iconPathsForKind( kind )
+	for _, path in ipairs( paths ) do
+		local ok = pcall( function()
+			gui:setImage( widget, path )
+		end )
+		if ok then
+			return true
+		end
+	end
+	return false
+end
+
+-- Icon OK → number only (icon shows type). Else letter+number (H1, T2…).
+local function rowListLabel( row, selected, iconOk )
 	local n = rowDisplayIndex( row ) or "?"
 	local mark = selected and "● " or ""
+	if iconOk then
+		return mark .. tostring( n )
+	end
 	return mark .. typeLetter( row and row.kind ) .. tostring( n )
 end
 
@@ -360,10 +425,8 @@ local function paintSlot( gui, host, i, row, selectedKey )
 	local soonW = "Soon" .. i
 	local dropW = "ModeDrop" .. i
 	local seedW = "SeedDrop" .. i
-	pcall( function()
-		gui:setVisible( iconW, false )
-	end )
 	if not row then
+		pcall( function() gui:setVisible( iconW, false ) end )
 		pcall( function() gui:setText( nameW, "" ) end )
 		pcall( function() gui:setText( soonW, "" ) end )
 		pcall( function() gui:setVisible( nameW, false ) end )
@@ -375,8 +438,18 @@ local function paintSlot( gui, host, i, row, selectedKey )
 		return
 	end
 	local isSel = selectedKey and tostring( row.key ) == tostring( selectedKey )
-	pcall( function() gui:setText( nameW, rowListLabel( row, isSel ) ) end )
+	-- Paint label first so a failed icon never leaves an empty row.
+	local iconOk = false
+	pcall( function() gui:setText( nameW, rowListLabel( row, isSel, false ) ) end )
 	pcall( function() gui:setVisible( nameW, true ) end )
+	-- Additive icon paint only — never recreateDropDown here.
+	iconOk = setBotIcon( gui, iconW, row.kind )
+	if iconOk then
+		pcall( function() gui:setVisible( iconW, true ) end )
+		pcall( function() gui:setText( nameW, rowListLabel( row, isSel, true ) ) end )
+	else
+		pcall( function() gui:setVisible( iconW, false ) end )
+	end
 	pcall( function() gui:setVisible( dropW, true ) end )
 	-- Selection only — dropdown item list is fixed at bind (MODE_ITEMS_ALL).
 	pcall( function()
@@ -707,7 +780,7 @@ function RfsBeaconOrdersGui.open( host, opts )
 	RfsBeaconOrdersGui.refresh( host )
 	gui:open()
 	pcall( function()
-		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5e)" )
+		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5f)" )
 	end )
 
 	if type( opts.rows ) == "table" and #opts.rows > 0 then

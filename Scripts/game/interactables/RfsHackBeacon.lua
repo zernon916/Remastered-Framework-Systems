@@ -1126,7 +1126,7 @@ cl_openOrders = function( self )
 		return
 	end
 	pcall( function()
-		sm.gui.chatMessage( "[RFS] HACK 3.5e-orders" )
+		sm.gui.chatMessage( "[RFS] HACK 3.5f-orders" )
 	end )
 	local payload = {
 		beaconKey = key,
