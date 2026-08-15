@@ -2,8 +2,11 @@
 
 Author: Zernon916  
 Workshop: 3782487760  
-Date: 2026-08-14  
+Date: 2026-08-15  
 SM: 1.0.5  
+
+WIP note: local **HACK 3.13** — 3.11 open + PREV/NEXT never setVisible; not all on GitHub (push freeze).  
+Scan tags: `[DONE]` / `[NEXT]` / `[FUTURE]`. Source of truth for Orders: `HIJACK_ROADMAP.txt` Phase 3.
 
 ---
 
@@ -39,23 +42,71 @@ Easy to miss: scale 0.25, `maxViewDistance` 15 m. Look at ground in **orange aut
 
 ---
 
-## 3) Hijack / Phase 2–5 polish — **OPEN** (doc only; not implemented yet)
+## 3) Phase 3 Orders / Beacon GUI — DONE vs NEXT vs FUTURE
+
+### [DONE] (through HACK 3.10 — local)
+
+- M1 Rest/Defend + beacon Orders GUI
+- M2 Hay Farm / M3 Tote Collect / M4 Waterbot Collect Oil
+- Master/Slave beacons; color presets (domain + new hijacks inherit)
+- `usable:true` E on beacons; raid list clear on destroy/capture
+- Nametag half size; type+number world tags; Orders icon+number (NodeIcons / H1 fallback)
+- Orders open/close/reopen + list fill (HACK 3.5+ / 3.9 path)
+- SHOW RANGE no longer kills menu (ring visibility still [NEXT])
+- Prev/Next layout-visible (no setVisible); pageDelta no-ops on 1 page (HACK 3.13)
+
+### [NEXT] — verify / testing now
+
+- Confirm HACK 3.13: open + list + icons/H1 + close/reopen + Prev/Next safe
+- SHOW RANGE ground ring actually visible (parked; menu-safe already)
+- Empty-list / reopen regressions — watch during test
+- Nametag numbers (issue #2) / bot naming UI — still polish (also §3a/3b)
+- RAID out of farm range — still open (also §3c)
+
+### [FUTURE] — end of phase / later (do not build during 3.10)
+
+- Recall bots + Stay in area (Orders)
+- Phase 3.5 pathfinding & painted chests (§4)
+- Phase 3.6 Menu GUI tab (§5)
+- chat `/botorder`
+
+See `HIJACK_ROADMAP.txt` Phase 3 checklist for the full scannable list.
+
+---
+
+## 3.4) Orders SHOW RANGE ring — **[NEXT]** (parked polish)
+
+**[DONE]:** SHOW RANGE click must **not** destroy/close the Orders menu
+(button caption toggles only).
+
+**[NEXT]:** ground range ring does not reliably draw/clear. Needs a proper fix
+(beacon clientData ring and/or safe Game fallback) without tearing down the
+Orders GUI.
+
+Do **not** treat range ring as shipped until this is closed.
+
+**[FUTURE] after SHOW RANGE:** Recall bots; Stay in area. See Phase 3 [FUTURE].
+
+---
+
+## 3a–3c) Hijack / Phase 2–5 polish — **[NEXT]/OPEN]** (doc only)
 
 Logged in `HIJACK_ROADMAP.txt` under Phase 2 full / Phase 5 full. Do not treat as shipped.
 
-### 3a) Numbers above bots still missing — **OPEN** (Phase 2 identity / nametag)
+### 3a) Numbers above bots — **[NEXT]** (Phase 2 identity / nametag)
 
 Nametag/number display above hijacked bots is incomplete or not showing.
 Phase 2 lite claims overhead via `pushTag` (idle name; HACK/DROP/CHAIN priority) —
 verify numbers + idle identity actually render on clients.
+(World type+number tags / half-size landed in Orders polish; issue-#2-style numbers still open.)
 
-### 3b) Bot naming — **OPEN** (Phase 2 richer identity UI / rename)
+### 3b) Bot naming — **[NEXT]** (Phase 2 richer identity UI / rename)
 
 Need a way to name bots:
 - Allowed: **E on bot** to create/set a name, **OR** rename via **hack device**
 - Names should show above the head **with the numbers** (same overhead as 3a)
 
-### 3c) RAID range filter — **OPEN** (Phase 5 raid callouts / raid behavior)
+### 3c) RAID range filter — **[NEXT]** (Phase 5 raid callouts / raid behavior)
 
 Bots that are **out of range of farms** should **NOT** be affected by the RAID
 stuff that was added. Keep out-of-range farm bots out of RAID behavior
@@ -63,7 +114,7 @@ stuff that was added. Keep out-of-range farm bots out of RAID behavior
 
 ---
 
-## 4) Pathfinding & painted chests — **FUTURE** (Phase 3.5; not started)
+## 4) Pathfinding & painted chests — **[FUTURE]** (Phase 3.5; not started)
 
 Logged in `HIJACK_ROADMAP.txt` under **Phase 3.5**. Improves shipped Farm / Collect / Oil
 navigation and deposit targeting. Do not treat as shipped.
@@ -73,11 +124,11 @@ navigation and deposit targeting. Do not treat as shipped.
 
 ---
 
-## 5) Menu tab: GUI (visuals) — **FUTURE** (Phase 3.6; not started)
+## 5) Menu tab: GUI (visuals) — **[FUTURE]** (Phase 3.6; logged, not started)
 
-Logged in `HIJACK_ROADMAP.txt` under **Phase 3.6**. Do **not** implement during HACK 3.3
-testing. Prefer `/menu` or `/gensettings` FEATURES/GUI tab (TBD). Cross-ref Phase 2
-nametag / naming polish and HACK 3.3 type+number / icons.
+Logged in `HIJACK_ROADMAP.txt` under **Phase 3.6**. Do **not** block Orders
+HACK 3.9 testing. Prefer `/menu` or `/gensettings` FEATURES/GUI tab (TBD).
+Cross-ref Phase 2 nametag / naming polish and Orders type+number badges.
 
 - Names on/off (world nametags)
 - Farmbots as **"Big Red"** (vs generic Farm / type name)

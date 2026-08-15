@@ -13,10 +13,16 @@ end )
 
 local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_BeaconOrders.layout"
 local ROWS = 8
+local SCROLL_STEP = 1 -- one ally row per wheel/button tick
+-- ~0.5s settle after Close before createGui (40Hz ≈ 20 ticks).
+local REOPEN_SETTLE_TICKS = 20
 local MODE_ITEMS_DEFAULT = { "Rest", "Defend" }
 local MODE_ITEMS_HAY = { "Rest", "Defend", "Farm" }
 local MODE_ITEMS_TOTE = { "Rest", "Defend", "Collect" }
 local MODE_ITEMS_WATER = { "Rest", "Defend", "Collect Oil" }
+-- Stable superset for all ModeDrop slots. Never recreateDropDown while scrolling —
+-- mid-refresh createDropDown / setVisible on dropdowns was wiping the painted list.
+local MODE_ITEMS_ALL = { "Rest", "Defend", "Farm", "Collect", "Collect Oil" }
 
 -- Full-body presets (RRGGBBAA). Ally Green / Infect Green match RfsBotHijack defaults.
 local COLOR_PRESETS = {
@@ -32,6 +38,8 @@ local COLOR_PRESETS = {
 }
 
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
+-- Icons: Survival setImage with custom/missing PNGs shows red-triangle placeholders
+-- (pcall still succeeds). Prefer letter+number badges on BotName; hide ImageBox.
 
 -- Fallback range ring drawn on the Game client when the beacon interactable
 -- cannot see Game's _G.g_rfsBeaconRangeVisible (separate script sandbox).
@@ -219,6 +227,39 @@ local function botKind( typeStr, displayName )
 	return "other"
 end
 
+local function typeLetter( kind )
+	kind = tostring( kind or "other" )
+	if kind == "hay" then return "H" end
+	if kind == "tote" then return "T" end
+	if kind == "water" then return "W" end
+	if kind == "farmbot" then return "F" end
+	if kind == "tape" then return "Tp" end
+	if kind == "miner" then return "M" end
+	if kind == "cable" then return "C" end
+	return "B"
+end
+
+local function rowDisplayIndex( row )
+	if not row then
+		return nil
+	end
+	local n = tonumber( row.displayIndex )
+	if n then
+		return n
+	end
+	local name = tostring( row.name or "" )
+	local num = string.match( name, "(%d+)$" )
+	return tonumber( num )
+end
+
+-- Always use type letter + number (H1, T2, W3…). Never setImage — broken paths
+-- render as red triangles even when pcall succeeds.
+local function rowListLabel( row, selected )
+	local n = rowDisplayIndex( row ) or "?"
+	local mark = selected and "● " or ""
+	return mark .. typeLetter( row and row.kind ) .. tostring( n )
+end
+
 local function modeItemsForKind( kind )
 	if kind == "hay" then
 		return MODE_ITEMS_HAY
@@ -275,28 +316,103 @@ function RfsBeaconOrdersGui.rowFromWidget( host, widgetName )
 		return nil
 	end
 	local rows = host.cl and host.cl.rfsOrdersRows or {}
-	local page = host.cl and host.cl.rfsOrdersPage or 0
-	local abs = page * ROWS + idx + 1
+	local scroll = host.cl and host.cl.rfsOrdersScroll or 0
+	local abs = scroll + idx + 1
 	return rows[abs], abs, idx
 end
 
+local function clampScroll( host, rows )
+	local n = ( type( rows ) == "table" ) and #rows or 0
+	local maxScroll = math.max( 0, n - ROWS )
+	local scroll = math.floor( tonumber( host.cl.rfsOrdersScroll ) or 0 )
+	if scroll > maxScroll then scroll = maxScroll end
+	if scroll < 0 then scroll = 0 end
+	host.cl.rfsOrdersScroll = scroll
+	return scroll, maxScroll
+end
+
+local function syncScrollbar( host, gui, rows )
+	local scroll, maxScroll = clampScroll( host, rows )
+	-- setSliderData can re-enter the slider callback; ignore that echo.
+	host.cl.rfsOrdersIgnoreSlider = true
+	pcall( function()
+		gui:setSliderData( "ScrollBar", math.max( 1, maxScroll + 1 ), scroll )
+	end )
+	host.cl.rfsOrdersIgnoreSlider = nil
+	local n = #rows
+	local first = ( n == 0 ) and 0 or ( scroll + 1 )
+	local last = math.min( n, scroll + ROWS )
+	pcall( function()
+		if n == 0 then
+			gui:setText( "ScrollLabel", "Allies 0" )
+		elseif maxScroll <= 0 then
+			gui:setText( "ScrollLabel", string.format( "Allies %d", n ) )
+		else
+			gui:setText( "ScrollLabel", string.format( "Allies %d-%d / %d", first, last, n ) )
+		end
+	end )
+	return scroll, maxScroll
+end
+
+local function paintSlot( gui, host, i, row, selectedKey )
+	local nameW = "BotName" .. i
+	local iconW = "BotIcon" .. i
+	local soonW = "Soon" .. i
+	local dropW = "ModeDrop" .. i
+	local seedW = "SeedDrop" .. i
+	pcall( function()
+		gui:setVisible( iconW, false )
+	end )
+	if not row then
+		pcall( function() gui:setText( nameW, "" ) end )
+		pcall( function() gui:setText( soonW, "" ) end )
+		pcall( function() gui:setVisible( nameW, false ) end )
+		pcall( function() gui:setVisible( soonW, false ) end )
+		-- Hide dropdowns for empty window slots. Safe because we never
+		-- createDropDown again after bind (that combo wiped the list in 3.5d).
+		pcall( function() gui:setVisible( dropW, false ) end )
+		pcall( function() gui:setVisible( seedW, false ) end )
+		return
+	end
+	local isSel = selectedKey and tostring( row.key ) == tostring( selectedKey )
+	pcall( function() gui:setText( nameW, rowListLabel( row, isSel ) ) end )
+	pcall( function() gui:setVisible( nameW, true ) end )
+	pcall( function() gui:setVisible( dropW, true ) end )
+	-- Selection only — dropdown item list is fixed at bind (MODE_ITEMS_ALL).
+	pcall( function()
+		gui:setSelectedDropDownItem( dropW, modeLabel( row.mode ) )
+	end )
+	local showSeed = ( row.kind == "hay" and row.mode == "farm" )
+	if showSeed then
+		pcall( function() gui:setText( soonW, "" ) end )
+		pcall( function() gui:setVisible( soonW, false ) end )
+		pcall( function() gui:setVisible( seedW, true ) end )
+		pcall( function()
+			gui:setSelectedDropDownItem( seedW, seedLabelForUuid( row.seedUuid ) )
+		end )
+	else
+		pcall( function() gui:setVisible( seedW, false ) end )
+		local soon = soonText( row.kind )
+		pcall( function() gui:setText( soonW, soon ) end )
+		pcall( function() gui:setVisible( soonW, soon ~= "" ) end )
+	end
+end
+
+-- In-place list paint from cached rfsOrdersRows. Scroll only changes offset.
+-- Never destroy GUI, never clear ally rows, never createDropDown here.
 function RfsBeaconOrdersGui.refresh( host )
 	local gui = host.cl and host.cl.rfsOrdersGui
 	if not gui then
 		return
 	end
 
-	local rows = host.cl.rfsOrdersRows or {}
-	local page = host.cl.rfsOrdersPage or 0
-	local maxPage = math.max( 0, math.ceil( #rows / ROWS ) - 1 )
-	if page > maxPage then
-		page = maxPage
-		host.cl.rfsOrdersPage = page
+	-- Same table reference — never replace/clear on scroll paint.
+	local rows = host.cl.rfsOrdersRows
+	if type( rows ) ~= "table" then
+		rows = {}
+		host.cl.rfsOrdersRows = rows
 	end
-	if page < 0 then
-		page = 0
-		host.cl.rfsOrdersPage = 0
-	end
+	local scroll = syncScrollbar( host, gui, rows )
 
 	local beaconName = host.cl.rfsOrdersBeaconName or "Beacon"
 	local key = host.cl.rfsOrdersBeaconKey or "?"
@@ -308,22 +424,21 @@ function RfsBeaconOrdersGui.refresh( host )
 		local mk = host.cl.rfsOrdersMasterKey
 		roleTxt = mk and ( "Slave of " .. tostring( mk ) ) or "Slave"
 	end
-	gui:setText( "Status", string.format(
-		"%s — %d ally(ies) | %s | key %s",
-		tostring( beaconName ),
-		#rows,
-		roleTxt,
-		tostring( key )
-	) )
-	gui:setText( "PageLabel", string.format( "Page %d / %d", page + 1, maxPage + 1 ) )
+	pcall( function()
+		gui:setText( "Status", string.format(
+			"%s — %d ally(ies) | %s | key %s",
+			tostring( beaconName ),
+			#rows,
+			roleTxt,
+			tostring( key )
+		) )
+	end )
 	pcall( function()
 		gui:setText( "RoleLabel", "Role: " .. roleTxt )
 	end )
 	pcall( function()
 		if role == "master" then
 			gui:setText( "BtnMaster", "CLEAR MASTER" )
-		elseif role == "slave" then
-			gui:setText( "BtnMaster", "SET MASTER" )
 		else
 			gui:setText( "BtnMaster", "SET MASTER" )
 		end
@@ -360,69 +475,93 @@ function RfsBeaconOrdersGui.refresh( host )
 		end
 	end )
 
-	local seeds = seedLabels()
-
+	-- Suppress Mode/Seed drop callbacks while we push selections into widgets.
+	host.cl.rfsOrdersSuppressDrop = true
 	for i = 0, ROWS - 1 do
-		local abs = page * ROWS + i + 1
-		local row = rows[abs]
-		local nameW = "BotName" .. i
-		local soonW = "Soon" .. i
-		local dropW = "ModeDrop" .. i
-		local seedW = "SeedDrop" .. i
-		if row then
-			local mark = ( selectedKey and tostring( row.key ) == tostring( selectedKey ) ) and "> " or ""
-			gui:setText( nameW, mark .. tostring( row.name or row.key or "Bot" ) )
-			gui:setVisible( nameW, true )
-			gui:setVisible( dropW, true )
-			pcall( function()
-				gui:createDropDown( dropW, "cl_rfs_ordersDrop" .. i, modeItemsForKind( row.kind ) )
-			end )
-			pcall( function()
-				gui:setSelectedDropDownItem( dropW, modeLabel( row.mode ) )
-			end )
-
-			local showSeed = ( row.kind == "hay" and row.mode == "farm" )
-			if showSeed then
-				gui:setText( soonW, "" )
-				gui:setVisible( soonW, false )
-				gui:setVisible( seedW, true )
-				pcall( function()
-					gui:createDropDown( seedW, "cl_rfs_ordersSeed" .. i, seeds )
-				end )
-				pcall( function()
-					gui:setSelectedDropDownItem( seedW, seedLabelForUuid( row.seedUuid ) )
-				end )
-			else
-				gui:setVisible( seedW, false )
-				local soon = soonText( row.kind )
-				gui:setText( soonW, soon )
-				gui:setVisible( soonW, soon ~= "" )
-			end
-		else
-			gui:setText( nameW, "" )
-			gui:setText( soonW, "" )
-			gui:setVisible( nameW, false )
-			gui:setVisible( soonW, false )
-			gui:setVisible( dropW, false )
-			gui:setVisible( seedW, false )
-		end
+		local abs = scroll + i + 1
+		paintSlot( gui, host, i, rows[abs], selectedKey )
 	end
+	host.cl.rfsOrdersSuppressDrop = nil
+end
+
+-- Scroll offset + in-place refresh only. Never open/close/clear rows / applyList.
+function RfsBeaconOrdersGui.scrollDelta( host, delta )
+	host.cl = host.cl or {}
+	if not host.cl.rfsOrdersGui then
+		return
+	end
+	local rows = host.cl.rfsOrdersRows or {}
+	local maxScroll = math.max( 0, #rows - ROWS )
+	if maxScroll <= 0 then
+		return
+	end
+	local nextScroll = ( tonumber( host.cl.rfsOrdersScroll ) or 0 ) + ( tonumber( delta ) or 0 )
+	if nextScroll < 0 then nextScroll = 0 end
+	if nextScroll > maxScroll then nextScroll = maxScroll end
+	if nextScroll == ( tonumber( host.cl.rfsOrdersScroll ) or 0 ) then
+		return
+	end
+	host.cl.rfsOrdersScroll = nextScroll
+	RfsBeaconOrdersGui.refresh( host )
+end
+
+-- Legacy name used by older Game.lua wiring; maps to one-row scroll steps.
+function RfsBeaconOrdersGui.pageDelta( host, delta )
+	RfsBeaconOrdersGui.scrollDelta( host, delta )
+end
+
+function RfsBeaconOrdersGui.onScrollChanged( host, pos )
+	host.cl = host.cl or {}
+	if host.cl.rfsOrdersIgnoreSlider then
+		return
+	end
+	if not host.cl.rfsOrdersGui then
+		return
+	end
+	local rows = host.cl.rfsOrdersRows or {}
+	local maxScroll = math.max( 0, #rows - ROWS )
+	local scroll = math.floor( tonumber( pos ) or 0 )
+	if scroll < 0 then scroll = 0 end
+	if scroll > maxScroll then scroll = maxScroll end
+	if scroll == ( tonumber( host.cl.rfsOrdersScroll ) or 0 ) then
+		return
+	end
+	host.cl.rfsOrdersScroll = scroll
+	RfsBeaconOrdersGui.refresh( host )
+end
+
+function RfsBeaconOrdersGui.onMouseWheel( host, scrollValue )
+	local v = tonumber( scrollValue ) or 0
+	if v == 0 then
+		return
+	end
+	-- positive wheel = scroll up (earlier allies)
+	RfsBeaconOrdersGui.scrollDelta( host, ( v > 0 ) and -SCROLL_STEP or SCROLL_STEP )
 end
 
 function RfsBeaconOrdersGui.bind( host, gui )
 	host.cl = host.cl or {}
 	host.cl.rfsOrdersGui = gui
-	host.cl.rfsOrdersPage = host.cl.rfsOrdersPage or 0
+	host.cl.rfsOrdersScroll = host.cl.rfsOrdersScroll or 0
 	host.cl.rfsOrdersRows = host.cl.rfsOrdersRows or {}
 
-	-- Callbacks must resolve on the Game host (GUI is opened via Game client RPC).
-	-- CloseButton → user close. OnClose is separate so Survival interact-tear can
-	-- re-queue; /menu uses the same fn for both because it is never E-bound.
+	-- Game-hosted callbacks (GUI opened on RecipeFrameworkSurvival).
+	-- Separate OnClose so CloseButton → close() does not re-enter close.
 	gui:setButtonCallback( "CloseButton", "cl_rfs_ordersClose" )
-	gui:setButtonCallback( "BtnPrev", "cl_rfs_ordersPrev" )
-	gui:setButtonCallback( "BtnNext", "cl_rfs_ordersNext" )
+	gui:setButtonCallback( "BtnScrollUp", "cl_rfs_ordersScrollUp" )
+	gui:setButtonCallback( "BtnScrollDown", "cl_rfs_ordersScrollDown" )
 	gui:setButtonCallback( "BtnMaster", "cl_rfs_ordersMaster" )
 	gui:setButtonCallback( "BtnRange", "cl_rfs_ordersRange" )
+	pcall( function()
+		gui:setSliderCallback( "ScrollBar", "cl_rfs_ordersScrollChanged" )
+	end )
+	-- Best-effort mouse-wheel (safe if API unsupported).
+	pcall( function()
+		gui:setMouseWheelCallback( "MainPanel", "cl_rfs_ordersMouseWheel" )
+	end )
+	pcall( function()
+		gui:setMouseWheelCallback( "ScrollBar", "cl_rfs_ordersMouseWheel" )
+	end )
 	gui:setOnCloseCallback( "cl_rfs_ordersOnClosed" )
 
 	local seeds = seedLabels()
@@ -433,12 +572,17 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	pcall( function()
 		gui:setSelectedDropDownItem( "ColorDrop", "Ally Green" )
 	end )
+	host.cl.rfsOrdersSuppressDrop = true
 	for i = 0, ROWS - 1 do
+		pcall( function()
+			gui:setVisible( "BotIcon" .. i, false )
+		end )
 		pcall( function()
 			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
 		end )
+		-- One stable item list for every slot — scroll never recreateDropDown.
 		pcall( function()
-			gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_DEFAULT )
+			gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_ALL )
 		end )
 		pcall( function()
 			gui:createDropDown( "SeedDrop" .. i, "cl_rfs_ordersSeed" .. i, seeds )
@@ -446,7 +590,14 @@ function RfsBeaconOrdersGui.bind( host, gui )
 		pcall( function()
 			gui:setVisible( "SeedDrop" .. i, false )
 		end )
+		pcall( function()
+			gui:setVisible( "ModeDrop" .. i, false )
+		end )
+		pcall( function()
+			gui:setVisible( "BotName" .. i, false )
+		end )
 	end
+	host.cl.rfsOrdersSuppressDrop = nil
 end
 
 local function applyOpenMeta( host, opts )
@@ -469,91 +620,37 @@ local function applyOpenMeta( host, opts )
 	end
 end
 
-local function mergeOptsIntoPending( pending, opts )
-	if type( opts ) ~= "table" then
-		return pending
-	end
-	pending = pending or {}
-	if opts.beaconKey then
-		pending.beaconKey = opts.beaconKey
-	end
-	if opts.beaconName then
-		pending.beaconName = opts.beaconName
-	end
-	if opts.role then
-		pending.role = opts.role
-	end
-	if opts.masterKey ~= nil then
-		pending.masterKey = opts.masterKey
-	end
-	if opts.range ~= nil then
-		pending.range = opts.range
-	end
-	if type( opts.pos ) == "table" then
-		pending.pos = opts.pos
-	end
-	if type( opts.rows ) == "table" then
-		pending.rows = opts.rows
-	end
-	return pending
-end
-
-local function snapshotOpts( opts )
-	opts = opts or {}
-	return {
-		beaconKey = opts.beaconKey,
-		beaconName = opts.beaconName,
-		role = opts.role,
-		masterKey = opts.masterKey,
-		range = opts.range,
-		pos = opts.pos,
-		rows = opts.rows,
-	}
-end
-
--- Queue open for Game.client_onUpdate — never gui:open during E-interact.
-function RfsBeaconOrdersGui.queueDeferredOpen( host, opts, delayTicks )
-	opts = opts or {}
-	if not opts.beaconKey or not host then
-		return false
-	end
-	host.cl = host.cl or {}
-	-- Already visible for this beacon: refresh in place (like list RPC), no re-open.
-	if host.cl.rfsOrdersGui
-		and host.cl.rfsOrdersBeaconKey
-		and tostring( host.cl.rfsOrdersBeaconKey ) == tostring( opts.beaconKey ) then
-		applyOpenMeta( host, opts )
-		if type( opts.rows ) == "table" then
-			RfsBeaconOrdersGui.applyList( host, opts )
-		else
-			RfsBeaconOrdersGui.refresh( host )
-		end
-		host.cl.rfsOrdersWantOpen = true
-		host.cl.rfsOrdersLastOpts = mergeOptsIntoPending( host.cl.rfsOrdersLastOpts, snapshotOpts( opts ) )
-		return true
-	end
+local function currentTick()
 	local tick = 0
 	pcall( function()
 		tick = sm.game.getCurrentTick() or 0
 	end )
-	delayTicks = tonumber( delayTicks ) or 5
-	if delayTicks < 2 then
-		delayTicks = 2
-	end
-	local due = tick + delayTicks
-	local prevDue = tonumber( host.cl.rfsOrdersPendingOpenTick )
-	-- Keep the later deadline if already queued (don't open earlier into interact tear).
-	if prevDue and prevDue > due then
-		due = prevDue
-	end
-	host.cl.rfsOrdersPendingOpen = mergeOptsIntoPending( host.cl.rfsOrdersPendingOpen, opts )
-	host.cl.rfsOrdersPendingOpenTick = due
-	host.cl.rfsOrdersWantOpen = true
-	host.cl.rfsOrdersLastOpts = mergeOptsIntoPending( host.cl.rfsOrdersLastOpts, snapshotOpts( opts ) )
-	return true
+	return tick
 end
 
--- Match /menu /setup /gensettings: close existing → createGuiFromLayout → bind → open.
+-- Only used after Close settle: delay createGui until the old window is dead.
+function RfsBeaconOrdersGui.queueOpen( host, opts )
+	host.cl = host.cl or {}
+	opts = opts or {}
+	if not opts.beaconKey then
+		return
+	end
+	local tick = currentTick()
+	local settle = tonumber( host.cl.rfsOrdersReopenAfterTick ) or 0
+	local atTick = tick
+	if settle > atTick then
+		atTick = settle
+	end
+	host.cl.rfsOrdersOpenGen = ( tonumber( host.cl.rfsOrdersOpenGen ) or 0 ) + 1
+	host.cl.rfsPendingOrdersGui = {
+		data = opts,
+		atTick = atTick,
+		gen = host.cl.rfsOrdersOpenGen,
+	}
+end
+
+-- Pre-Close-fix lifecycle (9cbdbc1): create → bind → open → request list.
+-- Host MUST be Game so Close/Master/Color callbacks resolve. No schedule maze.
 function RfsBeaconOrdersGui.open( host, opts )
 	opts = opts or {}
 	if not opts.beaconKey then
@@ -562,35 +659,58 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 
 	host.cl = host.cl or {}
-	host.cl.rfsOrdersPendingOpen = nil
-	host.cl.rfsOrdersPendingOpenTick = nil
-	host.cl.rfsOrdersWantOpen = true
-	host.cl.rfsOrdersLastOpts = snapshotOpts( opts )
+	local tick = currentTick()
+	local settle = tonumber( host.cl.rfsOrdersReopenAfterTick ) or 0
+	if tick < settle then
+		RfsBeaconOrdersGui.queueOpen( host, opts )
+		return
+	end
 
-	-- Same destroy guard as RfsMenuGui.open / RfsSetupGui.open / RfsGenGui.open.
 	if host.cl.rfsOrdersGui then
-		host.cl.rfsOrdersReplacing = true
-		pcall( function() host.cl.rfsOrdersGui:close() end )
+		local old = host.cl.rfsOrdersGui
 		host.cl.rfsOrdersGui = nil
-		host.cl.rfsOrdersReplacing = false
+		pcall( function() old:close() end )
 	end
 
 	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
 	if not ok or not gui then
 		sm.gui.chatMessage( "[RFS] Failed to open Beacon Orders GUI" )
 		print( "[RFS] orders GUI create failed: " .. tostring( gui ) )
-		host.cl.rfsOrdersWantOpen = false
 		return
 	end
 
+	-- Compare before applyOpenMeta overwrites the key (keeps cached rows on reopen).
+	local prevKey = host.cl.rfsOrdersBeaconKey
+	local sameBeacon = prevKey and opts.beaconKey
+		and tostring( prevKey ) == tostring( opts.beaconKey )
 	applyOpenMeta( host, opts )
 	host.cl.rfsOrdersRange = tonumber( opts.range ) or host.cl.rfsOrdersRange or 16
-	host.cl.rfsOrdersPage = 0
-	host.cl.rfsOrdersRows = {}
+	host.cl.rfsOrdersScroll = 0
 	host.cl.rfsOrdersSelectedKey = nil
+	if type( opts.rows ) == "table" and #opts.rows > 0 then
+		host.cl.rfsOrdersRows = {}
+		for _, row in ipairs( opts.rows ) do
+			if row and row.key then
+				host.cl.rfsOrdersRows[#host.cl.rfsOrdersRows + 1] = row
+			end
+		end
+	elseif not sameBeacon then
+		host.cl.rfsOrdersRows = {}
+	else
+		-- Reopen same beacon: keep prior ally cache (3.5c list fill).
+		host.cl.rfsOrdersRows = host.cl.rfsOrdersRows or {}
+	end
+	host.cl.rfsPendingOrdersGui = nil
+	host.cl.rfsOrdersReopenAfterTick = nil
 
 	RfsBeaconOrdersGui.bind( host, gui )
-	if type( opts.rows ) == "table" then
+	RfsBeaconOrdersGui.refresh( host )
+	gui:open()
+	pcall( function()
+		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5e)" )
+	end )
+
+	if type( opts.rows ) == "table" and #opts.rows > 0 then
 		RfsBeaconOrdersGui.applyList( host, {
 			rows = opts.rows,
 			beaconKey = opts.beaconKey,
@@ -598,75 +718,30 @@ function RfsBeaconOrdersGui.open( host, opts )
 			role = opts.role,
 			masterKey = opts.masterKey,
 		} )
-	else
-		RfsBeaconOrdersGui.refresh( host )
+	elseif #( host.cl.rfsOrdersRows or {} ) == 0 and host.network and host.network.sendToServer then
 		host.network:sendToServer( "sv_rfs_ordersList", {
 			beaconKey = host.cl.rfsOrdersBeaconKey,
 		} )
 	end
-	gui:open()
-	sm.gui.chatMessage( "RFS Beacon Orders opened" )
 end
 
--- Match RfsMenuGui.close (user Close / explicit dismiss).
+-- Close: nil ref first (OnClose no-op), engine close, then ~0.5s reopen settle.
 function RfsBeaconOrdersGui.close( host )
+	host.cl = host.cl or {}
 	destroyHostRangeRing( host )
-	if host.cl then
-		host.cl.rfsOrdersWantOpen = false
-		host.cl.rfsOrdersPendingOpen = nil
-		host.cl.rfsOrdersPendingOpenTick = nil
-		host.cl.rfsOrdersReopenCount = 0
-	end
-	local gui = host.cl and host.cl.rfsOrdersGui
+	local gui = host.cl.rfsOrdersGui
+	host.cl.rfsOrdersGui = nil
+	host.cl.rfsPendingOrdersGui = nil
+	host.cl.rfsOrdersReopenAfterTick = currentTick() + REOPEN_SETTLE_TICKS
 	if gui then
 		pcall( function() gui:close() end )
 	end
-	if host.cl then
-		host.cl.rfsOrdersGui = nil
-	end
 end
 
--- Survival may fire OnClose when E-interact tears down a panel opened too early.
--- If the user still wants Orders, re-queue (capped) after interact ends.
+-- Engine OnClose only — do not re-enter close or clear a queued reopen.
 function RfsBeaconOrdersGui.onClosed( host )
-	destroyHostRangeRing( host )
-	if host.cl then
-		host.cl.rfsOrdersGui = nil
-	end
-	if not host.cl or host.cl.rfsOrdersReplacing then
-		return
-	end
-	if not host.cl.rfsOrdersWantOpen or not host.cl.rfsOrdersLastOpts then
-		return
-	end
-	local n = ( host.cl.rfsOrdersReopenCount or 0 ) + 1
-	host.cl.rfsOrdersReopenCount = n
-	if n > 3 then
-		host.cl.rfsOrdersWantOpen = false
-		host.cl.rfsOrdersReopenCount = 0
-		return
-	end
-	RfsBeaconOrdersGui.queueDeferredOpen( host, host.cl.rfsOrdersLastOpts, 8 )
-end
-
--- Called from Game.client_onUpdate after interact ends.
-function RfsBeaconOrdersGui.pumpPendingOpen( host )
 	host.cl = host.cl or {}
-	local pending = host.cl.rfsOrdersPendingOpen
-	if not pending then
-		return
-	end
-	local due = tonumber( host.cl.rfsOrdersPendingOpenTick ) or 0
-	local tick = 0
-	pcall( function()
-		tick = sm.game.getCurrentTick() or 0
-	end )
-	if tick < due then
-		return
-	end
-	host.cl.rfsOrdersPendingOpen = nil
-	host.cl.rfsOrdersPendingOpenTick = nil
-	RfsBeaconOrdersGui.open( host, pending )
+	host.cl.rfsOrdersGui = nil
 end
 
 function RfsBeaconOrdersGui.applyRole( host, data )
@@ -684,8 +759,10 @@ function RfsBeaconOrdersGui.applyRole( host, data )
 	RfsBeaconOrdersGui.refresh( host )
 end
 
+-- Soft range toggle: never destroy Orders GUI / never rebuild rings here.
 function RfsBeaconOrdersGui.toggleRange( host )
 	host.cl = host.cl or {}
+	local gui = host.cl.rfsOrdersGui
 	local key = host.cl.rfsOrdersBeaconKey
 	if not key then
 		return
@@ -695,8 +772,6 @@ function RfsBeaconOrdersGui.toggleRange( host )
 	local on = not ( _G.g_rfsBeaconRangeVisible[key] == true )
 	_G.g_rfsBeaconRangeVisible[key] = on
 	host.cl.rfsOrdersShowRange = on
-	-- Server mirrors onto beacon clientData.showRange so the interactable client
-	-- (separate sandbox from Game GUI) actually draws/clears the ring.
 	if host.network and host.network.sendToServer then
 		pcall( function()
 			host.network:sendToServer( "sv_rfs_ordersRange", {
@@ -705,14 +780,11 @@ function RfsBeaconOrdersGui.toggleRange( host )
 			} )
 		end )
 	end
-	-- Game-client fallback ring (works even when beacon never sees Game's _G).
-	if on then
-		buildHostRangeRing( host, host.cl.rfsOrdersRange )
-	else
-		destroyHostRangeRing( host )
+	if gui then
+		pcall( function()
+			gui:setText( "BtnRange", on and "HIDE RANGE" or "SHOW RANGE" )
+		end )
 	end
-	RfsBeaconOrdersGui.refresh( host )
-	sm.gui.chatMessage( on and "[RFS] Range shown" or "[RFS] Range hidden" )
 end
 
 function RfsBeaconOrdersGui.setMaster( host )
@@ -731,20 +803,14 @@ end
 
 function RfsBeaconOrdersGui.applyList( host, data )
 	host.cl = host.cl or {}
-	-- List arrived before deferred open: stash into pending so pump opens with allies.
-	local gui = host.cl.rfsOrdersGui
-	if ( not gui ) and host.cl.rfsOrdersPendingOpen then
-		host.cl.rfsOrdersPendingOpen = mergeOptsIntoPending( host.cl.rfsOrdersPendingOpen, data )
-		host.cl.rfsOrdersLastOpts = mergeOptsIntoPending( host.cl.rfsOrdersLastOpts, data )
-		return
-	end
-	host.cl.rfsOrdersRows = {}
+	-- Only replace the ally cache when a real rows table arrives.
+	-- Never clear on nil/missing data (scroll must never lose N allies).
 	if type( data ) == "table" and type( data.rows ) == "table" then
+		local nextRows = {}
 		for _, row in ipairs( data.rows ) do
 			if row and row.key then
 				local kind = botKind( row.unitType or row.type, row.name )
 				local mode = modeValue( row.mode )
-				-- Soft-clamp: farm only on hay, collect only on tote, oil only on water.
 				if mode == "farm" and kind ~= "hay" then
 					mode = "rest"
 				end
@@ -754,9 +820,10 @@ function RfsBeaconOrdersGui.applyList( host, data )
 				if mode == "oil" and kind ~= "water" then
 					mode = "rest"
 				end
-				host.cl.rfsOrdersRows[#host.cl.rfsOrdersRows + 1] = {
+				nextRows[#nextRows + 1] = {
 					key = tostring( row.key ),
 					name = row.name or ( "Bot " .. tostring( row.key ) ),
+					displayIndex = tonumber( row.displayIndex ),
 					unitType = row.unitType or row.type,
 					kind = kind,
 					mode = mode,
@@ -766,6 +833,7 @@ function RfsBeaconOrdersGui.applyList( host, data )
 				}
 			end
 		end
+		host.cl.rfsOrdersRows = nextRows
 	end
 	if data and data.beaconName then
 		host.cl.rfsOrdersBeaconName = data.beaconName
@@ -776,14 +844,19 @@ function RfsBeaconOrdersGui.applyList( host, data )
 	if data and data.masterKey ~= nil then
 		host.cl.rfsOrdersMasterKey = data.masterKey
 	end
-	RfsBeaconOrdersGui.refresh( host )
+	if data and data.beaconKey and not host.cl.rfsOrdersBeaconKey then
+		host.cl.rfsOrdersBeaconKey = tostring( data.beaconKey )
+	end
+	if host.cl.rfsOrdersGui then
+		RfsBeaconOrdersGui.refresh( host )
+	end
 end
 
 function RfsBeaconOrdersGui.onBotClick( host, rowIdx )
 	host.cl = host.cl or {}
 	local rows = host.cl.rfsOrdersRows or {}
-	local page = host.cl.rfsOrdersPage or 0
-	local abs = page * ROWS + ( tonumber( rowIdx ) or 0 ) + 1
+	local scroll = host.cl.rfsOrdersScroll or 0
+	local abs = scroll + ( tonumber( rowIdx ) or 0 ) + 1
 	local row = rows[abs]
 	if not row or not row.key then
 		return
@@ -819,9 +892,12 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 end
 
 function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
+	if host.cl and host.cl.rfsOrdersSuppressDrop then
+		return
+	end
 	local rows = host.cl and host.cl.rfsOrdersRows or {}
-	local page = host.cl and host.cl.rfsOrdersPage or 0
-	local abs = page * ROWS + ( tonumber( rowIdx ) or 0 ) + 1
+	local scroll = host.cl and host.cl.rfsOrdersScroll or 0
+	local abs = scroll + ( tonumber( rowIdx ) or 0 ) + 1
 	local row = rows[abs]
 	if not row or not row.key then
 		return
@@ -854,9 +930,12 @@ function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
 end
 
 function RfsBeaconOrdersGui.onSeedDrop( host, rowIdx, value )
+	if host.cl and host.cl.rfsOrdersSuppressDrop then
+		return
+	end
 	local rows = host.cl and host.cl.rfsOrdersRows or {}
-	local page = host.cl and host.cl.rfsOrdersPage or 0
-	local abs = page * ROWS + ( tonumber( rowIdx ) or 0 ) + 1
+	local scroll = host.cl and host.cl.rfsOrdersScroll or 0
+	local abs = scroll + ( tonumber( rowIdx ) or 0 ) + 1
 	local row = rows[abs]
 	if not row or not row.key or row.kind ~= "hay" then
 		return
@@ -880,6 +959,8 @@ function RfsBeaconOrdersGui.onSeedDrop( host, rowIdx, value )
 end
 
 RfsBeaconOrdersGui.ROWS = ROWS
+RfsBeaconOrdersGui.SCROLL_STEP = SCROLL_STEP
+RfsBeaconOrdersGui.REOPEN_SETTLE_TICKS = REOPEN_SETTLE_TICKS
 RfsBeaconOrdersGui.modeLabel = modeLabel
 RfsBeaconOrdersGui.modeValue = modeValue
 RfsBeaconOrdersGui.botKind = botKind

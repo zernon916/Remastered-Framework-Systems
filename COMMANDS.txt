@@ -111,19 +111,20 @@ Streamer / Discord
   writes a local JSON drop; RfsStreamer polls and spawn/gives.
 
 
-Hijack polish still open (not commands — see PENDING_FIXES.md §3 + HIJACK_ROADMAP)
--------------------------------------------------------------------------------
+Phase 3 Orders status (not commands — see HIJACK_ROADMAP Phase 3 checklist)
+---------------------------------------------------------------------------
+  WIP local HACK 3.13 (2026-08-15) — 3.11 open + PREV/NEXT never setVisible.
+  [DONE]  M1–M5 jobs, Master/Slave, colors, E on beacons, icon+number list,
+          open/close, SHOW RANGE menu-safe; Prev/Next layout-visible + no-op
+  [NEXT]  Confirm 3.13: Orders opened + list N>0 + reopen; Prev/Next no-op OK;
+          SHOW RANGE ring visible; nametag numbers / bot naming; RAID farm-range filter
+  [FUTURE] Recall bots + Stay in area; Phase 3.5 pathfinding/chests; Phase 3.6 GUI tab
+
+Hijack polish still open (not commands — see PENDING_FIXES.md §3a–3c + HIJACK_ROADMAP)
+-------------------------------------------------------------------------------------
   Phase 2: numbers above bots missing; bot naming (E on bot or hack device;
            names + numbers above head)
   Phase 5: RAID range filter — out-of-range farm bots must ignore RAID behavior
-
-Future (not commands — see HIJACK_ROADMAP Phase 3.5 / 3.6 + PENDING_FIXES.md §4–§5)
----------------------------------------------------------------------------------
-  Phase 3.5: bot pathfinding + painted/assigned chests (seeds / produce / drop-off;
-             optional connection tool to beacon Orders domain)
-  Phase 3.6: Menu tab GUI (visuals) — Names on/off, Farmbot→"Big Red", enemy/neutral
-             health-bar colors; block health overlay if SM exposes it.
-             Likely under /menu or /gensettings FEATURES/GUI (TBD). Not Beacon Orders.
 
 Also available from Survival (when bound)
 ----------------------------------------

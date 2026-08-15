@@ -2,11 +2,20 @@
 
 Open polish only. Do not treat these as shipped features. Sources: `PENDING_FIXES.md`, `HIJACK_ROADMAP.txt`, `COMMANDS.txt`.
 
-## Nametag numbers (OPEN)
+WIP note (2026-08-15): local **HACK 3.10** — not all on GitHub (push freeze).  
+Orders checklist: `HIJACK_ROADMAP.txt` Phase 3 (`[DONE]` / `[NEXT]` / `[FUTURE]`).
 
-Idle identity / numbers above hijacked bots are incomplete or missing. Phase 2 lite claimed overhead via `pushTag` (idle name; HACK/DROP/CHAIN priority). Numbers still need verification on clients.
+## [NEXT] — verify during HACK 3.10
 
-## Bot naming / rename UI (OPEN)
+- Confirm Orders: open + list fill + icons/H1 fallback + close/reopen + Prev/Next safe
+- SHOW RANGE ground ring actually visible (menu no longer dies — ring polish parked)
+- Empty-list / reopen regressions — watch during test
+
+## Nametag numbers — **[NEXT]**
+
+Idle identity / numbers above hijacked bots are incomplete or missing (issue #2 style). Phase 2 lite claimed overhead via `pushTag`. World type+number tags / half-size landed in Orders polish; issue-#2-style numbers still need verification.
+
+## Bot naming / rename UI — **[NEXT]**
 
 No shipped way yet to set a custom bot name via:
 
@@ -15,27 +24,34 @@ No shipped way yet to set a custom bot name via:
 
 Desired: names show above the head **with** the numbers.
 
-## RAID farm-range filter (OPEN)
+## RAID farm-range filter — **[NEXT]**
 
 Bots that are **out of range of farms** should **not** be affected by RAID jam / range mul / raid notes. Still open in Phase 5 polish.
 
-## Pathfinding & painted chests (FUTURE — Phase 3.5)
+## Pathfinding & painted chests — **[FUTURE]** (Phase 3.5)
 
 Not started. Farm / Collect / Oil still use vanilla unit AI navigation. Planned: reliable pathfinding through doorways to chests, plus painted / assigned chests (color roles + optional connection tool to beacon Orders domain). Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.5, `PENDING_FIXES.md` §4, [[Bot-Orders]].
 
-## Menu tab: GUI visuals (FUTURE — Phase 3.6)
+## Menu tab: GUI visuals — **[FUTURE]** (Phase 3.6)
 
-Not started (do not build during HACK 3.3 testing). Planned player/host visual prefs — Names on/off, Farmbots as **"Big Red"**, enemy/neutral health-bar color dropdowns, and a block health overlay (green→red) only if SM exposes damage visuals. Menu home TBD (`/menu` or `/gensettings` FEATURES/GUI). Relates to Phase 2 nametag/naming polish and HACK 3.3 type+number / icons. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6, `PENDING_FIXES.md` §5.
+Not started (do not build during HACK 3.10 testing). Planned player/host visual prefs — Names on/off, Farmbots as **"Big Red"**, enemy/neutral health-bar color dropdowns, and a block health overlay (green→red) only if SM exposes damage visuals. Menu home TBD (`/menu` or `/gensettings` FEATURES/GUI). Relates to Phase 2 nametag/naming polish and Orders type+number badges. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6, `PENDING_FIXES.md` §5.
+
+## Recall bots / Stay in area — **[FUTURE]** (end of Phase 3)
+
+After SHOW RANGE ring polish: recall allies to beacon; Orders checkbox leash / stay near range. See `HIJACK_ROADMAP.txt` Phase 3 [FUTURE].
 
 ## Cotton in autumn
 
 Not an RFS bug. Vanilla places world cotton in autumn forest interiors; easy to miss (small scale / short view distance). See `PENDING_FIXES.md` section 2.
 
-## Recently fixed (this pack)
+## [DONE] recently (Orders / this pack — local HACK 3.10)
 
-- Beacon Orders menu open / close binding (Game client RPC)
-- Empty ally list on Master / Independent Orders (domain migrate + beacon-built list + in-range fallback)
-- SHOW RANGE / HIDE RANGE (networked `showRange` + Game-client ring fallback)
-- Ally color presets UI
+- M1–M5 jobs, Master/Slave, color presets, `usable:true` E on beacons
+- Raid list clear on destroy/capture
+- Nametag half size; type+number world tags; Orders icon+number (NodeIcons / H1 fallback)
+- Orders open / close / reopen + list fill (HACK 3.5+ / 3.9)
+- SHOW RANGE no longer kills menu (ring visibility still [NEXT])
+- Prev/Next hide on 1 page (verify under [NEXT])
+- Ally color presets UI; Craftbot client extras (earlier push)
 
 Quit Scrap Mechanic fully and reload the Workshop / `C:\sm\RFS` pack after syncing before testing.

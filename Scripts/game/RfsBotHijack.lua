@@ -30,12 +30,18 @@ local RED_IMPULSE = 14
 local RED_DAMAGE = 19
 local BIG_RED_MUL = 1.25
 local UUID_FARMBOT = sm.uuid.new( "9f4fde94-312f-4417-b13b-84029c5d6b52" )
+local UUID_HAYBOT = sm.uuid.new( "c8bfb8f3-7efc-49ac-875a-eb85ac0614db" )
+local UUID_TAPEBOT = sm.uuid.new( "04761b4a-a83e-4736-b565-120bc776edb2" )
 local UUID_MINERBOT = sm.uuid.new( "92da8324-3cfe-4529-ac1c-c71facda50a3" )
 local UUID_CABLEBOT = sm.uuid.new( "b837888a-0480-4a34-bc34-d72261a14385" )
+local UUID_TOTEBOT_BLUE = sm.uuid.new( "58992f50-ca36-44e1-8c47-4996d89d6a9a" )
 -- Phase 2 lite: infected/ally slowly convert nearby hostiles (not farm orders).
 local CHAIN_RANGE = 10
 local CHAIN_NEED_TICKS = 40 * 15 -- ~15 s
 local IDENTITY_TAG_EVERY = 80 -- 2 s nametag refresh when idle
+-- Domain default ally tint (last Orders color pick) + stable Type N indices.
+RfsBotHijack.domainAllyColor = RfsBotHijack.domainAllyColor or {} -- [masterKey] = hex
+RfsBotHijack.domainSeq = RfsBotHijack.domainSeq or {} -- [masterKey] = { next=N, byUnit={ [uk]=n } }
 
 local function hackableRobotsOn()
 	if type( RfsFeatures ) == "table" and type( RfsFeatures.hackableRobotsEnabled ) == "function" then
@@ -252,54 +258,195 @@ function RfsBotHijack.isUndergroundBotCharacter( char )
 		or t == cable or t == UUID_CABLEBOT or tostring( t ) == tostring( cable )
 end
 
-local function shortTypeName( typeStr )
-	typeStr = tostring( typeStr or "robot" )
-	-- Prefer readable tail of UUID-looking strings; Survival often uses unit_* globals.
-	if unit_farmbot and tostring( typeStr ) == tostring( unit_farmbot ) then
-		return "Farmbot"
+local function sameTypeUuid( typeStr, uuid )
+	if not uuid then
+		return false
 	end
-	if unit_haybot and tostring( typeStr ) == tostring( unit_haybot ) then
-		return "Haybot"
-	end
-	if unit_tapebot and tostring( typeStr ) == tostring( unit_tapebot ) then
-		return "Tapebot"
-	end
-	if unit_minerbot and tostring( typeStr ) == tostring( unit_minerbot ) then
-		return "Minerbot"
-	end
-	if unit_cablebot and tostring( typeStr ) == tostring( unit_cablebot ) then
-		return "Cablebot"
-	end
-	-- Totebot Blue = Waterbot (Collect Oil M4). Check before generic tote.
-	local blue = unit_totebot_blue or sm.uuid.new( "58992f50-ca36-44e1-8c47-4996d89d6a9a" )
-	if blue and ( typeStr == tostring( blue ) or string.lower( typeStr ) == string.lower( tostring( blue ) ) ) then
-		return "Waterbot"
-	end
-	if unit_waterbot and tostring( typeStr ) == tostring( unit_waterbot ) then
-		return "Waterbot"
-	end
-	if string.find( typeStr, "waterbot", 1, true ) or string.find( typeStr, "Waterbot", 1, true ) then
-		return "Waterbot"
-	end
-	if string.find( typeStr, "tote", 1, true ) or string.find( typeStr, "Tote", 1, true ) then
-		return "Totebot"
-	end
-	if #typeStr > 8 then
-		return "Bot-" .. string.sub( typeStr, -4 )
-	end
-	return typeStr
+	return tostring( typeStr ) == tostring( uuid )
 end
 
-local function makeDisplayName( unit, typeStr, mode )
-	local prefix = ( mode == "infected" ) and "Inf" or "Ally"
-	local base = shortTypeName( typeStr )
-	local idTail = ""
-	pcall( function()
-		if unit and unit.id ~= nil then
-			idTail = "-" .. tostring( unit.id % 1000 )
+-- Short world/list labels: Tote / Hay / Farm / Tape / Water / …
+local function shortTypeName( typeStr )
+	typeStr = tostring( typeStr or "robot" )
+	local lower = string.lower( typeStr )
+	local farm = unit_farmbot or UUID_FARMBOT
+	local hay = unit_haybot or UUID_HAYBOT
+	local tape = unit_tapebot or UUID_TAPEBOT
+	local miner = unit_minerbot or UUID_MINERBOT
+	local cable = unit_cablebot or UUID_CABLEBOT
+	local blue = unit_totebot_blue or UUID_TOTEBOT_BLUE
+	if sameTypeUuid( typeStr, farm ) or string.find( lower, "farmbot", 1, true ) then
+		return "Farm"
+	end
+	if sameTypeUuid( typeStr, hay ) or string.find( lower, "haybot", 1, true ) or string.find( lower, "hay", 1, true ) then
+		return "Hay"
+	end
+	if sameTypeUuid( typeStr, tape ) or string.find( lower, "tapebot", 1, true ) or string.find( lower, "tape", 1, true ) then
+		return "Tape"
+	end
+	if sameTypeUuid( typeStr, miner ) or string.find( lower, "miner", 1, true ) then
+		return "Miner"
+	end
+	if sameTypeUuid( typeStr, cable ) or string.find( lower, "cable", 1, true ) then
+		return "Cable"
+	end
+	if sameTypeUuid( typeStr, blue )
+		or sameTypeUuid( typeStr, unit_waterbot )
+		or string.find( lower, "waterbot", 1, true )
+		or string.find( lower, "water", 1, true ) then
+		return "Water"
+	end
+	if string.find( lower, "tote", 1, true ) then
+		return "Tote"
+	end
+	if string.find( lower, "loot", 1, true ) then
+		return "Loot"
+	end
+	if string.find( lower, "seed", 1, true ) then
+		return "Seed"
+	end
+	if string.find( lower, "trash", 1, true ) then
+		return "Trash"
+	end
+	if string.find( lower, "scan", 1, true ) then
+		return "Scan"
+	end
+	return "Bot"
+end
+
+local function parseTypeNumberName( name )
+	name = tostring( name or "" )
+	local label, num = string.match( name, "^([%a]+)%s+(%d+)$" )
+	if label and num then
+		return label, tonumber( num )
+	end
+	return nil, nil
+end
+
+local function isLegacyDisplayName( name )
+	name = tostring( name or "" )
+	if name == "" then
+		return true
+	end
+	if string.find( name, "^Inf ", 1 ) or string.find( name, "^Ally ", 1 ) then
+		return true
+	end
+	if string.find( name, "Bot%-", 1 ) then
+		return true
+	end
+	local label, num = parseTypeNumberName( name )
+	return not ( label and num )
+end
+
+local function namingDomainKey( beaconKey )
+	beaconKey = beaconKey and tostring( beaconKey ) or nil
+	if not beaconKey or beaconKey == "" then
+		return "_"
+	end
+	local master = beaconKey
+	if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
+		pcall( function()
+			master = RfsBotHijack.orderDomainMasterKey( beaconKey ) or beaconKey
+		end )
+	end
+	return tostring( master or beaconKey )
+end
+
+local function allocDomainIndex( domainKey, unitKey, prefer )
+	domainKey = tostring( domainKey or "_" )
+	unitKey = tostring( unitKey or "" )
+	if unitKey == "" then
+		return tonumber( prefer ) or 1
+	end
+	local slot = RfsBotHijack.domainSeq[domainKey]
+	if type( slot ) ~= "table" then
+		slot = { next = 1, byUnit = {} }
+		RfsBotHijack.domainSeq[domainKey] = slot
+	end
+	slot.byUnit = slot.byUnit or {}
+	if slot.byUnit[unitKey] then
+		return slot.byUnit[unitKey]
+	end
+	local n = tonumber( prefer )
+	if not n or n < 1 then
+		n = tonumber( slot.next ) or 1
+	end
+	-- Avoid collisions with already-assigned indices.
+	local used = {}
+	for _, v in pairs( slot.byUnit ) do
+		used[tonumber( v ) or 0] = true
+	end
+	while used[n] do
+		n = n + 1
+	end
+	slot.byUnit[unitKey] = n
+	if n >= ( tonumber( slot.next ) or 1 ) then
+		slot.next = n + 1
+	end
+	return n
+end
+
+local function domainColorFor( beaconKey )
+	local dk = namingDomainKey( beaconKey )
+	local hex = normalizeColorHex( RfsBotHijack.domainAllyColor[dk] )
+	if hex then
+		return hex
+	end
+	local rec = RfsBotHijack.beacons[dk]
+	if rec then
+		hex = normalizeColorHex( rec.allyColor )
+		if hex then
+			return hex
 		end
-	end )
-	return prefix .. " " .. base .. idTail
+	end
+	if beaconKey and tostring( beaconKey ) ~= dk then
+		rec = RfsBotHijack.beacons[tostring( beaconKey )]
+		if rec then
+			return normalizeColorHex( rec.allyColor )
+		end
+	end
+	return nil
+end
+
+function RfsBotHijack.setDomainAllyColor( beaconKey, colorHex )
+	local hex = normalizeColorHex( colorHex )
+	if not hex then
+		return false
+	end
+	local dk = namingDomainKey( beaconKey )
+	RfsBotHijack.domainAllyColor[dk] = hex
+	local domain = { [dk] = true }
+	if type( RfsBotHijack.orderDomainKeys ) == "function" then
+		pcall( function()
+			domain = RfsBotHijack.orderDomainKeys( beaconKey ) or domain
+		end )
+	end
+	for key, _ in pairs( domain ) do
+		local rec = RfsBotHijack.beacons[tostring( key )]
+		if rec then
+			rec.allyColor = hex
+		end
+	end
+	return true, hex
+end
+
+function RfsBotHijack.getDomainAllyColor( beaconKey )
+	return domainColorFor( beaconKey )
+end
+
+-- World nametag + Orders identity: "Tote 1", "Hay 2", … (stable per domain).
+local function makeDisplayName( unit, typeStr, opts )
+	opts = opts or {}
+	local base = shortTypeName( typeStr )
+	local uk = unitKey( unit )
+	local domainKey = namingDomainKey( opts.workBeaconKey or opts.beaconKey or opts.domainKey )
+	local prefer = tonumber( opts.displayIndex )
+	if not prefer and opts.displayName then
+		local _, n = parseTypeNumberName( opts.displayName )
+		prefer = n
+	end
+	local idx = allocDomainIndex( domainKey, uk, prefer )
+	return base .. " " .. tostring( idx ), idx, base
 end
 
 local function nowTick()
@@ -702,6 +849,9 @@ function RfsBotHijack.registerBeacon( key, rec )
 	if rec.masterKey == nil and prev and prev.masterKey ~= nil then
 		rec.masterKey = prev.masterKey
 	end
+	if rec.allyColor == nil and prev and prev.allyColor ~= nil then
+		rec.allyColor = prev.allyColor
+	end
 	rec.role = normalizeBeaconRole( rec.role )
 	if rec.role ~= "slave" then
 		rec.masterKey = nil
@@ -1032,7 +1182,6 @@ function RfsBotHijack.register( unit, ownerId, opts )
 	local mode = opts.mode or ( prev and prev.mode ) or "tethered"
 	local orig = ( prev and prev.origColor ) or charColorHex( char )
 	local firstSeen = opts.firstSeenTick or ( prev and prev.firstSeenTick ) or nowTick()
-	local displayName = opts.displayName or ( prev and prev.displayName ) or makeDisplayName( unit, t, mode )
 	local unitType = opts.unitType or ( prev and prev.unitType ) or t
 	local beaconKey = opts.beaconKey or ( prev and prev.beaconKey )
 	-- Sticky home for Rest/Defend/Farm jobs (survives infect / tether hops).
@@ -1041,7 +1190,29 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		workBeaconKey = tostring( workBeaconKey )
 	end
 	local order = opts.order or opts.rfsOrder or ( prev and ( prev.order or prev.rfsOrder ) )
-	local allyColor = normalizeColorHex( opts.allyColor ) or ( prev and normalizeColorHex( prev.allyColor ) )
+	local allyColor = normalizeColorHex( opts.allyColor )
+		or ( prev and normalizeColorHex( prev.allyColor ) )
+		or domainColorFor( workBeaconKey or beaconKey )
+	local displayName = opts.displayName or ( prev and prev.displayName )
+	local displayIndex = tonumber( opts.displayIndex ) or ( prev and tonumber( prev.displayIndex ) )
+	if displayName and isLegacyDisplayName( displayName ) then
+		displayName = nil
+		displayIndex = nil
+	end
+	if not displayName then
+		displayName, displayIndex = makeDisplayName( unit, unitType or t, {
+			beaconKey = beaconKey,
+			workBeaconKey = workBeaconKey,
+			displayIndex = displayIndex,
+			displayName = prev and prev.displayName,
+		} )
+	else
+		local _, n = parseTypeNumberName( displayName )
+		displayIndex = displayIndex or n
+		if displayIndex then
+			allocDomainIndex( namingDomainKey( workBeaconKey or beaconKey ), key, displayIndex )
+		end
+	end
 	RfsBotHijack.allies[key] = {
 		type = t,
 		unitType = unitType,
@@ -1057,6 +1228,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		hijackTicks = tonumber( opts.hijackTicks ) or ( prev and prev.hijackTicks ) or 320,
 		controlled = true,
 		displayName = displayName,
+		displayIndex = displayIndex,
 		firstSeenTick = firstSeen,
 		lastTagTick = prev and prev.lastTagTick or 0,
 	}
@@ -1066,6 +1238,7 @@ function RfsBotHijack.register( unit, ownerId, opts )
 	pushIdentityToUnit( unit, {
 		owner = RfsBotHijack.allies[key].owner,
 		displayName = displayName,
+		displayIndex = displayIndex,
 		unitType = unitType,
 		firstSeenTick = firstSeen,
 		mode = mode,
@@ -1219,7 +1392,17 @@ function RfsBotHijack.tick( world )
 							info.workBeaconKey = info.workBeaconKey or info.beaconKey or bkey
 							info.beaconKey = nil
 							info.infectAcc = 0
-							info.displayName = makeDisplayName( unit, info.unitType or info.type, "infected" )
+							-- Keep Type N identity; only mode changes.
+							if not info.displayName or isLegacyDisplayName( info.displayName ) then
+								info.displayName, info.displayIndex = makeDisplayName( unit, info.unitType or info.type, {
+									workBeaconKey = info.workBeaconKey,
+									beaconKey = bkey,
+									displayIndex = info.displayIndex,
+								} )
+							end
+							if not info.allyColor then
+								info.allyColor = domainColorFor( info.workBeaconKey or bkey )
+							end
 							local ord = info.rfsOrder or info.order
 							if type( ord ) == "table" then
 								ord.beaconKey = info.workBeaconKey
@@ -1229,6 +1412,7 @@ function RfsBotHijack.tick( world )
 							pushIdentityToUnit( unit, {
 								owner = info.owner,
 								displayName = info.displayName,
+								displayIndex = info.displayIndex,
 								unitType = info.unitType or info.type,
 								firstSeenTick = info.firstSeenTick,
 								mode = "infected",
@@ -1329,8 +1513,17 @@ function RfsBotHijack.convertUnit( unit, ownerId, opts )
 	if not opts.unitType then
 		opts.unitType = charTypeStr( unit.character )
 	end
+	-- Inherit domain Orders color so fresh hijacks match listed allies.
+	if not opts.allyColor then
+		opts.allyColor = domainColorFor( opts.workBeaconKey or opts.beaconKey )
+	end
+	if opts.displayName and isLegacyDisplayName( opts.displayName ) then
+		opts.displayName = nil
+	end
 	if not opts.displayName then
-		opts.displayName = makeDisplayName( unit, opts.unitType, opts.mode or "tethered" )
+		local name, idx = makeDisplayName( unit, opts.unitType, opts )
+		opts.displayName = name
+		opts.displayIndex = idx
 	end
 	RfsBotHijack.register( unit, ownerId, opts )
 	-- Captured raiders leave the raid list immediately (same as destroy).
@@ -1558,6 +1751,10 @@ local function kindFromText( text )
 	if string.find( text, "CHAIN", 1, true ) then
 		return "chain"
 	end
+	-- Type N nametags (Tote 1) — anything else with letters+number is still a name.
+	if parseTypeNumberName( text ) then
+		return "name"
+	end
 	if string.find( text, "Ally ", 1, true ) or string.find( text, "Inf ", 1, true ) then
 		return "name"
 	end
@@ -1602,9 +1799,24 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 	end
 	self.cl = self.cl or {}
 	local text = data and tostring( data.text or "" ) or ""
-	self.cl.rfsLastTag = { text = text, kind = data and data.kind }
+	local kind = ( data and data.kind ) or kindFromText( text )
+	local prev = self.cl.rfsLastTag
+	-- Skip no-op re-applies (client_onUpdate used to recreate FX every frame).
+	if prev and prev.text == text and prev.kind == kind and text ~= "" then
+		local fx = self.cl.rfsTagFx
+		local alive = false
+		pcall( function()
+			alive = fx and sm.exists( fx ) and fx:isPlaying()
+		end )
+		if alive then
+			return
+		end
+	end
+	self.cl.rfsLastTag = { text = text, kind = kind }
 	if text == "" then
 		RfsBotHijack.cl_destroyCharTag( self )
+		-- Clear Survival character debug text channel so animation labels
+		-- (e.g. "Balanced") cannot stack with leftover RFS fallbacks.
 		pcall( function()
 			sm.gui.setCharacterDebugText( self.character, "" )
 		end )
@@ -1616,7 +1828,9 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 		alive = fx and sm.exists( fx )
 	end )
 	if not alive then
-		local names = { "RfsHackText", "RfsGrowText", "DebugText" }
+		-- Never use vanilla DebugText — it shares the character debug channel
+		-- with Survival animation labels and causes overlapping "Balanced"/etc.
+		local names = { "RfsHackText", "RfsGrowText" }
 		for _, name in ipairs( names ) do
 			local ok, created = pcall( sm.effect.createEffect, name, self.character, nil, sm.effect.axis.all )
 			if not ( ok and created ) then
@@ -1650,7 +1864,6 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 		name = sm.color.new( 0.35, 0.95, 0.55, 1.0 ),
 		chain = sm.color.new( 0.75, 0.95, 0.35, 1.0 ),
 	}
-	local kind = ( data and data.kind ) or kindFromText( text )
 	if fx then
 		pcall( function()
 			fx:setParameter( "TextContent", text )
@@ -1659,12 +1872,8 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 				fx:start()
 			end
 		end )
-	else
-		-- Fallback only when world text FX is unavailable (avoid double huge debug text).
-		pcall( function()
-			sm.gui.setCharacterDebugText( self.character, text )
-		end )
 	end
+	-- Intentionally no setCharacterDebugText fallback (dual text / Balanced overlap).
 end
 
 function RfsBotHijack.ensureCharHooks()
@@ -1706,9 +1915,17 @@ function RfsBotHijack.ensureCharHooks()
 			if origU then
 				origU( self, dt )
 			end
+			-- Re-seat FX only if lost; do not recreate every frame.
 			local tag = self.cl and self.cl.rfsLastTag
 			if tag and tag.text and tag.text ~= "" then
-				RfsBotHijack.cl_applyCharTag( self, tag )
+				local fx = self.cl.rfsTagFx
+				local alive = false
+				pcall( function()
+					alive = fx and sm.exists( fx )
+				end )
+				if not alive then
+					RfsBotHijack.cl_applyCharTag( self, tag )
+				end
 			end
 		end
 		local origD = cls.client_onDestroy
@@ -2291,35 +2508,19 @@ function RfsBotHijack.homeBeaconKey( info )
 	return nil
 end
 
+-- Same ally set as Orders GUI / listHomeAllies (Master domain + orphan migrate + in-range).
 function RfsBotHijack.homeAllyCount( beaconKey )
 	if not beaconKey then
 		return 0
 	end
-	beaconKey = tostring( beaconKey )
-	local domain = nil
-	if RfsBotHijack.orderDomainKeys then
-		domain = RfsBotHijack.orderDomainKeys( beaconKey )
+	local rows = nil
+	pcall( function()
+		rows = RfsBotHijack.listHomeAllies( tostring( beaconKey ), nil )
+	end )
+	if type( rows ) == "table" then
+		return #rows
 	end
-	local n = 0
-	for _, info in pairs( RfsBotHijack.allies ) do
-		if info.controlled then
-			local home = RfsBotHijack.homeBeaconKey( info )
-			local match = false
-			if domain then
-				match = home ~= nil and domain[home] == true
-				-- Fallback: tethered to a domain beacon but home key never set.
-				if not match and home == nil and info.beaconKey and domain[tostring( info.beaconKey )] then
-					match = true
-				end
-			else
-				match = home == beaconKey
-			end
-			if match then
-				n = n + 1
-			end
-		end
-	end
-	return n
+	return 0
 end
 
 -- Resolve unit for Orders RPCs. Prefer UnitManager — Game.lua has no world context
@@ -2394,6 +2595,7 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 		rows[#rows + 1] = {
 			key = tostring( key ),
 			name = tostring( info.displayName or shortTypeName( info.unitType or info.type ) or "Bot" ),
+			displayIndex = tonumber( info.displayIndex ),
 			unitType = info.unitType ~= nil and tostring( info.unitType ) or ( info.type ~= nil and tostring( info.type ) or nil ),
 			type = info.type ~= nil and tostring( info.type ) or nil,
 			mode = orderMode,
@@ -2575,6 +2777,8 @@ function RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost
 	if beaconKey == "" then
 		return false, "no beacon", 0
 	end
+	-- Remember as domain default so newly hijacked bots inherit it.
+	RfsBotHijack.setDomainAllyColor( beaconKey, hex )
 	if unitKeyOnly and tostring( unitKeyOnly ) ~= "" then
 		local ok, result = RfsBotHijack.setAllyColor( tostring( unitKeyOnly ), hex, player, allowHost )
 		return ok, result, ok and 1 or 0
@@ -2598,6 +2802,10 @@ function RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost
 			end
 		end
 	end
+	-- Domain color is set even if the list is empty (next hijack still inherits).
+	if n == 0 and not unitKeyOnly then
+		return true, hex, 0
+	end
 	if n == 0 then
 		return false, lastErr or "no bots", 0
 	end
@@ -2606,6 +2814,8 @@ end
 
 RfsBotHijack.allyVisualColor = allyVisualColor
 RfsBotHijack.normalizeColorHex = normalizeColorHex
+RfsBotHijack.shortTypeName = shortTypeName
+RfsBotHijack.parseTypeNumberName = parseTypeNumberName
 
 -- Hostiles currently mid auto-hijack under this beacon (for battery work-drain).
 function RfsBotHijack.pendingCount( beaconKey )
@@ -2694,6 +2904,7 @@ function RfsBotHijack.ensureHooks()
 				workBeaconKey = self.saved.playerAllyWorkBeacon or self.saved.playerAllyBeacon,
 				rfsOrder = self.saved.rfsOrder,
 				displayName = self.saved.rfsDisplayName,
+				displayIndex = self.saved.rfsDisplayIndex,
 				unitType = self.saved.rfsUnitType,
 				firstSeenTick = self.saved.rfsFirstSeenTick,
 				allyColor = self.saved.rfsAllyColor,
@@ -2799,6 +3010,7 @@ function RfsBotHijack.ensureHooks()
 			self.saved.playerAllyWorkBeacon = info and info.workBeaconKey
 			self.saved.playerAllyOwner = info and info.owner
 			self.saved.rfsDisplayName = info and info.displayName
+			self.saved.rfsDisplayIndex = info and info.displayIndex
 			self.saved.rfsUnitType = info and ( info.unitType or info.type )
 			self.saved.rfsFirstSeenTick = info and info.firstSeenTick
 			self.saved.rfsAllyColor = info and info.allyColor
@@ -2954,6 +3166,7 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.playerAllyWorkBeacon = nil
 						self.saved.playerAllyOwner = nil
 						self.saved.rfsDisplayName = nil
+						self.saved.rfsDisplayIndex = nil
 						self.saved.rfsUnitType = nil
 						self.saved.rfsFirstSeenTick = nil
 						self.saved.rfsAllyColor = nil
@@ -2983,6 +3196,9 @@ function RfsBotHijack.ensureUnitHooks()
 					end
 					if params.displayName then
 						self.saved.rfsDisplayName = params.displayName
+					end
+					if params.displayIndex ~= nil then
+						self.saved.rfsDisplayIndex = tonumber( params.displayIndex )
 					end
 					if params.unitType then
 						self.saved.rfsUnitType = params.unitType

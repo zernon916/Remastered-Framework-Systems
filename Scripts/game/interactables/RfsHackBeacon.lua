@@ -11,21 +11,31 @@ RfsHackBeacon.colorNormal = sm.color.new( 0xd02525ff )
 RfsHackBeacon.colorHighlight = sm.color.new( 0xff6a6aff )
 RfsHackBeacon.connectIcon = "electrical"
 
+-- Prefer Custom Game pack (workshop/local RFS). B&P "RFS Beacons" loads this
+-- file with $CONTENT_DATA = the parts mod, which historically shipped a stale
+-- copy and has no hijack/orders scripts — so CG id must win.
+local RFS_CG = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247"
+local function rfsDofile( rel )
+	local paths = { RFS_CG .. "/" .. rel, "$CONTENT_DATA/" .. rel }
+	for _, p in ipairs( paths ) do
+		local ok = pcall( function()
+			dofile( p )
+		end )
+		if ok then
+			return true
+		end
+	end
+	return false
+end
 pcall( function()
 	dofile( "$SURVIVAL_DATA/Scripts/game/survival_items.lua" )
 end )
 pcall( function()
 	dofile( "$SURVIVAL_DATA/Scripts/util.lua" )
 end )
-pcall( function()
-	dofile( "$CONTENT_DATA/Scripts/game/RfsBotHijack.lua" )
-end )
-pcall( function()
-	dofile( "$CONTENT_DATA/Scripts/game/RfsFeatures.lua" )
-end )
-pcall( function()
-	dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
-end )
+rfsDofile( "Scripts/game/RfsBotHijack.lua" )
+rfsDofile( "Scripts/game/RfsFeatures.lua" )
+rfsDofile( "Scripts/game/RfsBeaconOrdersGui.lua" )
 
 local BATTERY_UUID = sm.uuid.new( "910a7f2c-52b0-46eb-8873-ad13255539af" )
 if type( ITEMS ) == "table" and ITEMS.obj_consumable_battery then
@@ -625,9 +635,7 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 		} )
 	end
 	if ( tick % 2 ) == 0 and type( RfsBotHijack ) == "table" and RfsBotHijack.pendingTagList then
-		pcall( function()
-			self.network:sendToClients( "cl_botTags", RfsBotHijack.pendingTagList() )
-		end )
+		-- Tags render via character RfsHackText only (no duplicate beacon world FX).
 	end
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.pullAnnounce then
 		local msg = RfsBotHijack.pullAnnounce()
@@ -905,98 +913,18 @@ local function cl_cleanText( text )
 	return text
 end
 
--- Forward decls: client_onFixedUpdate runs before these are assigned below.
+-- Forward decl: client helpers assigned below.
 local cl_openOrders
-local cl_ordersArmTimeout
 
+-- World tags use character-attached RfsHackText only (RfsBotHijack.pushTag).
+-- Beacon world FX duplicated HACK/DROP/name text and caused overlaps (incl. with
+-- Survival character debug labels like "Balanced"). Keep stubs for RPC compat.
 local function cl_updateOverheads()
-	local now = 0
-	pcall( function()
-		now = sm.game.getCurrentTick()
-	end )
-	if now == g_clBotFxTick then
-		return
+	-- Tear down any leftover world FX from older HACK builds.
+	if next( g_clBotFx ) ~= nil then
+		cl_destroyAllFx()
 	end
-	g_clBotFxTick = now
-
-	local units = {}
-	pcall( function()
-		units = sm.unit.getAllUnits() or {}
-	end )
-	local live = {}
-	for _, u in ipairs( units ) do
-		if sm.exists( u ) and u.character and sm.exists( u.character ) then
-			live[tostring( u.id )] = u
-		end
-	end
-
-	local seen = {}
-	for key, row in pairs( g_clBotTags ) do
-		local text = cl_cleanText( row and row.text )
-		if text ~= "" then
-			local unit = live[key]
-			local pos = nil
-			if unit then
-				pos = cl_headPos( unit.character )
-			elseif row.x and row.y and row.z then
-				pos = sm.vec3.new( row.x, row.y, row.z ) + WORLD_UP * 1.85
-			end
-			if pos then
-				seen[key] = true
-				local fx = cl_ensureFx( key )
-				if fx then
-					local kind = cl_kindOf( row )
-					local col = TAG_COLORS[kind] or TAG_COLORS.hack
-					pcall( function()
-						if unit then
-							local world = unit.character:getWorld()
-							if world then
-								fx:setWorld( world )
-							end
-						end
-						fx:setParameter( "TextContent", text )
-						fx:setParameter( "Color", col )
-						fx:setPosition( pos )
-						fx:setRotation( cl_billboard( pos ) )
-						if not fx:isPlaying() then
-							fx:start()
-						end
-					end )
-				end
-			end
-		end
-	end
-	for key, _ in pairs( g_clBotFx ) do
-		if not seen[key] then
-			cl_destroyFx( key )
-		end
-	end
-	-- HUD fallback — world text on NPCs is unreliable; this always shows.
-	local hud = nil
-	local hudD = nil
-	local myPos = nil
-	pcall( function()
-		myPos = sm.localPlayer.getPlayer().character.worldPosition
-	end )
-	for key, row in pairs( g_clBotTags ) do
-		local text = cl_cleanText( row and row.text )
-		if text ~= "" then
-			local d2 = 0
-			if myPos and row.x and row.y and row.z then
-				local p = sm.vec3.new( row.x, row.y, row.z )
-				d2 = ( p - myPos ):length2()
-			end
-			if hud == nil or d2 < hudD then
-				hud = text
-				hudD = d2
-			end
-		end
-	end
-	if hud then
-		pcall( function()
-			sm.gui.displayAlertText( hud, 1 )
-		end )
-	end
+	g_clBotTags = {}
 end
 
 function RfsHackBeacon.cl_rfsMsg( self, msg )
@@ -1045,10 +973,6 @@ end
 
 function RfsHackBeacon.client_onFixedUpdate( self, dt )
 	cl_updateOverheads()
-	-- Orders arm timeout: see cl_ordersArmTimeout (after cl_openOrders).
-	if self.cl and self.cl.rfsOrdersOpenOnRelease then
-		cl_ordersArmTimeout( self )
-	end
 end
 
 function RfsHackBeacon.client_onClientDataUpdate( self, data )
@@ -1121,7 +1045,7 @@ function RfsHackBeacon.client_canInteract( self )
 		sm.gui.setInteractionText(
 			"",
 			useKey,
-			"Orders" .. roleTxt .. " / " .. verb .. " " .. rangeTxt .. " — " .. tostring( nBat ) .. " Battery"
+			verb .. " " .. rangeTxt .. roleTxt .. " — " .. tostring( nBat ) .. " Battery"
 		)
 	end
 	return true
@@ -1193,14 +1117,17 @@ local function cl_beaconKey( self )
 end
 
 cl_openOrders = function( self )
-	-- Never gui:open inside client_onInteract. Ask Game via server so open uses the
-	-- same RecipeFrameworkSurvival.cl_rfs_ordersOpen path as other RFS menus.
+	-- Pre-Close-fix (9cbdbc1): open immediately on Game so createGui owns
+	-- Close/Master/Color. Do NOT open via beacon-sandbox RfsBeaconOrdersGui
+	-- (that made Close dead). Server bounce is fallback only.
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
-		sm.gui.chatMessage( "[RFS] Orders: no beacon key" )
 		return
 	end
+	pcall( function()
+		sm.gui.chatMessage( "[RFS] HACK 3.5e-orders" )
+	end )
 	local payload = {
 		beaconKey = key,
 		beaconName = pd.name or "Hack Beacon",
@@ -1214,64 +1141,72 @@ cl_openOrders = function( self )
 			payload.pos = { x = pos.x, y = pos.y, z = pos.z }
 		end
 	end )
+	local game = _G.g_rfsGame
+	if game and type( game.cl_rfs_ordersOpen ) == "function" then
+		local ok = pcall( function()
+			game:cl_rfs_ordersOpen( payload )
+		end )
+		if ok then
+			return
+		end
+	end
 	self.network:sendToServer( "sv_openOrdersGui", payload )
 end
 
-cl_ordersArmTimeout = function( self )
-	if not ( self.cl and self.cl.rfsOrdersOpenOnRelease and self.cl.rfsOrdersArmTick ) then
-		return
-	end
-	local tick = 0
-	pcall( function()
-		tick = sm.game.getCurrentTick() or 0
-	end )
-	if tick < ( self.cl.rfsOrdersArmTick + 12 ) then
-		return
-	end
-	self.cl.rfsOrdersOpenOnRelease = false
-	self.cl.rfsOrdersArmTick = nil
-	local pd = self.cl.pd or {}
-	if pd.powered then
-		cl_openOrders( self )
-	end
-end
-
-local function relayOrdersToPlayer( player, openData, listData )
-	if not player then
+local function scheduleOrdersOpenOnGame( player, openData )
+	if not player or type( openData ) ~= "table" or not openData.beaconKey then
 		return false
 	end
+	local payload = {
+		player = player,
+		beaconKey = openData.beaconKey,
+		beaconName = openData.beaconName,
+		role = openData.role,
+		masterKey = openData.masterKey,
+		range = openData.range,
+		rows = openData.rows,
+		pos = openData.pos,
+	}
 	local game = _G.g_rfsGame
-	if game and game.network and game.network.sendToClient then
+	if game and type( game.sv_rfs_ordersScheduleOpen ) == "function" then
 		local ok = pcall( function()
-			if openData then
-				game.network:sendToClient( player, "cl_rfs_ordersOpen", openData )
-			end
-			if listData then
-				game.network:sendToClient( player, "cl_rfs_ordersList", listData )
-			end
+			game:sv_rfs_ordersScheduleOpen( payload )
 		end )
 		if ok then
 			return true
 		end
 	end
 	local okEvent = pcall( function()
-		if openData then
-			sm.event.sendToGame( "sv_rfs_ordersOpenForPlayer", {
-				player = player,
-				beaconKey = openData.beaconKey,
-				beaconName = openData.beaconName,
-				role = openData.role,
-				masterKey = openData.masterKey,
-				range = openData.range,
-				rows = openData.rows,
-			} )
+		sm.event.sendToGame( "sv_rfs_ordersScheduleOpen", payload )
+	end )
+	if okEvent then
+		return true
+	end
+	-- Last resort: legacy open-for-player (also schedules on Game).
+	okEvent = pcall( function()
+		sm.event.sendToGame( "sv_rfs_ordersOpenForPlayer", payload )
+	end )
+	return okEvent and true or false
+end
+
+local function relayOrdersListToPlayer( player, listData )
+	if not player or type( listData ) ~= "table" then
+		return false
+	end
+	local game = _G.g_rfsGame
+	if game and game.network and game.network.sendToClient then
+		local ok = pcall( function()
+			game.network:sendToClient( player, "cl_rfs_ordersList", listData )
+		end )
+		if ok then
+			return true
 		end
-		if listData then
-			sm.event.sendToGame( "sv_rfs_ordersRelayToPlayer", {
-				player = player,
-				list = listData,
-			} )
-		end
+	end
+	local okEvent = pcall( function()
+		sm.event.sendToGame( "sv_rfs_ordersRelayToPlayer", {
+			player = player,
+			list = listData,
+		} )
 	end )
 	return okEvent and true or false
 end
@@ -1286,7 +1221,15 @@ local function buildOrdersListPayload( self, player )
 	pcall( function()
 		local all = sm.player.getAllPlayers()
 		if type( all ) == "table" and all[1] and player then
-			allowHost = ( all[1] == player ) or ( all[1].id ~= nil and player.id ~= nil and all[1].id == player.id )
+			local host = all[1]
+			local hid, pid = nil, nil
+			pcall( function() hid = host.id end )
+			pcall( function() pid = player.id end )
+			if hid ~= nil and pid ~= nil then
+				allowHost = ( hid == pid )
+			else
+				allowHost = ( host == player )
+			end
 		end
 	end )
 	if not allowHost and player then
@@ -1299,6 +1242,17 @@ local function buildOrdersListPayload( self, player )
 		pcall( function()
 			rows = RfsBotHijack.listHomeAllies( key, ownerFilter ) or {}
 		end )
+	end
+	-- Prompt uses unfiltered domain count. If owner filter emptied the list but
+	-- domain still has allies (host misdetect / id mismatch), match the prompt.
+	if ( not rows or #rows == 0 ) and type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
+		local unfiltered = {}
+		pcall( function()
+			unfiltered = RfsBotHijack.listHomeAllies( key, nil ) or {}
+		end )
+		if #unfiltered > 0 then
+			rows = unfiltered
+		end
 	end
 	-- Mirror listed allies into Game's RfsBotHijack so Color/setOrder RPCs
 	-- (which run on Game) can resolve unit keys after a sandbox split.
@@ -1317,6 +1271,7 @@ local function buildOrdersListPayload( self, player )
 						workBeaconKey = info.workBeaconKey and tostring( info.workBeaconKey ) or nil,
 						controlled = true,
 						displayName = info.displayName and tostring( info.displayName ) or nil,
+						displayIndex = info.displayIndex ~= nil and tonumber( info.displayIndex ) or nil,
 						allyColor = info.allyColor and tostring( info.allyColor ) or nil,
 						rfsOrder = type( info.rfsOrder ) == "table" and {
 							mode = info.rfsOrder.mode,
@@ -1371,12 +1326,17 @@ local function sv_sendOrdersOpen( self, player, params )
 			end
 		end )
 	end
-	-- Always open via Game cl_rfs_ordersOpen (same host as /menu). Optional listOnly
-	-- keeps a refresh from forcing a second create when the panel is already up.
-	if params and params.listOnly then
-		return relayOrdersToPlayer( player, nil, listPayload )
+	-- Immediate Game client open (pre-schedule era). No pending queue for happy path.
+	local game = _G.g_rfsGame
+	if game and game.network and game.network.sendToClient then
+		local ok = pcall( function()
+			game.network:sendToClient( player, "cl_rfs_ordersOpen", data )
+		end )
+		if ok then
+			return true
+		end
 	end
-	return relayOrdersToPlayer( player, data, nil )
+	return scheduleOrdersOpenOnGame( player, data )
 end
 
 function RfsHackBeacon.sv_openOrdersGui( self, params, player )
@@ -1390,7 +1350,7 @@ end
 -- Game GUI refresh path: build list here (beacon env) when Game forwards the key.
 function RfsHackBeacon.sv_ordersList( self, params, player )
 	local listPayload = buildOrdersListPayload( self, player )
-	relayOrdersToPlayer( player, nil, listPayload )
+	relayOrdersListToPlayer( player, listPayload )
 end
 
 function RfsHackBeacon.sv_setShowRange( self, params, player )
@@ -1460,30 +1420,20 @@ function RfsHackBeacon.sv_setMaster( self, params, player )
 end
 
 function RfsHackBeacon.client_onInteract( self, character, state )
-	local pd = ( self.cl and self.cl.pd ) or {}
-	if state then
-		-- Powered → arm Orders on E-release (after interact teardown). Tinker = hijack.
-		if pd.powered then
-			self.cl = self.cl or {}
-			self.cl.rfsOrdersOpenOnRelease = true
-			local tick = 0
-			pcall( function()
-				tick = sm.game.getCurrentTick() or 0
-			end )
-			self.cl.rfsOrdersArmTick = tick
-			return
-		end
-		self.network:sendToServer( "sv_hijack", {} )
+	-- Pre-Close-fix (9cbdbc1): open on E-press. Panel stayed open that way.
+	if not state then
 		return
 	end
-	-- E released — interact session ended; safe to request Game-hosted open.
-	if self.cl and self.cl.rfsOrdersOpenOnRelease then
-		self.cl.rfsOrdersOpenOnRelease = false
-		self.cl.rfsOrdersArmTick = nil
-		if pd.powered then
-			cl_openOrders( self )
-		end
+	local pd = ( self.cl and self.cl.pd ) or {}
+	if not pd.powered then
+		return
 	end
+	local homeN = tonumber( pd.homeAllies ) or 0
+	if homeN > 0 then
+		cl_openOrders( self )
+		return
+	end
+	self.network:sendToServer( "sv_hijack", {} )
 end
 
 function RfsHackBeacon.client_onTinker( self, character, state )

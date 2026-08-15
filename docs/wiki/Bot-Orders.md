@@ -2,6 +2,17 @@
 
 Opened with **E** on a **powered** Hack / Control / Infection beacon. Modes depend on bot type.
 
+WIP note (2026-08-15): local **HACK 3.10** GUI polish — not all on GitHub (push freeze).  
+Full checklist: `HIJACK_ROADMAP.txt` Phase 3 (`[DONE]` / `[NEXT]` / `[FUTURE]`).
+
+## Status this phase
+
+| Tag | What |
+|-----|------|
+| **[DONE]** | M1 Rest/Defend + Orders GUI; M2 Farm; M3 Collect; M4 Collect Oil; Master/Slave; color presets; `usable:true` E; raid list clear; nametag half-size + type+number world tags; Orders icon+number (NodeIcons / H1 fallback); open/close/reopen + list fill; SHOW RANGE no longer kills menu; Prev/Next hide on 1 page (verify) |
+| **[NEXT]** | Confirm HACK 3.10 (open + list + icons/H1 + close/reopen + Prev/Next); SHOW RANGE ring actually visible; empty-list/reopen watch; nametag numbers / bot naming polish; RAID out of farm range |
+| **[FUTURE]** | Recall bots + Stay in area; Phase 3.5 pathfinding & painted chests; Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay); chat `/botorder` |
+
 ## Modes by type
 
 | Bot | Modes |
@@ -32,10 +43,6 @@ Picks up allowlisted loot / loose parts in job radius (components/kits, soilbag,
 
 Searches oil geysers + crude oil loot/loose in job radius (perm-infect gets ×1.5 search). Deposits to chests in **base** beacon range. Stands down combat while on Oil (like Farm/Collect).
 
-## Future — pathfinding & painted chests (Phase 3.5)
-
-Not shipped. Jobs today rely on vanilla unit AI best-effort navigation. Planned: more reliable pathfinding (chests, doorways) plus color-coded / connection-tool assigned chests (e.g. seeds vs veggies/fruits vs general drop-off) for clearer Farm/Collect deposit targets than auto-scan. See `HIJACK_ROADMAP.txt` Phase 3.5 and [[Known-Issues]].
-
 ## Sticky home
 
 Each ally has a sticky `workBeaconKey` home for jobs. Infection clears tether `beaconKey` but keeps the work home. Master domain aggregation shares the ally pool across linked beacons.
@@ -43,3 +50,7 @@ Each ally has a sticky `workBeaconKey` home for jobs. Infection clears tether `b
 ## Color
 
 See [[Hack-Beacons]]. Color apply uses the same listed domain allies as the Orders list.
+
+## [FUTURE] — pathfinding & painted chests (Phase 3.5)
+
+Not shipped. Jobs today rely on vanilla unit AI best-effort navigation. Planned: more reliable pathfinding (chests, doorways) plus color-coded / connection-tool assigned chests (e.g. seeds vs veggies/fruits vs general drop-off). See `HIJACK_ROADMAP.txt` Phase 3.5 and [[Known-Issues]].

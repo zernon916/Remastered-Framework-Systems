@@ -474,6 +474,30 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 		end
 	end )
 	local tick = sm.game.getCurrentTick()
+	-- Single pending Orders open: fire once after interact (next Game ticks).
+	do
+		local pend = self.sv and self.sv.rfsPendingOrdersOpen
+		if pend and pend.player and type( pend.data ) == "table" then
+			if tick >= ( tonumber( pend.atTick ) or 0 ) then
+				self.sv.rfsPendingOrdersOpen = nil
+				local okSend = pcall( function()
+					self.network:sendToClient( pend.player, "cl_rfs_ordersOpen", pend.data )
+				end )
+				if not okSend then
+					-- Retry once next tick if network rejected the payload.
+					self.sv.rfsPendingOrdersOpen = {
+						player = pend.player,
+						atTick = tick + 1,
+						data = pend.data,
+						retried = true,
+					}
+					if not pend.retried then
+						rfsMsg( self, "HACK 3.5e-orders open retry" )
+					end
+				end
+			end
+		end
+	end
 	if ( tick % 80 ) == 0 then
 		pcall( function() RfsFarming.ensureHooks() end )
 		pcall( function() RfsBotHijack.ensureHooks() end )
@@ -563,6 +587,24 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	if not ( self.cl and self.cl.rfsCmdsBound ) then
 		self:rfs_bindCommands()
 	end
+	-- Beacon Orders: only deferred after Close settle (~0.5s). Normal open is immediate.
+	do
+		local pend = self.cl and self.cl.rfsPendingOrdersGui
+		if pend and type( pend.data ) == "table" then
+			local tick = sm.game.getCurrentTick()
+			local settle = tonumber( self.cl.rfsOrdersReopenAfterTick ) or 0
+			local readyAt = math.max( tonumber( pend.atTick ) or 0, settle )
+			if tick >= readyAt then
+				local gen = tonumber( pend.gen )
+				self.cl.rfsPendingOrdersGui = nil
+				if not ( gen and gen ~= tonumber( self.cl.rfsOrdersOpenGen ) )
+					and type( RfsBeaconOrdersGui ) == "table"
+					and type( RfsBeaconOrdersGui.open ) == "function" then
+					RfsBeaconOrdersGui.open( self, pend.data )
+				end
+			end
+		end
+	end
 	-- Character countdown hooks must run on the client (unit globals are server-only).
 	pcall( function()
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
@@ -595,11 +637,6 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	end
 	if self.cl and self.cl.rfsGenGui and ( sm.game.getCurrentTick() % 40 ) == 0 then
 		RfsGenGui.refresh( self )
-	end
-	-- Beacon Orders: pump deferred Game open after E-interact has ended.
-	if self.cl and self.cl.rfsOrdersPendingOpen and type( RfsBeaconOrdersGui ) == "table"
-		and RfsBeaconOrdersGui.pumpPendingOpen then
-		RfsBeaconOrdersGui.pumpPendingOpen( self )
 	end
 end
 
@@ -2441,6 +2478,12 @@ end
 function RecipeFrameworkSurvival.cl_rfs_ordersClose( self )
 	if type( RfsBeaconOrdersGui ) == "table" then
 		RfsBeaconOrdersGui.close( self )
+	elseif self.cl then
+		self.cl.rfsOrdersGui = nil
+		self.cl.rfsPendingOrdersGui = nil
+		local tick = 0
+		pcall( function() tick = sm.game.getCurrentTick() or 0 end )
+		self.cl.rfsOrdersReopenAfterTick = tick + 20
 	end
 end
 
@@ -2452,22 +2495,37 @@ function RecipeFrameworkSurvival.cl_rfs_ordersOnClosed( self )
 	end
 end
 
-function RecipeFrameworkSurvival.cl_rfs_ordersPrev( self )
-	self.cl = self.cl or {}
-	self.cl.rfsOrdersPage = math.max( 0, ( self.cl.rfsOrdersPage or 0 ) - 1 )
-	if type( RfsBeaconOrdersGui ) == "table" then
-		RfsBeaconOrdersGui.refresh( self )
+function RecipeFrameworkSurvival.cl_rfs_ordersScrollUp( self )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.scrollDelta then
+		RfsBeaconOrdersGui.scrollDelta( self, -( RfsBeaconOrdersGui.SCROLL_STEP or 1 ) )
 	end
 end
 
-function RecipeFrameworkSurvival.cl_rfs_ordersNext( self )
-	self.cl = self.cl or {}
-	local rows = self.cl.rfsOrdersRows or {}
-	local maxPage = math.max( 0, math.ceil( #rows / ( RfsBeaconOrdersGui and RfsBeaconOrdersGui.ROWS or 8 ) ) - 1 )
-	self.cl.rfsOrdersPage = math.min( maxPage, ( self.cl.rfsOrdersPage or 0 ) + 1 )
-	if type( RfsBeaconOrdersGui ) == "table" then
-		RfsBeaconOrdersGui.refresh( self )
+function RecipeFrameworkSurvival.cl_rfs_ordersScrollDown( self )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.scrollDelta then
+		RfsBeaconOrdersGui.scrollDelta( self, RfsBeaconOrdersGui.SCROLL_STEP or 1 )
 	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersScrollChanged( self, name, pos )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onScrollChanged then
+		RfsBeaconOrdersGui.onScrollChanged( self, pos )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersMouseWheel( self, name, scrollValue )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onMouseWheel then
+		RfsBeaconOrdersGui.onMouseWheel( self, scrollValue )
+	end
+end
+
+-- Legacy PREV/NEXT names (no longer in layout); keep as one-row scroll aliases.
+function RecipeFrameworkSurvival.cl_rfs_ordersPrev( self )
+	RecipeFrameworkSurvival.cl_rfs_ordersScrollUp( self )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_ordersNext( self )
+	RecipeFrameworkSurvival.cl_rfs_ordersScrollDown( self )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_ordersMaster( self )
@@ -2488,39 +2546,79 @@ function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
 	end
 end
 
+-- Pre-Close-fix: open immediately on Game (createGui owned here so Close binds).
+-- Only queues when a Close settle (~0.5s) is still active.
 function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
-	if type( RfsBeaconOrdersGui ) ~= "table" then
+	self.cl = self.cl or {}
+	if type( RfsBeaconOrdersGui ) ~= "table" or type( RfsBeaconOrdersGui.open ) ~= "function" then
 		sm.gui.chatMessage( "[RFS] Orders GUI not loaded" )
 		return
 	end
-	data = data or {}
-	-- Same Game-hosted open as /menu; still defer a few ticks so any leftover
-	-- interact teardown cannot flash-close the new panel.
-	if RfsBeaconOrdersGui.queueDeferredOpen then
-		RfsBeaconOrdersGui.queueDeferredOpen( self, data, 5 )
-		return
-	end
-	if type( RfsBeaconOrdersGui.open ) == "function" then
-		RfsBeaconOrdersGui.open( self, data )
-	end
+	RfsBeaconOrdersGui.open( self, data or {} )
 end
 
--- Server bounce from Hack Beacon when client cannot reach g_rfsGame directly.
-function RecipeFrameworkSurvival.sv_rfs_ordersOpenForPlayer( self, params )
+-- Beacon → Game: stash one pending open; server_onFixedUpdate sends it next ticks.
+function RecipeFrameworkSurvival.sv_rfs_ordersScheduleOpen( self, params )
 	params = params or {}
 	local player = params.player
-	if not player then
+	if not player or not params.beaconKey then
 		return
 	end
-	self.network:sendToClient( player, "cl_rfs_ordersOpen", {
-		beaconKey = params.beaconKey,
-		beaconName = params.beaconName or "Hack Beacon",
-		role = params.role or "independent",
-		masterKey = params.masterKey,
-		range = params.range or 16,
-		rows = params.rows,
-		pos = params.pos,
-	} )
+	self.sv = self.sv or {}
+	local tick = 0
+	pcall( function()
+		tick = sm.game.getCurrentTick() or 0
+	end )
+	-- Plain-table payload only (sendToClient must serialize).
+	local rows = {}
+	if type( params.rows ) == "table" then
+		for i, row in ipairs( params.rows ) do
+			if type( row ) == "table" then
+				rows[#rows + 1] = {
+					key = row.key ~= nil and tostring( row.key ) or nil,
+					name = row.name ~= nil and tostring( row.name ) or nil,
+					displayIndex = row.displayIndex ~= nil and tonumber( row.displayIndex ) or nil,
+					unitType = row.unitType ~= nil and tostring( row.unitType ) or nil,
+					type = row.type ~= nil and tostring( row.type ) or nil,
+					mode = row.mode ~= nil and tostring( row.mode ) or nil,
+					seedUuid = row.seedUuid ~= nil and tostring( row.seedUuid ) or nil,
+					owner = type( row.owner ) == "number" and row.owner
+						or ( row.owner ~= nil and tonumber( row.owner ) or nil ),
+					allyMode = row.allyMode ~= nil and tostring( row.allyMode ) or nil,
+					allyColor = row.allyColor ~= nil and tostring( row.allyColor ) or nil,
+				}
+			end
+			if i >= 64 then
+				break
+			end
+		end
+	end
+	local pos = nil
+	if type( params.pos ) == "table" and params.pos.x ~= nil then
+		pos = {
+			x = tonumber( params.pos.x ) or 0,
+			y = tonumber( params.pos.y ) or 0,
+			z = tonumber( params.pos.z ) or 0,
+		}
+	end
+	self.sv.rfsPendingOrdersOpen = {
+		player = player,
+		atTick = tick + 2,
+		data = {
+			beaconKey = tostring( params.beaconKey ),
+			beaconName = params.beaconName and tostring( params.beaconName ) or "Hack Beacon",
+			role = params.role and tostring( params.role ) or "independent",
+			masterKey = params.masterKey ~= nil and tostring( params.masterKey ) or nil,
+			range = tonumber( params.range ) or 16,
+			rows = rows,
+			pos = pos,
+		},
+	}
+end
+
+-- Legacy name: schedule (do not sendToClient during beacon interact).
+function RecipeFrameworkSurvival.sv_rfs_ordersOpenForPlayer( self, params )
+	self:sv_rfs_ordersScheduleOpen( params )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_ordersRelayToPlayer( self, params )
@@ -2565,6 +2663,7 @@ function RecipeFrameworkSurvival.sv_rfs_mirrorAllies( self, params )
 				workBeaconKey = info.workBeaconKey or prev.workBeaconKey,
 				controlled = true,
 				displayName = info.displayName or prev.displayName,
+				displayIndex = info.displayIndex ~= nil and tonumber( info.displayIndex ) or prev.displayIndex,
 				allyColor = info.allyColor or prev.allyColor,
 				rfsOrder = type( info.rfsOrder ) == "table" and info.rfsOrder or prev.rfsOrder,
 				order = type( info.rfsOrder ) == "table" and info.rfsOrder or prev.order,
@@ -2656,6 +2755,13 @@ function RecipeFrameworkSurvival.sv_rfs_ordersList( self, params, player )
 	local rows = {}
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
 		rows = RfsBotHijack.listHomeAllies( beaconKey, ownerFilter ) or {}
+	end
+	-- Match interact prompt: if filtered list is empty but domain has allies, use full list.
+	if ( not rows or #rows == 0 ) and type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
+		local unfiltered = RfsBotHijack.listHomeAllies( beaconKey, nil ) or {}
+		if #unfiltered > 0 then
+			rows = unfiltered
+		end
 	end
 	local beaconName, role, masterKey = nil, "independent", nil
 	pcall( function()

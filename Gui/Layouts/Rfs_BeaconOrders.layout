@@ -27,141 +27,155 @@
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.082 0.92 0.032" name="Hint">
-				<Property key="Caption" value="Click a bot name to select. Color drop applies to selected, or all listed if none selected. Infect keeps its tint until you override."/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.082 0.88 0.032" name="Hint">
+				<Property key="Caption" value="Click icon/number to select. Scroll moves the 8-row window through allies (wheel / bar / ▲▼). Color applies to selected, or all if none."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>
 			</Widget>
 
-			<!-- Row 0 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.125 0.36 0.048" name="BotName0">
+			<!-- Row 0: icon + number badge (select) -->
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.125 0.048 0.048" name="BotIcon0"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.125 0.30 0.048" name="BotName0">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.125 0.22 0.048" name="ModeDrop0"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.125 0.18 0.048" name="SeedDrop0"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.125 0.30 0.048" name="Soon0">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.125 0.26 0.048" name="Soon0">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 1 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.180 0.36 0.048" name="BotName1">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.180 0.048 0.048" name="BotIcon1"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.180 0.30 0.048" name="BotName1">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.180 0.22 0.048" name="ModeDrop1"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.180 0.18 0.048" name="SeedDrop1"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.180 0.30 0.048" name="Soon1">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.180 0.26 0.048" name="Soon1">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 2 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.235 0.36 0.048" name="BotName2">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.235 0.048 0.048" name="BotIcon2"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.235 0.30 0.048" name="BotName2">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.235 0.22 0.048" name="ModeDrop2"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.235 0.18 0.048" name="SeedDrop2"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.235 0.30 0.048" name="Soon2">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.235 0.26 0.048" name="Soon2">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 3 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.290 0.36 0.048" name="BotName3">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.290 0.048 0.048" name="BotIcon3"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.290 0.30 0.048" name="BotName3">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.290 0.22 0.048" name="ModeDrop3"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.290 0.18 0.048" name="SeedDrop3"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.290 0.30 0.048" name="Soon3">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.290 0.26 0.048" name="Soon3">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 4 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.345 0.36 0.048" name="BotName4">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.345 0.048 0.048" name="BotIcon4"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.345 0.30 0.048" name="BotName4">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.345 0.22 0.048" name="ModeDrop4"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.345 0.18 0.048" name="SeedDrop4"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.345 0.30 0.048" name="Soon4">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.345 0.26 0.048" name="Soon4">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 5 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.400 0.36 0.048" name="BotName5">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.400 0.048 0.048" name="BotIcon5"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.400 0.30 0.048" name="BotName5">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.400 0.22 0.048" name="ModeDrop5"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.400 0.18 0.048" name="SeedDrop5"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.400 0.30 0.048" name="Soon5">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.400 0.26 0.048" name="Soon5">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 6 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.455 0.36 0.048" name="BotName6">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.455 0.048 0.048" name="BotIcon6"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.455 0.30 0.048" name="BotName6">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.455 0.22 0.048" name="ModeDrop6"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.455 0.18 0.048" name="SeedDrop6"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.455 0.30 0.048" name="Soon6">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.455 0.26 0.048" name="Soon6">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- Row 7 -->
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.510 0.36 0.048" name="BotName7">
+			<Widget type="ImageBox" skin="ImageBox" position_real="0.04 0.510 0.048 0.048" name="BotIcon7"/>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.095 0.510 0.30 0.048" name="BotName7">
 				<Property key="Caption" value=""/>
-				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.42 0.510 0.22 0.048" name="ModeDrop7"/>
 			<Widget type="Widget" skin="PanelEmpty" position_real="0.66 0.510 0.18 0.048" name="SeedDrop7"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.510 0.30 0.048" name="Soon7">
+			<Widget type="TextBox" skin="TextBox" position_real="0.66 0.510 0.26 0.048" name="Soon7">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
-			<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.570 0.18 0.045" name="BtnPrev">
-				<Property key="Caption" value="PREV"/>
+			<!-- Scroll controls (RecipeRadar pattern): ▲ / InventoryVSlider / ▼ -->
+			<Widget type="Button" skin="PrimaryButton" position_real="0.93 0.125 0.04 0.048" name="BtnScrollUp">
+				<Property key="Caption" value="▲"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="TextBox" skin="TextBox" position_real="0.24 0.570 0.28 0.045" name="PageLabel">
-				<Property key="Caption" value="Page 1"/>
+			<Widget type="ScrollBar" skin="InventoryVSlider" position_real="0.93 0.180 0.04 0.320" name="ScrollBar">
+				<Property key="Range" value="101"/>
+				<Property key="RangePosition" value="0"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.93 0.510 0.04 0.048" name="BtnScrollDown">
+				<Property key="Caption" value="▼"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.570 0.48 0.045" name="ScrollLabel">
+				<Property key="Caption" value="Allies 0"/>
 				<Property key="FontName" value="SM_TextLabel"/>
-				<Property key="TextAlign" value="Center"/>
+				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.54 0.570 0.18 0.045" name="BtnNext">
-				<Property key="Caption" value="NEXT"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.570 0.22 0.045" name="BtnRange">
+			<Widget type="Button" skin="PrimaryButton" position_real="0.54 0.570 0.42 0.045" name="BtnRange">
 				<Property key="Caption" value="SHOW RANGE"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>

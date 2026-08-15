@@ -56,55 +56,45 @@ OPEN BUGS / polish (also in PENDING_FIXES.md):
   NOTE: client visual prefs (nametag on/off, Big Red label, health-bar colors)
   are Phase 3.6 FUTURE — not part of this OPEN polish list.
 
-Phase 3 — Orders
-----------------
-M1 SHIPPED — Beacon Orders GUI + Rest / Defend
-  - E on powered Hack/Control/Infection beacon opens Orders (always when powered)
-  - Tinker = manual hijack (same as old E when no allies / unpowered)
-  - Per-bot Rest (stand down) / Defend (combat clamped to beacon jobRadius 16/32/48)
-  - Sticky workBeaconKey home
-  - Master/Slave: SET MASTER on one device; other powered hack beacons in its range
-    become Slaves and share the Master's order-domain ally pool (list + new homes).
-    One Master per linked group; CLEAR MASTER returns Independent.
-  - SHOW RANGE / HIDE RANGE toggles the ground range ring (client, per beacon)
-  - GUI opens via Game client RPC so Close/buttons bind correctly
-  - Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotOrders.lua + Game RPCs
+Phase 3 — Orders / Beacon Orders GUI
+------------------------------------
+WIP note (2026-08-15): local HACK 3.13 — 3.11 open + PREV/NEXT never setVisible; not all on GitHub (push freeze).
+Tags: [DONE] shipped/working locally  |  [NEXT] verify/test now  |  [FUTURE] later
 
-M2 SHIPPED — Hay Farm
-  - Haybot only: Rest | Defend | Farm + seed picker (Farmbot/Big Red = Rest|Defend only)
-  - Persist rfsOrder = { mode="farm", seedUuid, beaconKey, owner }
-  - Job: powered home beacon radius → withdraw seeds from chests → plant soil →
-    harvest mature via bot event (NOT melee crop smash) → deposit carry buffer
-  - Seed allowlist = Survival Planter.lua 12 plantables (RfsFarming.getPlantableSeeds)
-  - Files: RfsBotOrdersFarm.lua; RfsFarming bot plant/harvest hooks
+=== [DONE] — this phase (through HACK 3.10) ===
+  [DONE] M1 Rest / Defend + beacon Orders GUI
+         E on powered Hack/Control/Infection → Orders; Tinker = mass hijack
+         Sticky workBeaconKey home; Game client RPC so Close/buttons bind
+  [DONE] M2 Hay Farm (Haybot Rest|Defend|Farm + seed picker)
+  [DONE] M3 Tote Collect (Totebot Rest|Defend|Collect)
+  [DONE] M4 Waterbot Collect Oil (Totebot Blue; Rest|Defend|Collect Oil)
+  [DONE] M5 Ally color presets (domain + new hijacks inherit)
+  [DONE] Master / Slave beacons (SET MASTER / CLEAR MASTER; shared order domain)
+  [DONE] usable:true — E on beacons opens Orders when powered
+  [DONE] Raid list clear on destroy / capture
+  [DONE] Nametag half size; type+number world tags; Orders icon+number rows
+         (Survival NodeIcons / RFS Gui/Icons; letter H1/T2 fallback if setImage fails)
+  [DONE] Orders open / close / reopen working again (HACK 3.5+ path; 3.9 list fill)
+  [DONE] SHOW RANGE no longer kills / closes the menu (caption toggles only)
+         Full ground range-ring draw still [NEXT] — see below
+  [DONE] Prev / Next hide on 1-page list (landed; verify under [NEXT] with 3.10)
 
-M3 SHIPPED — Tote Collect
-  - Totebot dropdown: Rest | Defend | Collect
-  - Collect allowlist: components/kits, soilbag, seeds, ores/resources (see RfsBotOrdersCollect.lua)
-  - Pickup: Survival hvs_loot harvestables + single-shape dynamic loose parts in jobRadius
-  - Synthetic rfsCarry buffer → deposit into chests (chest/small/tiny/XXL) via sm.container
-  - Files: RfsBotOrdersCollect.lua (+ hooks in RfsBotOrders / GUI / Hijack setOrder)
+=== [NEXT] — verify / testing (HACK 3.10) ===
+  [NEXT] Confirm HACK 3.10: open + list fill + icons/H1 fallback + close/reopen +
+         Prev/Next safe on 1 page and multi-page
+  [NEXT] SHOW RANGE ground ring actually visible (parked polish — menu-safe already)
+  [NEXT] Watch empty-list / reopen regressions during test
+  [NEXT] Nametag numbers (issue #2 style) / bot naming UI — still polish
+         (cross-ref Phase 2 full OPEN)
+  [NEXT] RAID out of farm range — still open (cross-ref Phase 5 full OPEN)
 
-M4 SHIPPED — Waterbot Collect Oil
-  - Waterbot = Survival Totebot Blue (no unit_waterbot); shortTypeName "Waterbot"
-  - Dropdown: Rest | Defend | Collect Oil (Oil: soon removed)
-  - Persist rfsOrder = { mode="oil", beaconKey, owner }
-  - Search: oil geysers + crudeoil loot/loose in jobRadius; perm-infect ×1.5 search
-  - Deposit: chests in base beacon range only (not the 1.5× search)
-  - Stand down combat while on Oil (like Farm/Collect)
-  - Files: RfsBotOrdersOil.lua (+ RfsBotOrders / GUI / Hijack / layout)
+=== [FUTURE] — do not build during 3.10 test ===
+  [FUTURE] chat /botorder
+  [FUTURE] Recall bots — chat and/or Orders button → allies return to beacon
+  [FUTURE] Stay in area — Orders checkbox (leash / stay near beacon range)
+  [FUTURE] Phase 3.5 Pathfinding & painted chests (see below)
+  [FUTURE] Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay)
 
-M5 SHIPPED — Ally color presets (Orders GUI)
-  - Color drop on Beacon Orders: Ally Green, Infect Green, Blue, Cyan, Yellow,
-    Orange, Magenta, White, Red (full-body character:setColor)
-  - Click bot name to select; choosing a color tints selected bot, or all listed
-    home allies in the Master/Slave domain if none selected
-  - Persist saved.rfsAllyColor / allies[].allyColor (survives unit reload like other
-    hijack identity). Infect/Ally defaults until user overrides.
-  - Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotHijack.lua, Game RPCs
-
-Still FUTURE:
-  chat /botorder
 Per-type flavor (author list):
   totebot  — Collect small loot (M3); combat under Defend
   haybot   — Farm plant/harvest (M2)
@@ -112,7 +102,10 @@ Per-type flavor (author list):
   farmbot  — tank / late escort (Rest+Defend only)
   waterbot — Collect Oil (M4) — Totebot Blue
 
-Phase 3.5 — Pathfinding & painted chests (FUTURE)
+Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotOrders*.lua,
+       RfsBotHijack.lua, RfsHackBeacon.lua, Game RPCs
+
+Phase 3.5 — Pathfinding & painted chests [FUTURE]
 -------------------------------------------------
 Not started. Today Farm / Collect / Oil use vanilla unit AI best-effort
 navigation (no reliable doorway / chest pathing).
@@ -129,13 +122,10 @@ navigation (no reliable doorway / chest pathing).
 
 Place before Phase 4 factories — improves shipped Phase 3 jobs first.
 
-Phase 3.6 — Menu tab: GUI (visuals) (FUTURE)
+Phase 3.6 — Menu tab: GUI (visuals) [FUTURE]
 --------------------------------------------
-Not started. Do **not** implement while testing HACK 3.3.
-Player-facing visual toggles for hijacked bots / world overlays.
-
-Menu home TBD — prefer player `/menu` or host `/gensettings`
-FEATURES / GUI tab (not Beacon Orders). Confirm placement when building.
+Not started. Prefer player `/menu` or host `/gensettings` FEATURES / GUI tab
+(not Beacon Orders). Confirm placement when building. Do not block Orders 3.9.
 
 Planned options:
   1. Names — toggle names above bots (world nametags on/off)
@@ -148,9 +138,8 @@ Planned options:
 
 Relation to earlier work:
   - Builds on Phase 2 lite nametags (`pushTag`) and Phase 2 full naming polish
-    (numbers above bots, rename UI)
-  - HACK 3.3 already ships type+number identity / icons in Orders — this phase
-    is client visual prefs on top, not a redo of that identity system
+  - Orders list already has type+number badges (H1/T2…); this phase is
+    client visual prefs on top, not a redo of that identity system
 
 Place after Phase 3.5; before Phase 4 factories. Does not block pathfinding
 or factories.
