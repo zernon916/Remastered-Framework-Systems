@@ -40,7 +40,7 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 
 [h2]Links[/h2]
 [list]
-[*][b]GitHub:[/b] [url]https://github.com/zernon916/Recipe-Framework-Systems[/url]
+[*][b]GitHub:[/b] [url]https://github.com/zernon916/Remastered-Framework-Systems[/url]
 [*][b]Discord:[/b] [url]https://discord.gg/DfjDMRx9ab[/url]
 [/list]
 
@@ -49,7 +49,7 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 [h2]Discord / Streamer companion (optional)[/h2]
 In-game [b]Streamer[/b] votes work via file drops in [b]%USER_DATA%/rfs_discord_bridge[/b]. The Discord / Streamer companion bot is [b]not[/b] bundled in this Workshop pack - it lives on GitHub only. Clone and run it separately:
 
-[url]https://github.com/zernon916/Recipe-Framework-Systems[/url] (folder [b]discord-bridge/[/b])
+[url]https://github.com/zernon916/Remastered-Framework-Systems[/url] (folder [b]discord-bridge/[/b])
 
 Community Discord: [url]https://discord.gg/DfjDMRx9ab[/url]
 
