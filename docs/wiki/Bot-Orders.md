@@ -32,6 +32,10 @@ Picks up allowlisted loot / loose parts in job radius (components/kits, soilbag,
 
 Searches oil geysers + crude oil loot/loose in job radius (perm-infect gets ×1.5 search). Deposits to chests in **base** beacon range. Stands down combat while on Oil (like Farm/Collect).
 
+## Future — pathfinding & painted chests (Phase 3.5)
+
+Not shipped. Jobs today rely on vanilla unit AI best-effort navigation. Planned: more reliable pathfinding (chests, doorways) plus color-coded / connection-tool assigned chests (e.g. seeds vs veggies/fruits vs general drop-off) for clearer Farm/Collect deposit targets than auto-scan. See `HIJACK_ROADMAP.txt` Phase 3.5 and [[Known-Issues]].
+
 ## Sticky home
 
 Each ally has a sticky `workBeaconKey` home for jobs. Infection clears tether `beaconKey` but keeps the work home. Master domain aggregation shares the ally pool across linked beacons.

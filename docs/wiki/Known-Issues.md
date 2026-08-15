@@ -19,6 +19,10 @@ Desired: names show above the head **with** the numbers.
 
 Bots that are **out of range of farms** should **not** be affected by RAID jam / range mul / raid notes. Still open in Phase 5 polish.
 
+## Pathfinding & painted chests (FUTURE — Phase 3.5)
+
+Not started. Farm / Collect / Oil still use vanilla unit AI navigation. Planned: reliable pathfinding through doorways to chests, plus painted / assigned chests (color roles + optional connection tool to beacon Orders domain). Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.5, `PENDING_FIXES.md` §4, [[Bot-Orders]].
+
 ## Cotton in autumn
 
 Not an RFS bug. Vanilla places world cotton in autumn forest interiors; easy to miss (small scale / short view distance). See `PENDING_FIXES.md` section 2.

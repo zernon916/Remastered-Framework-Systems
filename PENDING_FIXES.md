@@ -60,3 +60,13 @@ Need a way to name bots:
 Bots that are **out of range of farms** should **NOT** be affected by the RAID
 stuff that was added. Keep out-of-range farm bots out of RAID behavior
 (jam / range mul / raid notes in `RfsBotHijack`).
+
+---
+
+## 4) Pathfinding & painted chests — **FUTURE** (Phase 3.5; not started)
+
+Logged in `HIJACK_ROADMAP.txt` under **Phase 3.5**. Improves shipped Farm / Collect / Oil
+navigation and deposit targeting. Do not treat as shipped.
+
+- Reliable bot pathfinding (chests, doorways) beyond vanilla unit AI
+- Color-coded / connection-tool assigned chests (seeds vs produce vs drop-off)

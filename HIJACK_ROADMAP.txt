@@ -110,6 +110,23 @@ Per-type flavor (author list):
   farmbot  — tank / late escort (Rest+Defend only)
   waterbot — Collect Oil (M4) — Totebot Blue
 
+Phase 3.5 — Pathfinding & painted chests (FUTURE)
+-------------------------------------------------
+Not started. Today Farm / Collect / Oil use vanilla unit AI best-effort
+navigation (no reliable doorway / chest pathing).
+
+- Bot pathfinding — find chests, go through doorways, more reliable job
+  navigation than vanilla unit AI chase
+- Painted / assigned chests (same phase; author idea):
+  - Color-coded roles, e.g. one color = seeds, one = veggies/fruits,
+    one = drop-off / general deposit
+  - Optional: connection tool to assign chests to a beacon / Orders domain
+  Why paint+connect: Farm and Collect already need deposit targets;
+  explicit paint + connect is clearer and more controllable than auto-scan
+  of every chest in radius
+
+Place before Phase 4 factories — improves shipped Phase 3 jobs first.
+
 Phase 4 — Factories (late game / Wonk) — FUTURE
 -----------------------------------------------
 - Craftable factory interactable (Intelligentia or RFS part)

@@ -117,6 +117,11 @@ Hijack polish still open (not commands — see PENDING_FIXES.md §3 + HIJACK_ROA
            names + numbers above head)
   Phase 5: RAID range filter — out-of-range farm bots must ignore RAID behavior
 
+Future (not commands — see HIJACK_ROADMAP Phase 3.5 + PENDING_FIXES.md §4)
+-------------------------------------------------------------------------
+  Phase 3.5: bot pathfinding + painted/assigned chests (seeds / produce / drop-off;
+             optional connection tool to beacon Orders domain)
+
 Also available from Survival (when bound)
 ----------------------------------------
   /kick /ban /spudgun /gatling /shotgun /sunshake /baguette /keycard
