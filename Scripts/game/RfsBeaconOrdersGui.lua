@@ -38,32 +38,18 @@ local COLOR_PRESETS = {
 }
 
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
-local UUID_TOTEBOT_GREEN = "8984bdbf-521e-4eed-b3c4-2b5e287eb879"
-local UUID_TOTEBOT_LEAF = "55fd93fa-09ed-4a26-bfa1-4601694d5127"
-local UUID_TOTEBOT_RED = "9360d346-3ff2-4925-a068-660cf5dd5267"
-local UUID_TOTEBOT_YELLOW = "2dea48a4-6a79-11ed-a1eb-0242ac120002"
-local UUID_HAYBOT = "c8bfb8f3-7efc-49ac-875a-eb85ac0614db"
-local UUID_FARMBOT = "9f4fde94-312f-4417-b13b-84029c5d6b52"
-local UUID_TAPEBOT = "04761b4a-a83e-4736-b565-120bc776edb2"
-local UUID_TAPEBOT_RED = "c3d31c47-0c9b-4b07-9bd4-8f022dc4333e"
-local UUID_TAPEBOT_YELLOW = "97efd943-d176-479a-a6f4-46373327ddcd"
-local UUID_TAPEBOT_TAPED = {
-	"9dbbd2fb-7726-4e8f-8eb4-0dab228a561d",
-	"fcb2e8ce-ca94-45e4-a54b-b5acc156170b",
-	"68d3b2f3-ed4b-4967-9d22-8ee6f555df63",
-}
--- Green tapebot = Bubble (B). Distinct from Paint tapebot (P).
-local UUID_TAPEBOT_GREEN = {
-	"c68914f8-d769-4638-9071-f7dbd1d97351",
-	"f3ded3f4-ddf9-441d-83f1-28b8cf2c7581",
-	"54a06cf0-c035-41a5-b19e-158496d35586",
-}
--- HACK 3.5k: black letter+number badges on BotName (H1 T2 F3).
--- Never setImage portraits — missing NodeIcons render as red triangles.
+-- HACK 3.5f: icon + number on existing rows (additive paint only).
+-- Prefer RFS copies of Survival NodeIcons. Avoid icon_farmraid_compass_bot.png —
+-- that sprite itself looks like the red-triangle error placeholder.
+-- If every setImage path fails → hide ImageBox and use letter+number (H1/T2).
 
--- Fallback range ring used to be ShapeRenderable of blk_lights/plastic on the
--- Game client. That welded creation blocks onto the beacon battery circuit.
--- SHOW RANGE is drawn unhosted from Game.lua (RfsRangeViz / RfsRangeLine).
+-- Fallback range ring drawn on the Game client when the beacon interactable
+-- cannot see Game's _G.g_rfsBeaconRangeVisible (separate script sandbox).
+local RING_BLOCK = sm.uuid.new( "073f92af-f37e-4aff-96b3-d66284d5081c" )
+local RING_SEG_SPACING = 1.75
+local RING_SEG_MIN = 24
+local RING_SEG_MAX = 72
+
 local function destroyHostRangeRing( host )
 	local ring = host.cl and host.cl.rfsOrdersRangeRing
 	if type( ring ) ~= "table" then
@@ -71,7 +57,7 @@ local function destroyHostRangeRing( host )
 	end
 	for _, fx in ipairs( ring ) do
 		pcall( function()
-			if fx then
+			if fx and sm.exists( fx ) then
 				fx:stop()
 				fx:destroy()
 			end
@@ -80,8 +66,56 @@ local function destroyHostRangeRing( host )
 	host.cl.rfsOrdersRangeRing = nil
 end
 
+local function groundZ( x, y, fallbackZ )
+	local hit, result
+	local ok = pcall( function()
+		hit, result = sm.physics.raycast(
+			sm.vec3.new( x, y, fallbackZ + 24 ),
+			sm.vec3.new( x, y, fallbackZ - 80 )
+		)
+	end )
+	if ok and hit and result and result.pointWorld then
+		return result.pointWorld.z + 0.06
+	end
+	return fallbackZ
+end
+
 local function buildHostRangeRing( host, range, color )
 	destroyHostRangeRing( host )
+	host.cl = host.cl or {}
+	local pos = host.cl.rfsOrdersBeaconPos
+	if type( pos ) ~= "table" or pos.x == nil then
+		return
+	end
+	range = tonumber( range ) or tonumber( host.cl.rfsOrdersRange ) or 16
+	if range < 1 then
+		return
+	end
+	local n = math.floor( ( 2 * math.pi * range ) / RING_SEG_SPACING + 0.5 )
+	if n < RING_SEG_MIN then n = RING_SEG_MIN end
+	if n > RING_SEG_MAX then n = RING_SEG_MAX end
+	local ring = {}
+	local col = color or sm.color.new( 0.55, 0.95, 0.25, 1.0 )
+	local scale = sm.vec3.new( 0.28, 0.28, 0.08 )
+	for i = 0, n - 1 do
+		local ang = ( i / n ) * math.pi * 2
+		local x = pos.x + math.cos( ang ) * range
+		local y = pos.y + math.sin( ang ) * range
+		local z = groundZ( x, y, pos.z )
+		local ok, fx = pcall( sm.effect.createEffect, "ShapeRenderable" )
+		if ok and fx then
+			pcall( function()
+				fx:setParameter( "uuid", RING_BLOCK )
+				fx:setParameter( "color", col )
+				fx:setScale( scale )
+				fx:setPosition( sm.vec3.new( x, y, z ) )
+				fx:setRotation( sm.quat.identity() )
+				fx:start()
+			end )
+			ring[#ring + 1] = fx
+		end
+	end
+	host.cl.rfsOrdersRangeRing = ring
 end
 
 local function colorLabels()
@@ -153,32 +187,10 @@ local function sameUuid( a, b )
 	if a == nil or b == nil then
 		return false
 	end
-	local function key( v )
-		local s = string.lower( tostring( v ) )
-		return string.match( s, "(%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x)" ) or s
-	end
-	return key( a ) == key( b )
-end
-
-local function inUuidList( typeRaw, list )
-	if type( list ) ~= "table" then
-		return false
-	end
-	for _, u in ipairs( list ) do
-		if u and sameUuid( typeRaw, u ) then
-			return true
-		end
-	end
-	return false
+	return string.lower( tostring( a ) ) == string.lower( tostring( b ) )
 end
 
 local function botKind( typeStr, displayName )
-	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.classifyBotKind ) == "function" then
-		local kind = RfsBotHijack.classifyBotKind( typeStr, displayName )
-		if kind and kind ~= "other" then
-			return kind
-		end
-	end
 	local typeRaw = tostring( typeStr or "" )
 	local s = string.lower( typeRaw .. " " .. tostring( displayName or "" ) )
 	-- Waterbot / Totebot Blue before generic tote (Oil vs Collect).
@@ -196,47 +208,16 @@ local function botKind( typeStr, displayName )
 		or string.find( s, "oil", 1, true ) then
 		return "water"
 	end
-	local farm = rawget( _G, "unit_farmbot" )
-	if ( farm and sameUuid( typeRaw, farm ) ) or sameUuid( typeRaw, UUID_FARMBOT )
-		or string.find( s, "farmbot", 1, true )
-		or ( string.find( s, "farm", 1, true ) and not string.find( s, "tote", 1, true ) ) then
+	if string.find( s, "farm", 1, true ) then
 		return "farmbot"
 	end
-	local hay = rawget( _G, "unit_haybot" )
-	if ( hay and sameUuid( typeRaw, hay ) ) or sameUuid( typeRaw, UUID_HAYBOT )
-		or string.find( s, "hay", 1, true ) then
+	if string.find( s, "hay", 1, true ) then
 		return "hay"
 	end
-	local totes = {
-		rawget( _G, "unit_totebot_green" ), rawget( _G, "unit_totebot_red" ),
-		rawget( _G, "unit_totebot_yellow" ), rawget( _G, "unit_totebot_leaf" ),
-		UUID_TOTEBOT_GREEN, UUID_TOTEBOT_RED, UUID_TOTEBOT_YELLOW, UUID_TOTEBOT_LEAF,
-	}
-	if inUuidList( typeRaw, totes ) or string.find( s, "tote", 1, true ) then
+	if string.find( s, "tote", 1, true ) then
 		return "tote"
 	end
-	-- Bubble (green Tapebot) before generic Paint tapebot.
-	local greens = {
-		rawget( _G, "unit_tapebot_green_1" ),
-		rawget( _G, "unit_tapebot_green_2" ),
-		rawget( _G, "unit_tapebot_green_3" ),
-	}
-	if inUuidList( typeRaw, greens ) or inUuidList( typeRaw, UUID_TAPEBOT_GREEN )
-		or string.find( s, "bubble", 1, true )
-		or ( string.find( s, "tape", 1, true ) and string.find( s, "green", 1, true ) ) then
-		return "bubble"
-	end
-	local tapes = {
-		rawget( _G, "unit_tapebot" ),
-		rawget( _G, "unit_tapebot_red" ),
-		rawget( _G, "unit_tapebot_yellow" ),
-		rawget( _G, "unit_tapebot_taped_1" ),
-		rawget( _G, "unit_tapebot_taped_2" ),
-		rawget( _G, "unit_tapebot_taped_3" ),
-		UUID_TAPEBOT, UUID_TAPEBOT_RED, UUID_TAPEBOT_YELLOW,
-	}
-	if inUuidList( typeRaw, tapes ) or inUuidList( typeRaw, UUID_TAPEBOT_TAPED )
-		or string.find( s, "tape", 1, true ) or string.find( s, "paint", 1, true ) then
+	if string.find( s, "tape", 1, true ) then
 		return "tape"
 	end
 	if string.find( s, "miner", 1, true ) then
@@ -248,31 +229,16 @@ local function botKind( typeStr, displayName )
 	return "other"
 end
 
-local function typeLetter( kind, displayName )
-	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.typeLetterFor ) == "function" then
-		local letter = RfsBotHijack.typeLetterFor( kind, displayName )
-		if letter and letter ~= "?" then
-			return letter
-		end
-	end
+local function typeLetter( kind )
 	kind = tostring( kind or "other" )
 	if kind == "hay" then return "H" end
 	if kind == "tote" then return "T" end
 	if kind == "water" then return "W" end
-	if kind == "farmbot" or kind == "farm" then return "F" end
-	if kind == "tape" or kind == "paint" then return "P" end -- Paint tapebot
-	if kind == "bubble" then return "B" end -- Green tapebot
+	if kind == "farmbot" then return "F" end
+	if kind == "tape" then return "Tp" end
 	if kind == "miner" then return "M" end
 	if kind == "cable" then return "C" end
-	if #kind == 1 then
-		return string.upper( kind )
-	end
-	local name = tostring( displayName or "" )
-	local ch = string.match( name, "([%a])" )
-	if ch then
-		return string.upper( ch )
-	end
-	return "U"
+	return "B"
 end
 
 local function rowDisplayIndex( row )
@@ -288,15 +254,75 @@ local function rowDisplayIndex( row )
 	return tonumber( num )
 end
 
--- Always letter+number (H1, T2, F3). Black text on yellow badges.
-local BADGE_BLACK = "#000000"
-local function rowListLabel( row, selected )
+-- Prefer RFS NodeIcon copies, then Survival paths / short names.
+local function iconPathsForKind( kind )
+	kind = tostring( kind or "other" )
+	if kind == "hay" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_haybot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/HaybotIcon.png",
+			"HaybotIcon.png",
+		}
+	end
+	if kind == "tote" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_totebot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TotebotYellowIcon.png",
+			"TotebotYellowIcon.png",
+		}
+	end
+	if kind == "water" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_waterbot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TotebotBlueIcon.png",
+			"TotebotBlueIcon.png",
+		}
+	end
+	if kind == "farmbot" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_farmbot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/FarmbotIcon.png",
+			"notification_warning_icon_farmbot.png",
+			"icon_farmraid_raidmarkerboticon.png",
+			"FarmbotIcon.png",
+		}
+	end
+	if kind == "tape" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_tapebot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TapebotIcon.png",
+			"TapebotIcon.png",
+		}
+	end
+	return {
+		"$CONTENT_DATA/Gui/Icons/rfs_icon_bot.png",
+		"$SURVIVAL_DATA/Gui/NodeIcons/TotebotYellowIcon.png",
+		"icon_farmraid_raidmarkerboticon.png",
+	}
+end
+
+-- True when setImage pcall accepts a candidate path.
+local function setBotIcon( gui, widget, kind )
+	local paths = iconPathsForKind( kind )
+	for _, path in ipairs( paths ) do
+		local ok = pcall( function()
+			gui:setImage( widget, path )
+		end )
+		if ok then
+			return true
+		end
+	end
+	return false
+end
+
+-- Icon OK → number only (icon shows type). Else letter+number (H1, T2…).
+local function rowListLabel( row, selected, iconOk )
 	local n = rowDisplayIndex( row ) or "?"
 	local mark = selected and "● " or ""
-	local stored = row and row.typeLetter
-	local letter = ( stored and #tostring( stored ) == 1 and string.upper( tostring( stored ) ) )
-		or typeLetter( row and ( row.kind or row.botType ), row and row.name )
-	return mark .. BADGE_BLACK .. letter .. tostring( n )
+	if iconOk then
+		return mark .. tostring( n )
+	end
+	return mark .. typeLetter( row and row.kind ) .. tostring( n )
 end
 
 local function modeItemsForKind( kind )
@@ -399,9 +425,8 @@ local function paintSlot( gui, host, i, row, selectedKey )
 	local soonW = "Soon" .. i
 	local dropW = "ModeDrop" .. i
 	local seedW = "SeedDrop" .. i
-	-- Never setImage portraits. Hide ImageBox so no red-triangle placeholder.
-	pcall( function() gui:setVisible( iconW, false ) end )
 	if not row then
+		pcall( function() gui:setVisible( iconW, false ) end )
 		pcall( function() gui:setText( nameW, "" ) end )
 		pcall( function() gui:setText( soonW, "" ) end )
 		pcall( function() gui:setVisible( nameW, false ) end )
@@ -413,14 +438,18 @@ local function paintSlot( gui, host, i, row, selectedKey )
 		return
 	end
 	local isSel = selectedKey and tostring( row.key ) == tostring( selectedKey )
-	-- Paint black letter+number first so the row is never empty.
-	pcall( function() gui:setText( nameW, rowListLabel( row, isSel ) ) end )
-	pcall( function()
-		if gui.setTextColor then
-			gui:setTextColor( nameW, sm.color.new( 0, 0, 0 ) )
-		end
-	end )
+	-- Paint label first so a failed icon never leaves an empty row.
+	local iconOk = false
+	pcall( function() gui:setText( nameW, rowListLabel( row, isSel, false ) ) end )
 	pcall( function() gui:setVisible( nameW, true ) end )
+	-- Additive icon paint only — never recreateDropDown here.
+	iconOk = setBotIcon( gui, iconW, row.kind )
+	if iconOk then
+		pcall( function() gui:setVisible( iconW, true ) end )
+		pcall( function() gui:setText( nameW, rowListLabel( row, isSel, true ) ) end )
+	else
+		pcall( function() gui:setVisible( iconW, false ) end )
+	end
 	pcall( function() gui:setVisible( dropW, true ) end )
 	-- Selection only — dropdown item list is fixed at bind (MODE_ITEMS_ALL).
 	pcall( function()
@@ -624,11 +653,6 @@ function RfsBeaconOrdersGui.bind( host, gui )
 		pcall( function()
 			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
 		end )
-		pcall( function()
-			if gui.setTextColor then
-				gui:setTextColor( "BotName" .. i, sm.color.new( 0, 0, 0 ) )
-			end
-		end )
 		-- One stable item list for every slot — scroll never recreateDropDown.
 		pcall( function()
 			gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_ALL )
@@ -756,10 +780,8 @@ function RfsBeaconOrdersGui.open( host, opts )
 	RfsBeaconOrdersGui.refresh( host )
 	gui:open()
 	pcall( function()
-		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5k)" )
+		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5f)" )
 	end )
-	-- Open never toggles SHOW RANGE. Ring stays off unless the player already
-	-- clicked SHOW RANGE (g_rfsBeaconRangeVisible / server rangeVisible).
 
 	if type( opts.rows ) == "table" and #opts.rows > 0 then
 		RfsBeaconOrdersGui.applyList( host, {
@@ -776,23 +798,17 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 end
 
--- Close: destroy+nil (3.5 / 3.5e). gui:close() from the Close button is ignored
--- by the engine; destroy actually kills the window. Open path unchanged.
+-- Close: nil ref first (OnClose no-op), engine close, then ~0.5s reopen settle.
 function RfsBeaconOrdersGui.close( host )
 	host.cl = host.cl or {}
 	destroyHostRangeRing( host )
 	local gui = host.cl.rfsOrdersGui
-	if gui then
-		pcall( function() gui:destroy() end )
-		pcall( function() gui:close() end )
-	end
 	host.cl.rfsOrdersGui = nil
 	host.cl.rfsPendingOrdersGui = nil
-	host.cl.rfsOrdersBanner35k = nil
 	host.cl.rfsOrdersReopenAfterTick = currentTick() + REOPEN_SETTLE_TICKS
-	pcall( function()
-		sm.gui.chatMessage( "[RFS] HACK 3.5k" )
-	end )
+	if gui then
+		pcall( function() gui:close() end )
+	end
 end
 
 -- Engine OnClose only — do not re-enter close or clear a queued reopen.
@@ -829,17 +845,6 @@ function RfsBeaconOrdersGui.toggleRange( host )
 	local on = not ( _G.g_rfsBeaconRangeVisible[key] == true )
 	_G.g_rfsBeaconRangeVisible[key] = on
 	host.cl.rfsOrdersShowRange = on
-	host.cl.rfsRangeWant = host.cl.rfsRangeWant or {}
-	if on then
-		host.cl.rfsRangeWant[key] = {
-			key = key,
-			show = true,
-			range = tonumber( host.cl.rfsOrdersRange ) or 16,
-			pos = host.cl.rfsOrdersBeaconPos,
-		}
-	else
-		host.cl.rfsRangeWant[key] = { key = key, show = false }
-	end
 	if host.network and host.network.sendToServer then
 		pcall( function()
 			host.network:sendToServer( "sv_rfs_ordersRange", {
@@ -877,14 +882,7 @@ function RfsBeaconOrdersGui.applyList( host, data )
 		local nextRows = {}
 		for _, row in ipairs( data.rows ) do
 			if row and row.key then
-				local kind = row.botType or row.kind or botKind( row.unitType or row.type, row.name )
-				if ( not kind or kind == "other" ) then
-					kind = botKind( row.unitType or row.type, row.name )
-				end
-				local letter = row.typeLetter
-				if not letter or letter == "?" or letter == "" then
-					letter = typeLetter( kind, row.name )
-				end
+				local kind = botKind( row.unitType or row.type, row.name )
 				local mode = modeValue( row.mode )
 				if mode == "farm" and kind ~= "hay" then
 					mode = "rest"
@@ -901,8 +899,6 @@ function RfsBeaconOrdersGui.applyList( host, data )
 					displayIndex = tonumber( row.displayIndex ),
 					unitType = row.unitType or row.type,
 					kind = kind,
-					botType = kind,
-					typeLetter = letter,
 					mode = mode,
 					seedUuid = row.seedUuid and tostring( row.seedUuid ) or nil,
 					owner = row.owner,
@@ -911,12 +907,6 @@ function RfsBeaconOrdersGui.applyList( host, data )
 			end
 		end
 		host.cl.rfsOrdersRows = nextRows
-		if not host.cl.rfsOrdersBanner35k then
-			host.cl.rfsOrdersBanner35k = true
-			pcall( function()
-				sm.gui.chatMessage( "[RFS] HACK 3.5k" )
-			end )
-		end
 	end
 	if data and data.beaconName then
 		host.cl.rfsOrdersBeaconName = data.beaconName

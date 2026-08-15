@@ -427,56 +427,6 @@ local function publish( self, extra )
 	end )
 end
 
--- Game.lua draws the range circle (unhosted). Beacon client must not spawn FX.
-local function pushRangeViz( self, show )
-	local game = _G.g_rfsGame
-	if not ( game and game.network and self and self.sv and self.sv.key ) then
-		return
-	end
-	local t = self.sv.tier or tierOf( self.shape )
-	local pos = nil
-	pcall( function()
-		local p = self.shape and self.shape.worldPosition
-		if p then
-			pos = { x = p.x, y = p.y, z = p.z }
-		end
-	end )
-	local color = nil
-	if t and t.ringColor then
-		pcall( function()
-			color = { r = t.ringColor.r, g = t.ringColor.g, b = t.ringColor.b, a = t.ringColor.a }
-		end )
-	end
-	local raid, raidRange = false, t and t.range or 16
-	pcall( function()
-		if type( RfsBotHijack ) == "table" and RfsBotHijack.areaHasRaid then
-			local w = nil
-			pcall( function()
-				w = self.shape.body:getWorld()
-			end )
-			raid = RfsBotHijack.areaHasRaid( self.shape.worldPosition, w ) and true or false
-			if raid and RfsBotHijack.effectiveRange then
-				raidRange = RfsBotHijack.effectiveRange( {
-					range = t.range,
-					pos = self.shape.worldPosition,
-					world = w,
-				} )
-			end
-		end
-	end )
-	pcall( function()
-		game.network:sendToClients( "cl_rfs_rangeViz", {
-			key = tostring( self.sv.key ),
-			show = show and true or false,
-			range = t and t.range or 16,
-			raid = raid,
-			raidRange = raidRange,
-			pos = pos,
-			color = color,
-		} )
-	end )
-end
-
 local function saveBeaconRole( self )
 	if not self or not self.storage then
 		return
@@ -522,7 +472,6 @@ function RfsHackBeacon.server_onDestroy( self )
 		if RfsBotHijack.setRangeVisible then
 			RfsBotHijack.setRangeVisible( key, false )
 		end
-		pushRangeViz( self, false )
 	end
 end
 
@@ -684,10 +633,6 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 			raidRange = raidRange,
 			homeAllies = ( type( RfsBotHijack ) == "table" and RfsBotHijack.homeAllyCount and RfsBotHijack.homeAllyCount( self.sv.key ) ) or 0,
 		} )
-		if type( RfsBotHijack ) == "table" and RfsBotHijack.isRangeVisible
-			and self.sv.key and RfsBotHijack.isRangeVisible( self.sv.key ) then
-			pushRangeViz( self, true )
-		end
 	end
 	if ( tick % 2 ) == 0 and type( RfsBotHijack ) == "table" and RfsBotHijack.pendingTagList then
 		-- Tags render via character RfsHackText only (no duplicate beacon world FX).
@@ -711,66 +656,33 @@ local TAG_COLORS = {
 	jam = sm.color.new( 1.0, 0.18, 0.18, 1.0 ),
 	nobat = sm.color.new( 1.0, 0.35, 0.15, 1.0 ),
 }
--- Range viz look: flat circle of stretched cubes ~1.5 blocks up + 4 spokes.
--- 3.5e battery: idle powered = no drain; 1 Battery / drainEvery while working.
--- NEVER spawn these FX from the beacon interactable client — createEffect there
--- implicit-hosts on the part, welds onto the creation electrical net, and dumps
--- the battery box (blk_lights, plastic ShapeRenderable, and RfsRangeLine all did).
--- Game.lua (no interactable host) draws unhosted RfsRangeLine via RfsRangeViz.
-local RING_FX = "RfsRangeLine"
-local RING_MESH_M = 1.0
-local RING_HOVER = 0.375 -- 1.5 blocks above ground
-local RING_THICK = 0.10
-local RING_HUB = 0.45
-local RING_CHORD = 2.0
-local RING_SEG_MIN = 32
-local RING_SEG_MAX = 64
-local RING_RADIALS = 4
-local RING_DEFAULT_COLOR = sm.color.new( 0.95, 0.35, 0.12, 1.0 )
+-- Ground range outline: ring of ShapeRenderable pegs (blk_lights). Readable polygon.
+local RING_BLOCK = sm.uuid.new( "073f92af-f37e-4aff-96b3-d66284d5081c" ) -- blk_lights
+local RING_SEG_SPACING = 1.75 -- meters along circumference
+local RING_SEG_MIN = 24
+local RING_SEG_MAX = 72
 local g_clBotTags = {}
 local g_clBotFx = {}
 local g_clBotFxTick = -1
 local g_clBeaconN = 0
 
-local function cl_destroyRangeFxList( list )
-	if type( list ) ~= "table" then
+local function cl_destroyRangeRing( self )
+	if not self or not self.cl or not self.cl.rangeRing then
 		return
 	end
-	for _, fx in ipairs( list ) do
-		-- Do not gate on sm.exists — hosted renderables can fail exists and leak.
+	for _, fx in ipairs( self.cl.rangeRing ) do
 		pcall( function()
-			if fx then
+			if fx and sm.exists( fx ) then
 				fx:stop()
 				fx:destroy()
 			end
 		end )
 	end
-end
-
-local function cl_destroyRangeRing( self )
-	if not self or not self.cl then
-		return
-	end
-	if self.cl.rangeRing then
-		local ring = self.cl.rangeRing
-		if type( ring ) == "table" and ring.segs then
-			cl_destroyRangeFxList( ring.segs )
-			cl_destroyRangeFxList( ring.radials )
-		else
-			cl_destroyRangeFxList( ring )
-		end
-		self.cl.rangeRing = nil
-	end
+	self.cl.rangeRing = nil
 	self.cl.ringRange = nil
-	self.cl.ringSegN = nil
 end
 
--- Beacon interactable: never spawn range FX (circuit weld). Tear down leftovers.
-local function cl_updateRangeRing( self )
-	cl_destroyRangeRing( self )
-end
-
-local function vizGroundZ( x, y, fallbackZ )
+local function cl_groundZ( x, y, fallbackZ )
 	local hit, result
 	local ok = pcall( function()
 		hit, result = sm.physics.raycast(
@@ -779,265 +691,113 @@ local function vizGroundZ( x, y, fallbackZ )
 		)
 	end )
 	if ok and hit and result and result.pointWorld then
-		return result.pointWorld.z
+		return result.pointWorld.z + 0.06
 	end
 	return fallbackZ
 end
 
-local function vizQuatAlignZ( dir )
-	if not dir or dir:length2() < 1e-12 then
-		return sm.quat.identity()
-	end
-	dir = dir:normalize()
-	local d = WORLD_UP:dot( dir )
-	if d > 0.9995 then
-		return sm.quat.identity()
-	end
-	if d < -0.9995 then
-		return sm.quat.angleAxis( math.pi, sm.vec3.new( 1, 0, 0 ) )
-	end
-	local ok, q = pcall( sm.vec3.getRotation, WORLD_UP, dir )
-	if ok and q then
-		return q
-	end
-	return sm.quat.identity()
-end
-
-local function vizApplyLine( fx, from, to, color, world )
-	if not fx then
+local function cl_rebuildRangeRing( self, range, color )
+	cl_destroyRangeRing( self )
+	self.cl = self.cl or {}
+	range = tonumber( range ) or 16
+	if range < 1 then
 		return
 	end
-	local delta = to - from
-	local length = delta:length()
-	if length < 0.05 then
-		length = 0.05
-		delta = WORLD_UP * 0.05
+	local shape = self.shape
+	if not shape or not sm.exists( shape ) then
+		return
 	end
-	local dir = delta * ( 1 / length )
-	local mid = ( from + to ) * 0.5
-	local rot = vizQuatAlignZ( dir )
-	local sx = RING_THICK / RING_MESH_M
-	local sz = length / RING_MESH_M
-	pcall( function()
-		if world then
-			fx:setWorld( world )
-		end
-		if color then
-			fx:setParameter( "Color", color )
-			fx:setParameter( "color", color )
-		end
-		fx:setScale( sm.vec3.new( sx, sx, sz ) )
-		fx:setPosition( mid )
-		fx:setRotation( rot )
-		if not fx:isPlaying() then
-			fx:start()
-		end
-	end )
-end
-
-local function vizCreateLineFx( world )
-	local ok, fx = pcall( sm.effect.createEffect, RING_FX )
-	if not ( ok and fx ) then
-		return nil
-	end
-	local hosted = false
-	pcall( function()
-		hosted = fx:hasHost() and true or false
-	end )
-	if hosted then
-		pcall( function()
-			fx:stop()
-			fx:destroy()
-		end )
-		return nil
-	end
-	pcall( function()
-		if world then
-			fx:setWorld( world )
-		end
-	end )
-	return fx
-end
-
-local function vizSegCount( range )
-	local n = math.floor( ( 2 * math.pi * range ) / RING_CHORD + 0.5 )
+	local center = shape.worldPosition
+	local n = math.floor( ( 2 * math.pi * range ) / RING_SEG_SPACING + 0.5 )
 	if n < RING_SEG_MIN then n = RING_SEG_MIN end
 	if n > RING_SEG_MAX then n = RING_SEG_MAX end
-	return n
-end
-
-local function vizTblColor( tbl )
-	if type( tbl ) == "table" and tbl.r ~= nil then
-		local ok, c = pcall( sm.color.new, tbl.r, tbl.g, tbl.b, tbl.a or 1 )
-		if ok and c then
-			return c
-		end
-	end
-	return RING_DEFAULT_COLOR
-end
-
-local function vizTblVec( tbl )
-	if type( tbl ) ~= "table" or tbl.x == nil then
-		return nil
-	end
-	local ok, v = pcall( sm.vec3.new, tbl.x, tbl.y, tbl.z or 0 )
-	if ok then
-		return v
-	end
-	return nil
-end
-
-local function vizWorld()
+	local ring = {}
+	local col = color or sm.color.new( 0.95, 0.35, 0.12, 1.0 )
+	local scale = sm.vec3.new( 0.28, 0.28, 0.08 )
 	local world = nil
 	pcall( function()
-		local p = sm.localPlayer.getPlayer()
-		if p and p.character then
-			world = p.character:getWorld()
-		end
+		world = shape.body:getWorld()
 	end )
-	return world
-end
-
--- Drawn from Game.lua client (no shape host) so FX cannot weld onto a battery net.
-RfsRangeViz = RfsRangeViz or {}
-
-function RfsRangeViz.destroyKey( host, key )
-	if not host or not host.cl or type( host.cl.rfsRangeByKey ) ~= "table" then
-		return
-	end
-	key = tostring( key or "" )
-	local rec = host.cl.rfsRangeByKey[key]
-	if type( rec ) ~= "table" then
-		host.cl.rfsRangeByKey[key] = nil
-		return
-	end
-	cl_destroyRangeFxList( rec.segs )
-	cl_destroyRangeFxList( rec.radials )
-	host.cl.rfsRangeByKey[key] = nil
-end
-
-function RfsRangeViz.destroyAll( host )
-	if not host or not host.cl or type( host.cl.rfsRangeByKey ) ~= "table" then
-		return
-	end
-	for key, _ in pairs( host.cl.rfsRangeByKey ) do
-		RfsRangeViz.destroyKey( host, key )
-	end
-end
-
-local function vizSeat( rec, center, range, color, world )
-	if type( rec ) ~= "table" or type( rec.segs ) ~= "table" then
-		return
-	end
-	local z = ( rec.groundZ or vizGroundZ( center.x, center.y, center.z ) ) + RING_HOVER
-	local n = rec.segN or #rec.segs
-	local col = color or RING_DEFAULT_COLOR
-	for i = 1, #rec.segs do
-		local a0 = ( ( i - 1 ) / n ) * math.pi * 2
-		local a1 = ( i / n ) * math.pi * 2
-		local from = sm.vec3.new( center.x + math.cos( a0 ) * range, center.y + math.sin( a0 ) * range, z )
-		local to = sm.vec3.new( center.x + math.cos( a1 ) * range, center.y + math.sin( a1 ) * range, z )
-		vizApplyLine( rec.segs[i], from, to, col, world )
-	end
-	local radials = rec.radials or {}
-	for i = 1, #radials do
-		local ang = ( ( i - 1 ) / RING_RADIALS ) * math.pi * 2
-		local cang, sang = math.cos( ang ), math.sin( ang )
-		local hub = sm.vec3.new( center.x + cang * RING_HUB, center.y + sang * RING_HUB, z )
-		local rim = sm.vec3.new( center.x + cang * range, center.y + sang * range, z )
-		vizApplyLine( radials[i], hub, rim, col, world )
-	end
-	rec.center = center
-end
-
-local function vizRebuild( host, key, center, range, color, world )
-	RfsRangeViz.destroyKey( host, key )
-	range = tonumber( range ) or 16
-	if range < 1 or not center then
-		return
-	end
-	local n = vizSegCount( range )
-	local segs, radials = {}, {}
-	for _ = 1, n do
-		local fx = vizCreateLineFx( world )
-		if fx then
-			segs[#segs + 1] = fx
+	for i = 0, n - 1 do
+		local ang = ( i / n ) * math.pi * 2
+		local x = center.x + math.cos( ang ) * range
+		local y = center.y + math.sin( ang ) * range
+		local z = cl_groundZ( x, y, center.z )
+		local ok, fx = pcall( sm.effect.createEffect, "ShapeRenderable" )
+		if ok and fx then
+			pcall( function()
+				if world then
+					fx:setWorld( world )
+				end
+				fx:setParameter( "uuid", RING_BLOCK )
+				fx:setParameter( "color", col )
+				fx:setScale( scale )
+				fx:setPosition( sm.vec3.new( x, y, z ) )
+				fx:setRotation( sm.quat.identity() )
+				fx:start()
+			end )
+			ring[#ring + 1] = fx
 		end
 	end
-	for _ = 1, RING_RADIALS do
-		local fx = vizCreateLineFx( world )
-		if fx then
-			radials[#radials + 1] = fx
-		end
-	end
-	host.cl.rfsRangeByKey[key] = {
-		segs = segs,
-		radials = radials,
-		range = range,
-		segN = n,
-		groundZ = vizGroundZ( center.x, center.y, center.z ),
-	}
-	vizSeat( host.cl.rfsRangeByKey[key], center, range, color, world )
+	self.cl.rangeRing = ring
+	self.cl.ringRange = range
 end
 
-function RfsRangeViz.tick( host, wantMap )
-	if not host then
+local function cl_updateRangeRing( self )
+	self.cl = self.cl or {}
+	local pd = self.cl.pd or {}
+	local key = nil
+	pcall( function()
+		key = self.shape and self.shape.id
+	end )
+	if key ~= nil then
+		key = tostring( key )
+	elseif pd.beaconKey then
+		key = tostring( pd.beaconKey )
+	end
+	-- Range ring is opt-in via Orders GUI "Show Range". Prefer networked
+	-- clientData.showRange (crosses Game↔interactable sandbox); fall back to _G.
+	local show = false
+	if pd.showRange == true then
+		show = true
+	else
+		local showMap = _G.g_rfsBeaconRangeVisible
+		show = key and type( showMap ) == "table" and showMap[tostring( key )] == true
+	end
+	if not show then
+		cl_destroyRangeRing( self )
 		return
 	end
-	host.cl = host.cl or {}
-	host.cl.rfsRangeByKey = host.cl.rfsRangeByKey or {}
-	wantMap = wantMap or host.cl.rfsRangeWant or {}
-	local seen = {}
-	local world = vizWorld()
+	local t = tierOf( self.shape )
+	local range = tonumber( pd.range ) or t.range
+	if pd.raid then
+		range = tonumber( pd.raidRange ) or ( range * 0.5 )
+	end
+	local color = t.ringColor
+	local shape = self.shape
+	if not shape or not sm.exists( shape ) then
+		return
+	end
+	local center = shape.worldPosition
+	local moved = true
+	if self.cl.ringCenter then
+		local d = center - self.cl.ringCenter
+		moved = d:length2() > 0.04 -- ~0.2 m
+	end
 	local tick = 0
 	pcall( function()
 		tick = sm.game.getCurrentTick()
 	end )
-	for key, want in pairs( wantMap ) do
-		key = tostring( key )
-		seen[key] = true
-		if type( want ) ~= "table" or want.show ~= true then
-			RfsRangeViz.destroyKey( host, key )
-		else
-			local center = vizTblVec( want.pos )
-			local range = tonumber( want.range ) or 16
-			if want.raid then
-				range = tonumber( want.raidRange ) or ( range * 0.5 )
-			end
-			local color = vizTblColor( want.color )
-			local rec = host.cl.rfsRangeByKey[key]
-			local n = vizSegCount( range )
-			if not center then
-				RfsRangeViz.destroyKey( host, key )
-			else
-				local needBuild = rec == nil or rec.range ~= range or rec.segN ~= n
-				if needBuild then
-					vizRebuild( host, key, center, range, color, world )
-					if host.cl.rfsRangeByKey[key] then
-						host.cl.rfsRangeByKey[key].tick = tick
-					end
-				else
-					local moved = true
-					if rec.center then
-						local d = center - rec.center
-						moved = d:length2() > 0.04
-					end
-					local due = ( rec.tick or -999 ) + 8 <= tick
-					if moved or due then
-						if due then
-							rec.groundZ = vizGroundZ( center.x, center.y, center.z )
-						end
-						vizSeat( rec, center, range, color, world )
-						rec.tick = tick
-					end
-				end
-			end
-		end
-	end
-	for key, _ in pairs( host.cl.rfsRangeByKey ) do
-		if not seen[tostring( key )] then
-			RfsRangeViz.destroyKey( host, key )
-		end
+	local due = ( self.cl.ringTick or -999 ) + 20 <= tick -- 0.5 s
+	if self.cl.ringRange ~= range or self.cl.rangeRing == nil then
+		cl_rebuildRangeRing( self, range, color )
+		self.cl.ringCenter = center
+		self.cl.ringTick = tick
+	elseif moved and due then
+		-- Re-seat pegs when the beacon moves (lift / vehicle); skip every-frame raycasts.
+		cl_rebuildRangeRing( self, range, color )
+		self.cl.ringCenter = center
+		self.cl.ringTick = tick
 	end
 end
 
@@ -1366,7 +1126,7 @@ cl_openOrders = function( self )
 		return
 	end
 	pcall( function()
-		sm.gui.chatMessage( "[RFS] HACK 3.5k" )
+		sm.gui.chatMessage( "[RFS] HACK 3.5f-orders" )
 	end )
 	local payload = {
 		beaconKey = key,
@@ -1505,8 +1265,6 @@ local function buildOrdersListPayload( self, player )
 					snap[tostring( row.key )] = {
 						type = info.type and tostring( info.type ) or nil,
 						unitType = info.unitType and tostring( info.unitType ) or nil,
-						botType = info.botType and tostring( info.botType ) or nil,
-						typeLetter = info.typeLetter and tostring( info.typeLetter ) or nil,
 						owner = info.owner,
 						mode = info.mode and tostring( info.mode ) or nil,
 						beaconKey = info.beaconKey and tostring( info.beaconKey ) or nil,
@@ -1595,13 +1353,6 @@ function RfsHackBeacon.sv_ordersList( self, params, player )
 	relayOrdersListToPlayer( player, listPayload )
 end
 
-function RfsHackBeacon.cl_setShowRange( self, params )
-	self.cl = self.cl or {}
-	self.cl.pd = self.cl.pd or {}
-	self.cl.pd.showRange = params and params.show and true or false
-	cl_updateRangeRing( self )
-end
-
 function RfsHackBeacon.sv_setShowRange( self, params, player )
 	params = params or {}
 	local key = self.sv and self.sv.key
@@ -1612,12 +1363,7 @@ function RfsHackBeacon.sv_setShowRange( self, params, player )
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.setRangeVisible then
 		RfsBotHijack.setRangeVisible( key, show )
 	end
-	-- Direct client RPC so the circle appears without waiting on clientData.
-	-- Does not open/close/refresh Orders GUI.
-	pcall( function()
-		self.network:sendToClients( "cl_setShowRange", { show = show } )
-	end )
-	pushRangeViz( self, show )
+	-- Immediate clientData refresh so the ring appears without waiting a tick.
 	pcall( function()
 		publish( self, {} )
 	end )
