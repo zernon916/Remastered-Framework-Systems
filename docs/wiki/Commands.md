@@ -13,6 +13,8 @@ Full list: pack file `COMMANDS.txt`.
 | `/map` / `/rfsmap` | Top-down camera map (WASD pan, scroll zoom) |
 | `/mapclose` | Close map camera |
 
+Future (**Phase 3.6**, not shipped): a **GUI** visuals tab may land under `/menu` or host `/gensettings` FEATURES/GUI — nametags, Big Red label, health-bar colors; see [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
+
 ## Host setup
 
 | Command | What it does |

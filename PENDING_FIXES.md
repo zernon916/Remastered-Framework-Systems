@@ -70,3 +70,16 @@ navigation and deposit targeting. Do not treat as shipped.
 
 - Reliable bot pathfinding (chests, doorways) beyond vanilla unit AI
 - Color-coded / connection-tool assigned chests (seeds vs produce vs drop-off)
+
+---
+
+## 5) Menu tab: GUI (visuals) — **FUTURE** (Phase 3.6; not started)
+
+Logged in `HIJACK_ROADMAP.txt` under **Phase 3.6**. Do **not** implement during HACK 3.3
+testing. Prefer `/menu` or `/gensettings` FEATURES/GUI tab (TBD). Cross-ref Phase 2
+nametag / naming polish and HACK 3.3 type+number / icons.
+
+- Names on/off (world nametags)
+- Farmbots as **"Big Red"** (vs generic Farm / type name)
+- Health bar Enemy (default red) + Neutral/ally (default green) with color dropdowns
+- Block health overlay (green→red) — **research/feasibility**; may not be exposed in SM

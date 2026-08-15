@@ -21,6 +21,8 @@ Author: Zernon916
 
 - **Phase E** — Steam Workshop push (full menus / streamer / discord batch) — only when the user asks
 - **Phase 3 — farm orders** — follow/stay/guard/harvest/replant/chest (`/botorder` or beacon GUI) — future
+- **Phase 3.5 — pathfinding & painted chests** — future (see `HIJACK_ROADMAP.txt`)
+- **Phase 3.6 — Menu tab: GUI (visuals)** — Names / Big Red / health bars / block overlay (feasibility TBD); prefer `/menu` or `/gensettings` — future
 - **Phase 4 — factories** — craftable ally spawners / army caps — future
 - **Phase 2/5 full polish** — richer identity UI, melee-chain flavor, raid callouts (beyond lite)
 

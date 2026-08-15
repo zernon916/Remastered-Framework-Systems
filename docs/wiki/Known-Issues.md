@@ -23,6 +23,10 @@ Bots that are **out of range of farms** should **not** be affected by RAID jam /
 
 Not started. Farm / Collect / Oil still use vanilla unit AI navigation. Planned: reliable pathfinding through doorways to chests, plus painted / assigned chests (color roles + optional connection tool to beacon Orders domain). Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.5, `PENDING_FIXES.md` §4, [[Bot-Orders]].
 
+## Menu tab: GUI visuals (FUTURE — Phase 3.6)
+
+Not started (do not build during HACK 3.3 testing). Planned player/host visual prefs — Names on/off, Farmbots as **"Big Red"**, enemy/neutral health-bar color dropdowns, and a block health overlay (green→red) only if SM exposes damage visuals. Menu home TBD (`/menu` or `/gensettings` FEATURES/GUI). Relates to Phase 2 nametag/naming polish and HACK 3.3 type+number / icons. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6, `PENDING_FIXES.md` §5.
+
 ## Cotton in autumn
 
 Not an RFS bug. Vanilla places world cotton in autumn forest interiors; easy to miss (small scale / short view distance). See `PENDING_FIXES.md` section 2.

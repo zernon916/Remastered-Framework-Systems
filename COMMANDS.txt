@@ -117,10 +117,13 @@ Hijack polish still open (not commands — see PENDING_FIXES.md §3 + HIJACK_ROA
            names + numbers above head)
   Phase 5: RAID range filter — out-of-range farm bots must ignore RAID behavior
 
-Future (not commands — see HIJACK_ROADMAP Phase 3.5 + PENDING_FIXES.md §4)
--------------------------------------------------------------------------
+Future (not commands — see HIJACK_ROADMAP Phase 3.5 / 3.6 + PENDING_FIXES.md §4–§5)
+---------------------------------------------------------------------------------
   Phase 3.5: bot pathfinding + painted/assigned chests (seeds / produce / drop-off;
              optional connection tool to beacon Orders domain)
+  Phase 3.6: Menu tab GUI (visuals) — Names on/off, Farmbot→"Big Red", enemy/neutral
+             health-bar colors; block health overlay if SM exposes it.
+             Likely under /menu or /gensettings FEATURES/GUI (TBD). Not Beacon Orders.
 
 Also available from Survival (when bound)
 ----------------------------------------
