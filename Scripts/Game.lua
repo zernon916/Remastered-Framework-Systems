@@ -492,7 +492,7 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 						retried = true,
 					}
 					if not pend.retried then
-						rfsMsg( self, "HACK 3.5f-orders open retry" )
+						rfsMsg( self, "HACK 3.5k open retry" )
 					end
 				end
 			end
@@ -638,6 +638,11 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	if self.cl and self.cl.rfsGenGui and ( sm.game.getCurrentTick() % 40 ) == 0 then
 		RfsGenGui.refresh( self )
 	end
+	pcall( function()
+		if type( RfsRangeViz ) == "table" and RfsRangeViz.tick then
+			RfsRangeViz.tick( self, self.cl and self.cl.rfsRangeWant )
+		end
+	end )
 end
 
 function RecipeFrameworkSurvival.loadCraftingRecipes( self )
@@ -2479,6 +2484,11 @@ function RecipeFrameworkSurvival.cl_rfs_ordersClose( self )
 	if type( RfsBeaconOrdersGui ) == "table" then
 		RfsBeaconOrdersGui.close( self )
 	elseif self.cl then
+		local gui = self.cl.rfsOrdersGui
+		if gui then
+			pcall( function() gui:destroy() end )
+			pcall( function() gui:close() end )
+		end
 		self.cl.rfsOrdersGui = nil
 		self.cl.rfsPendingOrdersGui = nil
 		local tick = 0
@@ -2535,9 +2545,21 @@ function RecipeFrameworkSurvival.cl_rfs_ordersMaster( self )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_ordersRange( self )
+	-- Soft toggle only — never close, destroy, or rebuild the Orders GUI.
 	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.toggleRange then
 		RfsBeaconOrdersGui.toggleRange( self )
 	end
+end
+
+-- Beacon SHOW RANGE circle. Drawn here (Game has no interactable host) so the
+-- ring cannot weld onto the beacon's battery circuit.
+function RecipeFrameworkSurvival.cl_rfs_rangeViz( self, data )
+	self.cl = self.cl or {}
+	self.cl.rfsRangeWant = self.cl.rfsRangeWant or {}
+	if type( data ) ~= "table" or data.key == nil then
+		return
+	end
+	self.cl.rfsRangeWant[tostring( data.key )] = data
 end
 
 function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
@@ -2580,6 +2602,9 @@ function RecipeFrameworkSurvival.sv_rfs_ordersScheduleOpen( self, params )
 					displayIndex = row.displayIndex ~= nil and tonumber( row.displayIndex ) or nil,
 					unitType = row.unitType ~= nil and tostring( row.unitType ) or nil,
 					type = row.type ~= nil and tostring( row.type ) or nil,
+					botType = row.botType ~= nil and tostring( row.botType ) or nil,
+					typeLetter = row.typeLetter ~= nil and tostring( row.typeLetter ) or nil,
+					kind = row.kind ~= nil and tostring( row.kind ) or nil,
 					mode = row.mode ~= nil and tostring( row.mode ) or nil,
 					seedUuid = row.seedUuid ~= nil and tostring( row.seedUuid ) or nil,
 					owner = type( row.owner ) == "number" and row.owner
@@ -2657,6 +2682,8 @@ function RecipeFrameworkSurvival.sv_rfs_mirrorAllies( self, params )
 			RfsBotHijack.allies[k] = {
 				type = info.type or prev.type,
 				unitType = info.unitType or prev.unitType,
+				botType = info.botType or prev.botType,
+				typeLetter = info.typeLetter or prev.typeLetter,
 				owner = info.owner ~= nil and info.owner or prev.owner,
 				mode = info.mode or prev.mode,
 				beaconKey = info.beaconKey or prev.beaconKey,
@@ -2790,7 +2817,7 @@ function RecipeFrameworkSurvival.sv_rfs_ordersRange( self, params, player )
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.setRangeVisible then
 		RfsBotHijack.setRangeVisible( beaconKey, show )
 	end
-	-- Ask the live beacon to republish clientData.showRange immediately.
+	-- Game.lua draws the world circle (unhosted). Do not open/close Orders.
 	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.beaconScripts ) == "table" then
 		local beacon = RfsBotHijack.beaconScripts[beaconKey]
 		if beacon and type( beacon.sv_setShowRange ) == "function" then

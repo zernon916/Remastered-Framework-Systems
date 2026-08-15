@@ -15,6 +15,7 @@
 				"y": 2,
 				"z": 1
 			},
+			"itemStack": {},
 			"name": "obj_resource_corn",
 			"physicsMaterial": "Fruit",
 			"ratings": {
@@ -30,11 +31,7 @@
 			"rotationSet": "PropY",
 			"stackSize": 20,
 			"sticky": "-Y+Y",
-			"uuid": "fe8bfeba-850b-4827-9785-10e2468c9c23",
-			"scripted": {
-				"classname": "RfsCorn",
-				"filename": "$CONTENT_DATA/Scripts/game/RfsCorn.lua"
-			}
+			"uuid": "fe8bfeba-850b-4827-9785-10e2468c9c23"
 		}
 	]
 }

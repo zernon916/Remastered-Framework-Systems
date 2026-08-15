@@ -15,6 +15,10 @@ local DEFAULT_RANGE = 16
 local ALLY_AGGRO_RANGE = 40
 local HOSTILE_VS_ALLY_RANGE = 28
 local RAID_RANGE_MUL = 0.5
+-- Survival terrain cell / "tile" (RaidManager loadCellWithHandle, RfsAreaLoader).
+-- tileX = math.floor( worldPos.x / 64 ), tileY = math.floor( worldPos.y / 64 )
+local RAID_CELL_SIZE = 64
+RfsBotHijack.RAID_CELL_SIZE = RAID_CELL_SIZE
 local RAID_JAM_CHECK_TICKS = 80 -- 2 s
 local RAID_JAM_CHANCE = 0.18 -- fight through the hack during a raid
 local FIGHT_EXPLODE_CHANCE = 0.30 -- of those breakouts, this many self-destruct
@@ -32,9 +36,25 @@ local BIG_RED_MUL = 1.25
 local UUID_FARMBOT = sm.uuid.new( "9f4fde94-312f-4417-b13b-84029c5d6b52" )
 local UUID_HAYBOT = sm.uuid.new( "c8bfb8f3-7efc-49ac-875a-eb85ac0614db" )
 local UUID_TAPEBOT = sm.uuid.new( "04761b4a-a83e-4736-b565-120bc776edb2" )
+local UUID_TAPEBOT_RED = sm.uuid.new( "c3d31c47-0c9b-4b07-9bd4-8f022dc4333e" )
+local UUID_TAPEBOT_YELLOW = sm.uuid.new( "97efd943-d176-479a-a6f4-46373327ddcd" )
+local UUID_TAPEBOT_TAPED = {
+	sm.uuid.new( "9dbbd2fb-7726-4e8f-8eb4-0dab228a561d" ),
+	sm.uuid.new( "fcb2e8ce-ca94-45e4-a54b-b5acc156170b" ),
+	sm.uuid.new( "68d3b2f3-ed4b-4967-9d22-8ee6f555df63" ),
+}
+local UUID_TAPEBOT_GREEN = {
+	sm.uuid.new( "c68914f8-d769-4638-9071-f7dbd1d97351" ),
+	sm.uuid.new( "f3ded3f4-ddf9-441d-83f1-28b8cf2c7581" ),
+	sm.uuid.new( "54a06cf0-c035-41a5-b19e-158496d35586" ),
+}
 local UUID_MINERBOT = sm.uuid.new( "92da8324-3cfe-4529-ac1c-c71facda50a3" )
 local UUID_CABLEBOT = sm.uuid.new( "b837888a-0480-4a34-bc34-d72261a14385" )
 local UUID_TOTEBOT_BLUE = sm.uuid.new( "58992f50-ca36-44e1-8c47-4996d89d6a9a" )
+local UUID_TOTEBOT_GREEN = sm.uuid.new( "8984bdbf-521e-4eed-b3c4-2b5e287eb879" )
+local UUID_TOTEBOT_LEAF = sm.uuid.new( "55fd93fa-09ed-4a26-bfa1-4601694d5127" )
+local UUID_TOTEBOT_RED = sm.uuid.new( "9360d346-3ff2-4925-a068-660cf5dd5267" )
+local UUID_TOTEBOT_YELLOW = sm.uuid.new( "2dea48a4-6a79-11ed-a1eb-0242ac120002" )
 -- Phase 2 lite: infected/ally slowly convert nearby hostiles (not farm orders).
 local CHAIN_RANGE = 10
 local CHAIN_NEED_TICKS = 40 * 15 -- ~15 s
@@ -69,6 +89,7 @@ RfsBotHijack.beacons = RfsBotHijack.beacons or {} -- [beaconKey] = record
 RfsBotHijack.pending = RfsBotHijack.pending or {} -- [unitKey] = { startTick, need, beaconKey, text }
 RfsBotHijack.banned = RfsBotHijack.banned or {} -- [unitKey] = true, raid breakout, until death
 RfsBotHijack.chain = RfsBotHijack.chain or {} -- [hostileKey] = { startTick, need, sourceKey, text }
+RfsBotHijack.chainSkip = RfsBotHijack.chainSkip or {} -- [unitKey] = true, leftover/failed convert, no retry
 -- Client range ring opt-in (server mirrors onto beacon clientData.showRange).
 RfsBotHijack.rangeVisible = RfsBotHijack.rangeVisible or {} -- [beaconKey] = true
 -- Live interactable script refs (same Lua env) so Game RPCs can ask the beacon.
@@ -258,59 +279,151 @@ function RfsBotHijack.isUndergroundBotCharacter( char )
 		or t == cable or t == UUID_CABLEBOT or tostring( t ) == tostring( cable )
 end
 
+local function uuidKey( v )
+	if v == nil then
+		return ""
+	end
+	local s = string.lower( tostring( v ) )
+	local hex = string.match( s, "(%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x)" )
+	return hex or s
+end
+
 local function sameTypeUuid( typeStr, uuid )
-	if not uuid then
+	if typeStr == nil or uuid == nil then
 		return false
+	end
+	local a, b = uuidKey( typeStr ), uuidKey( uuid )
+	if a ~= "" and b ~= "" and a == b then
+		return true
 	end
 	return tostring( typeStr ) == tostring( uuid )
 end
 
--- Short world/list labels: Tote / Hay / Farm / Tape / Water / …
-local function shortTypeName( typeStr )
-	typeStr = tostring( typeStr or "robot" )
-	local lower = string.lower( typeStr )
-	local farm = unit_farmbot or UUID_FARMBOT
+local function inUuidList( typeStr, list )
+	if type( list ) ~= "table" then
+		return false
+	end
+	for _, u in ipairs( list ) do
+		if sameTypeUuid( typeStr, u ) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Survival character UUID / name → Orders kind (hay/tote/water/farmbot/tape/bubble/…).
+function RfsBotHijack.classifyBotKind( typeStr, displayName )
+	local typeRaw = tostring( typeStr or "" )
+	local s = string.lower( typeRaw .. " " .. tostring( displayName or "" ) )
 	local hay = unit_haybot or UUID_HAYBOT
+	local farm = unit_farmbot or UUID_FARMBOT
+	local blue = unit_totebot_blue or UUID_TOTEBOT_BLUE
 	local tape = unit_tapebot or UUID_TAPEBOT
 	local miner = unit_minerbot or UUID_MINERBOT
 	local cable = unit_cablebot or UUID_CABLEBOT
-	local blue = unit_totebot_blue or UUID_TOTEBOT_BLUE
-	if sameTypeUuid( typeStr, farm ) or string.find( lower, "farmbot", 1, true ) then
-		return "Farm"
+	-- Water / Totebot Blue before generic tote.
+	if sameTypeUuid( typeRaw, blue ) or sameTypeUuid( typeRaw, unit_waterbot )
+		or string.find( s, "waterbot", 1, true )
+		or ( string.find( s, "water", 1, true ) and not string.find( s, "tote", 1, true ) ) then
+		return "water"
 	end
-	if sameTypeUuid( typeStr, hay ) or string.find( lower, "haybot", 1, true ) or string.find( lower, "hay", 1, true ) then
-		return "Hay"
+	if sameTypeUuid( typeRaw, farm ) or string.find( s, "farmbot", 1, true )
+		or ( string.find( s, "farm", 1, true ) and not string.find( s, "tote", 1, true ) ) then
+		return "farmbot"
 	end
-	if sameTypeUuid( typeStr, tape ) or string.find( lower, "tapebot", 1, true ) or string.find( lower, "tape", 1, true ) then
-		return "Tape"
+	if sameTypeUuid( typeRaw, hay ) or string.find( s, "haybot", 1, true )
+		or string.find( s, "hay", 1, true ) then
+		return "hay"
 	end
-	if sameTypeUuid( typeStr, miner ) or string.find( lower, "miner", 1, true ) then
-		return "Miner"
+	local toteUuids = {
+		unit_totebot_green or UUID_TOTEBOT_GREEN,
+		unit_totebot_red or UUID_TOTEBOT_RED,
+		unit_totebot_yellow or UUID_TOTEBOT_YELLOW,
+		unit_totebot_leaf or UUID_TOTEBOT_LEAF,
+		UUID_TOTEBOT_GREEN, UUID_TOTEBOT_RED, UUID_TOTEBOT_YELLOW, UUID_TOTEBOT_LEAF,
+	}
+	if inUuidList( typeRaw, toteUuids ) or string.find( s, "tote", 1, true ) then
+		return "tote"
 	end
-	if sameTypeUuid( typeStr, cable ) or string.find( lower, "cable", 1, true ) then
-		return "Cable"
+	-- Green tapebot = Bubble before Paint tapebot.
+	local greens = {
+		rawget( _G, "unit_tapebot_green_1" ),
+		rawget( _G, "unit_tapebot_green_2" ),
+		rawget( _G, "unit_tapebot_green_3" ),
+	}
+	if inUuidList( typeRaw, greens ) or inUuidList( typeRaw, UUID_TAPEBOT_GREEN )
+		or string.find( s, "bubble", 1, true )
+		or ( string.find( s, "tape", 1, true ) and string.find( s, "green", 1, true ) ) then
+		return "bubble"
 	end
-	if sameTypeUuid( typeStr, blue )
-		or sameTypeUuid( typeStr, unit_waterbot )
-		or string.find( lower, "waterbot", 1, true )
-		or string.find( lower, "water", 1, true ) then
-		return "Water"
+	local tapes = {
+		tape, UUID_TAPEBOT, UUID_TAPEBOT_RED, UUID_TAPEBOT_YELLOW,
+		unit_tapebot_red, unit_tapebot_yellow,
+		rawget( _G, "unit_tapebot_taped_1" ),
+		rawget( _G, "unit_tapebot_taped_2" ),
+		rawget( _G, "unit_tapebot_taped_3" ),
+	}
+	if inUuidList( typeRaw, tapes ) or inUuidList( typeRaw, UUID_TAPEBOT_TAPED )
+		or string.find( s, "tapebot", 1, true ) or string.find( s, "tape", 1, true )
+		or string.find( s, "paint", 1, true ) then
+		return "tape"
 	end
-	if string.find( lower, "tote", 1, true ) then
-		return "Tote"
+	if sameTypeUuid( typeRaw, miner ) or string.find( s, "miner", 1, true ) then
+		return "miner"
 	end
-	if string.find( lower, "loot", 1, true ) then
-		return "Loot"
+	if sameTypeUuid( typeRaw, cable ) or string.find( s, "cable", 1, true ) then
+		return "cable"
 	end
-	if string.find( lower, "seed", 1, true ) then
-		return "Seed"
+	if string.find( s, "loot", 1, true ) then
+		return "loot"
 	end
-	if string.find( lower, "trash", 1, true ) then
-		return "Trash"
+	if string.find( s, "seed", 1, true ) then
+		return "seed"
 	end
-	if string.find( lower, "scan", 1, true ) then
-		return "Scan"
+	if string.find( s, "trash", 1, true ) then
+		return "trash"
 	end
+	if string.find( s, "scan", 1, true ) then
+		return "scan"
+	end
+	return "other"
+end
+
+function RfsBotHijack.typeLetterFor( kind, displayName )
+	kind = tostring( kind or "other" )
+	if kind == "hay" then return "H" end
+	if kind == "tote" then return "T" end
+	if kind == "water" then return "W" end
+	if kind == "farmbot" or kind == "farm" then return "F" end
+	if kind == "tape" or kind == "paint" then return "P" end
+	if kind == "bubble" then return "B" end
+	if kind == "miner" then return "M" end
+	if kind == "cable" then return "C" end
+	if kind == "loot" then return "L" end
+	if kind == "seed" then return "S" end
+	local name = tostring( displayName or "" )
+	local ch = string.match( name, "([%a])" )
+	if ch then
+		return string.upper( ch )
+	end
+	return "U"
+end
+
+-- Short world/list labels: Tote / Hay / Farm / Tape / Water / …
+local function shortTypeName( typeStr )
+	local kind = RfsBotHijack.classifyBotKind( typeStr, nil )
+	if kind == "farmbot" then return "Farm" end
+	if kind == "hay" then return "Hay" end
+	if kind == "tape" then return "Tape" end
+	if kind == "bubble" then return "Bubble" end
+	if kind == "miner" then return "Miner" end
+	if kind == "cable" then return "Cable" end
+	if kind == "water" then return "Water" end
+	if kind == "tote" then return "Tote" end
+	if kind == "loot" then return "Loot" end
+	if kind == "seed" then return "Seed" end
+	if kind == "trash" then return "Trash" end
+	if kind == "scan" then return "Scan" end
 	return "Bot"
 end
 
@@ -537,6 +650,8 @@ local function applyUnhackableToSelf( self )
 	self.saved.playerAllyOwner = nil
 	self.saved.rfsDisplayName = nil
 	self.saved.rfsUnitType = nil
+	self.saved.rfsBotType = nil
+	self.saved.rfsTypeLetter = nil
 	self.saved.rfsFirstSeenTick = nil
 	self.saved.rfsAllyColor = nil
 	self.saved.friendly = false
@@ -677,74 +792,162 @@ local function worldIdOf( world )
 	return nil
 end
 
--- True while the on-screen farm raid is incoming or dropping on this area.
-function RfsBotHijack.areaHasRaid( pos, world )
-	if not pos then
+-- Survival farm-raid "tile" = one terrain cell (64 m × 64 m), same formula
+-- RaidManager uses for loadCellWithHandle: math.floor(pos.x / 64), math.floor(pos.y / 64).
+-- Raid origin = raid.center (crop / farm-plot centroid). Fallback: attackPosition,
+-- then last on-tile raider note. Vanilla RAID_RADIUS is 96 m (spans neighbor cells);
+-- RFS raid effects use the origin cell only.
+function RfsBotHijack.tileCoords( pos )
+	if not pos or pos.x == nil or pos.y == nil then
+		return nil, nil
+	end
+	return math.floor( pos.x / RAID_CELL_SIZE ), math.floor( pos.y / RAID_CELL_SIZE )
+end
+
+local function sameRaidTile( a, b )
+	local ax, ay = RfsBotHijack.tileCoords( a )
+	local bx, by = RfsBotHijack.tileCoords( b )
+	return ax ~= nil and ax == bx and ay == by
+end
+
+local function raidIsActive( raid )
+	if type( raid ) ~= "table" then
 		return false
 	end
-	local wid = worldIdOf( world )
-	if wid and type( RaidManager ) == "table" and type( RaidManager.Sv_AreaHasActiveRaid ) == "function" then
-		local ok, active = pcall( RaidManager.Sv_AreaHasActiveRaid, pos, wid )
-		if ok and active then
-			return true
-		end
+	if raid.timeoutTick then
+		return true
 	end
-	if wid and g_raidManager and type( g_raidManager.sv_getRaidAtPosition ) == "function" then
-		local ok, raid = pcall( function()
-			return g_raidManager:sv_getRaidAtPosition( wid, pos )
-		end )
-		if ok and type( raid ) == "table" then
-			if raid.timeoutTick then
-				return true
-			end
-			local ad = raid.attackData
-			if type( ad ) == "table" then
-				if ad.spawnPositions then
-					return true
-				end
-				if ad.attackTick then
-					local now = 0
-					pcall( function()
-						now = sm.game.getCurrentTick()
-					end )
-					-- Same window as the on-screen incoming raid warning (~60 s).
-					if now >= ( ad.attackTick - 40 * 60 ) then
-						return true
-					end
-				end
-			end
-		end
+	local ad = raid.attackData
+	if type( ad ) ~= "table" then
+		return false
 	end
-	-- Fallback: a raider unit was seen nearby this second (walls getting hit).
-	local note = RfsBotHijack._raidNote
-	if note and note.pos and pos then
+	if ad.spawnPositions then
+		return true
+	end
+	if ad.attackTick then
 		local now = 0
 		pcall( function()
 			now = sm.game.getCurrentTick()
 		end )
-		if note.tick and ( now - note.tick ) <= 80 then
-			local same = true
-			local nwid = note.wid
-			if nwid and wid and nwid ~= wid then
-				same = false
-			end
-			if same then
-				local d2 = 0
-				pcall( function()
-					d2 = ( pos - note.pos ):length2()
-				end )
-				if d2 <= 96 * 96 then
-					return true
-				end
-			end
+		-- Same window as the on-screen incoming raid warning (~60 s).
+		if now >= ( ad.attackTick - 40 * 60 ) then
+			return true
 		end
 	end
 	return false
 end
 
+-- Prefer raid.center — that is the cell RaidManager pins with loadCellWithHandle.
+local function raidOriginPos( raid )
+	if type( raid ) ~= "table" then
+		return nil
+	end
+	if raid.center then
+		return raid.center
+	end
+	local ad = raid.attackData
+	if type( ad ) == "table" and ad.attackPosition then
+		return ad.attackPosition
+	end
+	return nil
+end
+
+local function collectRaidOrigins( wid, probePos )
+	local origins = {}
+	if wid and g_raidManager then
+		pcall( function()
+			local raids = g_raidManager.sv.saved.worldRaids[wid]
+			if type( raids ) ~= "table" then
+				return
+			end
+			for _, raid in pairs( raids ) do
+				if raidIsActive( raid ) then
+					local origin = raidOriginPos( raid )
+					if origin then
+						origins[#origins + 1] = origin
+					end
+				end
+			end
+		end )
+	end
+	if #origins == 0 and wid and g_raidManager and probePos
+		and type( g_raidManager.sv_getRaidAtPosition ) == "function" then
+		local ok, raid = pcall( function()
+			return g_raidManager:sv_getRaidAtPosition( wid, probePos )
+		end )
+		if ok and raidIsActive( raid ) then
+			local origin = raidOriginPos( raid )
+			if origin then
+				origins[#origins + 1] = origin
+			end
+		end
+	end
+	if #origins == 0 then
+		local note = RfsBotHijack._raidNote
+		if note and note.pos then
+			local now = 0
+			pcall( function()
+				now = sm.game.getCurrentTick()
+			end )
+			if note.tick and ( now - note.tick ) <= 80 then
+				local nwid = note.wid
+				if not ( nwid and wid and nwid ~= wid ) then
+					origins[#origins + 1] = note.pos
+				end
+			end
+		end
+	end
+	return origins
+end
+
+-- True only when pos is on the SAME 64 m cell as an active raid origin.
+function RfsBotHijack.areaHasRaid( pos, world )
+	if not pos then
+		return false
+	end
+	local origins = collectRaidOrigins( worldIdOf( world ), pos )
+	for i = 1, #origins do
+		if sameRaidTile( pos, origins[i] ) then
+			return true
+		end
+	end
+	return false
+end
+
+-- True when a raid is active in this world but pos is on a different cell.
+-- Off-tile allies keep hack / jobs; no jam, raid DROP, or raid unhack.
+function RfsBotHijack.outsideRaidTile( pos, world )
+	if not pos then
+		return false
+	end
+	local origins = collectRaidOrigins( worldIdOf( world ), pos )
+	if #origins == 0 then
+		return false
+	end
+	for i = 1, #origins do
+		if sameRaidTile( pos, origins[i] ) then
+			return false
+		end
+	end
+	return true
+end
+
 function RfsBotHijack.noteRaid( pos, world )
 	if not pos then
 		return
+	end
+	local origins = collectRaidOrigins( worldIdOf( world ), pos )
+	if #origins > 0 then
+		local onTile = false
+		for i = 1, #origins do
+			if sameRaidTile( pos, origins[i] ) then
+				onTile = true
+				break
+			end
+		end
+		if not onTile then
+			return
+		end
 	end
 	local now = 0
 	pcall( function()
@@ -1213,9 +1416,21 @@ function RfsBotHijack.register( unit, ownerId, opts )
 			allocDomainIndex( namingDomainKey( workBeaconKey or beaconKey ), key, displayIndex )
 		end
 	end
+	local charName = nil
+	pcall( function()
+		if char and sm.exists( char ) and char.getName then
+			charName = char:getName()
+		end
+	end )
+	local botType = opts.botType or ( prev and prev.botType )
+		or RfsBotHijack.classifyBotKind( unitType or t, displayName or charName )
+	local typeLetter = opts.typeLetter or ( prev and prev.typeLetter )
+		or RfsBotHijack.typeLetterFor( botType, displayName or charName )
 	RfsBotHijack.allies[key] = {
 		type = t,
 		unitType = unitType,
+		botType = botType,
+		typeLetter = typeLetter,
 		owner = ownerId or ( prev and prev.owner ),
 		mode = mode,
 		beaconKey = beaconKey,
@@ -1240,6 +1455,8 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		displayName = displayName,
 		displayIndex = displayIndex,
 		unitType = unitType,
+		botType = botType,
+		typeLetter = typeLetter,
 		firstSeenTick = firstSeen,
 		mode = mode,
 		beaconKey = RfsBotHijack.allies[key].beaconKey,
@@ -1267,6 +1484,9 @@ function RfsBotHijack.unregister( unit )
 		end
 		if RfsBotHijack.pending then
 			RfsBotHijack.pending[key] = nil
+		end
+		if RfsBotHijack.chain then
+			RfsBotHijack.chain[key] = nil
 		end
 	end
 end
@@ -1414,6 +1634,8 @@ function RfsBotHijack.tick( world )
 								displayName = info.displayName,
 								displayIndex = info.displayIndex,
 								unitType = info.unitType or info.type,
+								botType = info.botType,
+								typeLetter = info.typeLetter,
 								firstSeenTick = info.firstSeenTick,
 								mode = "infected",
 								workBeaconKey = info.workBeaconKey,
@@ -1575,6 +1797,9 @@ function RfsBotHijack.releaseVoluntary( unit )
 		end
 		if RfsBotHijack.chain then
 			RfsBotHijack.chain[key] = nil
+		end
+		if RfsBotHijack.chainSkip then
+			RfsBotHijack.chainSkip[key] = nil
 		end
 		-- Clear peacetime lockout only; never touch raid bans.
 		if RfsBotHijack.lockout then
@@ -2030,6 +2255,28 @@ function RfsBotHijack.standDown( self )
 	end
 end
 
+-- Hostiles / workers pulled onto raid pathing off the origin cell: drop raid AI.
+-- Allies always standDown separately. Capture/destroy still uses leaveRaidList.
+function RfsBotHijack.clearOffTileRaidAi( self )
+	if not self or not self.saved or not self.saved.raider then
+		return
+	end
+	if self.unit and RfsBotHijack.isAlly( self.unit ) then
+		return
+	end
+	local pos = nil
+	local world = nil
+	pcall( function()
+		if self.unit and self.unit.character then
+			pos = self.unit.character.worldPosition
+			world = self.unit.character:getWorld()
+		end
+	end )
+	if pos and RfsBotHijack.outsideRaidTile( pos, world ) then
+		RfsBotHijack.standDown( self )
+	end
+end
+
 function RfsBotHijack.isFarmbot( unit )
 	if not unit or not unit.character or not sm.exists( unit.character ) then
 		return false
@@ -2078,9 +2325,22 @@ function RfsBotHijack.popUnit( unit )
 end
 
 -- Raid hack-loss: banned until death. 30% red-tote pop (farmbot 1.25×).
+-- Off the raid tile: no-op (keep hack). Voluntary unhijack uses releaseVoluntary.
 function RfsBotHijack.releaseHack( unit, duringRaid )
 	if not unit or not sm.exists( unit ) then
 		return
+	end
+	local pos = nil
+	local world = nil
+	pcall( function()
+		pos = unit.character.worldPosition
+		world = unit.character:getWorld()
+	end )
+	if duringRaid and pos and RfsBotHijack.outsideRaidTile( pos, world ) then
+		return
+	end
+	if duringRaid and not ( pos and RfsBotHijack.areaHasRaid( pos, world ) ) then
+		duringRaid = false
 	end
 	RfsBotHijack.ban( unit )
 	RfsBotHijack.setHackable( unit, false )
@@ -2107,18 +2367,24 @@ function RfsBotHijack._tickRaidJam( unit, key, info, now )
 		return
 	end
 	RfsBotHijack.jams = RfsBotHijack.jams or {}
-	if RfsBotHijack.jams[key] or info.doomed then
-		RfsBotHijack.jams[key] = nil
-		info.doomed = nil
-		RfsBotHijack.releaseHack( unit, true )
-		return
-	end
 	local pos = nil
 	local world = nil
 	pcall( function()
 		pos = unit.character.worldPosition
 		world = unit.character:getWorld()
 	end )
+	if pos and RfsBotHijack.outsideRaidTile( pos, world ) then
+		RfsBotHijack.jams[key] = nil
+		info.doomed = nil
+		info.raidCheckTick = nil
+		return
+	end
+	if RfsBotHijack.jams[key] or info.doomed then
+		RfsBotHijack.jams[key] = nil
+		info.doomed = nil
+		RfsBotHijack.releaseHack( unit, true )
+		return
+	end
 	local inRaid = pos and RfsBotHijack.areaHasRaid( pos, world )
 	if not inRaid then
 		info.raidCheckTick = nil
@@ -2269,15 +2535,112 @@ end
 
 RfsBotHijack.drops = RfsBotHijack.drops or {} -- [unitKey] = { startTick, need, text }
 
+-- CHAIN 0.0 = convert finished the countdown but did not complete. Never leave
+-- that debug tag up, and never retry forever (that froze AI on raid-list leftovers).
+local function chainTagOwnedByOther( key )
+	return ( RfsBotHijack.pending and RfsBotHijack.pending[key] )
+		or ( RfsBotHijack.drops and RfsBotHijack.drops[key] )
+		or ( RfsBotHijack.jams and RfsBotHijack.jams[key] )
+end
+
+local abortChainGhost
+
+local function isChainSkipped( key )
+	return key ~= nil and RfsBotHijack.chainSkip and RfsBotHijack.chainSkip[key] == true
+end
+
+-- Leftover / failed convert: never restart the CHAIN overlay on this unit.
+local function skipChainUnit( unit )
+	if not unit then
+		return
+	end
+	local key = unitKey( unit )
+	if key then
+		RfsBotHijack.chainSkip = RfsBotHijack.chainSkip or {}
+		RfsBotHijack.chainSkip[key] = true
+		if RfsBotHijack.chain then
+			RfsBotHijack.chain[key] = nil
+		end
+	end
+	-- Persist: remnant leftover stays unhackable across save so CHAIN does not restart.
+	RfsBotHijack.setHackable( unit, false )
+	abortChainGhost( unit )
+end
+
+local function finishChainAsAlly( unit )
+	if not unit or not sm.exists( unit ) then
+		return
+	end
+	pcall( function()
+		sm.event.sendToUnit( unit, "sv_e_rfsLeaveRaid", {} )
+	end )
+	pcall( function()
+		if type( RfsBotOrders ) == "table" and RfsBotOrders.ensureDefaultOrder then
+			local info = RfsBotHijack.allies[unitKey( unit )]
+			RfsBotOrders.ensureDefaultOrder( unit, info and info.owner or 0, info or {} )
+		end
+	end )
+	pcall( function()
+		sm.event.sendToUnit( unit, "sv_e_receiveTarget", { targetCharacter = nil, sendingUnit = unit } )
+	end )
+	local info = RfsBotHijack.allies[unitKey( unit )]
+	if info and info.displayName then
+		setUnitTag( unit, info.displayName, "name" )
+	elseif not chainTagOwnedByOther( unitKey( unit ) ) then
+		setUnitTag( unit, "" )
+	end
+end
+
+abortChainGhost = function( unit )
+	if not unit or not sm.exists( unit ) then
+		return
+	end
+	if RfsBotHijack.isAlly( unit ) then
+		finishChainAsAlly( unit )
+		return
+	end
+	if not chainTagOwnedByOther( unitKey( unit ) ) then
+		setUnitTag( unit, "" )
+	end
+	-- Partial convert leftover (playerAlly / raid stand-down) without ally record.
+	clearIdentityOnUnit( unit )
+	pcall( function()
+		sm.event.sendToUnit( unit, "sv_e_receiveTarget", { targetCharacter = nil, sendingUnit = unit } )
+	end )
+end
+
 -- Light chain convert: allies/infected slowly convert nearby hostiles.
 -- Respects hackableRobots, underground flag, raid bans/lockouts. Skips new chains in raid.
 function RfsBotHijack._tickChainConvert( live, now )
 	RfsBotHijack.chain = RfsBotHijack.chain or {}
+	-- One-shot after load: leftover lime CHAIN 0.0 tags from a stalled convert.
+	-- Allies get their name back; ghosts get the debug tag cleared. No mass-wipe.
+	if not RfsBotHijack._chainTagSweep then
+		local nLive = 0
+		for _ in pairs( live ) do
+			nLive = nLive + 1
+		end
+		if nLive > 0 then
+			RfsBotHijack._chainTagSweep = true
+			for key, unit in pairs( live ) do
+				if unit and sm.exists( unit ) then
+					if RfsBotHijack.isAlly( unit ) then
+						local info = RfsBotHijack.allies[key]
+						if info and info.displayName then
+							setUnitTag( unit, info.displayName, "name" )
+						end
+					elseif not chainTagOwnedByOther( key ) then
+						setUnitTag( unit, "" )
+					end
+				end
+			end
+		end
+	end
 	if not hackableRobotsOn() then
 		for key, ch in pairs( RfsBotHijack.chain ) do
 			local unit = live[key]
 			if unit then
-				setUnitTag( unit, "" )
+				abortChainGhost( unit )
 			end
 		end
 		RfsBotHijack.chain = {}
@@ -2303,6 +2666,8 @@ function RfsBotHijack._tickChainConvert( live, now )
 								and not RfsBotHijack.isAlly( u )
 								and RfsBotHijack.isHackable( u )
 								and not RfsBotHijack.isLockedOut( u )
+								and not isChainSkipped( hkey )
+								and not ( RfsBotHijack.pending and RfsBotHijack.pending[hkey] )
 								and not ( RfsBotHijack.isUndergroundBotCharacter( u.character ) and not undergroundBotsOn() )
 							then
 								local d2 = ( u.character.worldPosition - pos ):length2()
@@ -2327,20 +2692,21 @@ function RfsBotHijack._tickChainConvert( live, now )
 						end
 						local elapsed = now - ( ch.startTick or now )
 						local remain = ch.need - elapsed
-						if remain <= 0 then
+						-- Convert once. Fail / remnant leftover → skip retries (no looping CHAIN tag).
+						if remain <= 2 or elapsed > ( ch.need or CHAIN_NEED_TICKS ) + 40 then
 							local opts = {
 								mode = ( info.mode == "infected" ) and "infected" or "tethered",
 								beaconKey = ( info.mode ~= "infected" ) and info.beaconKey or nil,
 								workBeaconKey = info.workBeaconKey or info.beaconKey,
 								hijackTicks = info.hijackTicks,
 							}
-							local ok = RfsBotHijack.convertUnit( best, info.owner or 0, opts )
-							setUnitTag( best, "" )
-							if not ok then
-								-- Keep trying next tick if convert failed for a soft reason.
-								ch.startTick = now - ( ch.need - 40 )
-								capturePos( ch, best )
-								nextChain[hkey] = ch
+							local ok, converted = pcall( RfsBotHijack.convertUnit, best, info.owner or 0, opts )
+							if ( ok and converted ) or RfsBotHijack.isAlly( best ) then
+								RfsBotHijack.chainSkip = RfsBotHijack.chainSkip or {}
+								RfsBotHijack.chainSkip[hkey] = true
+								finishChainAsAlly( best )
+							else
+								skipChainUnit( best )
 							end
 						else
 							ch.text = string.format( "CHAIN %.1f", remain / 40 )
@@ -2356,10 +2722,10 @@ function RfsBotHijack._tickChainConvert( live, now )
 	for key, ch in pairs( RfsBotHijack.chain ) do
 		if not nextChain[key] then
 			local unit = live[key]
-			if unit and not RfsBotHijack.isAlly( unit ) then
-				-- Clear stale chain tag unless pending/drop owns the tag.
-				if not ( RfsBotHijack.pending and RfsBotHijack.pending[key] )
-					and not ( RfsBotHijack.drops and RfsBotHijack.drops[key] ) then
+			if unit then
+				if RfsBotHijack.isAlly( unit ) then
+					finishChainAsAlly( unit )
+				elseif not chainTagOwnedByOther( key ) then
 					setUnitTag( unit, "" )
 				end
 			end
@@ -2378,6 +2744,20 @@ function RfsBotHijack._tickSignalLoss( live, now )
 		if info and info.mode ~= "infected" and not info.doomed and not ( RfsBotHijack.jams and RfsBotHijack.jams[key] ) then
 			local unit = live[key]
 			if unit and sm.exists( unit ) then
+				local pos = nil
+				local world = nil
+				pcall( function()
+					pos = unit.character.worldPosition
+					world = unit.character:getWorld()
+				end )
+				-- Raid on another tile: keep hack, cancel DROP, keep working.
+				if pos and RfsBotHijack.outsideRaidTile( pos, world ) then
+					info.outStreak = 0
+					info.controlled = true
+					if RfsBotHijack.drops then
+						RfsBotHijack.drops[key] = nil
+					end
+				else
 				-- Already-hacked bots use FULL beacon range so raid 50% cannot flicker them.
 				local rec, bkey = RfsBotHijack.coveringBeacon( unit, true )
 				local covered = rec ~= nil
@@ -2434,16 +2814,26 @@ function RfsBotHijack._tickSignalLoss( live, now )
 						end
 					end
 				end
+				end
 			end
 		end
 	end
 	RfsBotHijack.drops = nextDrops
 	for _, unit in ipairs( toRelease ) do
+		local skip = false
 		local inRaid = false
 		pcall( function()
-			inRaid = RfsBotHijack.areaHasRaid( unit.character.worldPosition, unit.character:getWorld() )
+			local p = unit.character.worldPosition
+			local w = unit.character:getWorld()
+			if RfsBotHijack.outsideRaidTile( p, w ) then
+				skip = true
+			else
+				inRaid = RfsBotHijack.areaHasRaid( p, w )
+			end
 		end )
-		RfsBotHijack.releaseHack( unit, inRaid )
+		if not skip then
+			RfsBotHijack.releaseHack( unit, inRaid )
+		end
 	end
 end
 
@@ -2592,12 +2982,35 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 		if type( ord ) == "table" and ord.seedUuid ~= nil then
 			seedUuid = tostring( ord.seedUuid )
 		end
+		local liveType, liveName = nil, nil
+		local unit = RfsBotHijack.unitByKey( key )
+		if unit and sm.exists( unit ) and unit.character and sm.exists( unit.character ) then
+			liveType = charTypeStr( unit.character )
+			pcall( function()
+				if unit.character.getName then
+					liveName = unit.character:getName()
+				end
+			end )
+		end
+		local name = tostring( info.displayName or liveName or shortTypeName( info.unitType or info.type or liveType ) or "Bot" )
+		local botType = info.botType
+			or RfsBotHijack.classifyBotKind( info.unitType or info.type or liveType, name )
+		if ( not botType or botType == "other" ) and liveType then
+			botType = RfsBotHijack.classifyBotKind( liveType, liveName or name )
+		end
+		info.botType = botType
+		local typeLetter = info.typeLetter
+			or RfsBotHijack.typeLetterFor( botType, name or liveName )
+		info.typeLetter = typeLetter
 		rows[#rows + 1] = {
 			key = tostring( key ),
-			name = tostring( info.displayName or shortTypeName( info.unitType or info.type ) or "Bot" ),
+			name = name,
 			displayIndex = tonumber( info.displayIndex ),
-			unitType = info.unitType ~= nil and tostring( info.unitType ) or ( info.type ~= nil and tostring( info.type ) or nil ),
+			unitType = info.unitType ~= nil and tostring( info.unitType ) or ( info.type ~= nil and tostring( info.type ) or ( liveType and tostring( liveType ) or nil ) ),
 			type = info.type ~= nil and tostring( info.type ) or nil,
+			botType = botType,
+			typeLetter = typeLetter,
+			kind = botType,
 			mode = orderMode,
 			seedUuid = seedUuid,
 			owner = info.owner,
@@ -2892,6 +3305,12 @@ function RfsBotHijack.ensureHooks()
 			if self.params.rfsUnitType then
 				self.saved.rfsUnitType = self.params.rfsUnitType
 			end
+			if self.params.rfsBotType then
+				self.saved.rfsBotType = self.params.rfsBotType
+			end
+			if self.params.rfsTypeLetter then
+				self.saved.rfsTypeLetter = self.params.rfsTypeLetter
+			end
 			if self.params.rfsFirstSeenTick then
 				self.saved.rfsFirstSeenTick = self.params.rfsFirstSeenTick
 			end
@@ -2906,6 +3325,8 @@ function RfsBotHijack.ensureHooks()
 				displayName = self.saved.rfsDisplayName,
 				displayIndex = self.saved.rfsDisplayIndex,
 				unitType = self.saved.rfsUnitType,
+				botType = self.saved.rfsBotType,
+				typeLetter = self.saved.rfsTypeLetter,
 				firstSeenTick = self.saved.rfsFirstSeenTick,
 				allyColor = self.saved.rfsAllyColor,
 			} )
@@ -2977,11 +3398,20 @@ function RfsBotHijack.ensureHooks()
 					} )
 					isAlly = true
 				else
+					-- Leftover convert / chain / raid-list cleanup: not an ally anymore.
 					self.saved.playerAlly = nil
 					self.saved.playerAllyMode = nil
 					self.saved.playerAllyBeacon = nil
+					self.saved.playerAllyWorkBeacon = nil
 					self.saved.friendly = false
 					self.isDirty = true
+					clearIdentityOnUnit( self.unit )
+					pcall( function()
+						sm.event.sendToUnit( self.unit, "sv_e_receiveTarget", { targetCharacter = nil, sendingUnit = self.unit } )
+					end )
+					if not chainTagOwnedByOther( unitKey( self.unit ) ) then
+						setUnitTag( self.unit, "" )
+					end
 				end
 			end
 		end
@@ -3012,6 +3442,8 @@ function RfsBotHijack.ensureHooks()
 			self.saved.rfsDisplayName = info and info.displayName
 			self.saved.rfsDisplayIndex = info and info.displayIndex
 			self.saved.rfsUnitType = info and ( info.unitType or info.type )
+			self.saved.rfsBotType = info and info.botType
+			self.saved.rfsTypeLetter = info and info.typeLetter
 			self.saved.rfsFirstSeenTick = info and info.firstSeenTick
 			self.saved.rfsAllyColor = info and info.allyColor
 			if info and type( info.order ) == "table" then
@@ -3020,6 +3452,12 @@ function RfsBotHijack.ensureHooks()
 				self.saved.rfsOrder = info.rfsOrder
 			end
 			self.isDirty = true
+			-- Stalled CHAIN 0.0 leftover: drop chain row and restore name + Defend AI.
+			local uk = self.unit and unitKey( self.unit )
+			if uk and RfsBotHijack.chain and RfsBotHijack.chain[uk] then
+				RfsBotHijack.chain[uk] = nil
+				finishChainAsAlly( self.unit )
+			end
 			RfsBotHijack.standDown( self )
 			if self.unit and self.unit.character then
 				applyAllyVisualColor( self.unit.character, info )
@@ -3045,6 +3483,9 @@ function RfsBotHijack.ensureHooks()
 		end
 
 		RfsBotHijack._origSelect( self, allyRange, dt )
+		pcall( function()
+			RfsBotHijack.clearOffTileRaidAi( self )
+		end )
 
 		if self.unit and not ( self.saved and self.saved.friendly ) then
 			local allyChar = closestOtherRobotCharacter( self.unit, true, HOSTILE_VS_ALLY_RANGE )
@@ -3077,7 +3518,7 @@ function RfsBotHijack.ensureHooks()
 	RfsBotHijack.ensureUnitHooks()
 	RfsBotHijack.ensureCharHooks()
 	RfsBotHijack._hooked = true
-	print( "[RFS] Bot hijack hooks installed (beacon computer / infect)" )
+	print( "[RFS] Bot hijack hooks installed (HACK 3.5k)" )
 	return true
 end
 
@@ -3168,6 +3609,8 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.rfsDisplayName = nil
 						self.saved.rfsDisplayIndex = nil
 						self.saved.rfsUnitType = nil
+						self.saved.rfsBotType = nil
+						self.saved.rfsTypeLetter = nil
 						self.saved.rfsFirstSeenTick = nil
 						self.saved.rfsAllyColor = nil
 						self.saved.rfsOrder = nil
@@ -3202,6 +3645,12 @@ function RfsBotHijack.ensureUnitHooks()
 					end
 					if params.unitType then
 						self.saved.rfsUnitType = params.unitType
+					end
+					if params.botType then
+						self.saved.rfsBotType = params.botType
+					end
+					if params.typeLetter then
+						self.saved.rfsTypeLetter = params.typeLetter
 					end
 					if params.firstSeenTick then
 						self.saved.rfsFirstSeenTick = params.firstSeenTick
@@ -3280,14 +3729,19 @@ function RfsBotHijack.ensureUnitHooks()
 							RfsBotHijack.noteRaid( self.unit.character.worldPosition, self.unit.character:getWorld() )
 						end )
 					end
+					local result = orig( self, dt )
 					if self.unit and RfsBotHijack.isAlly( self.unit ) then
 						if self.saved.rfsHackable == false then
 							RfsBotHijack.unregister( self.unit )
 						else
 							RfsBotHijack.standDown( self )
 						end
+					else
+						pcall( function()
+							RfsBotHijack.clearOffTileRaidAi( self )
+						end )
 					end
-					return orig( self, dt )
+					return result
 				end
 				cls._rfsUnitHooked = true
 			end
