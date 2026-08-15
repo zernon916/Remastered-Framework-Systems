@@ -596,8 +596,7 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	if self.cl and self.cl.rfsGenGui and ( sm.game.getCurrentTick() % 40 ) == 0 then
 		RfsGenGui.refresh( self )
 	end
-	-- Beacon Orders: never gui:open inside E-interact — Survival tears it down
-	-- (flash). Pump deferred open a few ticks later.
+	-- Beacon Orders: pump deferred Game open after E-interact has ended.
 	if self.cl and self.cl.rfsOrdersPendingOpen and type( RfsBeaconOrdersGui ) == "table"
 		and RfsBeaconOrdersGui.pumpPendingOpen then
 		RfsBeaconOrdersGui.pumpPendingOpen( self )
@@ -2495,10 +2494,10 @@ function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
 		return
 	end
 	data = data or {}
-	-- Server open RPC can arrive during/near E-interact. Always defer so Survival
-	-- cannot tear the panel down on interact end.
+	-- Same Game-hosted open as /menu; still defer a few ticks so any leftover
+	-- interact teardown cannot flash-close the new panel.
 	if RfsBeaconOrdersGui.queueDeferredOpen then
-		RfsBeaconOrdersGui.queueDeferredOpen( self, data, 3 )
+		RfsBeaconOrdersGui.queueDeferredOpen( self, data, 5 )
 		return
 	end
 	if type( RfsBeaconOrdersGui.open ) == "function" then

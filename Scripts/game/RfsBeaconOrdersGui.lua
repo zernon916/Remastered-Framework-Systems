@@ -416,12 +416,13 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	host.cl.rfsOrdersRows = host.cl.rfsOrdersRows or {}
 
 	-- Callbacks must resolve on the Game host (GUI is opened via Game client RPC).
+	-- CloseButton → user close. OnClose is separate so Survival interact-tear can
+	-- re-queue; /menu uses the same fn for both because it is never E-bound.
 	gui:setButtonCallback( "CloseButton", "cl_rfs_ordersClose" )
 	gui:setButtonCallback( "BtnPrev", "cl_rfs_ordersPrev" )
 	gui:setButtonCallback( "BtnNext", "cl_rfs_ordersNext" )
 	gui:setButtonCallback( "BtnMaster", "cl_rfs_ordersMaster" )
 	gui:setButtonCallback( "BtnRange", "cl_rfs_ordersRange" )
-	-- Separate OnClose so CloseButton → close() does not re-enter close.
 	gui:setOnCloseCallback( "cl_rfs_ordersOnClosed" )
 
 	local seeds = seedLabels()
@@ -468,17 +469,6 @@ local function applyOpenMeta( host, opts )
 	end
 end
 
-local function guiIsActive( gui )
-	if not gui then
-		return false
-	end
-	local active = false
-	pcall( function()
-		active = gui:isActive() and true or false
-	end )
-	return active
-end
-
 local function mergeOptsIntoPending( pending, opts )
 	if type( opts ) ~= "table" then
 		return pending
@@ -508,53 +498,62 @@ local function mergeOptsIntoPending( pending, opts )
 	return pending
 end
 
-local function applyRowsOrRefresh( host, opts )
-	if type( opts.rows ) == "table" then
-		RfsBeaconOrdersGui.applyList( host, {
-			rows = opts.rows,
-			beaconKey = opts.beaconKey,
-			beaconName = opts.beaconName,
-			role = opts.role,
-			masterKey = opts.masterKey,
-		} )
-	else
-		RfsBeaconOrdersGui.refresh( host )
-	end
+local function snapshotOpts( opts )
+	opts = opts or {}
+	return {
+		beaconKey = opts.beaconKey,
+		beaconName = opts.beaconName,
+		role = opts.role,
+		masterKey = opts.masterKey,
+		range = opts.range,
+		pos = opts.pos,
+		rows = opts.rows,
+	}
 end
 
--- Queue open for Game.client_onUpdate — never call gui:open during E-interact.
+-- Queue open for Game.client_onUpdate — never gui:open during E-interact.
 function RfsBeaconOrdersGui.queueDeferredOpen( host, opts, delayTicks )
 	opts = opts or {}
 	if not opts.beaconKey or not host then
 		return false
 	end
 	host.cl = host.cl or {}
-	local key = tostring( opts.beaconKey )
-	local existing = host.cl.rfsOrdersGui
-	local sameKey = host.cl.rfsOrdersBeaconKey and tostring( host.cl.rfsOrdersBeaconKey ) == key
-	if existing and sameKey and guiIsActive( existing ) then
-		-- Already up: merge list/meta in place, do not re-queue.
+	-- Already visible for this beacon: refresh in place (like list RPC), no re-open.
+	if host.cl.rfsOrdersGui
+		and host.cl.rfsOrdersBeaconKey
+		and tostring( host.cl.rfsOrdersBeaconKey ) == tostring( opts.beaconKey ) then
 		applyOpenMeta( host, opts )
-		applyRowsOrRefresh( host, opts )
+		if type( opts.rows ) == "table" then
+			RfsBeaconOrdersGui.applyList( host, opts )
+		else
+			RfsBeaconOrdersGui.refresh( host )
+		end
+		host.cl.rfsOrdersWantOpen = true
+		host.cl.rfsOrdersLastOpts = mergeOptsIntoPending( host.cl.rfsOrdersLastOpts, snapshotOpts( opts ) )
 		return true
 	end
 	local tick = 0
 	pcall( function()
 		tick = sm.game.getCurrentTick() or 0
 	end )
-	delayTicks = tonumber( delayTicks ) or 3
+	delayTicks = tonumber( delayTicks ) or 5
 	if delayTicks < 2 then
 		delayTicks = 2
 	end
+	local due = tick + delayTicks
+	local prevDue = tonumber( host.cl.rfsOrdersPendingOpenTick )
+	-- Keep the later deadline if already queued (don't open earlier into interact tear).
+	if prevDue and prevDue > due then
+		due = prevDue
+	end
 	host.cl.rfsOrdersPendingOpen = mergeOptsIntoPending( host.cl.rfsOrdersPendingOpen, opts )
-	host.cl.rfsOrdersPendingOpenTick = tick + delayTicks
-	pcall( function()
-		sm.gui.chatMessage( "[RFS] orders open queued" )
-	end )
+	host.cl.rfsOrdersPendingOpenTick = due
+	host.cl.rfsOrdersWantOpen = true
+	host.cl.rfsOrdersLastOpts = mergeOptsIntoPending( host.cl.rfsOrdersLastOpts, snapshotOpts( opts ) )
 	return true
 end
 
--- Immediate create+open. Prefer queueDeferredOpen from interact paths.
+-- Match /menu /setup /gensettings: close existing → createGuiFromLayout → bind → open.
 function RfsBeaconOrdersGui.open( host, opts )
 	opts = opts or {}
 	if not opts.beaconKey then
@@ -563,34 +562,24 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 
 	host.cl = host.cl or {}
-	-- Clear deferred queue once we actually open.
 	host.cl.rfsOrdersPendingOpen = nil
 	host.cl.rfsOrdersPendingOpenTick = nil
+	host.cl.rfsOrdersWantOpen = true
+	host.cl.rfsOrdersLastOpts = snapshotOpts( opts )
 
-	local key = tostring( opts.beaconKey )
-	local existing = host.cl.rfsOrdersGui
-	local sameKey = host.cl.rfsOrdersBeaconKey and tostring( host.cl.rfsOrdersBeaconKey ) == key
-
-	-- NEVER destroy+recreate for the same beacon. List/RPC bounce refreshes in-place.
-	if existing and sameKey then
-		applyOpenMeta( host, opts )
-		applyRowsOrRefresh( host, opts )
-		if not guiIsActive( existing ) then
-			pcall( function() existing:open() end )
-		end
-		return
-	end
-
-	if existing then
-		local old = existing
+	-- Same destroy guard as RfsMenuGui.open / RfsSetupGui.open / RfsGenGui.open.
+	if host.cl.rfsOrdersGui then
+		host.cl.rfsOrdersReplacing = true
+		pcall( function() host.cl.rfsOrdersGui:close() end )
 		host.cl.rfsOrdersGui = nil
-		pcall( function() old:close() end )
+		host.cl.rfsOrdersReplacing = false
 	end
 
 	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
 	if not ok or not gui then
 		sm.gui.chatMessage( "[RFS] Failed to open Beacon Orders GUI" )
 		print( "[RFS] orders GUI create failed: " .. tostring( gui ) )
+		host.cl.rfsOrdersWantOpen = false
 		return
 	end
 
@@ -611,41 +600,53 @@ function RfsBeaconOrdersGui.open( host, opts )
 		} )
 	else
 		RfsBeaconOrdersGui.refresh( host )
-	end
-	gui:open()
-	-- Rows normally arrive via beacon list-only RPC into pending/open.
-	-- Only self-request list when opened with no rows (server fallback open).
-	if type( opts.rows ) ~= "table" then
 		host.network:sendToServer( "sv_rfs_ordersList", {
 			beaconKey = host.cl.rfsOrdersBeaconKey,
 		} )
 	end
-	sm.gui.chatMessage( "[RFS] orders open" )
+	gui:open()
+	sm.gui.chatMessage( "RFS Beacon Orders opened" )
 end
 
+-- Match RfsMenuGui.close (user Close / explicit dismiss).
 function RfsBeaconOrdersGui.close( host )
-	local gui = host.cl and host.cl.rfsOrdersGui
 	destroyHostRangeRing( host )
-	-- Nil first so OnClose callback is a no-op.
 	if host.cl then
-		host.cl.rfsOrdersGui = nil
+		host.cl.rfsOrdersWantOpen = false
 		host.cl.rfsOrdersPendingOpen = nil
 		host.cl.rfsOrdersPendingOpenTick = nil
+		host.cl.rfsOrdersReopenCount = 0
 	end
+	local gui = host.cl and host.cl.rfsOrdersGui
 	if gui then
 		pcall( function() gui:close() end )
 	end
-	pcall( function()
-		sm.gui.chatMessage( "[RFS] orders destroy" )
-	end )
+	if host.cl then
+		host.cl.rfsOrdersGui = nil
+	end
 end
 
+-- Survival may fire OnClose when E-interact tears down a panel opened too early.
+-- If the user still wants Orders, re-queue (capped) after interact ends.
 function RfsBeaconOrdersGui.onClosed( host )
 	destroyHostRangeRing( host )
 	if host.cl then
 		host.cl.rfsOrdersGui = nil
-		-- Do NOT clear pending — interact-tear may fire OnClose before deferred pump.
 	end
+	if not host.cl or host.cl.rfsOrdersReplacing then
+		return
+	end
+	if not host.cl.rfsOrdersWantOpen or not host.cl.rfsOrdersLastOpts then
+		return
+	end
+	local n = ( host.cl.rfsOrdersReopenCount or 0 ) + 1
+	host.cl.rfsOrdersReopenCount = n
+	if n > 3 then
+		host.cl.rfsOrdersWantOpen = false
+		host.cl.rfsOrdersReopenCount = 0
+		return
+	end
+	RfsBeaconOrdersGui.queueDeferredOpen( host, host.cl.rfsOrdersLastOpts, 8 )
 end
 
 -- Called from Game.client_onUpdate after interact ends.
@@ -734,9 +735,7 @@ function RfsBeaconOrdersGui.applyList( host, data )
 	local gui = host.cl.rfsOrdersGui
 	if ( not gui ) and host.cl.rfsOrdersPendingOpen then
 		host.cl.rfsOrdersPendingOpen = mergeOptsIntoPending( host.cl.rfsOrdersPendingOpen, data )
-		pcall( function()
-			sm.gui.chatMessage( "[RFS] orders list" )
-		end )
+		host.cl.rfsOrdersLastOpts = mergeOptsIntoPending( host.cl.rfsOrdersLastOpts, data )
 		return
 	end
 	host.cl.rfsOrdersRows = {}
@@ -777,9 +776,6 @@ function RfsBeaconOrdersGui.applyList( host, data )
 	if data and data.masterKey ~= nil then
 		host.cl.rfsOrdersMasterKey = data.masterKey
 	end
-	pcall( function()
-		sm.gui.chatMessage( "[RFS] orders list" )
-	end )
 	RfsBeaconOrdersGui.refresh( host )
 end
 

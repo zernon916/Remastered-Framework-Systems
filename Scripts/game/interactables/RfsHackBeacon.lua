@@ -905,6 +905,10 @@ local function cl_cleanText( text )
 	return text
 end
 
+-- Forward decls: client_onFixedUpdate runs before these are assigned below.
+local cl_openOrders
+local cl_ordersArmTimeout
+
 local function cl_updateOverheads()
 	local now = 0
 	pcall( function()
@@ -1041,6 +1045,10 @@ end
 
 function RfsHackBeacon.client_onFixedUpdate( self, dt )
 	cl_updateOverheads()
+	-- Orders arm timeout: see cl_ordersArmTimeout (after cl_openOrders).
+	if self.cl and self.cl.rfsOrdersOpenOnRelease then
+		cl_ordersArmTimeout( self )
+	end
 end
 
 function RfsHackBeacon.client_onClientDataUpdate( self, data )
@@ -1184,10 +1192,9 @@ local function cl_beaconKey( self )
 	return nil
 end
 
-local function cl_openOrders( self )
-	-- CRITICAL: never gui:open() inside client_onInteract. Survival tears that
-	-- GUI down when E ends → flash-only panel. Queue a deferred Game open
-	-- (ticks later) and ask the server for LIST ONLY (ally table lives here).
+cl_openOrders = function( self )
+	-- Never gui:open inside client_onInteract. Ask Game via server so open uses the
+	-- same RecipeFrameworkSurvival.cl_rfs_ordersOpen path as other RFS menus.
 	local key = cl_beaconKey( self )
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
@@ -1207,30 +1214,26 @@ local function cl_openOrders( self )
 			payload.pos = { x = pos.x, y = pos.y, z = pos.z }
 		end
 	end )
-	local deferred = false
-	local game = _G.g_rfsGame
-	if game and type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.queueDeferredOpen then
-		local ok = pcall( function()
-			RfsBeaconOrdersGui.queueDeferredOpen( game, payload, 3 )
-		end )
-		deferred = ok and true or false
-		if not ok then
-			print( "[RFS] deferred orders open queue failed" )
-		end
-	elseif game then
-		-- Fallback: set pending fields directly if Gui module not in this env.
-		local ok = pcall( function()
-			game.cl = game.cl or {}
-			local tick = sm.game.getCurrentTick() or 0
-			game.cl.rfsOrdersPendingOpen = payload
-			game.cl.rfsOrdersPendingOpenTick = tick + 3
-		end )
-		deferred = ok and true or false
-	end
-	-- listOnly: server must NOT send cl_rfs_ordersOpen (would race interact frame).
-	payload.listOnly = deferred and true or false
-	payload.clientOpened = deferred and true or false
 	self.network:sendToServer( "sv_openOrdersGui", payload )
+end
+
+cl_ordersArmTimeout = function( self )
+	if not ( self.cl and self.cl.rfsOrdersOpenOnRelease and self.cl.rfsOrdersArmTick ) then
+		return
+	end
+	local tick = 0
+	pcall( function()
+		tick = sm.game.getCurrentTick() or 0
+	end )
+	if tick < ( self.cl.rfsOrdersArmTick + 12 ) then
+		return
+	end
+	self.cl.rfsOrdersOpenOnRelease = false
+	self.cl.rfsOrdersArmTick = nil
+	local pd = self.cl.pd or {}
+	if pd.powered then
+		cl_openOrders( self )
+	end
 end
 
 local function relayOrdersToPlayer( player, openData, listData )
@@ -1368,9 +1371,9 @@ local function sv_sendOrdersOpen( self, player, params )
 			end
 		end )
 	end
-	-- Deferred client queue / already-open: LIST ONLY. Never second open.
-	-- Fallback (no Game on client): open once with rows embedded via Game RPC.
-	if params and ( params.listOnly or params.clientOpened ) then
+	-- Always open via Game cl_rfs_ordersOpen (same host as /menu). Optional listOnly
+	-- keeps a refresh from forcing a second create when the panel is already up.
+	if params and params.listOnly then
 		return relayOrdersToPlayer( player, nil, listPayload )
 	end
 	return relayOrdersToPlayer( player, data, nil )
@@ -1457,16 +1460,30 @@ function RfsHackBeacon.sv_setMaster( self, params, player )
 end
 
 function RfsHackBeacon.client_onInteract( self, character, state )
-	if not state then
-		return
-	end
 	local pd = ( self.cl and self.cl.pd ) or {}
-	-- Powered → Orders (Master/Range/list). Tinker remains mass hijack.
-	if pd.powered then
-		cl_openOrders( self )
+	if state then
+		-- Powered → arm Orders on E-release (after interact teardown). Tinker = hijack.
+		if pd.powered then
+			self.cl = self.cl or {}
+			self.cl.rfsOrdersOpenOnRelease = true
+			local tick = 0
+			pcall( function()
+				tick = sm.game.getCurrentTick() or 0
+			end )
+			self.cl.rfsOrdersArmTick = tick
+			return
+		end
+		self.network:sendToServer( "sv_hijack", {} )
 		return
 	end
-	self.network:sendToServer( "sv_hijack", {} )
+	-- E released — interact session ended; safe to request Game-hosted open.
+	if self.cl and self.cl.rfsOrdersOpenOnRelease then
+		self.cl.rfsOrdersOpenOnRelease = false
+		self.cl.rfsOrdersArmTick = nil
+		if pd.powered then
+			cl_openOrders( self )
+		end
+	end
 end
 
 function RfsHackBeacon.client_onTinker( self, character, state )
