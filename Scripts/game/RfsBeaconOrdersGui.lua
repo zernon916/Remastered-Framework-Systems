@@ -17,13 +17,13 @@ local ROWS = 8
 local SCROLL_STEP = 1 -- one ally row per wheel/button tick
 -- ~0.5s settle after Close before createGui (40Hz ≈ 20 ticks).
 local REOPEN_SETTLE_TICKS = 20
-local MODE_ITEMS_DEFAULT = { "Rest", "Defend", "Return" }
-local MODE_ITEMS_HAY = { "Rest", "Defend", "Return", "Farm" }
-local MODE_ITEMS_TOTE = { "Rest", "Defend", "Return", "Collect" }
-local MODE_ITEMS_WATER = { "Rest", "Defend", "Return", "Collect Oil" }
--- Stable superset for all ModeDrop slots. Return sits with Rest/Defend (always enabled).
+local MODE_ITEMS_DEFAULT = { "Rest", "Defend", "Return", "Stay", "Recall" }
+local MODE_ITEMS_HAY = { "Rest", "Defend", "Return", "Stay", "Recall", "Farm" }
+local MODE_ITEMS_TOTE = { "Rest", "Defend", "Return", "Stay", "Recall", "Collect" }
+local MODE_ITEMS_WATER = { "Rest", "Defend", "Return", "Stay", "Recall", "Collect Oil" }
+-- Stable superset for all ModeDrop slots. Return stays walk-to-hack-device.
 -- Never recreateDropDown while scrolling — that wiped the painted list in 3.5d.
-local MODE_ITEMS_ALL = { "Rest", "Defend", "Return", "Farm", "Collect", "Collect Oil" }
+local MODE_ITEMS_ALL = { "Rest", "Defend", "Return", "Stay", "Recall", "Sentry", "Farm", "Collect", "Collect Oil" }
 
 -- Full-body presets (RRGGBBAA). Ally Green / Infect Green match RfsBotHijack defaults.
 local COLOR_PRESETS = {
@@ -199,6 +199,15 @@ local function modeLabel( mode )
 	if mode == "return" then
 		return "Return"
 	end
+	if mode == "stay" then
+		return "Stay"
+	end
+	if mode == "recall" then
+		return "Recall"
+	end
+	if mode == "sentry" then
+		return "Sentry"
+	end
 	return "Rest"
 end
 
@@ -216,8 +225,17 @@ local function modeValue( label )
 	if label == "oil" or label == "collect oil" or label == "collectoil" then
 		return "oil"
 	end
-	if label == "return" or label == "recall" or label == "home" then
+	if label == "return" or label == "home" then
 		return "return"
+	end
+	if label == "stay" or label == "leash" then
+		return "stay"
+	end
+	if label == "recall" then
+		return "recall"
+	end
+	if label == "sentry" then
+		return "sentry"
 	end
 	return "rest"
 end
