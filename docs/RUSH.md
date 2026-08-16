@@ -198,7 +198,7 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | R4 GUI visuals | `rush/r4` | `45a039a` | (on main) |
 | R5 factories | `rush/cut-factories` | `f9026e4` CUT | `f9026e4` (fast-forward) |
 | R6 MiniMap HUD | `rush/minimap` | `24a3ad1` | `7a89516` |
-| R6 Map complete | `rush/map-complete` | `b6eb83f` | (this merge) |
+| R6 Map complete | `rush/map-complete` | `b6eb83f` | `4366b97` |
 | R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
 | Inventory LCD | `rush/signs-lcd` | `00f87dd` | `b72e7c7` |
 | Rename persist | `rush/rename-bots` | `3cd2a9c` | `00fa455` |
