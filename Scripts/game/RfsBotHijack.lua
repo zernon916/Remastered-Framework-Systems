@@ -617,21 +617,37 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 	if not key or not unit or not sm.exists( unit ) then
 		return false, "bot gone"
 	end
+	RfsBotHijack.allies = RfsBotHijack.allies or {}
 	local info = RfsBotHijack.allies[key]
-	if not info or not info.controlled then
+	-- Game sandbox may lack the live allies row (E-on-bot never opened Orders).
+	-- Still rename via the unit saved table when the robot exists.
+	if info and not info.controlled then
 		return false, "not an ally"
 	end
 	local playerId = nil
 	pcall( function()
 		playerId = player and player.id
 	end )
-	local isOwner = playerId ~= nil and info.owner ~= nil and tostring( info.owner ) == tostring( playerId )
-	if not isOwner and not allowHost then
-		return false, "not owner"
+	if info then
+		local isOwner = playerId ~= nil and info.owner ~= nil and tostring( info.owner ) == tostring( playerId )
+		if not isOwner and not allowHost then
+			return false, "not owner"
+		end
 	end
 	name = tostring( name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
 	if #name > 24 then
 		name = string.sub( name, 1, 24 )
+	end
+	if not info then
+		-- Do not invent a Game allies row. Unit saved.playerAlly is the gate.
+		pcall( function()
+			sm.event.sendToUnit( unit, "sv_e_rfsSetCustomName", {
+				name = name,
+				playerId = playerId,
+				allowHost = allowHost and true or false,
+			} )
+		end )
+		return true, name ~= "" and name or "cleared"
 	end
 	if name == "" then
 		info.customName = nil
@@ -639,11 +655,12 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 		info.customName = name
 	end
 	RfsBotHijack.allies[key] = info
+	-- false = explicit clear so the unit saved table does not keep a stale name.
 	pushIdentityToUnit( unit, {
 		owner = info.owner,
 		displayName = info.displayName,
 		displayIndex = info.displayIndex,
-		customName = info.customName,
+		customName = info.customName or false,
 		unitType = info.unitType or info.type,
 		firstSeenTick = info.firstSeenTick,
 		mode = info.mode,
@@ -652,6 +669,13 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 		allyColor = info.allyColor,
 		playerAlly = true,
 	} )
+	pcall( function()
+		sm.event.sendToUnit( unit, "sv_e_rfsSetCustomName", {
+			name = name,
+			playerId = playerId,
+			allowHost = allowHost and true or false,
+		} )
+	end )
 	RfsBotHijack.pushTag( unit, identityTagText( info ), "name" )
 	return true, identityTagText( info )
 end
@@ -2251,6 +2275,9 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 		end
 	end
 	self.cl.rfsLastTag = { text = text, kind = kind }
+	if kind == "name" then
+		self.cl.rfsCanRename = true
+	end
 	if text == "" then
 		RfsBotHijack.cl_destroyCharTag( self )
 		-- Clear Survival character debug text channel so animation labels
@@ -2359,6 +2386,77 @@ function RfsBotHijack.ensureCharHooks()
 			self.cl.raidKey = nil
 			self.cl.markedRaider = nil
 		end
+		function cls.sv_e_rfsRenameLook( self, params )
+			params = params or {}
+			local key = params.unitKey and tostring( params.unitKey ) or nil
+			if not key or key == "" then
+				pcall( function()
+					local u = self.character and self.character:getUnit()
+					key = u and tostring( u.id ) or nil
+				end )
+			end
+			pcall( function()
+				sm.event.sendToGame( "sv_rfs_botRenameLook", {
+					unitKey = key,
+					player = params.player,
+				} )
+			end )
+		end
+		if not cls._rfsRenameInteract then
+			local origCan = cls.client_canInteract
+			cls.client_canInteract = function( self )
+				local okAlly = false
+				pcall( function()
+					okAlly = self.cl and ( self.cl.rfsCanRename
+						or ( self.cl.rfsLastTag and self.cl.rfsLastTag.kind == "name" ) )
+				end )
+				if okAlly then
+					pcall( function()
+						sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), "Rename bot" )
+					end )
+					return true
+				end
+				if origCan then
+					return origCan( self )
+				end
+				return false
+			end
+			local origInt = cls.client_onInteract
+			cls.client_onInteract = function( self, character, state )
+				local okAlly = false
+				pcall( function()
+					okAlly = self.cl and ( self.cl.rfsCanRename
+						or ( self.cl.rfsLastTag and self.cl.rfsLastTag.kind == "name" ) )
+				end )
+				if state and okAlly then
+					pcall( function()
+						local key = nil
+						pcall( function()
+							local u = self.character and self.character:getUnit()
+							key = u and tostring( u.id ) or nil
+						end )
+						local player = nil
+						pcall( function()
+							player = character and character:getPlayer()
+						end )
+						if not player then
+							pcall( function()
+								player = sm.localPlayer.getPlayer()
+							end )
+						end
+						self.network:sendToServer( "sv_e_rfsRenameLook", {
+							unitKey = key,
+							player = player,
+						} )
+					end )
+					return
+				end
+				if origInt then
+					return origInt( self, character, state )
+				end
+			end
+			cls._rfsRenameInteract = true
+		end
 		if cls._rfsTagRpc then
 			return
 		end
@@ -2392,44 +2490,6 @@ function RfsBotHijack.ensureCharHooks()
 			end
 		end
 		cls._rfsTagRpc = true
-		-- E on an ally robot: tell Game to prompt rename (owner/host).
-		if not cls._rfsRenameInteract then
-			local origCan = cls.client_canInteract
-			cls.client_canInteract = function( self )
-				local okAlly = false
-				pcall( function()
-					okAlly = self.cl and self.cl.rfsLastTag and self.cl.rfsLastTag.kind == "name"
-						and self.cl.rfsLastTag.text and self.cl.rfsLastTag.text ~= ""
-				end )
-				if okAlly then
-					pcall( function()
-						sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), "Rename bot" )
-					end )
-					return true
-				end
-				if origCan then
-					return origCan( self )
-				end
-				return false
-			end
-			local origInt = cls.client_onInteract
-			cls.client_onInteract = function( self, character, state )
-				if state then
-					pcall( function()
-						local u = self.character and self.character:getUnit()
-						local id = u and u.id
-						local g = _G.g_survivalGame or _G.g_rfsGame
-						if g and id then
-							g.network:sendToServer( "sv_rfs_botRenameLook", { unitKey = tostring( id ) } )
-						end
-					end )
-				end
-				if origInt then
-					return origInt( self, character, state )
-				end
-			end
-			cls._rfsRenameInteract = true
-		end
 	end
 	wrapClientData( _G.BaseEnemyCharacter )
 	local names = {
@@ -3839,7 +3899,16 @@ function RfsBotHijack.ensureHooks()
 			self.saved.playerAllyOwner = info and info.owner
 			self.saved.rfsDisplayName = info and info.displayName
 			self.saved.rfsDisplayIndex = info and info.displayIndex
-			self.saved.rfsCustomName = info and info.customName
+			-- Live table wins when set; otherwise restore from saved so reopen keeps the name.
+			if info then
+				if info.customName then
+					self.saved.rfsCustomName = info.customName
+				elseif self.saved.rfsCustomName then
+					info.customName = self.saved.rfsCustomName
+				else
+					self.saved.rfsCustomName = nil
+				end
+			end
 			self.saved.rfsUnitType = info and ( info.unitType or info.type )
 			self.saved.rfsFirstSeenTick = info and info.firstSeenTick
 			-- Prefer persisted Orders tint; never wipe saved color with a stale nil.
@@ -4014,6 +4083,7 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.playerAllyOwner = nil
 						self.saved.rfsDisplayName = nil
 						self.saved.rfsDisplayIndex = nil
+						self.saved.rfsCustomName = nil
 						self.saved.rfsUnitType = nil
 						self.saved.rfsFirstSeenTick = nil
 						self.saved.rfsAllyColor = nil
@@ -4054,6 +4124,16 @@ function RfsBotHijack.ensureUnitHooks()
 						else
 							self.saved.rfsCustomName = tostring( params.customName )
 						end
+						if self.unit then
+							local key = unitKey( self.unit )
+							if key then
+								RfsBotHijack.allies = RfsBotHijack.allies or {}
+								local rec = RfsBotHijack.allies[key]
+								if type( rec ) == "table" then
+									rec.customName = self.saved.rfsCustomName
+								end
+							end
+						end
 					end
 					if params.displayIndex ~= nil then
 						self.saved.rfsDisplayIndex = tonumber( params.displayIndex )
@@ -4086,6 +4166,48 @@ function RfsBotHijack.ensureUnitHooks()
 					end
 					self.isDirty = true
 				end
+				function cls.sv_e_rfsSetCustomName( self, params )
+					self.saved = self.saved or {}
+					if not self.saved.playerAlly then
+						return
+					end
+					params = params or {}
+					local playerId = params.playerId
+					local allowHost = params.allowHost and true or false
+					local owner = self.saved.playerAllyOwner
+					local isOwner = playerId ~= nil and owner ~= nil and tostring( owner ) == tostring( playerId )
+					if not isOwner and not allowHost then
+						return
+					end
+					local name = tostring( params.name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+					if #name > 24 then
+						name = string.sub( name, 1, 24 )
+					end
+					if name == "" then
+						self.saved.rfsCustomName = nil
+					else
+						self.saved.rfsCustomName = name
+					end
+					self.isDirty = true
+					local rec = nil
+					if self.unit then
+						local key = unitKey( self.unit )
+						if key then
+							RfsBotHijack.allies = RfsBotHijack.allies or {}
+							rec = RfsBotHijack.allies[key]
+							if type( rec ) == "table" then
+								rec.customName = self.saved.rfsCustomName
+							end
+						end
+						RfsBotHijack.pushTag( self.unit, identityTagText( rec or {
+							customName = self.saved.rfsCustomName,
+							displayName = self.saved.rfsDisplayName,
+							displayIndex = self.saved.rfsDisplayIndex,
+							unitType = self.saved.rfsUnitType,
+							type = self.saved.rfsUnitType,
+						} ), "name" )
+					end
+				end
 				function cls.sv_e_rfsLeaveRaid( self, params )
 					RfsBotHijack.standDown( self )
 				end
@@ -4093,6 +4215,50 @@ function RfsBotHijack.ensureUnitHooks()
 			elseif not cls.sv_e_rfsLeaveRaid then
 				function cls.sv_e_rfsLeaveRaid( self, params )
 					RfsBotHijack.standDown( self )
+				end
+			end
+			if type( cls.sv_e_rfsSetCustomName ) ~= "function" then
+				function cls.sv_e_rfsSetCustomName( self, params )
+					self.saved = self.saved or {}
+					if not self.saved.playerAlly then
+						return
+					end
+					params = params or {}
+					local playerId = params.playerId
+					local allowHost = params.allowHost and true or false
+					local owner = self.saved.playerAllyOwner
+					local isOwner = playerId ~= nil and owner ~= nil and tostring( owner ) == tostring( playerId )
+					if not isOwner and not allowHost then
+						return
+					end
+					local name = tostring( params.name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+					if #name > 24 then
+						name = string.sub( name, 1, 24 )
+					end
+					if name == "" then
+						self.saved.rfsCustomName = nil
+					else
+						self.saved.rfsCustomName = name
+					end
+					self.isDirty = true
+					local rec = nil
+					if self.unit then
+						local key = unitKey( self.unit )
+						if key then
+							RfsBotHijack.allies = RfsBotHijack.allies or {}
+							rec = RfsBotHijack.allies[key]
+							if type( rec ) == "table" then
+								rec.customName = self.saved.rfsCustomName
+							end
+						end
+						RfsBotHijack.pushTag( self.unit, identityTagText( rec or {
+							customName = self.saved.rfsCustomName,
+							displayName = self.saved.rfsDisplayName,
+							displayIndex = self.saved.rfsDisplayIndex,
+							unitType = self.saved.rfsUnitType,
+							type = self.saved.rfsUnitType,
+						} ), "name" )
+					end
 				end
 			end
 			if not cls._rfsOrderRpc then

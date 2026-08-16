@@ -1665,6 +1665,12 @@ function RecipeFrameworkSurvival.sv_rfs_botRenameLook( self, params, player )
 	params = params or {}
 	player = player or params.player
 	if not player then
+		local players = sm.player.getAllPlayers()
+		if type( players ) == "table" and #players == 1 then
+			player = players[1]
+		end
+	end
+	if not player then
 		return
 	end
 	self.sv = self.sv or {}
@@ -1678,8 +1684,8 @@ function RecipeFrameworkSurvival.sv_rfs_botRenameLook( self, params, player )
 	local name = ""
 	if unitKey and type( RfsBotHijack ) == "table" and RfsBotHijack.allies then
 		local info = RfsBotHijack.allies[unitKey]
-		if info then
-			name = tostring( info.customName or info.displayName or "" )
+		if info and info.customName then
+			name = tostring( info.customName )
 		end
 	end
 	self.network:sendToClient( player, "cl_rfs_botRenameOpen", {
@@ -1693,10 +1699,18 @@ function RecipeFrameworkSurvival.cl_rfs_botRenameOpen( self, data )
 	self.cl = self.cl or {}
 	self.cl.rfsRenameUnitKey = data.unitKey
 	if self.cl.rfsRenameGui then
-		pcall( function() self.cl.rfsRenameGui:close() end )
+		local old = self.cl.rfsRenameGui
 		self.cl.rfsRenameGui = nil
+		pcall( function() old:close() end )
 	end
-	local ok, gui = pcall( sm.gui.createGuiFromLayout, "$CONTENT_DATA/Gui/Layouts/Rfs_BotRename.layout" )
+	local ok, gui = pcall( sm.gui.createGuiFromLayout, "$CONTENT_DATA/Gui/Layouts/Rfs_BotRename.layout", false, {
+		isHud = false,
+		isInteractive = true,
+		needsCursor = true,
+	} )
+	if not ok or not gui then
+		ok, gui = pcall( sm.gui.createGuiFromLayout, "$CONTENT_DATA/Gui/Layouts/Rfs_BotRename.layout" )
+	end
 	if not ok or not gui then
 		sm.gui.chatMessage( "[RFS] Type /botname <name> to rename this bot." )
 		return
@@ -1706,18 +1720,24 @@ function RecipeFrameworkSurvival.cl_rfs_botRenameOpen( self, data )
 		gui:setText( "NameEdit", tostring( data.name or "" ) )
 		gui:setButtonCallback( "CloseButton", "cl_rfs_botRenameClose" )
 		gui:setButtonCallback( "BtnApply", "cl_rfs_botRenameApply" )
-		gui:setOnCloseCallback( "cl_rfs_botRenameClose" )
+		gui:setOnCloseCallback( "cl_rfs_botRenameClosed" )
 		gui:open()
 	end )
 end
 
-function RecipeFrameworkSurvival.cl_rfs_botRenameClose( self )
-	local gui = self.cl and self.cl.rfsRenameGui
-	if gui then
-		pcall( function() gui:close() end )
-	end
+function RecipeFrameworkSurvival.cl_rfs_botRenameClosed( self )
 	if self.cl then
 		self.cl.rfsRenameGui = nil
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botRenameClose( self )
+	local gui = self.cl and self.cl.rfsRenameGui
+	if self.cl then
+		self.cl.rfsRenameGui = nil
+	end
+	if gui then
+		pcall( function() gui:close() end )
 	end
 end
 
@@ -3117,6 +3137,7 @@ function RecipeFrameworkSurvival.sv_rfs_ordersScheduleOpen( self, params )
 				rows[#rows + 1] = {
 					key = row.key ~= nil and tostring( row.key ) or nil,
 					name = row.name ~= nil and tostring( row.name ) or nil,
+					customName = row.customName ~= nil and tostring( row.customName ) or nil,
 					displayIndex = row.displayIndex ~= nil and tonumber( row.displayIndex ) or nil,
 					unitType = row.unitType ~= nil and tostring( row.unitType ) or nil,
 					type = row.type ~= nil and tostring( row.type ) or nil,
@@ -3204,6 +3225,7 @@ function RecipeFrameworkSurvival.sv_rfs_mirrorAllies( self, params )
 				controlled = true,
 				displayName = info.displayName or prev.displayName,
 				displayIndex = info.displayIndex ~= nil and tonumber( info.displayIndex ) or prev.displayIndex,
+				customName = prev.customName,
 				allyColor = info.allyColor or prev.allyColor,
 				rfsOrder = type( info.rfsOrder ) == "table" and info.rfsOrder or prev.rfsOrder,
 				order = type( info.rfsOrder ) == "table" and info.rfsOrder or prev.order,
@@ -3213,6 +3235,11 @@ function RecipeFrameworkSurvival.sv_rfs_mirrorAllies( self, params )
 				firstSeenTick = prev.firstSeenTick,
 				lastTagTick = prev.lastTagTick,
 			}
+			if info.customName == false or info.customName == "" then
+				RfsBotHijack.allies[k].customName = nil
+			elseif info.customName ~= nil then
+				RfsBotHijack.allies[k].customName = tostring( info.customName )
+			end
 		end
 	end
 	pcall( function()

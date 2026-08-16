@@ -473,11 +473,25 @@ local function setBotIcon( gui, widget, kind )
 	return false
 end
 
--- Yellow field: "Seed 1" / "Tote 1". Keep type name even when the icon paints.
+-- Yellow field: custom name, else "Seed 1" / "Tote 1". Keep type name even when the icon paints.
 local function rowListLabel( row, selected, iconOk )
 	local mark = selected and "● " or ""
 	local n = rowDisplayIndex( row )
 	local kindLabel = kindDisplayName( row and row.kind )
+	local custom = row and row.customName and tostring( row.customName ) or ""
+	custom = custom:gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if custom == "" then
+		local ident = tostring( row and row.name or "" )
+		local parsed = ident:match( "^(.-)%s%s+[%a]+%s+%d+$" )
+		if parsed and parsed ~= "" then
+			custom = parsed
+		elseif ident ~= "" and not ident:match( "^[%a]+%s+%d+$" ) and ident ~= "Bot" then
+			custom = ident
+		end
+	end
+	if custom ~= "" then
+		return mark .. custom
+	end
 	local name = tostring( row and row.name or "" )
 	local nameLabel, nameNum = string.match( name, "^([%a]+)%s+(%d+)$" )
 	if nameLabel and nameNum and nameLabel ~= "Bot" then
@@ -1094,7 +1108,15 @@ function RfsBeaconOrdersGui.applyList( host, data )
 					n = tonumber( string.match( tostring( row.name or "" ), "(%d+)$" ) )
 				end
 				local typeName = kindDisplayName( kind )
+				local custom = row.customName and tostring( row.customName ) or ""
+				custom = custom:gsub( "^%s+", "" ):gsub( "%s+$", "" )
 				local name = tostring( row.name or "" )
+				if custom == "" then
+					local parsed = name:match( "^(.-)%s%s+[%a]+%s+%d+$" )
+					if parsed and parsed ~= "" then
+						custom = parsed
+					end
+				end
 				local nameLabel = string.match( name, "^([%a]+)%s+%d+$" )
 				if name == "" or nameLabel == "Bot" or string.match( name, "^%d+$" ) then
 					name = n and ( typeName .. " " .. tostring( n ) ) or typeName
@@ -1102,6 +1124,7 @@ function RfsBeaconOrdersGui.applyList( host, data )
 				nextRows[#nextRows + 1] = {
 					key = tostring( row.key ),
 					name = name,
+					customName = ( custom ~= "" ) and custom or nil,
 					displayIndex = n,
 					unitType = row.unitType or row.type,
 					kind = kind,
@@ -1155,6 +1178,12 @@ function RfsBeaconOrdersGui.onBotClick( host, rowIdx )
 			break
 		end
 	end
+	local gui = host.cl.rfsOrdersGui
+	if gui then
+		pcall( function()
+			gui:setText( "NameEdit", tostring( row.customName or "" ) )
+		end )
+	end
 	RfsBeaconOrdersGui.refresh( host )
 end
 
@@ -1199,18 +1228,15 @@ function RfsBeaconOrdersGui.onRename( host )
 		name = gui:getText( "NameEdit" )
 	end )
 	name = tostring( name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
-	if name == "" then
-		sm.gui.chatMessage( "[RFS] Type a name in the Name box, select bots, then RENAME." )
-		return
-	end
 	local keys = orderTargetKeys( host )
 	if #keys == 0 then
-		sm.gui.chatMessage( "[RFS] No allies to rename." )
+		sm.gui.chatMessage( "[RFS] Select a bot (or leave none selected to rename all listed), then RENAME." )
 		return
 	end
 	host.network:sendToServer( "sv_rfs_ordersRename", {
 		name = name,
 		unitKeys = keys,
+		beaconKey = host.cl.rfsOrdersBeaconKey,
 	} )
 end
 

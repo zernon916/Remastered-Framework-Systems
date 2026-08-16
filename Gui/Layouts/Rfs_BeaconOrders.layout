@@ -2,11 +2,11 @@
 <MyGUI type="Layout" version="3.2.0">
 	<!-- Recipe Framework Survival — Beacon Orders (Rest/Defend/Farm/Collect/Oil + ally color). Author: DemonsDen126 -->
 	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
-		<Property key="NeedKey" value="false"/>
+		<Property key="NeedKey" value="true"/>
 		<Property key="NeedMouse" value="true"/>
 
 		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.18 0.04 0.64 0.92" name="MainPanel">
-			<Property key="NeedKey" value="false"/>
+			<Property key="NeedKey" value="true"/>
 			<Property key="NeedMouse" value="true"/>
 			<Property key="InheritsAlpha" value="false"/>
 
@@ -212,6 +212,7 @@
 			<Widget type="EditBox" skin="EditBox" position_real="0.18 0.735 0.50 0.045" name="NameEdit">
 				<Property key="Caption" value=""/>
 				<Property key="FontName" value="SM_Text"/>
+				<Property key="NeedKey" value="true"/>
 			</Widget>
 			<Widget type="Button" skin="PrimaryButton" position_real="0.70 0.735 0.26 0.045" name="BtnRename">
 				<Property key="Caption" value="RENAME"/>
