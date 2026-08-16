@@ -140,4 +140,5 @@ Shipped on `rush/digital-signs`. Spec was high-level only.
 - Craftbot Digital Sign S / L / XL show editable text (Survival textsign face)
 - Optional logic switch: unpowered logic hides text; no parent = always on
 - Logic output follows display-on
+- Inventory LCD S / L / XL (`rush/signs-lcd`): item name + count from a welded/adjacent or logic-wired chest. Small = one stack (instruction readout); L/XL list rows and scroll. LCD output stays inactive so chest loot-vacuum is not triggered. Text Digital Signs keep UUID `f8c2a5e4-…`. Factory UUID untouched.
 - Gaps: no ON/OFF dual messages; no Hideout trade; vanilla Survival signs stay non-logic

@@ -1,0 +1,118 @@
+{
+	"partList": [
+		{
+			"uuid": "3c06e928-5f97-42a9-d4b6-a7f926343d7f",
+			"name": "obj_rfs_inventorylcd_small",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_small.rend",
+			"color": "1aad9a",
+			"box": { "x": 3, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsInventoryLcd",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsInventoryLcd.lua",
+				"data": {
+					"effectName": "Textsign - Text",
+					"fontName": "SM_IntlText",
+					"instructionStyle": true,
+					"lines": 2,
+					"maxChars": 14,
+					"scrollTicks": 80,
+					"lineSpacing": 0.20,
+					"maxTextWidth": 88,
+					"oversizeScale": 0.625,
+					"asg": { "a": 0.0, "s": 0.0, "g": 0.9 },
+					"offsetPosition": { "x": -0.0, "y": 0.025, "z": 0.1517 },
+					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
+				}
+			}
+		},
+		{
+			"uuid": "4d17fa39-60a8-43ba-e5c7-b80a37454e80",
+			"name": "obj_rfs_inventorylcd_large",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_large.rend",
+			"color": "1aad9a",
+			"box": { "x": 5, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsInventoryLcd",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsInventoryLcd.lua",
+				"data": {
+					"effectName": "Textsign - Text",
+					"fontName": "SM_IntlText",
+					"instructionStyle": false,
+					"lines": 3,
+					"maxChars": 20,
+					"scrollTicks": 80,
+					"lineSpacing": 0.16,
+					"maxTextWidth": 148,
+					"oversizeScale": 0.625,
+					"asg": { "a": 0.0, "s": 0.0, "g": 0.9 },
+					"offsetPosition": { "x": -0.0, "y": 0.025, "z": 0.1517 },
+					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
+				}
+			}
+		},
+		{
+			"uuid": "5e280b4a-71b9-44cb-f6d8-c91b48565f91",
+			"name": "obj_rfs_inventorylcd_extralarge",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_extralarge.rend",
+			"color": "1aad9a",
+			"box": { "x": 8, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsInventoryLcd",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsInventoryLcd.lua",
+				"data": {
+					"effectName": "Textsign - Text",
+					"fontName": "SM_IntlText",
+					"instructionStyle": false,
+					"lines": 4,
+					"maxChars": 28,
+					"scrollTicks": 80,
+					"lineSpacing": 0.14,
+					"maxTextWidth": 256,
+					"oversizeScale": 0.625,
+					"asg": { "a": 0.0, "s": 0.0, "g": 0.9 },
+					"offsetPosition": { "x": -0.0, "y": 0.025, "z": 0.1517 },
+					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
+				}
+			}
+		}
+	]
+}

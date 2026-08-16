@@ -17,7 +17,7 @@ Display name on GitHub: **Remastered Framework Survival** (repo: `Remastered-Fra
 | [[Commands]] | `/setup`, `/menu`, `/gensettings`, hijack, shops, cheats |
 | [[Hack-Beacons]] | Beacon tiers, power, E Orders, Tinker, Master/Slave, range, color |
 | [[Bot-Orders]] | Rest / Defend / Farm / Collect / Oil |
-| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) + Phase 3.5 / 3.6. Phase 6 MiniMap shipped (Nutt World Map). Phase 7 Digital Signs: minimum shipped. |
+| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) + Phase 3.5 / 3.6. Phase 6 MiniMap shipped (Nutt World Map). Phase 7 Digital Signs: minimum shipped. Inventory LCD: chest item + count. |
 | [[Modder-Hooks]] | Store / quest / feature flags (see also `MODDER_API.txt`) |
 | [[Discord-Streamer]] | GitHub-only companion bot (not in Workshop) |
 

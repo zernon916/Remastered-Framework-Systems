@@ -43,5 +43,32 @@
 		"ingredientList": [
 			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
 		]
+	},
+	{
+		"_comment": "Inventory LCD small - chest item + count. 1 Metal placeholder.",
+		"itemId": "3c06e928-5f97-42a9-d4b6-a7f926343d7f",
+		"quantity": 1,
+		"craftTime": 2,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
+	},
+	{
+		"_comment": "Inventory LCD large - chest list, scrolls. 1 Metal placeholder.",
+		"itemId": "4d17fa39-60a8-43ba-e5c7-b80a37454e80",
+		"quantity": 1,
+		"craftTime": 2,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
+	},
+	{
+		"_comment": "Inventory LCD extra large - chest list, scrolls. 1 Metal placeholder.",
+		"itemId": "5e280b4a-71b9-44cb-f6d8-c91b48565f91",
+		"quantity": 1,
+		"craftTime": 2,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
 	}
 ]

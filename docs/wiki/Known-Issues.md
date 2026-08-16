@@ -47,6 +47,8 @@ Always-on corner MiniMap while walking; `/map` / `/rfsmap` opens the full atlas.
 
 Craftbot **Digital Sign** S / L / XL. Press **E** to type text (Survival Digital Sign GUI). Optional logic switch: no parent = always show; wired + off = hide. Logic output follows display-on. No battery. Vanilla Survival textsigns stay non-logic.
 
+**Inventory LCD** S / L / XL (teal, Craftbot): shows a chest's item name + count. Weld onto/next to the chest, or Connect **LCD → chest**. Small = one stack (name / amount) and cycles; L/XL list rows and scroll extra stacks. Optional logic switch hides the face. LCD logic output stays off so a wired chest does not vacuum loot. Text signs keep UUID `f8c2a5e4-…`; factory UUID is not reused.
+
 Gaps (spec was high-level only): no ON/OFF dual messages; no Hideout trade; no dedicated MyGUI layout.
 
 Cross-ref: `HIJACK_ROADMAP.txt` Phase 7, `PENDING_FIXES.md` §7.
