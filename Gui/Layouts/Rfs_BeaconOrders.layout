@@ -204,7 +204,22 @@
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.735 0.92 0.230" name="Footer">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.735 0.14 0.045" name="NameLabel">
+				<Property key="Caption" value="Name"/>
+				<Property key="FontName" value="SM_TextLabel"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="EditBox" skin="EditBox" position_real="0.18 0.735 0.50 0.045" name="NameEdit">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.70 0.735 0.26 0.045" name="BtnRename">
+				<Property key="Caption" value="RENAME"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.790 0.92 0.175" name="Footer">
 				<Property key="Caption" value="Master forces nearby powered hack devices into Slave — they share this Orders ally pool. Hay Farm / Tote Collect / Water Collect Oil deposit into chests in beacon range. Farm/Collect/Oil bots stand down (no combat). Ally color uses full-body tint; infect default stays until you pick a color."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>

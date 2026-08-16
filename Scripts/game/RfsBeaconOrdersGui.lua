@@ -775,6 +775,7 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	gui:setButtonCallback( "BtnScrollDown", "cl_rfs_ordersScrollDown" )
 	gui:setButtonCallback( "BtnMaster", "cl_rfs_ordersMaster" )
 	gui:setButtonCallback( "BtnRange", "cl_rfs_ordersRange" )
+	gui:setButtonCallback( "BtnRename", "cl_rfs_ordersRename" )
 	pcall( function()
 		gui:setSliderCallback( "ScrollBar", "cl_rfs_ordersScrollChanged" )
 	end )
@@ -1170,6 +1171,29 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 	local scope = ( nSel > 0 ) and ( tostring( nSel ) .. " selected" ) or "all listed allies"
 	local pretty = colorLabelForHex( hex ) or tostring( value )
 	sm.gui.chatMessage( "[RFS] Color " .. tostring( pretty ) .. " → " .. scope )
+end
+
+function RfsBeaconOrdersGui.onRename( host )
+	host.cl = host.cl or {}
+	local gui = host.cl.rfsOrdersGui
+	local name = ""
+	pcall( function()
+		name = gui:getText( "NameEdit" )
+	end )
+	name = tostring( name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if name == "" then
+		sm.gui.chatMessage( "[RFS] Type a name in the Name box, select bots, then RENAME." )
+		return
+	end
+	local keys = orderTargetKeys( host )
+	if #keys == 0 then
+		sm.gui.chatMessage( "[RFS] No allies to rename." )
+		return
+	end
+	host.network:sendToServer( "sv_rfs_ordersRename", {
+		name = name,
+		unitKeys = keys,
+	} )
 end
 
 function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
