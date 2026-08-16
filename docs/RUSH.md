@@ -184,23 +184,6 @@ Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab
 
 ---
 
-### R7 — Phase 7 — Digital Signs
-
-**Source:** `PHASES.md` **Phase 7**; `HIJACK_ROADMAP.txt` Phase 7; `PENDING_FIXES.md` §7; wiki [[Known-Issues]].
-
-**What “done” means:** (flesh out at build time — high-level only today)
-
-- Signs can be **connected to logic**.
-- Signs can **actually show information** (not decorative-only).
-
-Does not scramble shipped Phase 3.
-
-**Likely files:** new interactable + layout/GUI under `Scripts/game/interactables/` and `Gui/Layouts/`, possibly logic-gate wiring in Game/Survival interactable style, Craftbot/Hideout unlock if craftable.
-
-**Frozen extra:** After MiniMap (Phase 6) **and** factories (Phase 4). Spec is not complete — confirm UX with the user before a large build.
-
----
-
 ### R8 — Phase E — Steam Workshop push (gated)
 
 **Source:** `PHASES.md` remaining **Phase E**.
@@ -217,7 +200,11 @@ Does not scramble shipped Phase 3.
 
 Implemented, waiting for the user to playtest. Bugs keep the item here until fixed. Testing good → **PENDING DONE**.
 
-_(empty — no remaining-phase implementations waiting. NOW Orders GUI is a separate in-flight repair, not this list.)_
+### R7 — Phase 7 — Digital Signs (minimum)
+
+Craftbot Digital Sign S/L/XL. E edits text via Survival Digital Sign GUI. Optional logic switch hides the face; logic output follows display-on. No battery. Isolated on `rush/digital-signs`.
+
+**Gaps (spec was high-level only):** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; no dedicated MyGUI layout (reuses Survival `DigitalSign.gui`).
 
 ---
 
@@ -267,7 +254,7 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 4. R4 Phase 3.6 GUI visuals tab  
 5. R5 Phase 4 factories  
 6. R6 Phase 6 MiniMap (permission / Nutt credit / fallback)  
-7. R7 Phase 7 Digital Signs  
+7. R7 Phase 7 Digital Signs — **TO BE TESTED** (this branch)  
 8. R8 Phase E Workshop — **only if the user asks**
 
 If NOW Orders GUI is still broken when Rush starts: **skip R1–R2** (they share hijack/Orders files) and start at **R3** only if those files are untouched — otherwise wait.

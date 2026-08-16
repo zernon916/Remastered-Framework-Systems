@@ -97,8 +97,8 @@ Tags: [DONE] shipped/working locally  |  [NEXT] verify/test now  |  [FUTURE] lat
   [FUTURE] Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay)
   [FUTURE] Phase 6 MiniMap HUD (see below) — not Orders 3.x;
            PLANNED, NOT IN CURRENT BUILD — do not implement or copy yet
-  [FUTURE] Phase 7 Digital Signs (see below) — not Orders 3.x;
-           later systems stretch after MiniMap / factories
+  [DONE]   Phase 7 Digital Signs (minimum — see below) — not Orders 3.x;
+           logic-connectable RFS signs that show editable text
 
 Per-type flavor (author list):
   totebot  — Collect small loot (M3); combat under Defend
@@ -241,16 +241,21 @@ Feasibility (from the study, for our own code):
 
 Phase 6 does not block factories or Orders.
 
-Phase 7 — Digital Signs [FUTURE]
---------------------------------
-Not started. Later systems stretch after MiniMap (Phase 6) and factories
-(Phase 4). Do not build during Phase 3 Orders testing. Flesh out in a
-later pass — high-level only, not a full spec.
+Phase 7 — Digital Signs [DONE minimum]
+--------------------------------------
+Shipped on rush/digital-signs (documented minimum; spec was never fleshed out).
 
-- Can be connected to logic
-- Can actually show information on them
+- Craftbot Digital Sign S / L / XL (Survival textsign meshes + "Textsign - Text")
+- E opens Survival Digital Sign GUI (type text, pick style)
+- Optional logic switch: no parent = always show; wired + off = hide text
+- Logic output follows display-on (can drive other logic)
+- No battery. Does not scramble shipped Phase 3.
 
-Does not scramble shipped Phase 3.
+Gaps (not in the high-level spec — not built):
+- Separate ON vs OFF messages
+- Hideout trade / gensettings toggle
+- Vanilla Survival textsigns stay non-logic (RFS parts are the connectable ones)
+- Dedicated MyGUI layout (reuses Survival DigitalSign.gui)
 
 Collaboration
 -------------

@@ -14,6 +14,7 @@ Author: Zernon916
 - **Phase C — vote resolve + allowlist UI** — `vote_result.json` + `vote-resolve.js`; `/gensettings` allowlist summary / reload / unit cycle
 - **Phase D — game → Discord chat outbox** — `/say` + `/d` → `chat_outbox.json` → `chat-outbox.js` → `CHAT_CHANNEL_ID` (gated by Streamer + chat relay)
 - **Phase F — hijack one-pass (lite)** — identity persist + nametag; light chain convert; `/unhijack` voluntary release; underground miner/cable flag (default ON). Docs honesty for Hideout Control/Infection (50/120 Farmers). See `HIJACK_ROADMAP.txt`.
+- **Phase 7 — Digital Signs (minimum)** — Craftbot logic-connectable signs (S/L/XL) that show editable text. Optional logic switch hides the face. Does not scramble Phase 3. Spec was high-level only; see gaps in `docs/RUSH.md` R7 / `HIJACK_ROADMAP.txt`.
 
 ---
 
@@ -26,7 +27,6 @@ Author: Zernon916
 - **Phase 4 — factories** — craftable ally spawners / army caps — future
 - **Phase 2/5 full polish** — richer identity UI, melee-chain flavor, raid callouts (beyond lite)
 - **Phase 6 — MiniMap (HUD)** — PLANNED, **NOT IN CURRENT BUILD** — do not implement or copy yet. After permission: incorporate Nutt's minimap (Steam Workshop **3780282057**). Credit Nutt in Steam / `description.json` **and** in-game/docs **when implemented** (not before). Fallback: original RFS HUD schematic if permission or code cannot ship. Always-on/toggle corner map; refine `/map`; player/beacon/ally markers (letters later) — future
-- **Phase 7 — Digital Signs** — later systems stretch after MiniMap / factories. Logic-connectable signs that can actually show information. Flesh out later (not a full spec). Does not scramble shipped Phase 3 — future
 
 ### Phase F note (from `PENDING_FIXES.md`, 2026-08-13)
 
