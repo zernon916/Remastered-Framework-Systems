@@ -1,8 +1,8 @@
--- RfsMiniMapTool.lua — always-on MiniMap autoTool.
+-- RfsMiniMapTool.lua — Map phase autoTool (HUD MiniMap + Nutt atlas host).
 -- Preferred path: host Nutt World Map (Steam Workshop 3780282057) HUD + atlas.
 -- Credit: Nutt. Do not enable World Map as a world mod (duplicate HUD / GPS grant).
 -- Fallback: this tool stays inert; RfsHud clock/compass/ammo and /map camera remain.
--- GPS item is not required — /map /rfsmap open Nutt's full map when this tool loaded.
+-- GPS item is not required — /map /rfsmap /menu Map open Nutt's full atlas.
 
 RfsMiniMapTool = class()
 
@@ -38,9 +38,9 @@ do
 		_G.g_rfsNuttMapErr = g_rfsNuttMapErr
 	end
 	if ok then
-		print( "[RFS] MiniMap: Nutt World Map HUD loaded (3780282057)" )
+		print( "[RFS] Map: Nutt World Map HUD + atlas loaded (3780282057)" )
 	else
-		print( "[RFS] MiniMap: Nutt HUD unavailable (" .. tostring( err ) .. ") — original HUD + /map camera" )
+		print( "[RFS] Map: Nutt atlas unavailable (" .. tostring( err ) .. ") — clock/compass/ammo + /map camera" )
 	end
 end
 
@@ -86,13 +86,13 @@ if g_rfsNuttMap and MinimapHud then
 			if not self.cl.rfsNuttCredit then
 				self.cl.rfsNuttCredit = true
 				pcall( function()
-					sm.gui.chatMessage( "[RFS] MiniMap HUD: World Map by Nutt (Workshop 3780282057). /map opens the full atlas." )
+					sm.gui.chatMessage( "[RFS] Map: World Map by Nutt (Workshop 3780282057). Corner MiniMap on; /map /rfsmap open the atlas. Do not enable World Map as a world mod." )
 				end )
 			end
 		end
 	end
 else
 	function RfsMiniMapTool.client_onCreate( self )
-		print( "[RFS] MiniMap autoTool: Nutt content not loaded; original HUD fallback" )
+		print( "[RFS] Map autoTool: Nutt content not loaded; clock/compass/ammo + lock-camera /map" )
 	end
 end

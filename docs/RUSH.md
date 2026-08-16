@@ -83,17 +83,21 @@ Farm / Collect / Oil walk to chests; doorway side-step if LOS blocked. Paint: **
 
 ### R4 — Phase 3.6 GUI visuals (`rush/r4` `45a039a`)
 
-Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle (tints RFS tags). **Block health overlay CUT** — no SM custom-game API.
+Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle. **HP billboards** + **block overlay** completed on `rush/map-complete` `b6eb83f` (engine bars cannot be recolored; overlay is mass/shape-count).
 
-### R6 — Phase 6 MiniMap (`rush/minimap` `24a3ad1`, merge `7a89516`)
+### R6 — Phase 6 Map complete (`rush/map-complete` `b6eb83f`, prior HUD `rush/minimap` `24a3ad1` merge `7a89516`)
 
-Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enable World Map as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ammo lower-right). Fallback: lock-camera `/map`. Credit Nutt in `description.json`. Player.lua keeps **both** pickup-dupe carry hooks and MiniMap toggle.
+**MiniMap HUD is the Map phase**, not a sidecar. Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enable World Map as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ammo lower-right). Fallback: lock-camera `/map`. Credit Nutt in `description.json`. Player.lua keeps **both** pickup-dupe carry hooks and Map toggle.
 
-### R7 — Phase 7 Digital Signs (`rush/digital-signs` `c96b042`, merge `e6329b4`)
+### R7 — Phase 7 Digital Signs (`rush/digital-signs` `c96b042`, merge `e6329b4`) + Inventory LCD (`rush/signs-lcd` `00f87dd`)
 
-Craftbot Digital Sign S/L/XL. E edits text. Optional logic switch hides the face. No battery.
+Craftbot Digital Sign S/L/XL. E edits text. Optional logic switch hides the face. No battery. Digital Sign keeps `f8c2a5e4-…`.
 
-Inventory LCD S/L/XL on `rush/signs-lcd`: chest item + count. Weld/adjacent or LCD→chest wire. Small cycles one stack; L/XL scroll. Factory UUID not reused.
+Inventory LCD S/L/XL UUIDs `3c06e928` / `4d17fa39` / `5e280b4a`: chest item + count. Weld/adjacent or LCD→chest wire. Small cycles one stack; L/XL scroll. Factory UUID not reused.
+
+### Rename persist (`rush/rename-bots` `3cd2a9c`)
+
+Orders Name+RENAME and E-on-bot APPLY persist in unit save data. Keep `queueOpen` / E / `cl_rfs_ordersOpen` (do not recreate GUI on the E frame).
 
 ### Pickup-dupe harden (`rush/pickup-dupe` `216143c`, merge `9c7b9c6`)
 
@@ -138,9 +142,9 @@ _(empty — use **Already shipped (not Rush)** below for historical DONE, not th
 
 Dropped from the playable pack. Do not re-implement unless the user asks.
 
-### R5 — Phase 4 factories — CUT (`rush/cut-factories`)
+### R5 — Phase 4 factories — CUT (`rush/cut-factories` `f9026e4`)
 
-**Not worth the lag.** Ally Factory unwired: no `RfsFactory`, no Hideout 200 Farmers listing, no factory shape. Digital Sign keeps `f8c2a5e4-…`. **Crate→80 seed trades kept.** Historical implement: `rush/factories` `46cf97e`, merge `1d5a861`.
+**Not worth the lag.** Ally Factory unwired: no `RfsFactory`, no Hideout 200 Farmers listing, no factory shape. Digital Sign keeps `f8c2a5e4-…`. **Hideout 1 crate→80 seed trades kept.** Historical implement: `rush/factories` `46cf97e`, merge `1d5a861`.
 
 ---
 
@@ -151,10 +155,10 @@ Do not silently drop or “fix” these:
 - **Digital Signs:** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; reuses Survival `DigitalSign.gui` (no dedicated MyGUI layout)
 - **Factories:** CUT — not worth the lag (`rush/cut-factories`). Do not restore unless asked. Crate→80 seed trades stay.
 - **CHAIN:** melee flavor shipped in R1; larger CHAIN rewrite not done
-- **MiniMap:** letters / fog / GPS not v1; World Map must stay subscribed, not enabled as a world mod
+- **MiniMap / Map:** letters / fog / GPS not v1; World Map must stay subscribed, not enabled as a world mod
 - **Master-off split:** parked, do not “fix” as Rush
-- **Block health overlay:** cut — no SM custom-game API for damaged-block gradient
-- **Vanilla engine HP bars:** Enemy/Neutral dropdowns tint RFS nametags / jam tags only; engine health bars are not recolorable
+- **Block health overlay:** shipped best-effort (look-at HUD + world text + nearby creation mass/shape-count). SM has no per-block HP API — do not expect a damaged-block gradient
+- **Unit HP bars:** custom billboards colored by Enemy/Neutral `/menu` settings (engine bars cannot be recolored). Allies/hacked bots use Neutral
 - **Cotton in autumn:** not an RFS fix
 - **Connection tool for chests:** no new tool; weld to beacon creation or Connect Tool logic to the beacon
 
@@ -192,10 +196,12 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | R2 Stay/Recall | `rush/r2` | `355eca4` | `b3b9b27` |
 | R3 pathfinding | `rush/r3` | `b9c0e9f` | (on main) |
 | R4 GUI visuals | `rush/r4` | `45a039a` | (on main) |
-| R5 factories | `rush/cut-factories` | CUT (not worth the lag) | do not merge unless asked |
-| R6 MiniMap | `rush/minimap` | `24a3ad1` | `7a89516` |
+| R5 factories | `rush/cut-factories` | `f9026e4` CUT | `f9026e4` (fast-forward) |
+| R6 MiniMap HUD | `rush/minimap` | `24a3ad1` | `7a89516` |
+| R6 Map complete | `rush/map-complete` | `b6eb83f` | (this merge) |
 | R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
-| Inventory LCD | `rush/signs-lcd` | (this branch) | not merged |
+| Inventory LCD | `rush/signs-lcd` | `00f87dd` | `b72e7c7` |
+| Rename persist | `rush/rename-bots` | `3cd2a9c` | `00fa455` |
 | Pickup-dupe | `rush/pickup-dupe` | `216143c` | `9c7b9c6` |
 | R8 Phase E | — | — | gated |
 

@@ -3,7 +3,7 @@
 -- Original clock + compass HUD implementation.
 -- Tool ammo readout restored here: this always-on HUD sits on the default HUD layer
 -- and hides the engine weapon ammo number, so we draw remaining ammo ourselves.
--- Phase 6 MiniMap (Nutt) uses the bottom-left corner; ammo stays lower-right.
+-- Phase 6 Map (Nutt): MiniMap uses the bottom-left corner; ammo stays lower-right.
 
 RfsHud = RfsHud or {}
 
@@ -69,6 +69,18 @@ local function updateAmmo( gui )
 	end )
 end
 
+local function updateBlockOverlay( gui, host )
+	local text = host and host.cl and host.cl.rfsBlockHud
+	if type( text ) ~= "string" or text == "" then
+		pcall( function() gui:setVisible( "RfsOverlayPanel", false ) end )
+		return
+	end
+	pcall( function()
+		gui:setVisible( "RfsOverlayPanel", true )
+		gui:setText( "RfsOverlayText", text )
+	end )
+end
+
 function RfsHud.ensure( host )
 	host.cl = host.cl or {}
 	if host.cl.rfsHud then
@@ -131,4 +143,5 @@ function RfsHud.update( host )
 	end
 	pcall( function() gui:setText( "RfsCompassText", compass ) end )
 	updateAmmo( gui )
+	updateBlockOverlay( gui, host )
 end

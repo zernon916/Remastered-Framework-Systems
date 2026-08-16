@@ -67,8 +67,8 @@ Easy to miss: scale 0.25, `maxViewDistance` 15 m. Look at ground in **orange aut
 
 - Stay / Recall / `/botorder` / tapebot Sentry — **shipped** (R2)
 - Phase 3.5 pathfinding & painted chests (§4) — **shipped** (R3)
-- Phase 3.6 Menu GUI tab (§5) — **shipped** (R4; block overlay cut)
-- Phase 6 MiniMap HUD (§6) — **shipped** (Nutt 3780282057; HUD/camera fallback)
+- Phase 3.6 Menu GUI tab (§5) — **shipped** (R4 + map-complete: HP bars + block overlay)
+- Phase 6 Map (§6) — **complete** (Nutt 3780282057 atlas + MiniMap HUD; ammo + camera fallback)
 - Phase 7 Digital Signs (§7) — **minimum shipped** (Craftbot S/L/XL; logic hide)
 
 See `HIJACK_ROADMAP.txt` Phase 3 checklist for the full scannable list.
@@ -121,15 +121,18 @@ Shipped on `rush/r3`. Farm / Collect / Oil walk to chests; doorway side-step if 
 
 ## 5) Menu tab: GUI (visuals) — **[DONE]** (Phase 3.6)
 
-Shipped on `/menu` (not Beacon Orders). Names on/off, Big Red, enemy/neutral tag color cycle. Block health overlay **cut** (no SM API). Vanilla engine HP bars are not recolorable.
+Shipped on `/menu` (not Beacon Orders). Names on/off, Big Red, enemy/neutral colors.
+Custom unit HP billboards use those colors (engine HP bars cannot be recolored).
+Block/creation overlay is best-effort: look-at HUD + world text + nearby labels
+using shape count / mass (SM has no per-block HP API). Toggle: `/menu` Block overlay.
 
 ---
 
-## 6) MiniMap HUD — **shipped** (Phase 6)
+## 6) Map — **complete** (Phase 6)
 
-Logged in `HIJACK_ROADMAP.txt` under **Phase 6**. Status: **shipped on `rush/minimap`** (Nutt World Map Workshop **3780282057**).
+Logged in `HIJACK_ROADMAP.txt` under **Phase 6**. Status: **complete on `rush/map-complete`** (Nutt World Map Workshop **3780282057**). MiniMap HUD is part of this phase, not a sidecar.
 
-**Path:** RFS autoTool hosts Nutt's HUD from `$CONTENT_58df2b8e-...` (subscribe, do not enable as a world mod). `/map` / `/rfsmap` open the atlas. Credit Nutt in Steam / `description.json` / in-game. **Fallback:** original RfsHud (clock + compass + ammo) and lock-camera `/map` if Nutt content is missing. Do not cover lower-right ammo. Beacon/ally letters later.
+**Path:** RFS autoTool hosts Nutt's HUD from `$CONTENT_58df2b8e-...` (subscribe, do not enable as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Credit Nutt in Steam / `description.json` / in-game. **Fallback:** original RfsHud (clock + compass + ammo) and lock-camera `/map` if Nutt content is missing. Do not cover lower-right ammo. Beacon/ally letters later.
 
 ---
 

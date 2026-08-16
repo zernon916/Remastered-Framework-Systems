@@ -1,6 +1,6 @@
--- RfsGuiPrefs.lua — Phase 3.6 /menu visual prefs (per player).
--- Names on/off, Big Red farmbot label, enemy/neutral nametag tint.
--- Block health overlay: no SM custom-game API — cut (see docs/RUSH.md UNSURE).
+-- RfsGuiPrefs.lua — /menu visual prefs (per player).
+-- Names on/off, Big Red farmbot label, enemy/neutral HP-bar + tag tint,
+-- block/creation overlay on/off.
 
 RfsGuiPrefs = RfsGuiPrefs or {}
 
@@ -25,6 +25,7 @@ local function defaults()
 		bigRed = false,
 		enemyHp = "red",
 		neutralHp = "green",
+		blockOverlay = true,
 	}
 end
 
@@ -58,6 +59,9 @@ local function normalize( data )
 	end
 	d.enemyHp = hp( data.enemyHp, d.enemyHp )
 	d.neutralHp = hp( data.neutralHp, d.neutralHp )
+	if data.blockOverlay ~= nil then
+		d.blockOverlay = data.blockOverlay and true or false
+	end
 	return d
 end
 
@@ -101,6 +105,8 @@ function RfsGuiPrefs.toggle( prefs, key )
 		prefs.names = not prefs.names
 	elseif key == "bigRed" then
 		prefs.bigRed = not prefs.bigRed
+	elseif key == "blockOverlay" then
+		prefs.blockOverlay = not prefs.blockOverlay
 	elseif key == "enemyHp" or key == "neutralHp" then
 		local cur = prefs[key]
 		local idx = 1
@@ -116,4 +122,4 @@ function RfsGuiPrefs.toggle( prefs, key )
 	return prefs
 end
 
-print( "[RFS] RfsGuiPrefs loaded (Phase 3.6 visuals)" )
+print( "[RFS] RfsGuiPrefs loaded (names / HP bars / block overlay)" )

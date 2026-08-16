@@ -7,6 +7,8 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCarry.lua" )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" ) end )
+pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsBlockOverlay.lua" ) end )
+pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsHealthBars.lua" ) end )
 
 Player = class( SurvivalPlayer )
 
@@ -205,10 +207,18 @@ function Player.cl_rfs_mapToggleTry( self )
 		self.network:sendToServer( "sv_rfs_mapClose" )
 		return
 	end
-	if type( RfsMiniMap ) == "table" and RfsMiniMap.available() then
+	if type( RfsMiniMap ) == "table" then
 		if RfsMiniMap.toggleBigMap() then
 			print( "[RFS] /map toggle -> Nutt World Map atlas" )
 			return
+		end
+		-- Nutt is the Map phase: wait for terrain/atlas instead of dropping to camera.
+		if RfsMiniMap.nuttLoaded() then
+			if RfsMiniMap.pending() then
+				sm.gui.chatMessage( "[RFS] Map atlas still loading — try /map again in a moment." )
+				print( "[RFS] /map deferred: Nutt hosted but atlas not ready" )
+				return
+			end
 		end
 	end
 	self.network:sendToServer( "sv_rfs_mapToggleCamera" )
@@ -595,7 +605,17 @@ function Player.client_onUpdate( self, dt )
 				RfsCarry.ensureHooks()
 			end )
 		end
+		pcall( function()
+			if type( RfsBlockOverlay ) == "table" and RfsBlockOverlay.update then
+				RfsBlockOverlay.update( self )
+			end
+		end )
 		RfsHud.update( self )
+		pcall( function()
+			if type( RfsHealthBars ) == "table" and RfsHealthBars.ensureHooks then
+				RfsHealthBars.ensureHooks()
+			end
+		end )
 	end
 
 	-- Force top-down camera every frame while map is open (continuous camera set)

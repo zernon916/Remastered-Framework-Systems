@@ -37,11 +37,11 @@ Farm / Collect / Oil walk to chests; doorway side-step if line of sight is block
 
 ## Menu tab: GUI visuals — **[DONE]** (Phase 3.6)
 
-Player `/menu` GUI section: Names on/off, Farmbots as **Big Red**, enemy/neutral color cycle (tints RFS tags; vanilla HP bars are engine-fixed). Block health overlay cut — no SM custom-game API. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6.
+Player `/menu` GUI section: Names on/off, Farmbots as **Big Red**, enemy/neutral color cycle. Custom HP billboards on units (engine HP bars cannot be recolored). Block/creation overlay is best-effort look-at HUD + world text (mass/shape-count; no per-block HP API). Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6.
 
-## MiniMap HUD — **shipped** (Phase 6)
+## Map — **complete** (Phase 6)
 
-Always-on corner MiniMap while walking; `/map` / `/rfsmap` opens the full atlas. Terrain map by **Nutt** (Workshop **3780282057** World Map) — credited in Steam / `description.json` / in-game chat. Subscribe to World Map; do **not** enable it as a world mod. Fallback if that content is missing: original RfsHud (clock + compass + **ammo**) and lock-camera `/map`. Beacon/ally letter markers later. Cross-ref: `HIJACK_ROADMAP.txt` Phase 6, `PHASES.md`, `PENDING_FIXES.md` §6.
+Always-on corner MiniMap while walking is part of the Map phase; `/map` / `/rfsmap` / `/menu` Map open the full atlas. Terrain map by **Nutt** (Workshop **3780282057** World Map) — credited in Steam / `description.json` / in-game chat. Subscribe to World Map; do **not** enable it as a world mod. Fallback if that content is missing: original RfsHud (clock + compass + **ammo**) and lock-camera `/map`. Beacon/ally letter markers later. Cross-ref: `HIJACK_ROADMAP.txt` Phase 6, `PHASES.md`, `PENDING_FIXES.md` §6.
 
 ## Digital Signs — **[DONE minimum]** (Phase 7)
 
