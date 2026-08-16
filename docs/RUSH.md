@@ -69,6 +69,8 @@ Remaining phases **not started or not finished**. Implement in this order. After
 
 Implemented, waiting for the user to playtest. Bugs keep the item here until fixed. Testing good → **PENDING DONE**.
 
+Playtest checkboxes (hack menus first): `docs/TEST_CHECKLIST.md` — parent agent ticks as the user reports pass/fail.
+
 ### R1 — Phase 2/5 polish (`rush/r1` `1ed3196`, merge `a21cd2a`)
 
 Nametag numbers via `RfsHackText` plus `sm.gui.setCharacterDebugText` refresh. Custom names (`/botname`, E-on-bot rename, Orders NameEdit). `RfsBotHijack.allyIgnoresRaid` (farm/collect/oil outside home radius skip RAID jam/range mul). Melee-on-hit chain flavor (~5s). Raid jam callouts. Keep Seed N / type+number.
@@ -218,4 +220,5 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | `GITHUB.md` | Git push from Desktop folder, ask-only |
 | `docs/wiki/Home.md` | Wiki index (shipped vs roadmap) |
 | `docs/wiki/Known-Issues.md` | Open polish + shipped 3.5 / 3.6 |
+| `docs/TEST_CHECKLIST.md` | Playtest checkboxes (hack first, then rest); parent agent updates on pass/fail |
 | `description.json` | Steam blurb; Nutt MiniMap credit shipped |
