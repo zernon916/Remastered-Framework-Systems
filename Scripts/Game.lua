@@ -37,6 +37,34 @@ local function rfsClientIsHost()
 	return ok and v and true or false
 end
 
+-- Chat-list /setup: host, or a client the engine marks as admin (if those flags exist).
+local function rfsClientIsAdmin()
+	if rfsClientIsHost() then
+		return true
+	end
+	local p = nil
+	pcall( function() p = sm.localPlayer.getPlayer() end )
+	if not p then
+		return false
+	end
+	local ok, v = pcall( function()
+		if p.hasAdminRights then
+			return p:hasAdminRights()
+		end
+		if type( p.isAdmin ) == "function" then
+			return p:isAdmin()
+		end
+		if p.isAdmin then
+			return true
+		end
+		if p.clientIsAdmin then
+			return p.clientIsAdmin and true or false
+		end
+		return false
+	end )
+	return ok and v and true or false
+end
+
 local function rfsServerPlayerIsHost( player )
 	if not player then
 		return false
@@ -54,6 +82,53 @@ local function rfsServerPlayerIsHost( player )
 		return hid == pid
 	end
 	return host == player
+end
+
+-- Server: host, or a connected player the engine marks as admin (same flags as rfsClientIsAdmin).
+local function rfsServerPlayerIsAdmin( player )
+	if rfsServerPlayerIsHost( player ) then
+		return true
+	end
+	if not player then
+		return false
+	end
+	local ok, v = pcall( function()
+		if player.hasAdminRights then
+			return player:hasAdminRights()
+		end
+		if type( player.isAdmin ) == "function" then
+			return player:isAdmin()
+		end
+		if player.isAdmin then
+			return true
+		end
+		if player.clientIsAdmin then
+			return player.clientIsAdmin and true or false
+		end
+		return false
+	end )
+	return ok and v and true or false
+end
+
+local function rfsServerDenyTo( self, player, msg )
+	if player then
+		pcall( function()
+			self.network:sendToClient( player, "client_showMessage", msg )
+		end )
+	end
+end
+
+-- Chat cheats: host or admin, and cheats setting on. Nil player is denied (not an RPC sender).
+local function rfsServerAllowCheat( self, player )
+	if not rfsServerPlayerIsAdmin( player ) then
+		rfsServerDenyTo( self, player, "[RFS] Cheats are host/admin only." )
+		return false
+	end
+	if not RfsSettings.cheatsEnabled() then
+		rfsServerDenyTo( self, player, "[RFS] Cheats are OFF (pack or /gensettings)." )
+		return false
+	end
+	return true
 end
 
 local function rfsOpenPlayerMenu( game )
@@ -867,6 +942,12 @@ function RecipeFrameworkSurvival.rfs_bindOne( self, name, args, desc )
 		if reserved then
 			if name == "/help" then
 				self.cl.rfsHelpReserved = true
+			else
+				self.cl.rfsBindFailLogged = self.cl.rfsBindFailLogged or {}
+				if not self.cl.rfsBindFailLogged[name] then
+					self.cl.rfsBindFailLogged[name] = true
+					print( "[RFS] bind " .. name .. " reserved: " .. errStr )
+				end
 			end
 		else
 			self.cl.rfsBindFailLogged = self.cl.rfsBindFailLogged or {}
@@ -886,8 +967,11 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self.cl = self.cl or {}
 	RfsSettings.load()
 	local cheats = RfsSettings.cheatsEnabled()
+	local admin = rfsClientIsAdmin()
+	local host = rfsClientIsHost()
 	-- Avoid full rebind storms from clientData / features sync when nothing changed.
-	if self.cl.rfsCmdsBound and self.cl.rfsCmdsCheatsBound == cheats then
+	if self.cl.rfsCmdsBound and self.cl.rfsCmdsCheatsBound == cheats
+		and self.cl.rfsCmdsAdminBound == admin and self.cl.rfsCmdsHostBound == host then
 		return
 	end
 
@@ -895,14 +979,20 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		self:rfs_bindOne( "/kick", { { "string", "player name", false } }, "Kick a player from server" )
 		self:rfs_bindOne( "/ban", { { "string", "player name", false } }, "Ban a player from server" )
 	end
+	if rfsClientIsAdmin() then
+		self:rfs_bindOne( "/setup", {}, "Open RFS host setup GUI (admin)" )
+	end
 
+	-- Player menu first. /help is often engine-reserved; a failed /help must not
+	-- skip /menu. /menu itself can also be reserved (InGameMenu) — then /rfsmenu
+	-- is the name that actually appears in the client's chat list.
+	self:rfs_bindOne( "/menu", {}, "Open player menu (map and growth overlay)" )
+	self:rfs_bindOne( "/rfsmenu", {}, "Open player menu (map and growth overlay)" )
 	-- Always available (/help is often engine-reserved; skip after first reserved fail)
 	if not self.cl.rfsHelpReserved then
 		self:rfs_bindOne( "/help", {}, "List Recipe Framework Survival commands" )
 	end
 	self:rfs_bindOne( "/commands", {}, "Alias of /help" )
-	self:rfs_bindOne( "/menu", {}, "Open player menu (map + growth overlay)" )
-	self:rfs_bindOne( "/setup", {}, "Open RFS host setup GUI (host only)" )
 	self:rfs_bindOne( "/gensettings", {}, "Open RFS gen settings (host only)" )
 	self:rfs_bindOne( "/map", {}, "Toggle top-down camera map (WASD pan, scroll zoom)" )
 	self:rfs_bindOne( "/mapclose", {}, "Close top-down camera map" )
@@ -918,7 +1008,8 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self:rfs_bindOne( "/d", sayArgs, "Alias of /say (game → Discord)" )
 	self:rfs_bindOne( "/unhijack", { { "number", "range", true } }, "Release nearest owned ally robot (host can release any)" )
 
-	if cheats then
+	-- Cheats in the chat list: host or admin only. Regular clients never see them.
+	if cheats and admin then
 		-- Survival cheat set
 		self:rfs_bindOne( "/ammo", { { "int", "quantity", true } }, "Give ammo (default 100)" )
 		self:rfs_bindOne( "/spudgun", {}, "Give the spudgun" )
@@ -934,8 +1025,11 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		self:rfs_bindOne( "/seedsplease", {}, "Give seeds and soil" )
 		self:rfs_bindOne( "/tumble", { { "bool", "enable", true } }, "Set tumble state" )
 		self:rfs_bindOne( "/god", {}, "Mechanic characters take no damage" )
-		self:rfs_bindOne( "/limited", {}, "Use the limited inventory" )
-		self:rfs_bindOne( "/unlimited", {}, "Use the unlimited inventory" )
+		-- /limited /unlimited: host-only bind. sm.game.setLimitedInventory is world-wide.
+		if host then
+			self:rfs_bindOne( "/limited", {}, "Keep world inventory limited (host)" )
+			self:rfs_bindOne( "/unlimited", {}, "Host-only; world-wide flag is not applied (would unlock clients)" )
+		end
 		self:rfs_bindOne( "/timeofday", { { "number", "timeOfDay", true } }, "Set time of day 0..1" )
 		self:rfs_bindOne( "/timeprogress", { { "bool", "enabled", true } }, "Enable or disable time progress" )
 
@@ -985,13 +1079,17 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 
 	self.cl.rfsCmdsBound = true
 	self.cl.rfsCmdsCheatsBound = cheats
+	self.cl.rfsCmdsAdminBound = admin
+	self.cl.rfsCmdsHostBound = host
 	if not self.cl.rfsCmdsReadyMsg then
 		self.cl.rfsCmdsReadyMsg = true
 		pcall( function()
 			if RfsSettings.frameworkOnly() then
 				sm.gui.chatMessage( "RFS framework-only: /menu /setup /gensettings /map /mods /help (cheats + quest UI OFF; hooks stay on)" )
-			elseif cheats then
+			elseif cheats and admin then
 				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /map /fly /hijack /givehack /tshop /mods /help" )
+			elseif cheats then
+				sm.gui.chatMessage( "RFS commands ready: /menu /rfsmenu /map /mods /help (cheats host/admin only)" )
 			else
 				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /map /mods /help (cheats OFF)" )
 			end
@@ -1018,23 +1116,25 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 
 	if cmd == "/help" or cmd == "/commands" then
 		local lines
+		local showCheats = cheats and rfsClientIsAdmin()
 		if RfsSettings.frameworkOnly() then
 			lines = {
 				"RFS framework-only: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
 				"Store scan + RfsQuest hooks stay on. Cheats/quest tooling forced off. Beacons/loader use /gensettings.",
 			}
-		elseif cheats then
+		elseif showCheats then
 			lines = {
-				"RFS: /menu /setup(host) /gensettings(host) /map /say /d /mapclose /rfsmap /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath /limited /unlimited",
+				"RFS: /menu /setup(host) /gensettings(host) /map /say /d /mapclose /rfsmap /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath",
 				"/timeofday /timeprogress /weather /goto /spawn /give /farmers /tshop /mshop /components /ammo",
 				"/foodplease /seedsplease /clearinv /cleanup /killall /hijack /hijacklist /givehack /unhijack /noaggro /aggroall",
 				"/unlockrecipe /unlockmodded /unlockvanilla /mods",
 				"/questlist /rfsquestlist /questinfo /completequest /startquest /resetquest /help",
+				"Cheats are host/admin only. /limited /unlimited are host-only and do not unlock client inventories.",
 			}
 		else
 			lines = {
-				"RFS commands (cheats OFF): /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
-				"Toggle cheats in host /gensettings (or pack rfs_settings.json) for fly/give/quests/shops.",
+				"RFS commands: /menu /rfsmenu /setup(admin) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
+				cheats and "Cheats are host/admin only." or "Toggle cheats in host /gensettings (or pack rfs_settings.json) for fly/give/quests/shops.",
 			}
 		end
 		for _, line in ipairs( lines ) do
@@ -1043,7 +1143,7 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 
-	if cmd == "/menu" then
+	if cmd == "/menu" or cmd == "/rfsmenu" then
 		rfsOpenPlayerMenu( self )
 		return
 	end
@@ -1058,8 +1158,8 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 	end
 
 	if cmd == "/setup" then
-		if not rfsClientIsHost() then
-			sm.gui.chatMessage( "[RFS] /setup is host-only. Use /menu for personal options." )
+		if not rfsClientIsAdmin() then
+			sm.gui.chatMessage( "[RFS] /setup is admin-only. Use /menu for personal options." )
 			return
 		end
 		if RfsSettings.frameworkOnly() then
@@ -1116,9 +1216,36 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 
-	-- Everything below requires cheats enabled (pack and/or /gensettings)
+	if cmd == "/kick" or cmd == "/ban" then
+		SurvivalGame.cl_onChatCommand( self, params )
+		return
+	end
+
+	-- Everything below is a cheat (RFS or Survival). Host or admin only.
+	if not rfsClientIsAdmin() then
+		sm.gui.chatMessage( "[RFS] Cheats are host/admin only." )
+		return
+	end
 	if not cheats then
 		sm.gui.chatMessage( "[RFS] Cheats are OFF (pack or /gensettings)." )
+		return
+	end
+
+	-- sm.game.setLimitedInventory is WORLD-WIDE (no per-player API). Never unlock clients.
+	if cmd == "/unlimited" then
+		if not rfsClientIsHost() then
+			sm.gui.chatMessage( "[RFS] /unlimited is host-only." )
+			return
+		end
+		sm.gui.chatMessage( "[RFS] /unlimited is a world-wide engine flag — not applied (would unlock all clients). Stay limited." )
+		return
+	end
+	if cmd == "/limited" then
+		if not rfsClientIsHost() then
+			sm.gui.chatMessage( "[RFS] /limited is host-only." )
+			return
+		end
+		self.network:sendToServer( "sv_setLimitedInventory", true )
 		return
 	end
 
@@ -1216,14 +1343,105 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 	SurvivalGame.cl_onChatCommand( self, params )
 end
 
+-- Survival cheat RPCs are world-wide and have no sender check. Gate host/admin here.
+-- Streamer/internal calls pass player==nil; those skip the admin check on spawn only.
+
+function RecipeFrameworkSurvival.sv_onChatCommand( self, params, player )
+	local cmd = params and params[1]
+	if cmd == "/kick" or cmd == "/ban" then
+		if not rfsServerPlayerIsHost( player ) then
+			rfsServerDenyTo( self, player, "[RFS] /kick and /ban are host-only." )
+			return
+		end
+		SurvivalGame.sv_onChatCommand( self, params, player )
+		return
+	end
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_onChatCommand( self, params, player )
+end
+
+function RecipeFrameworkSurvival.sv_giveItem( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_giveItem( self, params )
+end
+
+function RecipeFrameworkSurvival.sv_switchGodMode( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_switchGodMode( self )
+end
+
+-- sm.game.setLimitedInventory is WORLD-WIDE. Never set false (unlimited) — that unlocks every client.
+-- /limited (true) is allowed for the host so the world can be locked back to limited.
+function RecipeFrameworkSurvival.sv_setLimitedInventory( self, state, player )
+	local unlimited = ( state == false or state == 0 )
+	if unlimited then
+		if player then
+			rfsServerDenyTo( self, player, "[RFS] /unlimited is a world-wide engine flag — not applied (would unlock all clients). Stay limited." )
+		end
+		return
+	end
+	-- Locking to limited: host, or server-internal (starterkit / BaseWorld, player is nil).
+	if player ~= nil then
+		if not rfsServerPlayerIsHost( player ) then
+			rfsServerDenyTo( self, player, "[RFS] /limited and /unlimited are host-only." )
+			return
+		end
+		if not rfsServerAllowCheat( self, player ) then
+			return
+		end
+	end
+	SurvivalGame.sv_setLimitedInventory( self, true )
+end
+
+function RecipeFrameworkSurvival.sv_n_switchAggroMode( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_n_switchAggroMode( self, params )
+end
+
+function RecipeFrameworkSurvival.sv_setTimeOfDay( self, timeOfDay, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_setTimeOfDay( self, timeOfDay )
+end
+
+function RecipeFrameworkSurvival.sv_setTimeProgress( self, timeProgress, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_setTimeProgress( self, timeProgress )
+end
+
+function RecipeFrameworkSurvival.sv_killPlayer( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_killPlayer( self, params )
+end
+
+function RecipeFrameworkSurvival.sv_spawnUnit( self, params, player )
+	-- Streamer vote spawn is server-internal (no RPC sender).
+	if player ~= nil and not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	SurvivalGame.sv_spawnUnit( self, params )
+end
+
 -- ========== Server handlers ==========
 
 function RecipeFrameworkSurvival.sv_rfs_toggleFly( self, params, player )
-	local target = player
-	if params and params.player then
-		target = params.player
+	if not rfsServerAllowCheat( self, player ) then
+		return
 	end
-	target = target or sm.player.getAllPlayers()[1]
+	local target = player
 	if not target then
 		return
 	end
@@ -1258,6 +1476,9 @@ function RecipeFrameworkSurvival.sv_rfs_mapClose( self, params, player )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_give( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or sm.player.getAllPlayers()[1]
 	if not player or not params or not params.uuid then
 		rfsMsg( self, "Usage: /give <uuid> [qty]" )
@@ -1276,6 +1497,9 @@ function RecipeFrameworkSurvival.sv_rfs_give( self, params, player )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_clearInv( self, _, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or sm.player.getAllPlayers()[1]
 	if not player then return end
 	local inv = player:getInventory()
@@ -1291,6 +1515,9 @@ function RecipeFrameworkSurvival.sv_rfs_clearInv( self, _, player )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_cleanup( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or sm.player.getAllPlayers()[1]
 	if not player or not player.character then return end
 	local radius = tonumber( params and params.radius ) or 50
@@ -1324,6 +1551,9 @@ function RecipeFrameworkSurvival.sv_rfs_cleanup( self, params, player )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_killAll( self, _, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local killed = 0
 	if g_unitManager and g_unitManager.sv_getAllUnits then
 		local units = g_unitManager:sv_getAllUnits()
@@ -1367,6 +1597,9 @@ function RecipeFrameworkSurvival.sv_rfs_sendHijackEvent( self, event, payload )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_hijack( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or ( params and params.player ) or sm.player.getAllPlayers()[1]
 	if type( RfsFeatures ) == "table" and type( RfsFeatures.hackableRobotsEnabled ) == "function" then
 		local ok, on = pcall( RfsFeatures.hackableRobotsEnabled )
@@ -1379,6 +1612,9 @@ function RecipeFrameworkSurvival.sv_rfs_hijack( self, params, player )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_hijackList( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or ( params and params.player )
 	self:sv_rfs_sendHijackEvent( "sv_e_rfsHijackList", { player = player } )
 end
@@ -1394,6 +1630,9 @@ function RecipeFrameworkSurvival.sv_rfs_unhijack( self, params, player )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_givehack( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or ( params and params.player ) or sm.player.getAllPlayers()[1]
 	if not player then
 		rfsMsg( self, "Givehack failed: no player" )
@@ -1435,7 +1674,10 @@ function RecipeFrameworkSurvival.sv_rfs_givehack( self, params, player )
 	end
 end
 
-function RecipeFrameworkSurvival.sv_rfs_weather( self, params )
+function RecipeFrameworkSurvival.sv_rfs_weather( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local wm = WeatherManager and WeatherManager.Get and WeatherManager.Get()
 	if not wm then
 		rfsMsg( self, "WeatherManager not available" )
@@ -1454,6 +1696,9 @@ function RecipeFrameworkSurvival.sv_rfs_weather( self, params )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_goto( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	player = player or sm.player.getAllPlayers()[1]
 	if not player or not player.character then return end
 	local loc = string.lower( tostring( params and params.location or "start" ) )
@@ -1473,7 +1718,10 @@ function RecipeFrameworkSurvival.sv_rfs_goto( self, params, player )
 	rfsMsg( self, "Goto " .. loc )
 end
 
-function RecipeFrameworkSurvival.sv_rfs_unlockRecipe( self, params )
+function RecipeFrameworkSurvival.sv_rfs_unlockRecipe( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local key = params and params.key
 	if not key then
 		rfsMsg( self, "Usage: /unlockrecipe <uuid|name>" )
@@ -1497,7 +1745,10 @@ function RecipeFrameworkSurvival.sv_rfs_unlockRecipe( self, params )
 	rfsMsg( self, "Unlocked " .. uuid )
 end
 
-function RecipeFrameworkSurvival.sv_rfs_unlockModded( self )
+function RecipeFrameworkSurvival.sv_rfs_unlockModded( self, _, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local scan = ModRecipeScan.getLast()
 	local n = 0
 	if scan and scan.craftPaths then
@@ -1516,7 +1767,10 @@ function RecipeFrameworkSurvival.sv_rfs_unlockModded( self )
 	rfsMsg( self, "Unlocked modded recipes: " .. tostring( n ) )
 end
 
-function RecipeFrameworkSurvival.sv_rfs_unlockVanilla( self )
+function RecipeFrameworkSurvival.sv_rfs_unlockVanilla( self, _, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local n = 0
 	if g_unlockableCraftItems then
 		local scan = ModRecipeScan.getLast()
@@ -1572,7 +1826,10 @@ function RecipeFrameworkSurvival.sv_rfs_chatOutbox( self, params, player )
 	end
 end
 
-function RecipeFrameworkSurvival.sv_rfs_questList( self )
+function RecipeFrameworkSurvival.sv_rfs_questList( self, _, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local active = QuestManager.Sv_GetActiveQuests and QuestManager.Sv_GetActiveQuests() or {}
 	local completed = {}
 	if g_questManagerServer and g_questManagerServer.sv and g_questManagerServer.sv.saved then
@@ -1616,7 +1873,10 @@ function RecipeFrameworkSurvival.sv_rfs_questList( self )
 	end
 end
 
-function RecipeFrameworkSurvival.sv_rfs_questInfo( self, params )
+function RecipeFrameworkSurvival.sv_rfs_questInfo( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local name = params and params.name
 	if not name then
 		rfsMsg( self, "Usage: /questinfo <name>" )
@@ -1639,7 +1899,10 @@ function RecipeFrameworkSurvival.sv_rfs_questInfo( self, params )
 	end
 end
 
-function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params )
+function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local name = params and params.name
 	if not name then
 		rfsMsg( self, "Usage: /completequest <name>" )
@@ -1712,7 +1975,10 @@ function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params )
 	end
 end
 
-function RecipeFrameworkSurvival.sv_rfs_startQuest( self, params )
+function RecipeFrameworkSurvival.sv_rfs_startQuest( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local name = params and params.name
 	if not name then
 		rfsMsg( self, "Usage: /startquest <name>" )
@@ -1733,7 +1999,10 @@ function RecipeFrameworkSurvival.sv_rfs_startQuest( self, params )
 	rfsMsg( self, "Tried start + track " .. name )
 end
 
-function RecipeFrameworkSurvival.sv_rfs_resetQuest( self, params )
+function RecipeFrameworkSurvival.sv_rfs_resetQuest( self, params, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
 	local name = params and params.name
 	if not name then
 		rfsMsg( self, "Usage: /resetquest <name> - QuestManager has no public reset; abandoning if active." )
@@ -1995,11 +2264,18 @@ end
 
 function RecipeFrameworkSurvival.cl_rfs_setupToggleInventory( self )
 	if not RfsSettings.cheatsEnabled() then return end
+	if not rfsClientIsHost() then
+		sm.gui.chatMessage( "[RFS] Inventory limited/unlimited is host-only." )
+		return
+	end
 	local limited = true
 	pcall( function() limited = sm.game.getLimitedInventory() end )
-	-- Toggle: limited -> unlimited, unlimited -> limited (same as /limited /unlimited)
-	self.network:sendToServer( "sv_setLimitedInventory", not limited )
-	-- Refresh after a short delay via local optimistic update
+	if limited then
+		-- World-wide flag: do not unlock every client.
+		sm.gui.chatMessage( "[RFS] Unlimited inventory is a world-wide engine flag — not applied (would unlock all clients)." )
+		return
+	end
+	self.network:sendToServer( "sv_setLimitedInventory", true )
 	self.cl = self.cl or {}
 	self.cl.rfsSetupRefreshAt = sm.game.getCurrentTick() + 8
 end
@@ -2288,7 +2564,10 @@ function RecipeFrameworkSurvival.cl_rfs_featuresSync( self, data )
 	-- Rebind only when cheats gate changed (or not yet bound). No OK spam either way.
 	RfsSettings.load()
 	local cheats = RfsSettings.cheatsEnabled()
-	if not self.cl.rfsCmdsBound or self.cl.rfsCmdsCheatsBound ~= cheats then
+	local admin = rfsClientIsAdmin()
+	local host = rfsClientIsHost()
+	if not self.cl.rfsCmdsBound or self.cl.rfsCmdsCheatsBound ~= cheats
+		or self.cl.rfsCmdsAdminBound ~= admin or self.cl.rfsCmdsHostBound ~= host then
 		self:rfs_bindCommands()
 	end
 	if self.cl.rfsGenGui then

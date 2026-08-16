@@ -27,8 +27,9 @@ end
 
 local TradeData = rfsLoadHideoutTradeData()
 
--- RFS: hideout shop pays with Farmers (caged farmer / farmerball) only.
--- Vanilla hideout.json uses produce CRATES for many costs; those icons look like loose veggies in the UI.
+-- RFS: hideout shop pays with Farmers (caged farmer / farmerball), except seed
+-- SKUs: spend 1 matching produce crate, get 80 seeds. Vanilla hideout.json uses
+-- produce CRATES for many costs; those icons look like loose veggies in the UI.
 local FARMERS_ITEM_ID = "8d601982-4608-4d5e-bb9e-e4041486f7c7"
 -- Beacon titles/icons only if the B&P shape exists on THIS peer. Missing mods are stripped
 -- from the shop (no vanilla-icon ghost / "BLOCK NOT FOUND" rows).
@@ -137,51 +138,118 @@ local function rfsPreviewItemId( itemId )
 	return tostring( itemId )
 end
 -- Produce CRATE UUIDs from Survival survival_items.lua (not loose produce).
+-- Packing-station crates only: banana, blueberry, orange, pineapple, carrot,
+-- redbeet, tomato, broccoli. No inventory crate for potato / cotton / chili / paint.
+local CRATE_BANANA = "0bc74539-df8a-47c7-aad8-d55d809a01e4"
+local CRATE_BLUEBERRY = "e77d9577-589a-446b-96c1-f6d0d7495489"
+local CRATE_ORANGE = "c10a77d5-3357-4cb4-8113-a2cbe69c7ff2"
+local CRATE_PINEAPPLE = "bc69cb3b-7e0c-4c36-805d-f8d89fcfced3"
+local CRATE_CARROT = "9cd8288c-5a19-479f-af47-9eb55230ade2"
+local CRATE_REDBEET = "628fd350-577d-413f-82a8-7f08a83de3d8"
+local CRATE_TOMATO = "1dcd74ca-39ba-4b00-a36a-3381b25055f4"
+local CRATE_BROCCOLI = "99477093-e819-4199-b62a-fda6143aae89"
 local PRODUCE_CRATE_IDS = {
-	["0bc74539-df8a-47c7-aad8-d55d809a01e4"] = true, -- banana
-	["e77d9577-589a-446b-96c1-f6d0d7495489"] = true, -- blueberry
-	["c10a77d5-3357-4cb4-8113-a2cbe69c7ff2"] = true, -- orange
-	["bc69cb3b-7e0c-4c36-805d-f8d89fcfced3"] = true, -- pineapple
-	["9cd8288c-5a19-479f-af47-9eb55230ade2"] = true, -- carrot
-	["628fd350-577d-413f-82a8-7f08a83de3d8"] = true, -- redbeet
-	["1dcd74ca-39ba-4b00-a36a-3381b25055f4"] = true, -- tomato
-	["99477093-e819-4199-b62a-fda6143aae89"] = true, -- broccoli
+	[CRATE_BANANA] = true,
+	[CRATE_BLUEBERRY] = true,
+	[CRATE_ORANGE] = true,
+	[CRATE_PINEAPPLE] = true,
+	[CRATE_CARROT] = true,
+	[CRATE_REDBEET] = true,
+	[CRATE_TOMATO] = true,
+	[CRATE_BROCCOLI] = true,
 }
+-- Hideout seed listings: spend 1 crate, get 80 seeds. Matching crate when it exists.
+-- Potato / cotton / paint / chili have no crate SKU — closest vacuum crate (not Farmers).
+local SEED_TRADE_QTY = 80
+local SEED_CRATE_COST = {
+	["38e41fb5-dd50-4294-829d-a517f0282fed"] = CRATE_TOMATO, -- tomato
+	["9c82a525-8a8b-4483-9595-505aaa042486"] = CRATE_CARROT, -- carrot
+	["64051718-a3f1-422b-bda3-277efa0c4545"] = CRATE_REDBEET, -- redbeet
+	["22beade5-38ca-47b4-a2ee-32403f58a862"] = CRATE_BANANA, -- banana
+	["4b6d2bee-d0f1-4e56-96f0-d2596388cad2"] = CRATE_BLUEBERRY, -- blueberry
+	["bee966b0-b5e5-41da-b992-5d363ab85ae4"] = CRATE_ORANGE, -- orange
+	["1c6756ca-3a60-4dcb-a5d1-353edf818308"] = CRATE_BROCCOLI, -- broccoli
+	["9edb6f7c-fb44-4348-a1c4-8afb41b92d8a"] = CRATE_PINEAPPLE, -- pineapple
+	["eb1ef696-5c05-4662-9e47-fe1e0875ff84"] = CRATE_CARROT, -- potato: no crate → carrot crate
+	["93c27ab2-4930-4654-ba1c-bcfe35e966f6"] = CRATE_BANANA, -- cotton: no crate → banana crate
+	["c44b27da-88cf-4e17-b872-6236a1172688"] = CRATE_BLUEBERRY, -- paint: no crate → blueberry crate
+	["8883e0ee-8a6e-423a-a4e0-583d9bf105bd"] = CRATE_TOMATO, -- chili: no crate → tomato crate
+}
+local RFS_EXTRA_UNLOCK_SEEDS = {
+	"eb1ef696-5c05-4662-9e47-fe1e0875ff84", -- potato (not in Survival hideout.json)
+	"93c27ab2-4930-4654-ba1c-bcfe35e966f6", -- cotton
+	"c44b27da-88cf-4e17-b872-6236a1172688", -- pigmentflower
+}
+local function rfsApplySeedCrateTrades( trades )
+	if type( trades ) ~= "table" then
+		return
+	end
+	local seen = {}
+	for _, trade in ipairs( trades ) do
+		if type( trade ) == "table" and trade.itemId then
+			local id = tostring( trade.itemId )
+			local crate = SEED_CRATE_COST[id]
+			if crate then
+				trade.quantity = SEED_TRADE_QTY
+				trade.craftTime = trade.craftTime or 0
+				trade.schematic = false
+				trade.ingredientList = { { itemId = crate, quantity = 1 } }
+				seen[id] = true
+			end
+		end
+	end
+	for id, crate in pairs( SEED_CRATE_COST ) do
+		if not seen[id] then
+			trades[#trades + 1] = {
+				itemId = id,
+				quantity = SEED_TRADE_QTY,
+				craftTime = 0,
+				schematic = false,
+				ingredientList = { { itemId = crate, quantity = 1 } },
+			}
+			-- Unlock runs after DefaultUnlockedTradesSet is built (RFS_EXTRA_UNLOCK_SEEDS).
+		end
+	end
+end
 local function rfsConvertTradeCostsToFarmers( trades )
 	if type( trades ) ~= "table" then
 		return
 	end
+	rfsApplySeedCrateTrades( trades )
 	local converted = 0
 	for _, trade in ipairs( trades ) do
 		if type( trade ) == "table" and type( trade.ingredientList ) == "table" then
-			local farmersQty = 0
-			local hadOther = false
-			for _, ing in ipairs( trade.ingredientList ) do
-				if ing and ing.itemId then
-					local id = tostring( ing.itemId )
-					local qty = tonumber( ing.quantity ) or 1
-					if id == FARMERS_ITEM_ID then
-						farmersQty = farmersQty + qty
-					elseif PRODUCE_CRATE_IDS[id] then
-						farmersQty = farmersQty + qty
-						hadOther = true
-					else
-						-- Non-crate / non-farmer cost → fold into Farmers 1:1 (RFS policy)
-						farmersQty = farmersQty + qty
-						hadOther = true
+			local seedId = trade.itemId and tostring( trade.itemId ) or ""
+			if not SEED_CRATE_COST[seedId] then
+				local farmersQty = 0
+				local hadOther = false
+				for _, ing in ipairs( trade.ingredientList ) do
+					if ing and ing.itemId then
+						local id = tostring( ing.itemId )
+						local qty = tonumber( ing.quantity ) or 1
+						if id == FARMERS_ITEM_ID then
+							farmersQty = farmersQty + qty
+						elseif PRODUCE_CRATE_IDS[id] then
+							farmersQty = farmersQty + qty
+							hadOther = true
+						else
+							-- Non-crate / non-farmer cost → fold into Farmers 1:1 (RFS policy)
+							farmersQty = farmersQty + qty
+							hadOther = true
+						end
 					end
 				end
-			end
-			if hadOther or #trade.ingredientList == 0 then
-				if farmersQty < 1 then
-					farmersQty = 1
+				if hadOther or #trade.ingredientList == 0 then
+					if farmersQty < 1 then
+						farmersQty = 1
+					end
+					trade.ingredientList = { { itemId = FARMERS_ITEM_ID, quantity = farmersQty } }
+					converted = converted + 1
+				elseif #trade.ingredientList > 1 then
+					-- Multiple farmer lines → collapse
+					trade.ingredientList = { { itemId = FARMERS_ITEM_ID, quantity = math.max( 1, farmersQty ) } }
+					converted = converted + 1
 				end
-				trade.ingredientList = { { itemId = FARMERS_ITEM_ID, quantity = farmersQty } }
-				converted = converted + 1
-			elseif #trade.ingredientList > 1 then
-				-- Multiple farmer lines → collapse
-				trade.ingredientList = { { itemId = FARMERS_ITEM_ID, quantity = math.max( 1, farmersQty ) } }
-				converted = converted + 1
 			end
 		end
 	end
@@ -216,6 +284,9 @@ local function RemoveUnusedItemSlotProperties( Widget )
 end
 
 local DefaultUnlockedTradesSet = DefaultListToSet( DefaultUnlockedTrades )
+for _, id in ipairs( RFS_EXTRA_UNLOCK_SEEDS ) do
+	DefaultUnlockedTradesSet[id] = true
+end
 
 local DefaultUnlockedSchematicTrades = {
 	ITEMS.obj_interactive_logicgate,

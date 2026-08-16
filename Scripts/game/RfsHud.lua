@@ -1,11 +1,28 @@
 -- RfsHud.lua — always-on top-center clock + compass HUD for Recipe Framework Survival
 -- Author: DemonsDen126
 -- Original clock + compass HUD implementation.
+-- Tool ammo readout restored here: this always-on HUD sits on the default HUD layer
+-- and hides the engine weapon ammo number, so we draw remaining ammo ourselves.
 
 RfsHud = RfsHud or {}
 
 local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_Hud.layout"
 local CARDINALS = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" }
+
+-- Vanilla Survival tool UUIDs → ammo item UUID (spudgun/gatling/shotgun = potatoes).
+local POTATO = sm.uuid.new( "bfcfac34-db0f-42d6-bd0c-74a7a5c95e82" )
+local FIREAMMO = sm.uuid.new( "68a58472-368d-4b09-ad36-9093f11d76ae" )
+local CLAY = sm.uuid.new( "6395a2f1-4169-4a7e-be15-a9864cb6ce7e" )
+local EXTINGUISHER = sm.uuid.new( "d2fab7ef-21db-4681-a22a-cd4f278fc355" )
+local AMMO_BY_TOOL = {
+	["c5ea0c2f-185b-48d6-b4df-45c386a575cc"] = POTATO,       -- Spud Gun
+	["f6250bf4-9726-406f-a29a-945c06e460e5"] = POTATO,       -- Spud Shotgun
+	["9fde0601-c2ba-4c70-8d5c-2a7a9fdd122b"] = POTATO,       -- Potato Gatling
+	["d51ec758-057b-4263-bd16-7a731e149480"] = POTATO,       -- Scrap Spud Gun
+	["a2a2bb33-a841-4b23-88da-b758063d9206"] = FIREAMMO,     -- Spud Launcher
+	["6993e5df-6852-4e84-88ae-df49f765e784"] = CLAY,         -- Clay Gun
+	["2c7e0586-2534-44cc-9f4b-e28c436446b6"] = EXTINGUISHER, -- Extinguisher
+}
 
 local function compassFromDirection( dir )
 	if not dir then
@@ -26,6 +43,31 @@ local function compassFromDirection( dir )
 	return string.format( "%s %d°", CARDINALS[idx], math.floor( deg + 0.5 ) % 360 )
 end
 
+local function updateAmmo( gui )
+	local ammoUuid = nil
+	pcall( function()
+		local item = sm.localPlayer.getActiveItem()
+		if item then
+			ammoUuid = AMMO_BY_TOOL[string.lower( tostring( item ) )]
+		end
+	end )
+	if not ammoUuid then
+		pcall( function() gui:setVisible( "RfsAmmoPanel", false ) end )
+		return
+	end
+	local count = 0
+	pcall( function()
+		local inv = sm.localPlayer.getInventory()
+		if inv then
+			count = sm.container.totalQuantity( inv, ammoUuid ) or 0
+		end
+	end )
+	pcall( function()
+		gui:setVisible( "RfsAmmoPanel", true )
+		gui:setText( "RfsAmmoText", tostring( count ) )
+	end )
+end
+
 function RfsHud.ensure( host )
 	host.cl = host.cl or {}
 	if host.cl.rfsHud then
@@ -42,7 +84,7 @@ function RfsHud.ensure( host )
 	end
 	host.cl.rfsHud = gui
 	pcall( function() gui:open() end )
-	print( "[RFS] HUD opened (clock + compass)" )
+	print( "[RFS] HUD opened (clock + compass + ammo)" )
 	return gui
 end
 
@@ -78,4 +120,5 @@ function RfsHud.update( host )
 		end
 	end
 	pcall( function() gui:setText( "RfsCompassText", compass ) end )
+	updateAmmo( gui )
 end

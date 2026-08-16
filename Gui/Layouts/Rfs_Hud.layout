@@ -36,5 +36,23 @@
 				<Property key="NeedMouse" value="false"/>
 			</Widget>
 		</Widget>
+
+		<!-- Tool ammo (lower-right). Vanilla engine ammo HUD is covered by this always-on HUD. -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.82 0.76 0.16 0.08" name="RfsAmmoPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText">
+				<Property key="Caption" value=""/>
+				<Property key="TextAlign" value="Right Bottom"/>
+				<Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/>
+				<Property key="FontHeight" value="32"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="TextShadowColour" value="0 0 0 0.4"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
 	</Widget>
 </MyGUI>
