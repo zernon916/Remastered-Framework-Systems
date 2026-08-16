@@ -1,0 +1,27 @@
+{
+	"lodList" :
+	[
+		{
+			"includes" :
+			[
+				"POSITION",
+				"NORMAL",
+				"UV0"
+			],
+			"maxViewDistance" : 256,
+			"mesh" : "$GAME_DATA/Effects/Mesh/lootcrate/p_mesh_CrystalCube_01.fbx",
+			"subMeshList" :
+			[
+				{
+					"material" : "Dif",
+					"textureList" :
+					[
+						"$GAME_DATA/Textures/white.png",
+						"",
+						""
+					]
+				}
+			]
+		}
+	]
+}

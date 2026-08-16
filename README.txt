@@ -60,6 +60,7 @@ Allies can slowly chain-convert nearby hostiles. See HIJACK_ROADMAP.txt
 Always-on HUD
 -------------
 Top-center game clock and facing compass (N/NE/E/…). Visible without opening /setup.
+(Future Phase 6: HUD minimap — WAITING ON PERMISSION, do not implement copy. See HIJACK_ROADMAP.txt. Not shipped.)
 
 Map (/map)
 ----------

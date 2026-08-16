@@ -86,5 +86,25 @@
 			"TextMaterial" : "InWorldText",
 			"anchor" : "CENTER"
 		}
+	},
+	"RfsRangeLine" :
+	{
+		"effectList" :
+		[
+			{
+				"name" : "$CONTENT_DATA/Effects/Renderable/rfs_range_cube.rend",
+				"type" : "renderable",
+				"offset" :
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 0.0
+				}
+			}
+		],
+		"parameterList" :
+		{
+			"Color" : [ 0.95, 0.35, 0.12, 1.0 ]
+		}
 	}
 }

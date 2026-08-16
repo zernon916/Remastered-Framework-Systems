@@ -94,6 +94,10 @@ Tags: [DONE] shipped/working locally  |  [NEXT] verify/test now  |  [FUTURE] lat
   [FUTURE] Stay in area — Orders checkbox (leash / stay near beacon range)
   [FUTURE] Phase 3.5 Pathfinding & painted chests (see below)
   [FUTURE] Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay)
+  [FUTURE] Phase 6 MiniMap HUD (see below) — not Orders 3.x;
+           PLANNED, NOT IN CURRENT BUILD — do not implement or copy yet
+  [FUTURE] Phase 7 Digital Signs (see below) — not Orders 3.x;
+           later systems stretch after MiniMap / factories
 
 Per-type flavor (author list):
   totebot  — Collect small loot (M3); combat under Defend
@@ -142,7 +146,8 @@ Relation to earlier work:
     client visual prefs on top, not a redo of that identity system
 
 Place after Phase 3.5; before Phase 4 factories. Does not block pathfinding
-or factories.
+or factories. MiniMap HUD is Phase 6 (not this tab); a later toggle on this
+tab is optional.
 
 Phase 4 — Factories (late game / Wonk) — FUTURE
 -----------------------------------------------
@@ -167,6 +172,84 @@ OPEN BUGS / polish (also in PENDING_FIXES.md):
 - Richer raid help / callouts
 - More polish on identity tags / release UI
   (cross-ref Phase 2: numbers above bots + bot naming)
+
+Phase 6 — MiniMap (HUD) [FUTURE]
+--------------------------------
+Status: PLANNED, NOT IN CURRENT BUILD — do not implement or copy yet.
+Not started. Do not build during Phase 3 Orders testing. Own phase after
+the GUI-visuals tab (3.6); does not scramble shipped Phase 3.
+
+Preferred path (after permission from Nutt, author of Steam Workshop
+3780282057 World Map): incorporate that minimap + map into the RFS
+gamemode. When implemented, credit Nutt in Steam / description.json
+AND in-game/docs (do not rewrite Steam text until the feature ships).
+Do not copy any of that mod until permission is confirmed.
+
+Fallback (if permission or code cannot ship): original RFS HUD schematic
+minimap as already documented below — study Workshop 3780282057
+approach only; do not port their scripts, layouts, tile-photo atlas,
+GPS tool, or assets into this pack.
+
+What they did vs what we have (approach summary, no copy until permission):
+  World Map: always-on circular HUD overlay (non-interactive jsonGui) in a
+  screen corner. Terrain cells (~64 m) from client terrain data; a packed
+  aerial-photo atlas for known vanilla tiles; biome-color + road hint when
+  a tile has no photo. Player stays in first-person; the ring scrolls with
+  world position each frame; cell pictures refill only when you cross a
+  cell. Facing arrow from camera heading. Held GPS opens a fullscreen
+  atlas map (pan/zoom, click waypoint, compass pin). Hide the ring when
+  another GUI/chat is up (mods cannot draw under chat). No exploration fog.
+  RFS today: `/map` is a live top-down cutscene camera (WASD pan, scroll
+  zoom, character locked/immovable; lock-part + Player.lua camera backup).
+  `/menu` Map only opens that camera. Always-on HUD (`RfsHud`) is clock +
+  compass text — not a map. No tile atlas, no HUD ring, no map pins for
+  player / beacons / allies.
+
+Roadmap (HUD toggle, markers, keep `/map` — same either path):
+  - HUD minimap, always-on or toggle (`/menu` and/or chat). Corner overlay
+    so the player can walk while it updates. Square/rounded layout widget
+    is enough for v1 (true circular clip is engine-awkward).
+  - Preferred path (permission granted): incorporate Nutt's minimap + map.
+    Credit Nutt in Steam / description.json and in-game/docs when this
+    ships (not before). Fallback: draw our own map — schematic
+    biome/grid from terrain cell data (and/or later original RFS art).
+    Never reuse 3780282057 photos, sheets, or GUI unless permission is
+    confirmed.
+  - Refine existing `/map` as the full map (live camera). Optional: click
+    or `/menu` Map from the HUD to open it. Keep lock/fallback polish.
+    Preferred path may fold in Nutt's map; fallback does not replace
+    `/map` with someone else's atlas screen.
+  - Markers: player (heading), powered beacons, allies. Letters later
+    (H1/T2-style, after Phase 2 naming / Orders badges).
+  - Toggle + size/corner prefs may later share the Phase 3.6 GUI tab.
+  - No GPS item required (chat `/map` already exists). Optional gadget later.
+  - Fog of war: not in the studied mod (missing tiles = flat color). Skip
+    for v1, or add original visited-cell fog later — not a port.
+  - Waypoints / compass pin: later polish, not v1.
+
+Feasibility (from the study, for our own code):
+  - HUD overlay is already proven (`RfsHud` layout, isHud, non-interactive).
+    Prefer Player.lua + layout like the clock, not a Workshop autoTool.
+  - `sm.storage.loadTerrainData` can drive a schematic cell grid without
+    photographs. Live 3D cannot be an inset HUD widget (camera is global).
+  - Hide the HUD map while chat/other GUIs are open (same layering limit).
+  - Update: follow world pos every frame for pan; refill cells on cell
+    change only. MP: keep init on the local player (RfsHud already does).
+  - Ally/beacon pins need positions we already track in hijack/beacon code;
+    do not copy another mod's marker widgets.
+
+Phase 6 does not block factories or Orders.
+
+Phase 7 — Digital Signs [FUTURE]
+--------------------------------
+Not started. Later systems stretch after MiniMap (Phase 6) and factories
+(Phase 4). Do not build during Phase 3 Orders testing. Flesh out in a
+later pass — high-level only, not a full spec.
+
+- Can be connected to logic
+- Can actually show information on them
+
+Does not scramble shipped Phase 3.
 
 Collaboration
 -------------

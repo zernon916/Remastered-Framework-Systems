@@ -11,7 +11,7 @@ Full checklist: `HIJACK_ROADMAP.txt` Phase 3 (`[DONE]` / `[NEXT]` / `[FUTURE]`).
 |-----|------|
 | **[DONE]** | M1 Rest/Defend + Orders GUI; M2 Farm; M3 Collect; M4 Collect Oil; Master/Slave; color presets; `usable:true` E; raid list clear; nametag half-size + type+number world tags; Orders icon+number (NodeIcons / H1 fallback); open/close/reopen + list fill; SHOW RANGE no longer kills menu; Prev/Next hide on 1 page (verify) |
 | **[NEXT]** | Confirm HACK 3.10 (open + list + icons/H1 + close/reopen + Prev/Next); SHOW RANGE ring actually visible; empty-list/reopen watch; nametag numbers / bot naming polish; RAID out of farm range |
-| **[FUTURE]** | Recall bots + Stay in area; Phase 3.5 pathfinding & painted chests; Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay); chat `/botorder` |
+| **[FUTURE]** | Recall bots + Stay in area; Phase 3.5 pathfinding & painted chests; Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay); Phase 6 MiniMap HUD (WAITING ON PERMISSION — do not implement copy; preferred Nutt/3780282057, fallback original RFS); Phase 7 Digital Signs (logic-connectable; show info — flesh out later); chat `/botorder` |
 
 ## Modes by type
 

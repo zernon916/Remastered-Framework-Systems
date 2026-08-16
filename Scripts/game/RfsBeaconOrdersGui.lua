@@ -127,10 +127,35 @@ local function colorLabels()
 end
 
 local function colorHexForLabel( label )
-	label = tostring( label or "" )
+	-- SM DropDown may pass caption, extra whitespace, or a 0/1-based index.
+	if type( label ) == "number" then
+		local idx = math.floor( label )
+		if COLOR_PRESETS[idx] then
+			return COLOR_PRESETS[idx].hex
+		end
+		if idx >= 0 and COLOR_PRESETS[idx + 1] then
+			return COLOR_PRESETS[idx + 1].hex
+		end
+		return nil
+	end
+	local s = tostring( label or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if s == "" then
+		return nil
+	end
+	local lower = string.lower( s )
 	for _, p in ipairs( COLOR_PRESETS ) do
-		if p.label == label then
+		if p.label == s or string.lower( p.label ) == lower then
 			return p.hex
+		end
+	end
+	local idx = tonumber( s )
+	if idx then
+		idx = math.floor( idx )
+		if COLOR_PRESETS[idx] then
+			return COLOR_PRESETS[idx].hex
+		end
+		if idx >= 0 and COLOR_PRESETS[idx + 1] then
+			return COLOR_PRESETS[idx + 1].hex
 		end
 	end
 	return nil
@@ -639,13 +664,15 @@ function RfsBeaconOrdersGui.bind( host, gui )
 
 	local seeds = seedLabels()
 	local colors = colorLabels()
+	-- Suppress before ColorDrop create/select — setSelectedDropDownItem fires
+	-- the callback, and applying Ally Green on every open looked like Color was dead.
+	host.cl.rfsOrdersSuppressDrop = true
 	pcall( function()
 		gui:createDropDown( "ColorDrop", "cl_rfs_ordersColor", colors )
 	end )
 	pcall( function()
 		gui:setSelectedDropDownItem( "ColorDrop", "Ally Green" )
 	end )
-	host.cl.rfsOrdersSuppressDrop = true
 	for i = 0, ROWS - 1 do
 		pcall( function()
 			gui:setVisible( "BotIcon" .. i, false )
@@ -945,6 +972,9 @@ end
 
 function RfsBeaconOrdersGui.onColorDrop( host, value )
 	host.cl = host.cl or {}
+	if host.cl.rfsOrdersSuppressDrop then
+		return
+	end
 	local hex = colorHexForLabel( value )
 	if not hex then
 		return
@@ -954,14 +984,26 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 		return
 	end
 	local selected = host.cl.rfsOrdersSelectedKey
+	local unitKeys = nil
+	if not selected then
+		-- Send the painted list so Game sandbox listHomeAllies cannot no-op.
+		unitKeys = {}
+		for _, row in ipairs( host.cl.rfsOrdersRows or {} ) do
+			if row and row.key then
+				unitKeys[#unitKeys + 1] = tostring( row.key )
+			end
+		end
+	end
 	host.network:sendToServer( "sv_rfs_ordersSetColor", {
 		beaconKey = beaconKey,
 		unitKey = selected,
+		unitKeys = unitKeys,
 		colorHex = hex,
 		colorLabel = tostring( value ),
 	} )
 	local scope = selected and "selected bot" or "all listed allies"
-	sm.gui.chatMessage( "[RFS] Color " .. tostring( value ) .. " → " .. scope )
+	local pretty = colorLabelForHex( hex ) or tostring( value )
+	sm.gui.chatMessage( "[RFS] Color " .. tostring( pretty ) .. " → " .. scope )
 end
 
 function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )

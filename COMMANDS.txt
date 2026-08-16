@@ -92,6 +92,10 @@ Map (/map)
   Toggle open/close with /map again.
   While open: WASD pan, scroll zoom, RMB or LMB recenter on you, E / Esc / Jump close.
   Character is locked (immovable) while the map is open. No craftable map tool.
+  [FUTURE] Phase 6 MiniMap HUD (always-on or toggle; keep /map). Preferred:
+  incorporate Nutt / Workshop 3780282057 if permission granted. Fallback:
+  original RFS schematic. WAITING ON PERMISSION — do not implement copy.
+  See HIJACK_ROADMAP.txt.
 
 Streamer / Discord
 ------------------
@@ -118,7 +122,9 @@ Phase 3 Orders status (not commands — see HIJACK_ROADMAP Phase 3 checklist)
           open/close, SHOW RANGE menu-safe; Prev/Next layout-visible + no-op
   [NEXT]  Confirm 3.13: Orders opened + list N>0 + reopen; Prev/Next no-op OK;
           SHOW RANGE ring visible; nametag numbers / bot naming; RAID farm-range filter
-  [FUTURE] Recall bots + Stay in area; Phase 3.5 pathfinding/chests; Phase 3.6 GUI tab
+  [FUTURE] Recall bots + Stay in area; Phase 3.5 pathfinding/chests; Phase 3.6 GUI tab;
+          Phase 6 MiniMap HUD (WAITING ON PERMISSION — do not implement copy);
+          Phase 7 Digital Signs (logic-connectable; show info — flesh out later)
 
 Hijack polish still open (not commands — see PENDING_FIXES.md §3a–3c + HIJACK_ROADMAP)
 -------------------------------------------------------------------------------------

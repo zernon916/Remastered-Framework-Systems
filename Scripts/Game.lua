@@ -638,6 +638,11 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	if self.cl and self.cl.rfsGenGui and ( sm.game.getCurrentTick() % 40 ) == 0 then
 		RfsGenGui.refresh( self )
 	end
+	pcall( function()
+		if type( RfsRangeViz ) == "table" and RfsRangeViz.tick then
+			RfsRangeViz.tick( self, self.cl and self.cl.rfsRangeWant )
+		end
+	end )
 end
 
 function RecipeFrameworkSurvival.loadCraftingRecipes( self )
@@ -2540,6 +2545,17 @@ function RecipeFrameworkSurvival.cl_rfs_ordersRange( self )
 	end
 end
 
+-- Beacon SHOW RANGE circle. Drawn here (Game has no interactable host) so the
+-- ring cannot weld onto the beacon's battery circuit.
+function RecipeFrameworkSurvival.cl_rfs_rangeViz( self, data )
+	self.cl = self.cl or {}
+	self.cl.rfsRangeWant = self.cl.rfsRangeWant or {}
+	if type( data ) ~= "table" or data.key == nil then
+		return
+	end
+	self.cl.rfsRangeWant[tostring( data.key )] = data
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
 	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onColorDrop then
 		RfsBeaconOrdersGui.onColorDrop( self, value )
@@ -2888,6 +2904,15 @@ function RecipeFrameworkSurvival.sv_rfs_ordersSetColor( self, params, player )
 	if unitKey == "" then
 		unitKey = nil
 	end
+	local unitKeys = nil
+	if type( params.unitKeys ) == "table" then
+		unitKeys = {}
+		for _, k in ipairs( params.unitKeys ) do
+			if k ~= nil and tostring( k ) ~= "" then
+				unitKeys[#unitKeys + 1] = tostring( k )
+			end
+		end
+	end
 	local colorHex = params.colorHex and tostring( params.colorHex ) or nil
 	if not colorHex then
 		self.network:sendToClient( player, "cl_rfs_ordersSetResult", { ok = false, msg = "no color" } )
@@ -2896,7 +2921,7 @@ function RecipeFrameworkSurvival.sv_rfs_ordersSetColor( self, params, player )
 	local allowHost = rfsServerPlayerIsHost( player )
 	local ok, result, count = false, "hijack missing", 0
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.setAllyColorDomain then
-		ok, result, count = RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost, unitKey )
+		ok, result, count = RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost, unitKey, unitKeys )
 	end
 	self.network:sendToClient( player, "cl_rfs_ordersSetResult", {
 		ok = ok and true or false,

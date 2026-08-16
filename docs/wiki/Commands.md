@@ -15,6 +15,10 @@ Full list: pack file `COMMANDS.txt`.
 
 Future (**Phase 3.6**, not shipped): a **GUI** visuals tab may land under `/menu` or host `/gensettings` FEATURES/GUI — nametags, Big Red label, health-bar colors; see [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
 
+Future (**Phase 6 MiniMap**, not shipped): always-on or toggle HUD minimap; `/map` stays. **WAITING ON PERMISSION — do not implement copy.** Preferred: incorporate Nutt / Workshop 3780282057 if granted. Fallback: original RFS schematic (study only). See [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
+
+Future (**Phase 7 Digital Signs**, not shipped): logic-connectable signs that can actually show information. Flesh out later. See [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
+
 ## Host setup
 
 | Command | What it does |
