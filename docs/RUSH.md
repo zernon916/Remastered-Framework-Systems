@@ -81,7 +81,7 @@ Modes `stay` / `recall` / `sentry`. Stay = leash at beacon tier 16/32/48. Recall
 
 Farm / Collect / Oil walk to chests; doorway side-step if LOS blocked. Paint: **yellow = seeds**, **green = produce**, other/unpainted = drop-off. Assigned: same creation as the home beacon, or logic-connected to it. Does not scramble M1–M5 jobs.
 
-### R4 — Phase 3.6 GUI visuals (`/menu`)
+### R4 — Phase 3.6 GUI visuals (`rush/r4` `45a039a`)
 
 Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle (tints RFS tags). **Block health overlay CUT** — no SM custom-game API.
 
@@ -183,7 +183,7 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | R1 Phase 2/5 | `rush/r1` | `1ed3196` | `a21cd2a` |
 | R2 Stay/Recall | `rush/r2` | `355eca4` | `b3b9b27` |
 | R3 pathfinding | `rush/r3` | `b9c0e9f` | (on main) |
-| R4 GUI visuals | `rush/r4` | (this ship) | (on main) |
+| R4 GUI visuals | `rush/r4` | `45a039a` | (on main) |
 | R5 factories | `rush/factories` | `46cf97e` | `1d5a861` |
 | R6 MiniMap | `rush/minimap` | `24a3ad1` | `7a89516` |
 | R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
