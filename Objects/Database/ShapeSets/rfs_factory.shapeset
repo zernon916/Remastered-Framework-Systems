@@ -1,0 +1,30 @@
+{
+	"partList": [
+		{
+			"uuid": "f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b",
+			"name": "obj_rfs_allyfactory",
+			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_switch.rend",
+			"color": "b87333",
+			"box": { "x": 1, "y": 1, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y+X-X-Z+Z",
+			"ratings": {
+				"buoyancy": 2,
+				"density": 2,
+				"durability": 3,
+				"friction": 5
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsFactory",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsFactory.lua"
+			}
+		}
+	]
+}

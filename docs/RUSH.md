@@ -139,23 +139,6 @@ Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab
 
 ---
 
-### R5 — Phase 4 — factories
-
-**Source:** `PHASES.md` **Phase 4**; `HIJACK_ROADMAP.txt` Phase 4.
-
-**What “done” means:**
-
-- Craftable factory interactable (Intelligentia **or** RFS part) that spends resources to `sm.unit.createUnit(uuid, pos, yaw, { playerAlly=true, color=..., tetherPoint=... })`.
-- Capsules stay hostile (vanilla); factory is the ally spawner.
-- Caps on army size.
-- Optional flavor: tapebot assembly line, haybot “barn”, farmbot “garage”.
-
-**Likely files:** new interactable under `Scripts/game/interactables/`, `CraftingRecipes/craftbot.json` and/or Hideout trades, `Scripts/game/RfsBotHijack.lua` (ally create / cap), `Scripts/Game.lua` (dofile), Beacons B&P only if a new shape lives there.
-
-**Frozen extra:** After 3.5 (jobs navigate first). Do not auto-unlock recipes. Hideout currency stays Farmers. Optional Intelligentia restyle later; RFS remains AI host.
-
----
-
 ### R6 — Phase 6 — MiniMap (HUD)
 
 **Source:** `PHASES.md` **Phase 6**; `HIJACK_ROADMAP.txt` Phase 6; `PENDING_FIXES.md` §6; `COMMANDS.txt` Map; wiki [[Known-Issues]] / [[Commands]]; `description.json` (credit **when shipped**).
@@ -217,7 +200,13 @@ Does not scramble shipped Phase 3.
 
 Implemented, waiting for the user to playtest. Bugs keep the item here until fixed. Testing good → **PENDING DONE**.
 
-_(empty — no remaining-phase implementations waiting. NOW Orders GUI is a separate in-flight repair, not this list.)_
+### R5 — Phase 4 — factories (rush/factories)
+
+**Source:** `PHASES.md` **Phase 4**; `HIJACK_ROADMAP.txt` Phase 4.
+
+Isolated implement: RFS Ally Factory part. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to `sm.unit.createUnit(..., { playerAlly=true, color=..., tetherPoint=... })`. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage.
+
+**Frozen extra still applies:** Do not auto-unlock recipes. Hideout currency stays Farmers. RFS remains AI host. No MiniMap / Signs / Orders GUI / cheats / pickup-dupe on this branch.
 
 ---
 

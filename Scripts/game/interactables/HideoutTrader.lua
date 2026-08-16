@@ -49,6 +49,11 @@ local RFS_BEACON_UI = {
 		desc = "48 m computer. E infects permanently. Tethered bots in the field ~8 s also submit.",
 		icon = "1d4793af-cb66-4628-804a-9d7404712643",
 	},
+	["f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b"] = {
+		title = "Ally Factory",
+		desc = "200 Farmers. E spends Metal+Battery to spawn a player ally. U cycles tote/hay/tape/farm. Army cap 16.",
+		icon = "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
+	},
 }
 local function rfsItemPresentOnPeer( itemId )
 	local id = tostring( itemId or "" )

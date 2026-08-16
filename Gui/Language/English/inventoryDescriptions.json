@@ -28,5 +28,11 @@
 		"upperCaseTitle": "AREA LOADER",
 		"keywords": [ "radio", "stream", "cell", "load", "rfs" ],
 		"description": "Keeps this area streamed (one 64 m cell) while powered. Wire a Battery container; optional logic switch. Light Battery drain. Units may still exist — cell load cannot exclude bots."
+	},
+	"f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b": {
+		"title": "Ally Factory",
+		"upperCaseTitle": "ALLY FACTORY",
+		"keywords": [ "factory", "ally", "robot", "rfs", "barn", "garage" ],
+		"description": "Spends Metal + Battery from a wired chest or your inventory to spawn a player ally (capsules stay hostile). E builds; U cycles Tote / Hay barn / Tape assembly / Farm garage. Army cap 16 (2 farmbots). Optional logic switch."
 	}
 }
