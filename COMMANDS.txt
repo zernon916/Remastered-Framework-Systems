@@ -129,6 +129,8 @@ Phase 3 Orders status (not commands — see HIJACK_ROADMAP Phase 3 checklist)
   [DONE]   Phase 6 MiniMap HUD (Nutt World Map 3780282057; /map atlas; HUD fallback)
   [DONE]   Phase 7 Digital Signs (minimum): Craftbot S/L/XL, E to edit text,
           optional logic switch hides the face
+  [DONE]   Inventory LCD S/L/XL: chest item + count; weld or LCD→chest wire;
+          larger sizes scroll extra stacks
 
 Phase 4 Ally Factory — CUT (not a chat command)
 ----------------------------------------------

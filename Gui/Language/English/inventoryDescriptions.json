@@ -46,5 +46,23 @@
 		"upperCaseTitle": "DIGITAL SIGN EXTRA LARGE",
 		"keywords": [ "sign", "text", "logic", "display", "rfs" ],
 		"description": "Extra-large digital sign. Shows custom text. Press E to edit. Optional logic switch hides the text when off."
+	},
+	"3c06e928-5f97-42a9-d4b6-a7f926343d7f": {
+		"title": "Inventory LCD",
+		"upperCaseTitle": "INVENTORY LCD",
+		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
+		"description": "Shows one chest stack: item name and amount. Weld onto or next to a chest, or connect LCD → chest. Optional logic switch hides the face. Scrolls stacks. No battery. Not a computer."
+	},
+	"4d17fa39-60a8-43ba-e5c7-b80a37454e80": {
+		"title": "Inventory LCD Large",
+		"upperCaseTitle": "INVENTORY LCD LARGE",
+		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
+		"description": "Shows a chest inventory list (item + count). Weld to a chest or connect LCD → chest. Scrolls when there are more stacks than lines. Optional logic switch hides the face."
+	},
+	"5e280b4a-71b9-44cb-f6d8-c91b48565f91": {
+		"title": "Inventory LCD Extra Large",
+		"upperCaseTitle": "INVENTORY LCD EXTRA LARGE",
+		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
+		"description": "Wide chest inventory list (item + count). Weld to a chest or connect LCD → chest. Scrolls extra stacks. Optional logic switch hides the face."
 	}
 }

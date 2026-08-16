@@ -176,6 +176,10 @@ Shipped on rush/digital-signs (documented minimum; spec was never fleshed out).
 - Optional logic switch: no parent = always show; wired + off = hide text
 - Logic output follows display-on (can drive other logic)
 - No battery. Does not scramble shipped Phase 3.
+- Inventory LCD S / L / XL (rush/signs-lcd): chest item + count. Bind: weld/adjacent
+  on the same creation, or Connect LCD → chest (chest's one logic slot). Small shows
+  one stack (name / xAMT) and cycles; L/XL list more lines and scroll. LCD stays
+  logic-inactive so a wired chest does not start loot vacuum.
 
 Gaps (not in the high-level spec — not built):
 - Separate ON vs OFF messages

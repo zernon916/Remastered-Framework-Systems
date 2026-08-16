@@ -65,6 +65,11 @@ Craftbot: Digital Sign / Large / Extra Large (1 Metal placeholder each).
 Press E to type text. Optional logic switch: no wire = always show; switch off = hide.
 No battery. Vanilla Survival textsigns still exist and are not logic-connectable.
 
+Inventory LCD (craftbot, 1 Metal each): S / L / XL. Shows a chest's item names and
+counts. Weld the LCD onto or next to the chest, or connect LCD → chest with the
+Connect tool. Small shows one stack (name + amount) and cycles; L/XL list more
+rows and scroll. Optional logic switch hides the face. Not a computer.
+
 Always-on HUD
 -------------
 Top-center game clock and facing compass (N/NE/E/…). Lower-right weapon ammo count.

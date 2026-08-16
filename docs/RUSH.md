@@ -93,6 +93,8 @@ Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enabl
 
 Craftbot Digital Sign S/L/XL. E edits text. Optional logic switch hides the face. No battery.
 
+Inventory LCD S/L/XL on `rush/signs-lcd`: chest item + count. Weld/adjacent or LCD→chest wire. Small cycles one stack; L/XL scroll. Factory UUID not reused.
+
 ### Pickup-dupe harden (`rush/pickup-dupe` `216143c`, merge `9c7b9c6`)
 
 Carry/use: LMB while carrying a large pickup cannot clone the hotbar item. Keep with MiniMap `Player.lua` merge.
@@ -193,6 +195,7 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | R5 factories | `rush/cut-factories` | CUT (not worth the lag) | do not merge unless asked |
 | R6 MiniMap | `rush/minimap` | `24a3ad1` | `7a89516` |
 | R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
+| Inventory LCD | `rush/signs-lcd` | (this branch) | not merged |
 | Pickup-dupe | `rush/pickup-dupe` | `216143c` | `9c7b9c6` |
 | R8 Phase E | — | — | gated |
 
