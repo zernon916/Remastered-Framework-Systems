@@ -47,6 +47,18 @@ local UUID_TOTEBOT_GREEN = sm.uuid.new( "8984bdbf-521e-4eed-b3c4-2b5e287eb879" )
 local UUID_TOTEBOT_LEAF = sm.uuid.new( "55fd93fa-09ed-4a26-bfa1-4601694d5127" )
 local UUID_TOTEBOT_RED = sm.uuid.new( "9360d346-3ff2-4925-a068-660cf5dd5267" )
 local UUID_TOTEBOT_YELLOW = sm.uuid.new( "2dea48a4-6a79-11ed-a1eb-0242ac120002" )
+-- Survival Seedbot (farmer tote, crop crate on the head tray).
+-- ONE character UUID for every crate crop — seedType is unit data, not a UUID.
+-- robots.json + survival_units.lua unit_seedbot. Overworld spawn (survival_spawns.lua):
+-- tomato, potato, carrot, redbeet, banana, blueberry, orange, broccoli, pineapple.
+-- Cotton and pigmentflower (paint) are explicitly not spawned as seedbots — no extra UUIDs.
+-- Chili has crate FX/loot tables but no separate character UUID.
+local UUID_SEEDBOT_STR = "4fbefe2d-83c7-4859-982e-1720f04079a3"
+local UUID_SEEDBOT = sm.uuid.new( UUID_SEEDBOT_STR )
+-- Hardcoded strings first: beacon sandbox has no survival_units, so unit_seedbot is nil.
+local SEEDBOT_UUID_STRS = {
+	UUID_SEEDBOT_STR, -- tomato / potato / carrot / redbeet / banana / blueberry / orange / broccoli / pineapple
+}
 -- Phase 2 lite: infected/ally slowly convert nearby hostiles (not farm orders).
 local CHAIN_RANGE = 10
 local CHAIN_NEED_TICKS = 40 * 15 -- ~15 s
@@ -191,6 +203,24 @@ local function applyAllyVisualColor( char, info )
 	applyColor( char, allyVisualColor( info ) )
 end
 
+-- Stick the Orders tint on vanilla saved.color so InitRobotParams / unit AI
+-- cannot snap the body back to default green every think.
+local function persistAllyTintOnUnit( self, hex )
+	hex = normalizeColorHex( hex )
+	if not self or not hex then
+		return
+	end
+	self.saved = self.saved or {}
+	self.saved.rfsAllyColor = hex
+	local col = colorFromHex( hex )
+	if col then
+		self.saved.color = col
+		if self.unit and self.unit.character and sm.exists( self.unit.character ) then
+			applyColor( self.unit.character, col )
+		end
+	end
+end
+
 local function sameWorld( a, b )
 	local ok = true
 	pcall( function()
@@ -306,12 +336,22 @@ local function matchesAnyUuid( typeStr, list )
 end
 
 -- Survival character UUIDs (getCharacterType) — H Hay, T Tote, W Water, F Farm,
--- P Tape/paint, B Bubble (green tapebot).
+-- P Tape/paint, B Bubble (green tapebot), S Seed (crate-tray farmer).
 local function shortTypeName( typeStr )
 	typeStr = tostring( typeStr or "robot" )
 	local lower = string.lower( typeStr )
 	local farm = { unit_farmbot, UUID_FARMBOT }
 	local hay = { unit_haybot, UUID_HAYBOT }
+	-- Hardcoded UUID strings first: beacon sandbox has no survival_units, so unit_seedbot is nil
+	-- and { nil, UUID } is a Lua 5.1 hole (#list == 0) that skipped Seed entirely.
+	local seed = { UUID_SEEDBOT_STR, UUID_SEEDBOT }
+	for i = 1, #SEEDBOT_UUID_STRS do
+		seed[#seed + 1] = SEEDBOT_UUID_STRS[i]
+	end
+	local seedGlobal = rawget( _G, "unit_seedbot" )
+	if seedGlobal then
+		seed[#seed + 1] = seedGlobal
+	end
 	local bubble = {
 		unit_tapebot_green_1, unit_tapebot_green_2, unit_tapebot_green_3,
 		UUID_TAPEBOT_GREEN_1, UUID_TAPEBOT_GREEN_2, UUID_TAPEBOT_GREEN_3,
@@ -351,6 +391,11 @@ local function shortTypeName( typeStr )
 	end
 	if matchesAnyUuid( typeStr, hay ) or string.find( lower, "haybot", 1, true ) then
 		return "Hay"
+	end
+	if matchesAnyUuid( typeStr, seed ) or string.find( lower, "seedbot", 1, true )
+		or string.find( lower, UUID_SEEDBOT_STR, 1, true )
+		or string.find( lower, "seed", 1, true ) then
+		return "Seed"
 	end
 	if matchesAnyUuid( typeStr, bubble ) or string.find( lower, "tapebot_green", 1, true )
 		or ( string.find( lower, "tape", 1, true ) and string.find( lower, "green", 1, true ) ) then
@@ -2775,6 +2820,85 @@ function RfsBotHijack.homeBeaconKey( info )
 	return nil
 end
 
+-- Walk this ally to the device that converted it (hackBeaconKey), not the Orders master home.
+function RfsBotHijack.driveReturnToHackBeacon( self )
+	if not self or not self.unit or not sm.exists( self.unit ) then
+		return false
+	end
+	local key = unitKey( self.unit )
+	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
+	local hackKey = convertingBeaconKey( info )
+	if not hackKey and self.saved then
+		hackKey = self.saved.rfsHackBeacon or self.saved.playerAllyBeacon
+	end
+	if not hackKey and info then
+		hackKey = RfsBotHijack.homeBeaconKey( info )
+	end
+	if not hackKey then
+		return false
+	end
+	hackKey = tostring( hackKey )
+	local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[hackKey]
+	local dest = rec and rec.pos
+	if not dest then
+		return false
+	end
+	pcall( function()
+		RfsBotHijack.standDown( self )
+	end )
+	self.target = nil
+	self.lastTargetPosition = nil
+	self.eventTarget = nil
+	local arrived = false
+	pcall( function()
+		local char = self.unit.character
+		if char and sm.exists( char ) then
+			arrived = ( char.worldPosition - dest ):length2() <= 9
+		end
+	end )
+	local function switchState( nextState )
+		if not nextState or self.currentState == nextState then
+			return
+		end
+		pcall( function()
+			if self.currentState and self.currentState.stop then
+				self.currentState:stop()
+			end
+			self.currentState = nextState
+			if nextState.start then
+				nextState:start()
+			end
+		end )
+	end
+	if arrived then
+		switchState( self.idleState )
+		return true
+	end
+	local pathing = self.pathingState or self.minerbotPathingState
+	if pathing and pathing.sv_setDestination then
+		pcall( function()
+			pathing:sv_setDestination( dest )
+			if pathing.sv_setRaider then
+				pathing:sv_setRaider( false )
+			end
+		end )
+		switchState( pathing )
+		return true
+	end
+	if self.roamState then
+		pcall( function()
+			self.roamState.tetherPosition = dest
+			self.roamState.maxTetherDistance = 8
+			self.roamState.maxRadius = 8
+			self.roamState.minMoveDistance = 1
+			self.roamState.roamCenterOffset = 0
+		end )
+		switchState( self.roamState )
+		return true
+	end
+	return false
+end
+
 -- Same ally set as Orders GUI / listHomeAllies (Master domain + orphan migrate + in-range).
 function RfsBotHijack.homeAllyCount( beaconKey )
 	if not beaconKey then
@@ -2870,6 +2994,7 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 			owner = info.owner,
 			allyMode = info.mode ~= nil and tostring( info.mode ) or nil,
 			allyColor = info.allyColor ~= nil and tostring( info.allyColor ) or nil,
+			hackBeaconKey = info.hackBeaconKey ~= nil and tostring( info.hackBeaconKey ) or nil,
 		}
 		matched[key] = true
 	end
@@ -2971,8 +3096,8 @@ function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
 	if type( RfsBotOrders ) == "table" and type( RfsBotOrders.setOrder ) == "function" then
 		return RfsBotOrders.setOrder( unit, saved )
 	end
-	-- Fallback without RfsBotOrders: allow Rest/Defend/Collect/Farm/Oil strings.
-	if mode ~= "defend" and mode ~= "rest" and mode ~= "collect" and mode ~= "farm" and mode ~= "oil" then
+	-- Fallback without RfsBotOrders: allow Rest/Defend/Collect/Farm/Oil/Return strings.
+	if mode ~= "defend" and mode ~= "rest" and mode ~= "collect" and mode ~= "farm" and mode ~= "oil" and mode ~= "return" then
 		mode = "rest"
 	end
 	saved.mode = mode
@@ -3027,6 +3152,7 @@ function RfsBotHijack.setAllyColor( unitOrKey, colorHex, player, allowHost )
 			mode = info.mode,
 			beaconKey = info.beaconKey,
 			workBeaconKey = info.workBeaconKey,
+			hackBeaconKey = info.hackBeaconKey,
 			allyColor = hex,
 			playerAlly = true,
 		} )
@@ -3217,7 +3343,9 @@ function RfsBotHijack.ensureHooks()
 			} )
 			self.saved.friendly = false
 			pcall( function()
-				applyAllyVisualColor( self.unit.character, RfsBotHijack.allies[unitKey( self.unit )] )
+				local rec = RfsBotHijack.allies[unitKey( self.unit )]
+				applyAllyVisualColor( self.unit.character, rec )
+				persistAllyTintOnUnit( self, rec and rec.allyColor or self.saved.rfsAllyColor )
 			end )
 			pcall( function()
 				if type( RfsBotOrders ) == "table" and RfsBotOrders.ensureDefaultOrder then
@@ -3337,11 +3465,22 @@ function RfsBotHijack.ensureHooks()
 			RfsBotHijack.standDown( self )
 			if self.unit and self.unit.character then
 				applyAllyVisualColor( self.unit.character, info or { allyColor = self.saved.rfsAllyColor } )
+				persistAllyTintOnUnit( self, ( info and info.allyColor ) or self.saved.rfsAllyColor )
 			end
 			self.eventTarget = nil
-			-- Rest/Defend job clamp (RfsBotOrders). Fallback = legacy full aggro.
+			-- Rest/Defend/Return job clamp (RfsBotOrders). Fallback = legacy full aggro.
 			local handled = false
-			if type( RfsBotOrders ) == "table" and type( RfsBotOrders.applySelect ) == "function" then
+			local orderMode = nil
+			if self.saved and type( self.saved.rfsOrder ) == "table" then
+				orderMode = string.lower( tostring( self.saved.rfsOrder.mode or "" ) )
+			elseif info and type( info.rfsOrder ) == "table" then
+				orderMode = string.lower( tostring( info.rfsOrder.mode or "" ) )
+			elseif info and type( info.order ) == "table" then
+				orderMode = string.lower( tostring( info.order.mode or "" ) )
+			end
+			if orderMode == "return" then
+				handled = RfsBotHijack.driveReturnToHackBeacon( self ) and true or false
+			elseif type( RfsBotOrders ) == "table" and type( RfsBotOrders.applySelect ) == "function" then
 				local okApply, did = pcall( RfsBotOrders.applySelect, self )
 				handled = okApply and did and true or false
 			end
@@ -3538,12 +3677,7 @@ function RfsBotHijack.ensureUnitHooks()
 									rec.allyColor = hex
 								end
 							end
-							if self.unit.character and sm.exists( self.unit.character ) then
-								applyAllyVisualColor( self.unit.character, {
-									allyColor = hex,
-									mode = self.saved.playerAllyMode,
-								} )
-							end
+							persistAllyTintOnUnit( self, hex )
 						end
 					end
 					if type( params.rfsOrder ) == "table" then
@@ -3623,7 +3757,24 @@ function RfsBotHijack.ensureUnitHooks()
 							RfsBotHijack.standDown( self )
 						end
 					end
-					return orig( self, dt )
+					local result = orig( self, dt )
+					-- Re-apply after vanilla unit AI so saved.color / setColor stick.
+					if self.unit and sm.exists( self.unit ) and RfsBotHijack.isAlly( self.unit ) then
+						local info = RfsBotHijack.allies[unitKey( self.unit )]
+						local hex = normalizeColorHex( ( info and info.allyColor ) or ( self.saved and self.saved.rfsAllyColor ) )
+						if hex then
+							if info then
+								info.allyColor = hex
+							end
+							persistAllyTintOnUnit( self, hex )
+						end
+						local order = self.saved and self.saved.rfsOrder
+						local mode = order and string.lower( tostring( order.mode or "" ) ) or ""
+						if mode == "return" then
+							RfsBotHijack.driveReturnToHackBeacon( self )
+						end
+					end
+					return result
 				end
 				cls._rfsUnitHooked = true
 			end

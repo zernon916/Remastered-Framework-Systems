@@ -28,7 +28,7 @@
 			</Widget>
 
 			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.082 0.88 0.032" name="Hint">
-				<Property key="Caption" value="Click icon/number to select. Scroll moves the 8-row window through allies (wheel / bar / ▲▼). Color applies to selected, or all if none."/>
+				<Property key="Caption" value="Click number to select. Scroll moves the 8-row window through allies (wheel / bar / ▲▼). Color applies to selected, or all if none. Return walks a bot to its hack device."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>

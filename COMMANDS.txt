@@ -45,11 +45,13 @@ Dev / movement / survival
                        Needs RFS Beacons Blocks & Parts enabled in world Mods.
                        Wire a Battery container. Optional switch.
                        Craftbot: Hack 1 Metal. Hideout: 20 / 50 / 120 Farmers.
-                       E on powered beacon = Orders (Rest/Defend/Farm/Collect/Oil).
+                       E on powered beacon = Orders (Rest/Defend/Farm/Collect/Oil/Return).
                        Tinker = mass hijack. Waterbot (blue tote) = Collect Oil.
-                       Orders: SET MASTER links nearby powered hack devices as Slaves
-                       (shared ally/order list). SHOW RANGE / HIDE RANGE toggles the
-                       ground range ring. CLOSE closes the GUI.
+                       Seed bots nametag as Seed N (not Bot N). Click icon/number to select
+                       for Color (selected, or all if none). Return walks each bot to its
+                       own hack/convert device. SHOW RANGE draws a hover ring (Game FX,
+                       not on the battery net). SET MASTER links nearby powered hack
+                       devices as Slaves (shared ally/order list). CLOSE closes the GUI.
   /unhijack [range]    Voluntary release nearest owned ally (default 16 m).
                        Host may release any ally. Does NOT raid-ban the bot.
                        /gensettings FEATURES: Underground miner/cable (default ON).

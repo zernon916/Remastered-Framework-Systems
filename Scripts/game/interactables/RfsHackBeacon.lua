@@ -838,20 +838,19 @@ local function vizApplyLine( fx, from, to, color, world )
 end
 
 local function vizCreateLineFx( world )
-	-- No host argument: world FX only. If the engine still attaches a host, drop it.
+	-- No host argument: world FX only. Game.lua has no shape, so this cannot
+	-- weld onto a beacon electrical net. Do not destroy just because hasHost()
+	-- is sticky on some clients — that left SHOW RANGE with zero segments.
 	local ok, fx = pcall( sm.effect.createEffect, RING_FX )
 	if not ( ok and fx ) then
-		return nil
+		ok, fx = pcall( sm.effect.createEffect, "ShapeRenderable" )
+		if ok and fx then
+			pcall( function()
+				fx:setParameter( "uuid", sm.uuid.new( "073f92af-f37e-4aff-96b3-d66284d5081c" ) )
+			end )
+		end
 	end
-	local hosted = false
-	pcall( function()
-		hosted = fx:hasHost() and true or false
-	end )
-	if hosted then
-		pcall( function()
-			fx:stop()
-			fx:destroy()
-		end )
+	if not ( ok and fx ) then
 		return nil
 	end
 	pcall( function()
@@ -1661,6 +1660,21 @@ function RfsHackBeacon.sv_setMaster( self, params, player )
 			} )
 		end )
 	end
+end
+
+-- Persist Independent after CLEAR MASTER. Does not re-split allies (later-bug).
+function RfsHackBeacon.sv_clearMaster( self, params, player )
+	if not self.sv or not self.sv.key then
+		return
+	end
+	self.sv.role = "independent"
+	self.sv.masterKey = nil
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.clearMaster then
+		pcall( function()
+			RfsBotHijack.clearMaster( self.sv.key )
+		end )
+	end
+	saveBeaconRole( self )
 end
 
 function RfsHackBeacon.client_onInteract( self, character, state )

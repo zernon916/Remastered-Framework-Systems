@@ -3,6 +3,9 @@
 
 dofile( "$CONTENT_DATA/Scripts/game/RfsBotHijack.lua" )
 pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsBotOrders.lua" )
+end )
+pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsFeatures.lua" )
 end )
 

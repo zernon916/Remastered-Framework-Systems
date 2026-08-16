@@ -2737,7 +2737,7 @@ for _rfsOrdersDropI = 0, 7 do
 			RfsBeaconOrdersGui.onSeedDrop( self, idx, value )
 		end
 	end
-	RecipeFrameworkSurvival["cl_rfs_ordersBot" .. idx] = function( self )
+	RecipeFrameworkSurvival["cl_rfs_ordersBot" .. idx] = function( self, widgetName )
 		if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onBotClick then
 			RfsBeaconOrdersGui.onBotClick( self, idx )
 		end
@@ -2806,14 +2806,46 @@ function RecipeFrameworkSurvival.sv_rfs_ordersRange( self, params, player )
 	if type( RfsBotHijack ) == "table" and RfsBotHijack.setRangeVisible then
 		RfsBotHijack.setRangeVisible( beaconKey, show )
 	end
-	-- Ask the live beacon to republish clientData.showRange immediately.
+	-- Draw from Game (no interactable host). Never depend on beacon sandbox g_rfsGame.
+	local pos = nil
+	if type( params.pos ) == "table" and params.pos.x ~= nil then
+		pos = {
+			x = tonumber( params.pos.x ) or 0,
+			y = tonumber( params.pos.y ) or 0,
+			z = tonumber( params.pos.z ) or 0,
+		}
+	elseif type( RfsBotHijack ) == "table" and RfsBotHijack.beacons then
+		local rec = RfsBotHijack.beacons[beaconKey]
+		if rec and rec.pos then
+			pcall( function()
+				pos = {
+					x = rec.pos.x,
+					y = rec.pos.y,
+					z = rec.pos.z,
+				}
+			end )
+		end
+	end
+	local range = tonumber( params.range )
+	if not range and type( RfsBotHijack ) == "table" and RfsBotHijack.beacons then
+		local rec = RfsBotHijack.beacons[beaconKey]
+		range = rec and tonumber( rec.range ) or nil
+	end
+	pcall( function()
+		self.network:sendToClients( "cl_rfs_rangeViz", {
+			key = beaconKey,
+			show = show,
+			range = range or 16,
+			pos = pos,
+		} )
+	end )
+	-- Persist showRange flag only. Beacon must not spawn FX (battery net weld).
 	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.beaconScripts ) == "table" then
 		local beacon = RfsBotHijack.beaconScripts[beaconKey]
 		if beacon and type( beacon.sv_setShowRange ) == "function" then
 			pcall( function()
 				beacon:sv_setShowRange( { show = show }, player )
 			end )
-			return
 		end
 	end
 end
@@ -2848,22 +2880,39 @@ function RecipeFrameworkSurvival.sv_rfs_ordersClearMaster( self, params, player 
 		return
 	end
 	local ok, err = RfsBotHijack.clearMaster( beaconKey )
+	-- Persist Independent on the live beacon (Set Master already saves via claim + pendingRole).
+	-- Do not re-query effectiveBeaconRole — that can snap the GUI back to Master/Slave
+	-- before storage catches up. Do not migrate/re-split allies (later-bug).
+	if ok and type( RfsBotHijack.beaconScripts ) == "table" then
+		local beacon = RfsBotHijack.beaconScripts[beaconKey]
+		if beacon then
+			pcall( function()
+				if type( beacon.sv_clearMaster ) == "function" then
+					beacon:sv_clearMaster( { beaconKey = beaconKey }, player )
+				else
+					beacon.sv = beacon.sv or {}
+					beacon.sv.role = "independent"
+					beacon.sv.masterKey = nil
+					if beacon.storage then
+						beacon.storage:save( {
+							role = "independent",
+							masterKey = nil,
+						} )
+					end
+				end
+			end )
+		end
+	end
 	self.network:sendToClient( player, "cl_rfs_ordersSetResult", {
 		ok = ok and true or false,
 		msg = ( not ok ) and tostring( err or "clear failed" ) or nil,
 		clearedMaster = ok and true or false,
 	} )
 	if ok then
-		local role, masterKey = "independent", nil
-		pcall( function()
-			if RfsBotHijack.effectiveBeaconRole then
-				role, masterKey = RfsBotHijack.effectiveBeaconRole( beaconKey )
-			end
-		end )
 		self.network:sendToClient( player, "cl_rfs_ordersRole", {
 			beaconKey = beaconKey,
-			role = role,
-			masterKey = masterKey,
+			role = "independent",
+			masterKey = nil,
 		} )
 	end
 end

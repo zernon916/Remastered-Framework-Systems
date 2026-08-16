@@ -76,13 +76,15 @@ Tags: [DONE] shipped/working locally  |  [NEXT] verify/test now  |  [FUTURE] lat
          (Survival NodeIcons / RFS Gui/Icons; letter H1/T2 fallback if setImage fails)
   [DONE] Orders open / close / reopen working again (HACK 3.5+ path; 3.9 list fill)
   [DONE] SHOW RANGE no longer kills / closes the menu (caption toggles only)
-         Full ground range-ring draw still [NEXT] — see below
+  [DONE] SHOW RANGE ground ring (Game-hosted RfsRangeLine, ~1.5 up + 4 spokes;
+         never createEffect from the beacon interactable — battery net weld)
+  [DONE] Orders list click Select (icon + number); Color selected or all; tint sticks
+  [DONE] Seedbot nametag Seed N (character UUID in type map)
+  [DONE] Return order — walk to converting hack device (hackBeaconKey)
   [DONE] Prev / Next hide on 1-page list (landed; verify under [NEXT] with 3.10)
 
-=== [NEXT] — verify / testing (HACK 3.10) ===
-  [NEXT] Confirm HACK 3.10: open + list fill + icons/H1 fallback + close/reopen +
-         Prev/Next safe on 1 page and multi-page
-  [NEXT] SHOW RANGE ground ring actually visible (parked polish — menu-safe already)
+=== [NEXT] — verify / testing (HACK 3.5f) ===
+  [NEXT] Confirm HACK 3.5f: Select + Color stick + SHOW RANGE ring + Seed names + Return
   [NEXT] Watch empty-list / reopen regressions during test
   [NEXT] Nametag numbers (issue #2 style) / bot naming UI — still polish
          (cross-ref Phase 2 full OPEN)
@@ -90,7 +92,6 @@ Tags: [DONE] shipped/working locally  |  [NEXT] verify/test now  |  [FUTURE] lat
 
 === [FUTURE] — do not build during 3.10 test ===
   [FUTURE] chat /botorder
-  [FUTURE] Recall bots — chat and/or Orders button → allies return to beacon
   [FUTURE] Stay in area — Orders checkbox (leash / stay near beacon range)
   [FUTURE] Phase 3.5 Pathfinding & painted chests (see below)
   [FUTURE] Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay)

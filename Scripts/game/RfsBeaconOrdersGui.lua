@@ -3,7 +3,8 @@
 -- Opened from powered Hack/Control/Infection beacons when home allies exist.
 -- Hay: Rest|Defend|Farm + seed picker. Tote: Rest|Defend|Collect.
 -- Waterbot (Totebot Blue): Rest|Defend|Collect Oil. Others: Rest|Defend.
--- Color: click bot name to select; Color drop applies to selected, or all listed if none.
+-- Color: click number (BotName) to select; Color drop applies to selected, or all listed if none.
+-- Return: Orders dropdown; selected bot, or all listed if none, walk to their hack device.
 
 RfsBeaconOrdersGui = RfsBeaconOrdersGui or {}
 
@@ -16,13 +17,13 @@ local ROWS = 8
 local SCROLL_STEP = 1 -- one ally row per wheel/button tick
 -- ~0.5s settle after Close before createGui (40Hz ≈ 20 ticks).
 local REOPEN_SETTLE_TICKS = 20
-local MODE_ITEMS_DEFAULT = { "Rest", "Defend" }
-local MODE_ITEMS_HAY = { "Rest", "Defend", "Farm" }
-local MODE_ITEMS_TOTE = { "Rest", "Defend", "Collect" }
-local MODE_ITEMS_WATER = { "Rest", "Defend", "Collect Oil" }
--- Stable superset for all ModeDrop slots. Never recreateDropDown while scrolling —
--- mid-refresh createDropDown / setVisible on dropdowns was wiping the painted list.
-local MODE_ITEMS_ALL = { "Rest", "Defend", "Farm", "Collect", "Collect Oil" }
+local MODE_ITEMS_DEFAULT = { "Rest", "Defend", "Return" }
+local MODE_ITEMS_HAY = { "Rest", "Defend", "Return", "Farm" }
+local MODE_ITEMS_TOTE = { "Rest", "Defend", "Return", "Collect" }
+local MODE_ITEMS_WATER = { "Rest", "Defend", "Return", "Collect Oil" }
+-- Stable superset for all ModeDrop slots. Return sits with Rest/Defend (always enabled).
+-- Never recreateDropDown while scrolling — that wiped the painted list in 3.5d.
+local MODE_ITEMS_ALL = { "Rest", "Defend", "Return", "Farm", "Collect", "Collect Oil" }
 
 -- Full-body presets (RRGGBBAA). Ally Green / Infect Green match RfsBotHijack defaults.
 local COLOR_PRESETS = {
@@ -38,6 +39,13 @@ local COLOR_PRESETS = {
 }
 
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
+-- Survival Seedbot: one character UUID for every crate crop (seedType is unit data).
+-- tomato/potato/carrot/redbeet/banana/blueberry/orange/broccoli/pineapple.
+-- Cotton + pigmentflower (paint) have no seedbot character — do not invent UUIDs.
+local UUID_SEEDBOT_STRS = {
+	"4fbefe2d-83c7-4859-982e-1720f04079a3",
+}
+local UUID_SEEDBOT = UUID_SEEDBOT_STRS[1]
 -- HACK 3.5f: icon + number on existing rows (additive paint only).
 -- Prefer RFS copies of Survival NodeIcons. Avoid icon_farmraid_compass_bot.png —
 -- that sprite itself looks like the red-triangle error placeholder.
@@ -188,6 +196,9 @@ local function modeLabel( mode )
 	if mode == "oil" then
 		return "Collect Oil"
 	end
+	if mode == "return" then
+		return "Return"
+	end
 	return "Rest"
 end
 
@@ -204,6 +215,9 @@ local function modeValue( label )
 	end
 	if label == "oil" or label == "collect oil" or label == "collectoil" then
 		return "oil"
+	end
+	if label == "return" or label == "recall" or label == "home" then
+		return "return"
 	end
 	return "rest"
 end
@@ -233,7 +247,21 @@ local function botKind( typeStr, displayName )
 		or string.find( s, "oil", 1, true ) then
 		return "water"
 	end
-	if string.find( s, "farm", 1, true ) then
+	-- Seed UUID before generic "farm" — crate-tray farmer is Seed, not Farm.
+	-- unit_seedbot is often nil in this sandbox; hardcoded UUID strings still match.
+	local seedG = rawget( _G, "unit_seedbot" )
+	local isSeed = ( seedG and sameUuid( typeRaw, seedG ) ) or false
+	for i = 1, #UUID_SEEDBOT_STRS do
+		if sameUuid( typeRaw, UUID_SEEDBOT_STRS[i] ) then
+			isSeed = true
+			break
+		end
+	end
+	if isSeed or string.find( s, "seedbot", 1, true ) or string.find( s, "seed", 1, true ) then
+		return "seed"
+	end
+	if string.find( s, "farmbot", 1, true )
+		or ( string.find( s, "farm", 1, true ) and not string.find( s, "farmer", 1, true ) ) then
 		return "farmbot"
 	end
 	if string.find( s, "hay", 1, true ) then
@@ -259,11 +287,25 @@ local function typeLetter( kind )
 	if kind == "hay" then return "H" end
 	if kind == "tote" then return "T" end
 	if kind == "water" then return "W" end
+	if kind == "seed" then return "S" end
 	if kind == "farmbot" then return "F" end
 	if kind == "tape" then return "Tp" end
 	if kind == "miner" then return "M" end
 	if kind == "cable" then return "C" end
 	return "B"
+end
+
+local function kindDisplayName( kind )
+	kind = tostring( kind or "other" )
+	if kind == "hay" then return "Hay" end
+	if kind == "tote" then return "Tote" end
+	if kind == "water" then return "Water" end
+	if kind == "seed" then return "Seed" end
+	if kind == "farmbot" then return "Farm" end
+	if kind == "tape" then return "Tape" end
+	if kind == "miner" then return "Miner" end
+	if kind == "cable" then return "Cable" end
+	return "Bot"
 end
 
 local function rowDisplayIndex( row )
@@ -277,6 +319,72 @@ local function rowDisplayIndex( row )
 	local name = tostring( row.name or "" )
 	local num = string.match( name, "(%d+)$" )
 	return tonumber( num )
+end
+
+local function selectedSet( host )
+	host.cl = host.cl or {}
+	if type( host.cl.rfsOrdersSelected ) ~= "table" then
+		host.cl.rfsOrdersSelected = {}
+	end
+	return host.cl.rfsOrdersSelected
+end
+
+local function isRowSelected( host, key )
+	if not key then
+		return false
+	end
+	local set = host.cl and host.cl.rfsOrdersSelected
+	return type( set ) == "table" and set[tostring( key )] == true
+end
+
+local function listedKeys( host )
+	local keys = {}
+	for _, row in ipairs( host.cl and host.cl.rfsOrdersRows or {} ) do
+		if row and row.key then
+			keys[#keys + 1] = tostring( row.key )
+		end
+	end
+	return keys
+end
+
+local function pruneSelection( host )
+	local set = selectedSet( host )
+	local live = {}
+	for _, row in ipairs( host.cl.rfsOrdersRows or {} ) do
+		if row and row.key then
+			live[tostring( row.key )] = true
+		end
+	end
+	for k, _ in pairs( set ) do
+		if not live[tostring( k )] then
+			set[k] = nil
+		end
+	end
+end
+
+-- Selected keys, or all listed allies if none selected (Color / orders scope).
+local function orderTargetKeys( host )
+	local set = selectedSet( host )
+	local keys = {}
+	for k, v in pairs( set ) do
+		if v then
+			keys[#keys + 1] = tostring( k )
+		end
+	end
+	if #keys > 0 then
+		return keys
+	end
+	return listedKeys( host )
+end
+
+local function rowByKey( host, key )
+	key = tostring( key or "" )
+	for _, row in ipairs( host.cl and host.cl.rfsOrdersRows or {} ) do
+		if row and tostring( row.key ) == key then
+			return row
+		end
+	end
+	return nil
 end
 
 -- Prefer RFS NodeIcon copies, then Survival paths / short names.
@@ -301,6 +409,13 @@ local function iconPathsForKind( kind )
 			"$CONTENT_DATA/Gui/Icons/rfs_icon_waterbot.png",
 			"$SURVIVAL_DATA/Gui/NodeIcons/TotebotBlueIcon.png",
 			"TotebotBlueIcon.png",
+		}
+	end
+	if kind == "seed" then
+		return {
+			"$CONTENT_DATA/Gui/Icons/rfs_icon_totebot.png",
+			"$SURVIVAL_DATA/Gui/NodeIcons/TotebotYellowIcon.png",
+			"TotebotYellowIcon.png",
 		}
 	end
 	if kind == "farmbot" then
@@ -340,14 +455,26 @@ local function setBotIcon( gui, widget, kind )
 	return false
 end
 
--- Icon OK → number only (icon shows type). Else letter+number (H1, T2…).
+-- Yellow field: "Seed 1" / "Tote 1". Keep type name even when the icon paints.
 local function rowListLabel( row, selected, iconOk )
-	local n = rowDisplayIndex( row ) or "?"
 	local mark = selected and "● " or ""
-	if iconOk then
-		return mark .. tostring( n )
+	local n = rowDisplayIndex( row )
+	local kindLabel = kindDisplayName( row and row.kind )
+	local name = tostring( row and row.name or "" )
+	local nameLabel, nameNum = string.match( name, "^([%a]+)%s+(%d+)$" )
+	if nameLabel and nameNum and nameLabel ~= "Bot" then
+		return mark .. name
 	end
-	return mark .. typeLetter( row and row.kind ) .. tostring( n )
+	if n then
+		return mark .. kindLabel .. " " .. tostring( n )
+	end
+	if name ~= "" then
+		return mark .. name
+	end
+	if iconOk then
+		return mark .. kindLabel
+	end
+	return mark .. typeLetter( row and row.kind ) .. tostring( n or "?" )
 end
 
 local function modeItemsForKind( kind )
@@ -444,7 +571,7 @@ local function syncScrollbar( host, gui, rows )
 	return scroll, maxScroll
 end
 
-local function paintSlot( gui, host, i, row, selectedKey )
+local function paintSlot( gui, host, i, row )
 	local nameW = "BotName" .. i
 	local iconW = "BotIcon" .. i
 	local soonW = "Soon" .. i
@@ -462,7 +589,7 @@ local function paintSlot( gui, host, i, row, selectedKey )
 		pcall( function() gui:setVisible( seedW, false ) end )
 		return
 	end
-	local isSel = selectedKey and tostring( row.key ) == tostring( selectedKey )
+	local isSel = isRowSelected( host, row.key )
 	-- Paint label first so a failed icon never leaves an empty row.
 	local iconOk = false
 	pcall( function() gui:setText( nameW, rowListLabel( row, isSel, false ) ) end )
@@ -551,25 +678,20 @@ function RfsBeaconOrdersGui.refresh( host )
 		gui:setText( "BtnRange", showRange and "HIDE RANGE" or "SHOW RANGE" )
 	end )
 
-	local selectedKey = host.cl.rfsOrdersSelectedKey
-	local selectedName = nil
-	if selectedKey then
-		for _, r in ipairs( rows ) do
-			if r and tostring( r.key ) == tostring( selectedKey ) then
-				selectedName = r.name or r.key
-				break
-			end
-		end
-		if not selectedName then
-			host.cl.rfsOrdersSelectedKey = nil
-			selectedKey = nil
+	pruneSelection( host )
+	local names = {}
+	for _, r in ipairs( rows ) do
+		if r and isRowSelected( host, r.key ) then
+			names[#names + 1] = rowListLabel( r, false, true )
 		end
 	end
 	pcall( function()
-		if selectedName then
-			gui:setText( "ColorSelLabel", "Selected: " .. tostring( selectedName ) )
-		else
+		if #names == 0 then
 			gui:setText( "ColorSelLabel", "None selected — applies to all" )
+		elseif #names == 1 then
+			gui:setText( "ColorSelLabel", "Selected: " .. names[1] )
+		else
+			gui:setText( "ColorSelLabel", "Selected: " .. table.concat( names, ", " ) )
 		end
 	end )
 
@@ -577,7 +699,7 @@ function RfsBeaconOrdersGui.refresh( host )
 	host.cl.rfsOrdersSuppressDrop = true
 	for i = 0, ROWS - 1 do
 		local abs = scroll + i + 1
-		paintSlot( gui, host, i, rows[abs], selectedKey )
+		paintSlot( gui, host, i, rows[abs] )
 	end
 	host.cl.rfsOrdersSuppressDrop = nil
 end
@@ -637,11 +759,14 @@ function RfsBeaconOrdersGui.onMouseWheel( host, scrollValue )
 	RfsBeaconOrdersGui.scrollDelta( host, ( v > 0 ) and -SCROLL_STEP or SCROLL_STEP )
 end
 
+-- Callbacks only. Do not createDropDown / setVisible-hide rows here — that ran
+-- before gui:open() and left cursor capture with no drawn window.
 function RfsBeaconOrdersGui.bind( host, gui )
 	host.cl = host.cl or {}
 	host.cl.rfsOrdersGui = gui
 	host.cl.rfsOrdersScroll = host.cl.rfsOrdersScroll or 0
 	host.cl.rfsOrdersRows = host.cl.rfsOrdersRows or {}
+	host.cl.rfsOrdersDropsBound = nil
 
 	-- Game-hosted callbacks (GUI opened on RecipeFrameworkSurvival).
 	-- Separate OnClose so CloseButton → close() does not re-enter close.
@@ -662,6 +787,19 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	end )
 	gui:setOnCloseCallback( "cl_rfs_ordersOnClosed" )
 
+	for i = 0, ROWS - 1 do
+		pcall( function()
+			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
+		end )
+	end
+end
+
+-- First show only, AFTER gui:open(). Never call from refresh / scroll / paint.
+local function bindDropDowns( host, gui )
+	if not gui or host.cl.rfsOrdersDropsBound then
+		return
+	end
+	host.cl.rfsOrdersDropsBound = true
 	local seeds = seedLabels()
 	local colors = colorLabels()
 	-- Suppress before ColorDrop create/select — setSelectedDropDownItem fires
@@ -675,13 +813,6 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	end )
 	for i = 0, ROWS - 1 do
 		pcall( function()
-			gui:setVisible( "BotIcon" .. i, false )
-		end )
-		pcall( function()
-			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
-		end )
-		-- One stable item list for every slot — scroll never recreateDropDown.
-		pcall( function()
 			gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_ALL )
 		end )
 		pcall( function()
@@ -689,12 +820,6 @@ function RfsBeaconOrdersGui.bind( host, gui )
 		end )
 		pcall( function()
 			gui:setVisible( "SeedDrop" .. i, false )
-		end )
-		pcall( function()
-			gui:setVisible( "ModeDrop" .. i, false )
-		end )
-		pcall( function()
-			gui:setVisible( "BotName" .. i, false )
 		end )
 	end
 	host.cl.rfsOrdersSuppressDrop = nil
@@ -749,7 +874,7 @@ function RfsBeaconOrdersGui.queueOpen( host, opts )
 	}
 end
 
--- Pre-Close-fix lifecycle (9cbdbc1): create → bind → open → request list.
+-- 3.5e/3.5f: create → bind callbacks → open → dropdowns (first show) → refresh.
 -- Host MUST be Game so Close/Master/Color callbacks resolve. No schedule maze.
 function RfsBeaconOrdersGui.open( host, opts )
 	opts = opts or {}
@@ -786,6 +911,7 @@ function RfsBeaconOrdersGui.open( host, opts )
 	applyOpenMeta( host, opts )
 	host.cl.rfsOrdersRange = tonumber( opts.range ) or host.cl.rfsOrdersRange or 16
 	host.cl.rfsOrdersScroll = 0
+	host.cl.rfsOrdersSelected = {}
 	host.cl.rfsOrdersSelectedKey = nil
 	if type( opts.rows ) == "table" and #opts.rows > 0 then
 		host.cl.rfsOrdersRows = {}
@@ -802,10 +928,12 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 	host.cl.rfsPendingOrdersGui = nil
 	host.cl.rfsOrdersReopenAfterTick = nil
+	host.cl.rfsOrdersDropsBound = nil
 
 	RfsBeaconOrdersGui.bind( host, gui )
-	RfsBeaconOrdersGui.refresh( host )
 	gui:open()
+	bindDropDowns( host, gui )
+	RfsBeaconOrdersGui.refresh( host )
 	pcall( function()
 		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5f)" )
 	end )
@@ -832,6 +960,7 @@ function RfsBeaconOrdersGui.close( host )
 	local gui = host.cl.rfsOrdersGui
 	host.cl.rfsOrdersGui = nil
 	host.cl.rfsPendingOrdersGui = nil
+	host.cl.rfsOrdersDropsBound = nil
 	host.cl.rfsOrdersReopenAfterTick = currentTick() + REOPEN_SETTLE_TICKS
 	if gui then
 		pcall( function() gui:close() end )
@@ -842,6 +971,7 @@ end
 function RfsBeaconOrdersGui.onClosed( host )
 	host.cl = host.cl or {}
 	host.cl.rfsOrdersGui = nil
+	host.cl.rfsOrdersDropsBound = nil
 end
 
 function RfsBeaconOrdersGui.applyRole( host, data )
@@ -859,7 +989,7 @@ function RfsBeaconOrdersGui.applyRole( host, data )
 	RfsBeaconOrdersGui.refresh( host )
 end
 
--- Soft range toggle: never destroy Orders GUI / never rebuild rings here.
+-- Soft range toggle: never destroy Orders GUI. Draw from Game (no beacon FX host).
 function RfsBeaconOrdersGui.toggleRange( host )
 	host.cl = host.cl or {}
 	local gui = host.cl.rfsOrdersGui
@@ -872,11 +1002,28 @@ function RfsBeaconOrdersGui.toggleRange( host )
 	local on = not ( _G.g_rfsBeaconRangeVisible[key] == true )
 	_G.g_rfsBeaconRangeVisible[key] = on
 	host.cl.rfsOrdersShowRange = on
+	-- Immediate Game-client ring. Do not wait for beacon sandbox / g_rfsGame.
+	host.cl.rfsRangeWant = host.cl.rfsRangeWant or {}
+	local pos = host.cl.rfsOrdersBeaconPos
+	if on and type( pos ) == "table" and pos.x ~= nil then
+		host.cl.rfsRangeWant[key] = {
+			key = key,
+			show = true,
+			range = tonumber( host.cl.rfsOrdersRange ) or 16,
+			pos = { x = pos.x, y = pos.y, z = pos.z },
+		}
+	else
+		host.cl.rfsRangeWant[key] = { key = key, show = false }
+	end
 	if host.network and host.network.sendToServer then
 		pcall( function()
 			host.network:sendToServer( "sv_rfs_ordersRange", {
 				beaconKey = key,
 				show = on,
+				range = tonumber( host.cl.rfsOrdersRange ) or 16,
+				pos = ( type( pos ) == "table" and pos.x ~= nil ) and {
+					x = pos.x, y = pos.y, z = pos.z,
+				} or nil,
 			} )
 		end )
 	end
@@ -920,16 +1067,30 @@ function RfsBeaconOrdersGui.applyList( host, data )
 				if mode == "oil" and kind ~= "water" then
 					mode = "rest"
 				end
+				if mode == "return" then
+					mode = "return"
+				end
+				local n = tonumber( row.displayIndex )
+				if not n then
+					n = tonumber( string.match( tostring( row.name or "" ), "(%d+)$" ) )
+				end
+				local typeName = kindDisplayName( kind )
+				local name = tostring( row.name or "" )
+				local nameLabel = string.match( name, "^([%a]+)%s+%d+$" )
+				if name == "" or nameLabel == "Bot" or string.match( name, "^%d+$" ) then
+					name = n and ( typeName .. " " .. tostring( n ) ) or typeName
+				end
 				nextRows[#nextRows + 1] = {
 					key = tostring( row.key ),
-					name = row.name or ( "Bot " .. tostring( row.key ) ),
-					displayIndex = tonumber( row.displayIndex ),
+					name = name,
+					displayIndex = n,
 					unitType = row.unitType or row.type,
 					kind = kind,
 					mode = mode,
 					seedUuid = row.seedUuid and tostring( row.seedUuid ) or nil,
 					owner = row.owner,
 					allyColor = row.allyColor and tostring( row.allyColor ) or nil,
+					hackBeaconKey = row.hackBeaconKey and tostring( row.hackBeaconKey ) or nil,
 				}
 			end
 		end
@@ -962,10 +1123,18 @@ function RfsBeaconOrdersGui.onBotClick( host, rowIdx )
 		return
 	end
 	local key = tostring( row.key )
-	if host.cl.rfsOrdersSelectedKey and tostring( host.cl.rfsOrdersSelectedKey ) == key then
-		host.cl.rfsOrdersSelectedKey = nil
+	local set = selectedSet( host )
+	if set[key] then
+		set[key] = nil
 	else
-		host.cl.rfsOrdersSelectedKey = key
+		set[key] = true
+	end
+	host.cl.rfsOrdersSelectedKey = nil
+	for k, v in pairs( set ) do
+		if v then
+			host.cl.rfsOrdersSelectedKey = k
+			break
+		end
 	end
 	RfsBeaconOrdersGui.refresh( host )
 end
@@ -983,25 +1152,22 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 	if not beaconKey then
 		return
 	end
-	local selected = host.cl.rfsOrdersSelectedKey
-	local unitKeys = nil
-	if not selected then
-		-- Send the painted list so Game sandbox listHomeAllies cannot no-op.
-		unitKeys = {}
-		for _, row in ipairs( host.cl.rfsOrdersRows or {} ) do
-			if row and row.key then
-				unitKeys[#unitKeys + 1] = tostring( row.key )
-			end
-		end
-	end
+	host.cl.rfsOrdersColorLabel = colorLabelForHex( hex ) or tostring( value )
+	local keys = orderTargetKeys( host )
 	host.network:sendToServer( "sv_rfs_ordersSetColor", {
 		beaconKey = beaconKey,
-		unitKey = selected,
-		unitKeys = unitKeys,
+		unitKey = nil,
+		unitKeys = keys,
 		colorHex = hex,
 		colorLabel = tostring( value ),
 	} )
-	local scope = selected and "selected bot" or "all listed allies"
+	local nSel = 0
+	for _, v in pairs( selectedSet( host ) ) do
+		if v then
+			nSel = nSel + 1
+		end
+	end
+	local scope = ( nSel > 0 ) and ( tostring( nSel ) .. " selected" ) or "all listed allies"
 	local pretty = colorLabelForHex( hex ) or tostring( value )
 	sm.gui.chatMessage( "[RFS] Color " .. tostring( pretty ) .. " → " .. scope )
 end
@@ -1013,35 +1179,41 @@ function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
 	local rows = host.cl and host.cl.rfsOrdersRows or {}
 	local scroll = host.cl and host.cl.rfsOrdersScroll or 0
 	local abs = scroll + ( tonumber( rowIdx ) or 0 ) + 1
-	local row = rows[abs]
-	if not row or not row.key then
+	local clicked = rows[abs]
+	if not clicked or not clicked.key then
 		return
 	end
 	local mode = modeValue( value )
-	if mode == "farm" and row.kind ~= "hay" then
-		return
+	local keys = orderTargetKeys( host )
+	if #keys == 0 then
+		keys = { tostring( clicked.key ) }
 	end
-	if mode == "collect" and row.kind ~= "tote" then
-		return
+	local beaconKey = host.cl.rfsOrdersBeaconKey
+	local sent = 0
+	for _, k in ipairs( keys ) do
+		local row = rowByKey( host, k ) or clicked
+		if mode == "farm" and row.kind ~= "hay" then
+			-- keep Farm/Collect/Oil disable rules
+		elseif mode == "collect" and row.kind ~= "tote" then
+		elseif mode == "oil" and row.kind ~= "water" then
+		else
+			if mode == "farm" and not row.seedUuid then
+				local uuid = seedUuidForLabel( "Tomato" )
+				row.seedUuid = uuid and tostring( uuid ) or nil
+			end
+			row.mode = mode
+			host.network:sendToServer( "sv_rfs_ordersSet", {
+				unitKey = k,
+				mode = mode,
+				seedUuid = row.seedUuid,
+				beaconKey = beaconKey,
+			} )
+			sent = sent + 1
+		end
 	end
-	if mode == "oil" and row.kind ~= "water" then
-		return
+	if sent > 0 then
+		RfsBeaconOrdersGui.refresh( host )
 	end
-	if mode == row.mode then
-		return
-	end
-	row.mode = mode
-	if mode == "farm" and not row.seedUuid then
-		local uuid = seedUuidForLabel( "Tomato" )
-		row.seedUuid = uuid and tostring( uuid ) or nil
-	end
-	host.network:sendToServer( "sv_rfs_ordersSet", {
-		unitKey = row.key,
-		mode = mode,
-		seedUuid = row.seedUuid,
-		beaconKey = host.cl.rfsOrdersBeaconKey,
-	} )
-	RfsBeaconOrdersGui.refresh( host )
 end
 
 function RfsBeaconOrdersGui.onSeedDrop( host, rowIdx, value )

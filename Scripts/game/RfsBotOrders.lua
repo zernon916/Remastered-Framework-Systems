@@ -22,6 +22,7 @@ RfsBotOrders.MODE_DEFEND = "defend"
 RfsBotOrders.MODE_FARM = "farm" -- M2
 RfsBotOrders.MODE_COLLECT = "collect" -- M3
 RfsBotOrders.MODE_OIL = "oil" -- M4
+RfsBotOrders.MODE_RETURN = "return" -- walk to converting hack device
 
 local DEFAULT_MODE = RfsBotOrders.MODE_DEFEND
 local DEFAULT_RANGE = 16
@@ -78,6 +79,9 @@ local function normalizeMode( mode )
 	end
 	if mode == "oil" or mode == "collectoil" or mode == "collect oil" then
 		return RfsBotOrders.MODE_OIL
+	end
+	if mode == "return" or mode == "recall" or mode == "home" then
+		return RfsBotOrders.MODE_RETURN
 	end
 	return nil
 end
@@ -222,7 +226,7 @@ local function modeAllowedForType( mode, typeStr )
 	if not mode then
 		return false
 	end
-	if mode == RfsBotOrders.MODE_REST or mode == RfsBotOrders.MODE_DEFEND then
+	if mode == RfsBotOrders.MODE_REST or mode == RfsBotOrders.MODE_DEFEND or mode == RfsBotOrders.MODE_RETURN then
 		return true
 	end
 	if mode == RfsBotOrders.MODE_COLLECT then
@@ -349,11 +353,15 @@ function RfsBotOrders.effectiveMode( unit )
 	if type( RfsBotHijack ) ~= "table" or not RfsBotHijack.isAlly or not RfsBotHijack.isAlly( unit ) then
 		return RfsBotOrders.MODE_REST
 	end
+	local mode = RfsBotOrders.getOrderMode( unit )
+	-- Return walks to the converting device even if the Orders home is unpowered.
+	if mode == RfsBotOrders.MODE_RETURN then
+		return RfsBotOrders.MODE_RETURN
+	end
 	local ready = RfsBotOrders.homeBeaconReady( unit )
 	if not ready then
 		return RfsBotOrders.MODE_REST
 	end
-	local mode = RfsBotOrders.getOrderMode( unit )
 	local t = typeStrOf( unit )
 	if mode == RfsBotOrders.MODE_COLLECT and modeAllowedForType( mode, t ) then
 		return RfsBotOrders.MODE_COLLECT
@@ -485,7 +493,7 @@ end
 -- Role matrix: Rest+Defend all. Farm = hay (M2). Collect = tote (M3). Oil = water/blue (M4).
 function RfsBotOrders.modesForType( unitType )
 	unitType = tostring( unitType or "" )
-	local modes = { RfsBotOrders.MODE_REST, RfsBotOrders.MODE_DEFEND }
+	local modes = { RfsBotOrders.MODE_REST, RfsBotOrders.MODE_DEFEND, RfsBotOrders.MODE_RETURN }
 	local soon = {}
 	if isWaterbotType( unitType ) then
 		modes[#modes + 1] = RfsBotOrders.MODE_OIL
@@ -579,15 +587,20 @@ function RfsBotOrders.applySelect( self )
 		return true
 	end
 	local mode = RfsBotOrders.effectiveMode( self.unit )
-	-- Rest + Collect + Farm + Oil: stand down combat; jobs run in sv_think.
+	-- Rest + Collect + Farm + Oil + Return: stand down combat; jobs run in sv_think / unit drive.
 	if mode == RfsBotOrders.MODE_REST
 		or mode == RfsBotOrders.MODE_COLLECT
 		or mode == RfsBotOrders.MODE_FARM
-		or mode == RfsBotOrders.MODE_OIL then
+		or mode == RfsBotOrders.MODE_OIL
+		or mode == RfsBotOrders.MODE_RETURN then
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.standDown then
 			RfsBotHijack.standDown( self )
 		end
 		clearCombatTarget( self )
+		if mode == RfsBotOrders.MODE_RETURN and type( RfsBotHijack ) == "table"
+			and type( RfsBotHijack.driveReturnToHackBeacon ) == "function" then
+			pcall( RfsBotHijack.driveReturnToHackBeacon, self )
+		end
 		return true
 	end
 
@@ -705,4 +718,4 @@ if type( RfsBotOrdersFarm ) == "table" and RfsBotOrdersFarm.install then
 	pcall( RfsBotOrdersFarm.install )
 end
 
-print( "[RFS] RfsBotOrders loaded (Rest/Defend M1 + Farm M2 + Collect M3 + Oil M4)" )
+print( "[RFS] RfsBotOrders loaded (Rest/Defend M1 + Farm M2 + Collect M3 + Oil M4 + Return)" )

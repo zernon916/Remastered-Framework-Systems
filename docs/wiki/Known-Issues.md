@@ -8,7 +8,10 @@ Orders checklist: `HIJACK_ROADMAP.txt` Phase 3 (`[DONE]` / `[NEXT]` / `[FUTURE]`
 ## [NEXT] — verify during HACK 3.10
 
 - Confirm Orders: open + list fill + icons/H1 fallback + close/reopen + Prev/Next safe
-- SHOW RANGE ground ring actually visible (menu no longer dies — ring polish parked)
+- SHOW RANGE ground ring (Game-hosted; menu no longer dies)
+- List click Select; Color selected or all (tint must stick)
+- Seedbot nametag **Seed N** (not Bot N)
+- Return order (walk to converting hack device)
 - Empty-list / reopen regressions — watch during test
 
 ## Nametag numbers — **[NEXT]**
