@@ -3,6 +3,7 @@
 -- Original clock + compass HUD implementation.
 -- Tool ammo readout restored here: this always-on HUD sits on the default HUD layer
 -- and hides the engine weapon ammo number, so we draw remaining ammo ourselves.
+-- Phase 6 MiniMap (Nutt) uses the bottom-left corner; ammo stays lower-right.
 
 RfsHud = RfsHud or {}
 
@@ -73,11 +74,20 @@ function RfsHud.ensure( host )
 	if host.cl.rfsHud then
 		return host.cl.rfsHud
 	end
+	-- Middle layer keeps clock/compass/ammo above the MiniMap ring HUD.
 	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false, {
 		isHud = true,
 		isInteractive = false,
-		needsCursor = false
+		needsCursor = false,
+		layer = "Middle"
 	} )
+	if not ok or not gui then
+		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false, {
+			isHud = true,
+			isInteractive = false,
+			needsCursor = false
+		} )
+	end
 	if not ok or not gui then
 		print( "[RFS] HUD create failed: " .. tostring( gui ) )
 		return nil

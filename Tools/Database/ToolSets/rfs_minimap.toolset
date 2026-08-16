@@ -1,0 +1,11 @@
+{
+	"toolList": [
+		{
+			"name": "RfsMiniMap",
+			"uuid": "7c4e9b21-6a8d-4f03-b5e1-92c0d8a47f16",
+			"previewRenderable": "$GAME_DATA/Character/Char_Tools/char_spudgun_preview.rend",
+			"script": { "file": "$CONTENT_DATA/Scripts/game/RfsMiniMapTool.lua", "class": "RfsMiniMapTool" },
+			"autoTool": true
+		}
+	]
+}

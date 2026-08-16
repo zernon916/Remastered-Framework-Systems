@@ -10,12 +10,12 @@ Full list: pack file `COMMANDS.txt`.
 |---------|----------------|
 | `/menu` | Player menu (Map + Growth Time overlay) |
 | `/help` / `/commands` | Command summary |
-| `/map` / `/rfsmap` | Top-down camera map (WASD pan, scroll zoom) |
-| `/mapclose` | Close map camera |
+| `/map` / `/rfsmap` | Full atlas (Nutt World Map) when subscribed; else top-down camera |
+| `/mapclose` | Close atlas / map camera |
 
 Future (**Phase 3.6**, not shipped): a **GUI** visuals tab may land under `/menu` or host `/gensettings` FEATURES/GUI — nametags, Big Red label, health-bar colors; see [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
 
-Future (**Phase 6 MiniMap**, not shipped): always-on or toggle HUD minimap; `/map` stays. **WAITING ON PERMISSION — do not implement copy.** Preferred: incorporate Nutt / Workshop 3780282057 if granted. Fallback: original RFS schematic (study only). See [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
+**Phase 6 MiniMap (shipped):** always-on corner HUD while you walk; `/map` / `/rfsmap` opens Nutt's full atlas. Credit **Nutt** / Workshop [3780282057](https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057). Subscribe to **World Map** and do **not** enable it as a world mod. If that pack is missing, original clock/compass/ammo HUD and lock-camera `/map` stay. Beacon/ally letter markers later. See [[Known-Issues]] / `HIJACK_ROADMAP.txt`.
 
 **Digital Signs** (Phase 7 minimum): Craftbot Digital Sign S/L/XL. E to edit text. Optional logic switch hides the face. See [[Known-Issues]].
 

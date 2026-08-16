@@ -139,31 +139,21 @@ Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab
 
 ---
 
+### R5 — Phase 4 — factories
+
+**Source:** `PHASES.md` **Phase 4**; `HIJACK_ROADMAP.txt` Phase 4.
+
+**Shipped** on `rush/factories` (`46cf97e`), merged to main. Factory UUID remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` so Digital Sign keeps `f8c2a5e4-…`. Hideout crate→80 seed trades kept.
+
 ### R6 — Phase 6 — MiniMap (HUD)
 
-**Source:** `PHASES.md` **Phase 6**; `HIJACK_ROADMAP.txt` Phase 6; `PENDING_FIXES.md` §6; `COMMANDS.txt` Map; wiki [[Known-Issues]] / [[Commands]]; `description.json` (credit **when shipped**).
+**Source:** `PHASES.md` **Phase 6**; `HIJACK_ROADMAP.txt` Phase 6.
 
-**Status today:** PLANNED, **not in current build**. Clock + compass HUD (`RfsHud`) and locked `/map` camera only.
+**Shipped** on `rush/minimap` (`24a3ad1`). Nutt World Map HUD while Workshop **3780282057** is subscribed (do not enable World Map as a world mod). `/map` atlas; fallback lock-camera + original RfsHud clock/compass/ammo (ammo lower-right). Credit Nutt in `description.json`.
 
-**What “done” means:**
+### R7 — Phase 7 — Digital Signs
 
-- Always-on or toggle **corner HUD minimap** so the player can walk while it updates. Square/rounded widget is enough for v1.
-- Refine existing `/map` as the full map (live camera). Optional: HUD click or `/menu` Map opens it. Keep lock/fallback polish.
-- Markers: player (heading), powered beacons, allies. Letters later (H1/T2-style, after naming / Orders badges).
-- Hide HUD map while chat/other GUIs are open (engine layering).
-- **Preferred path:** after **permission from Nutt**, incorporate minimap + map from Steam Workshop **3780282057**. Then credit Nutt in Steam / `description.json` **and** in-game/docs. Do **not** rewrite Steam text until the feature ships.
-- **Fallback:** if permission or code cannot ship, original RFS HUD schematic (biome/grid from `sm.storage.loadTerrainData`). Study 3780282057 approach only; **do not port** their scripts, layouts, tile-photo atlas, GPS tool, or assets.
-- No GPS item required (`/map` exists). Fog of war / waypoints: not v1.
-
-**Likely files:** `Scripts/game/RfsHud.lua`, `Gui/Layouts/Rfs_Hud.layout`, `Scripts/game/interactables/RfsMapLock.lua`, `Scripts/game/RfsMenuGui.lua`, `Scripts/Game.lua` / Player client tick, `description.json` + `STEAM_DESCRIPTION.txt` **only when shipping**, wiki [[Commands]] / `COMMANDS.txt` / `README.txt`.
-
-**Frozen extra:**
-
-- **WAITING ON PERMISSION** before any copy of 3780282057.
-- Credit Nutt **when implemented**, not before.
-- Do not replace `/map` with someone else's atlas screen on the fallback path.
-- Optional size/corner prefs may share the Phase 3.6 GUI tab.
-- After 3.6 on the roadmap; does **not** block factories or Orders.
+**Shipped** minimum on `rush/digital-signs` (`c96b042`). Craftbot S/L/XL, E to edit text, optional logic hide. Gaps: no ON/OFF dual messages; no Hideout trade; vanilla textsigns stay non-logic.
 
 ---
 
@@ -173,7 +163,7 @@ Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab
 
 **What “done” means:** Full menus / streamer / discord-batch **Workshop publish** of pack `3782487760` when the **user asks**.
 
-**Likely files / tools:** steamcmd workflow the user already uses; `description.json` (do not add Nutt credit unless Phase 6 shipped); do **not** pack `discord-bridge/` into Workshop.
+**Likely files / tools:** steamcmd workflow the user already uses; `description.json` (Nutt MiniMap credit already on `rush/minimap`); do **not** pack `discord-bridge/` into Workshop.
 
 **Frozen extra:** **Do not steamcmd or Workshop-push during Rush unless the user explicitly asks for Phase E.** GitHub push is also ask-only (`GITHUB.md`). This item stays in TO BE EXECUTED until that ask.
 
@@ -194,6 +184,10 @@ Craftbot Digital Sign S/L/XL. E edits text via Survival Digital Sign GUI. Option
 RFS Ally Factory part. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to spawn a player ally. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage.
 
 **Merge note:** factory UUID was `f8c2a5e4-…` which collided with Digital Sign. Factory was remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` so both parts exist. Seed crate→80 trades kept.
+
+### R6 — Phase 6 — MiniMap (HUD)
+
+Nutt World Map HUD (Workshop **3780282057**) hosted as an RFS autoTool. `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ring pinned off lower-right). Fallback: lock-camera `/map` if Nutt content is missing. Credit Nutt in `description.json` / Steam text / in-game chat. Branch: `rush/minimap`.
 
 ---
 
@@ -242,8 +236,8 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 3. R3 Phase 3.5 pathfinding + painted chests  
 4. R4 Phase 3.6 GUI visuals tab  
 5. R5 Phase 4 factories  
-6. R6 Phase 6 MiniMap (permission / Nutt credit / fallback)  
-7. R7 Phase 7 Digital Signs — **TO BE TESTED** (this branch)  
+6. R6 Phase 6 MiniMap — **in TO BE TESTED** (`rush/minimap`)  
+7. R7 Phase 7 Digital Signs — **TO BE TESTED**  
 8. R8 Phase E Workshop — **only if the user asks**
 
 If NOW Orders GUI is still broken when Rush starts: **skip R1–R2** (they share hijack/Orders files) and start at **R3** only if those files are untouched — otherwise wait.
@@ -261,4 +255,4 @@ If NOW Orders GUI is still broken when Rush starts: **skip R1–R2** (they share
 | `GITHUB.md` | Git push from Desktop folder, ask-only |
 | `docs/wiki/Home.md` | Wiki index (shipped vs roadmap) |
 | `docs/wiki/Known-Issues.md` | Open polish + future phases |
-| `description.json` | Steam blurb; Nutt credit **when MiniMap ships** |
+| `description.json` | Steam blurb; Nutt MiniMap credit **shipped on rush/minimap** |

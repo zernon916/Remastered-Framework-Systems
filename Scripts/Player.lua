@@ -2,6 +2,7 @@
 -- Author: DemonsDen126
 dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalPlayer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHud.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsMiniMap.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCarry.lua" )
@@ -150,9 +151,37 @@ local function rfs_applyFlySpeed( character )
 	return speed
 end
 
--- ========== /map (top-down camera) ==========
+-- ========== /map (Nutt atlas when available, else top-down camera) ==========
 
 function Player.sv_rfs_mapToggle( self )
+	-- Client decides: Nutt World Map fullscreen atlas, or original lock camera.
+	self.network:sendToClient( self.player, "cl_rfs_mapToggleTry" )
+end
+
+function Player.cl_rfs_mapToggleTry( self )
+	if self.player ~= sm.localPlayer.getPlayer() then
+		return
+	end
+	if self.cl and self.cl.rfsMapOpen then
+		self.network:sendToServer( "sv_rfs_mapClose" )
+		return
+	end
+	if type( RfsMiniMap ) == "table" and RfsMiniMap.available() then
+		if RfsMiniMap.toggleBigMap() then
+			print( "[RFS] /map toggle -> Nutt World Map atlas" )
+			return
+		end
+	end
+	self.network:sendToServer( "sv_rfs_mapToggleCamera" )
+end
+
+function Player.cl_rfs_nuttMapClose( self )
+	if type( RfsMiniMap ) == "table" then
+		RfsMiniMap.closeBigMap()
+	end
+end
+
+function Player.sv_rfs_mapToggleCamera( self )
 	print( "[RFS] /map toggle  open=" .. tostring( self.sv.rfsMapOpen ) )
 	if self.sv.rfsMapOpen then
 		local tick = sm.game.getCurrentTick()
@@ -281,6 +310,7 @@ end
 function Player.sv_rfs_mapClose( self, reason )
 	reason = reason or "close"
 	print( "[RFS] /map close (" .. tostring( reason ) .. ")" )
+	self.network:sendToClient( self.player, "cl_rfs_nuttMapClose" )
 	local wasOpen = self.sv.rfsMapOpen
 	local shape = self.sv.rfsMapShape
 	self.sv.rfsMapShape = nil

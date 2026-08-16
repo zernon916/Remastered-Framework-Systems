@@ -16,7 +16,10 @@ Requirements
 ------------
 1) Subscribe to ModDatabase (Steam Workshop fileId 2504530003).
    Keep it installed. Do NOT enable it as a manual world mod.
-2) This Custom Game: Recipe Framework Survival.
+2) Subscribe to World Map by Nutt (Steam Workshop fileId 3780282057).
+   Keep it installed. Do NOT enable it as a world mod (RFS hosts the HUD;
+   enabling it as a B&P would duplicate the ring and auto-grant a GPS).
+3) This Custom Game: Recipe Framework Survival.
 
 How to start a world
 --------------------
@@ -70,13 +73,16 @@ Capsules stay hostile. Optional logic switch.
 
 Always-on HUD
 -------------
-Top-center game clock and facing compass (N/NE/E/…). Visible without opening /setup.
-(Future Phase 6: HUD minimap — WAITING ON PERMISSION, do not implement copy. See HIJACK_ROADMAP.txt. Not shipped.)
+Top-center game clock and facing compass (N/NE/E/…). Lower-right weapon ammo count.
+Corner MiniMap HUD (Nutt World Map, Workshop 3780282057) while you walk.
+If World Map is not subscribed, clock/compass/ammo stay; MiniMap is skipped.
 
 Map (/map)
 ----------
-Chat `/map` opens a top-down cutscene camera over the live world (not a craftable tool).
-WASD pans, scroll zooms, RMB/LMB recenters on you, E or Esc closes (or `/map` again).
+Chat `/map` or `/rfsmap` opens Nutt's full atlas when World Map is installed
+(pan/zoom on the overlay; E / Esc / CLOSE / `/mapclose` to exit). No GPS item.
+If Nutt content is missing, `/map` falls back to the original top-down camera
+(WASD pan, scroll zoom, character locked). `/menu` Map uses the same toggle.
 Reload tip: exit to menu and reload the world after updating this Custom Game so Scripts/Objects refresh.
 
 Streamer / Discord (optional)

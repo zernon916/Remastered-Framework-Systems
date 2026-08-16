@@ -5,8 +5,11 @@
 1. **ModDatabase** (Steam Workshop fileId `2504530003`)  
    - Subscribe / keep installed.  
    - Do **not** enable it as a manual world mod. RFS uses it only to discover other mods' `description.json` paths.
-2. This **Custom Game** pack (Workshop `3782487760` or a local clone under Scrap Mechanic Custom Games).
-3. Optional Blocks & Parts:
+2. **World Map** by Nutt (Steam Workshop fileId `3780282057`)  
+   - Subscribe / keep installed for the MiniMap HUD and `/map` atlas.  
+   - Do **not** enable it as a world mod (RFS hosts the HUD; enabling the B&P would duplicate the ring and auto-grant a GPS).
+3. This **Custom Game** pack (Workshop `3782487760` or a local clone under Scrap Mechanic Custom Games).
+4. Optional Blocks & Parts:
    - **RFS Beacons** — Hack / Control / Infection shapes (required for beacon gameplay)
    - Intelligentia, Scrap Computers, etc. as desired
 

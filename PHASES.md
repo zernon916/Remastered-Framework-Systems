@@ -14,19 +14,14 @@ Author: Zernon916
 - **Phase C — vote resolve + allowlist UI** — `vote_result.json` + `vote-resolve.js`; `/gensettings` allowlist summary / reload / unit cycle
 - **Phase D — game → Discord chat outbox** — `/say` + `/d` → `chat_outbox.json` → `chat-outbox.js` → `CHAT_CHANNEL_ID` (gated by Streamer + chat relay)
 - **Phase F — hijack one-pass (lite)** — identity persist + nametag; light chain convert; `/unhijack` voluntary release; underground miner/cable flag (default ON). Docs honesty for Hideout Control/Infection (50/120 Farmers). See `HIJACK_ROADMAP.txt`.
-- **Phase 7 — Digital Signs (minimum)** — Craftbot logic-connectable signs (S/L/XL) that show editable text. Optional logic switch hides the face. Does not scramble Phase 3. Spec was high-level only; see gaps in `docs/RUSH.md` R7 / `HIJACK_ROADMAP.txt`.
+- **Phase 7 — Digital Signs (minimum)** — Craftbot logic-connectable signs (S/L/XL) that show editable text. Optional logic switch hides the face. Does not scramble Phase 3.
+- **Phase 6 — MiniMap (HUD)** — Nutt World Map HUD + `/map` atlas (Workshop 3780282057); original HUD/camera fallback; Nutt credited. Beacon/ally letters later.
 
 ---
 
 ## REMAINING (unfinished only)
 
 - **Phase E** — Steam Workshop push (full menus / streamer / discord batch) — only when the user asks
-- **Phase 3 — farm orders** — follow/stay/guard/harvest/replant/chest (`/botorder` or beacon GUI) — future
-- **Phase 3.5 — pathfinding & painted chests** — future (see `HIJACK_ROADMAP.txt`)
-- **Phase 3.6 — Menu tab: GUI (visuals)** — Names / Big Red / health bars / block overlay (feasibility TBD); prefer `/menu` or `/gensettings` — future
-- **Phase 4 — factories** — Ally Factory (`rush/factories`): Hideout 200 Farmers; E spends Metal+Battery to spawn player allies; army cap 16 (2 farmbots). Capsules stay hostile.
-- **Phase 2/5 full polish** — richer identity UI, melee-chain flavor, raid callouts (beyond lite)
-- **Phase 6 — MiniMap (HUD)** — PLANNED, **NOT IN CURRENT BUILD** — do not implement or copy yet. After permission: incorporate Nutt's minimap (Steam Workshop **3780282057**). Credit Nutt in Steam / `description.json` **and** in-game/docs **when implemented** (not before). Fallback: original RFS HUD schematic if permission or code cannot ship. Always-on/toggle corner map; refine `/map`; player/beacon/ally markers (letters later) — future
 
 ### Phase F note (from `PENDING_FIXES.md`, 2026-08-13)
 

@@ -11,8 +11,8 @@ Full checklist: `HIJACK_ROADMAP.txt` Phase 3 (`[DONE]` / `[NEXT]` / `[FUTURE]`).
 |-----|------|
 | **[DONE]** | M1 Rest/Defend + Orders GUI; M2 Farm; M3 Collect; M4 Collect Oil; Master/Slave; color presets; `usable:true` E; raid list clear; nametag half-size + type+number world tags; Orders icon+number (NodeIcons / H1 fallback); open/close/reopen + list fill; SHOW RANGE ring (Game-hosted, ~1.5 up + 4 spokes); list click Select; sticky Color; Seed N names; Return to hack device |
 | **[NEXT]** | Confirm HACK 3.5f Select/Color/SHOW RANGE/Seed/Return in-game; empty-list/reopen watch; RAID out of farm range |
-| **[FUTURE]** | Stay in area; Phase 3.5 pathfinding & painted chests; Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay); Phase 6 MiniMap HUD (WAITING ON PERMISSION — do not implement copy; preferred Nutt/3780282057, fallback original RFS); chat `/botorder` |
-| **[DONE min]** | Phase 7 Digital Signs: Craftbot S/L/XL, E to edit text, optional logic hide |
+| **[DONE]** | Stay / Recall / `/botorder` / tapebot Sentry; Phase 6 MiniMap HUD (Nutt World Map 3780282057; `/map` atlas; HUD/camera fallback); Phase 7 Digital Signs minimum (Craftbot S/L/XL, logic hide) |
+| **[FUTURE]** | Phase 3.5 pathfinding & painted chests; Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay) |
 
 ## Modes by type
 

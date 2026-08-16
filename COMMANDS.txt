@@ -14,8 +14,8 @@ Help
   /setup               Host-only world setup (Main / Farming / Quest / Inventory)
   /gensettings         Host-only gen settings (cheats, modded blocks, features,
                        Streamer mode for Discord vote drops — see below)
-  /map                 Toggle top-down camera map (WASD pan, scroll zoom)
-  /mapclose            Close the map camera
+  /map                 Toggle full atlas (Nutt World Map) or camera fallback
+  /mapclose            Close the atlas / map camera
   /rfsmap              Alias of /map
 
 Cheats default from rfs_settings.json; host /gensettings can override per world.
@@ -91,13 +91,14 @@ Quests
 
 Map (/map)
 ----------
-  Toggle open/close with /map again.
-  While open: WASD pan, scroll zoom, RMB or LMB recenter on you, E / Esc / Jump close.
-  Character is locked (immovable) while the map is open. No craftable map tool.
-  [FUTURE] Phase 6 MiniMap HUD (always-on or toggle; keep /map). Preferred:
-  incorporate Nutt / Workshop 3780282057 if permission granted. Fallback:
-  original RFS schematic. WAITING ON PERMISSION — do not implement copy.
-  See HIJACK_ROADMAP.txt.
+  Toggle open/close with /map again. Alias /rfsmap. `/mapclose` always closes.
+  Preferred (World Map by Nutt subscribed): fullscreen atlas overlay; you can
+  still walk with the corner MiniMap HUD. E / Esc / CLOSE exit the atlas.
+  Fallback (Nutt content missing): original top-down camera (WASD pan, scroll
+  zoom, RMB/LMB recenter, character locked).
+  No GPS item. MiniMap HUD stays off the lower-right ammo count.
+  Credit: Nutt, Steam Workshop 3780282057 World Map.
+  See HIJACK_ROADMAP.txt Phase 6.
 
 Streamer / Discord
 ------------------
@@ -124,8 +125,8 @@ Phase 3 Orders status (not commands — see HIJACK_ROADMAP Phase 3 checklist)
           open/close, SHOW RANGE menu-safe; Prev/Next layout-visible + no-op
   [NEXT]  Confirm 3.13: Orders opened + list N>0 + reopen; Prev/Next no-op OK;
           SHOW RANGE ring visible; nametag numbers / bot naming; RAID farm-range filter
-  [FUTURE] Recall bots + Stay in area; Phase 3.5 pathfinding/chests; Phase 3.6 GUI tab;
-          Phase 6 MiniMap HUD (WAITING ON PERMISSION — do not implement copy)
+  [FUTURE] Phase 3.5 pathfinding/chests; Phase 3.6 GUI tab
+  [DONE]   Phase 6 MiniMap HUD (Nutt World Map 3780282057; /map atlas; HUD fallback)
   [DONE]   Phase 7 Digital Signs (minimum): Craftbot S/L/XL, E to edit text,
           optional logic switch hides the face
 
