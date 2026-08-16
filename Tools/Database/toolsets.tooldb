@@ -1,3 +1,5 @@
 {
-   "toolSetList" : []
+	"toolSetList": [
+		"$CONTENT_DATA/Tools/Database/ToolSets/rfs_minimap.toolset"
+	]
 }

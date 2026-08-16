@@ -17,16 +17,17 @@ Display name on GitHub: **Remastered Framework Survival** (repo: `Remastered-Fra
 | [[Commands]] | `/setup`, `/menu`, `/gensettings`, hijack, shops, cheats |
 | [[Hack-Beacons]] | Beacon tiers, power, E Orders, Tinker, Master/Slave, range, color |
 | [[Bot-Orders]] | Rest / Defend / Farm / Collect / Oil |
-| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) + Phase 3.5 / 3.6 / 6 MiniMap (planned, not shipped) / 7 Digital Signs |
+| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) + Phase 3.5 / 3.6 / 7 Digital Signs. Phase 6 MiniMap shipped (Nutt World Map). |
 | [[Modder-Hooks]] | Store / quest / feature flags (see also `MODDER_API.txt`) |
 | [[Discord-Streamer]] | GitHub-only companion bot (not in Workshop) |
 
 ## Quick start
 
 1. Subscribe to **ModDatabase** (keep installed; do **not** enable as a world mod).
-2. Custom Game → create a world with this pack.
-3. Enable Blocks & Parts you want (e.g. **RFS Beacons**, Intelligentia).
-4. Host: `/givehack` (or Hideout trades) → wire a **Battery** → **E** on a powered beacon for Orders.
+2. Subscribe to **World Map** by Nutt (Workshop 3780282057; keep installed; do **not** enable as a world mod).
+3. Custom Game → create a world with this pack.
+4. Enable Blocks & Parts you want (e.g. **RFS Beacons**, Intelligentia).
+5. Host: `/givehack` (or Hideout trades) → wire a **Battery** → **E** on a powered beacon for Orders.
 
 ## What ships today
 
@@ -34,6 +35,7 @@ Display name on GitHub: **Remastered Framework Survival** (repo: `Remastered-Fra
 - Beacon Orders GUI: Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil, ally color presets
 - Master/Slave beacon linking + SHOW/HIDE range ring
 - Host `/setup` + `/gensettings`, player `/menu` + `/map`
+- MiniMap HUD (Nutt World Map) + `/map` atlas; ammo HUD kept
 - Modder store merge (Craftbot / Hideout / Mining Hub) and `RfsQuest` wrappers
 
 This wiki matches **current shipped code**, not the full hijack roadmap.

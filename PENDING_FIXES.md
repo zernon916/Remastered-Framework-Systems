@@ -68,7 +68,7 @@ Easy to miss: scale 0.25, `maxViewDistance` 15 m. Look at ground in **orange aut
 - Recall bots + Stay in area (Orders)
 - Phase 3.5 pathfinding & painted chests (§4)
 - Phase 3.6 Menu GUI tab (§5)
-- Phase 6 MiniMap HUD (§6) — WAITING ON PERMISSION; do not implement copy
+- Phase 6 MiniMap HUD (§6) — **shipped** this branch (Nutt 3780282057; HUD/camera fallback)
 - Phase 7 Digital Signs (§7) — later stretch after MiniMap / factories
 - chat `/botorder`
 
@@ -139,19 +139,11 @@ Cross-ref Phase 2 nametag / naming polish and Orders type+number badges.
 
 ---
 
-## 6) MiniMap HUD — **[FUTURE]** (Phase 6; logged, not started)
+## 6) MiniMap HUD — **shipped** (Phase 6)
 
-Logged in `HIJACK_ROADMAP.txt` under **Phase 6**. Status: **WAITING ON PERMISSION — do not implement copy.**
+Logged in `HIJACK_ROADMAP.txt` under **Phase 6**. Status: **shipped on `rush/minimap`** (Nutt World Map Workshop **3780282057**).
 
-**Preferred path (pending permission):** if Nutt (Steam Workshop **3780282057**) grants permission, incorporate that minimap + map into the RFS gamemode (credit Nutt / workshop 3780282057). Do not copy until permission is confirmed.
-
-**Fallback:** if no permission, original RFS HUD schematic minimap (study Workshop 3780282057 approach only; do not copy that mod's code, assets, atlas, or layouts).
-
-- HUD minimap (always-on or toggle) — we only have clock + compass HUD today
-- Refine existing `/map` live camera if needed (that is the full map, not a HUD)
-- Markers: player, beacons, allies (letters later)
-- Feasibility: HUD overlay already proven (`RfsHud`); schematic cells from
-  terrain data possible; no live-world inset widget; hide under chat/GUIs
+**Path:** RFS autoTool hosts Nutt's HUD from `$CONTENT_58df2b8e-...` (subscribe, do not enable as a world mod). `/map` / `/rfsmap` open the atlas. Credit Nutt in Steam / `description.json` / in-game. **Fallback:** original RfsHud (clock + compass + ammo) and lock-camera `/map` if Nutt content is missing. Do not cover lower-right ammo. Beacon/ally letters later.
 
 ---
 

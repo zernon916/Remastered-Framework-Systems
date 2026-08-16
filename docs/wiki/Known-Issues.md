@@ -39,9 +39,9 @@ Not started. Farm / Collect / Oil still use vanilla unit AI navigation. Planned:
 
 Not started (do not build during HACK 3.10 testing). Planned player/host visual prefs — Names on/off, Farmbots as **"Big Red"**, enemy/neutral health-bar color dropdowns, and a block health overlay (green→red) only if SM exposes damage visuals. Menu home TBD (`/menu` or `/gensettings` FEATURES/GUI). Relates to Phase 2 nametag/naming polish and Orders type+number badges. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6, `PENDING_FIXES.md` §5.
 
-## MiniMap HUD — **[FUTURE]** (Phase 6)
+## MiniMap HUD — **shipped** (Phase 6)
 
-**Planned, not in current build.** Do not implement or copy yet. Always-on or toggle corner HUD minimap; refine existing `/map` live camera; markers for player, beacons, allies (letters later). **Preferred path:** after permission from Nutt (Workshop **3780282057**), incorporate that minimap + map. Credit Nutt in Steam / `description.json` **and** in-game/docs **when implemented**. **Fallback:** original RFS HUD schematic if permission or code cannot ship — study approach only, no copy. Today we have clock+compass HUD and a locked top-down camera, not a walking HUD map. Cross-ref: `HIJACK_ROADMAP.txt` Phase 6, `PHASES.md`, `PENDING_FIXES.md` §6.
+Always-on corner MiniMap while walking; `/map` / `/rfsmap` opens the full atlas. Terrain map by **Nutt** (Workshop **3780282057** World Map) — credited in Steam / `description.json` / in-game chat. Subscribe to World Map; do **not** enable it as a world mod. Fallback if that content is missing: original RfsHud (clock + compass + **ammo**) and lock-camera `/map`. Beacon/ally letter markers later. Cross-ref: `HIJACK_ROADMAP.txt` Phase 6, `PHASES.md`, `PENDING_FIXES.md` §6.
 
 ## Digital Signs — **[FUTURE]** (Phase 7)
 
