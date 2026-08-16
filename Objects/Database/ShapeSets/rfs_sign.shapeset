@@ -1,0 +1,118 @@
+{
+	"partList": [
+		{
+			"uuid": "f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b",
+			"name": "obj_rfs_digitalsign_small",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_small.rend",
+			"color": "df7f01",
+			"box": { "x": 3, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"params": [
+				{ "name": "text", "type": "string" },
+				{ "name": "selected", "type": "float", "default": 1.0 }
+			],
+			"scripted": {
+				"classname": "RfsDigitalSign",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsDigitalSign.lua",
+				"data": {
+					"effectName": "Textsign - Text",
+					"fontName": "SM_IntlText",
+					"maxTextLength": 6,
+					"maxTextWidth": 88,
+					"oversizeScale": 0.625,
+					"asg": { "a": 0.0, "s": 0.0, "g": 0.9 },
+					"offsetPosition": { "x": -0.0, "y": 0.025, "z": 0.1517 },
+					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
+				}
+			}
+		},
+		{
+			"uuid": "09d3b6f5-2c74-4fe6-a183-74e6f3010a3c",
+			"name": "obj_rfs_digitalsign_large",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_large.rend",
+			"color": "df7f01",
+			"box": { "x": 5, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"params": [
+				{ "name": "text", "type": "string" },
+				{ "name": "selected", "type": "float", "default": 1.0 }
+			],
+			"scripted": {
+				"classname": "RfsDigitalSign",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsDigitalSign.lua",
+				"data": {
+					"effectName": "Textsign - Text",
+					"fontName": "SM_IntlText",
+					"maxTextLength": 11,
+					"maxTextWidth": 148,
+					"oversizeScale": 0.625,
+					"asg": { "a": 0.0, "s": 0.0, "g": 0.9 },
+					"offsetPosition": { "x": -0.0, "y": 0.025, "z": 0.1517 },
+					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
+				}
+			}
+		},
+		{
+			"uuid": "1ae4c706-3d85-40f7-b294-85f704121b4d",
+			"name": "obj_rfs_digitalsign_extralarge",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_extralarge.rend",
+			"color": "df7f01",
+			"box": { "x": 8, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"params": [
+				{ "name": "text", "type": "string" },
+				{ "name": "selected", "type": "float", "default": 1.0 }
+			],
+			"scripted": {
+				"classname": "RfsDigitalSign",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsDigitalSign.lua",
+				"data": {
+					"effectName": "Textsign - Text",
+					"fontName": "SM_IntlText",
+					"maxTextLength": 18,
+					"maxTextWidth": 256,
+					"oversizeScale": 0.625,
+					"asg": { "a": 0.0, "s": 0.0, "g": 0.9 },
+					"offsetPosition": { "x": -0.0, "y": 0.025, "z": 0.1517 },
+					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
+				}
+			}
+		}
+	]
+}

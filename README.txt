@@ -55,7 +55,13 @@ Hack 16 m / Control 32 m / Infection 48 m (permanent submit). Lose power/range â
 
 Tethered = green. Infected = deeper green, no beacon needed.
 Allies can slowly chain-convert nearby hostiles. See HIJACK_ROADMAP.txt
-(Phase 3 orders / Phase 4 factories still future).
+(Phase 3 leftover orders / Phase 4 factories still future).
+
+Digital Signs
+-------------
+Craftbot: Digital Sign / Large / Extra Large (1 Metal placeholder each).
+Press E to type text. Optional logic switch: no wire = always show; switch off = hide.
+No battery. Vanilla Survival textsigns still exist and are not logic-connectable.
 
 Always-on HUD
 -------------

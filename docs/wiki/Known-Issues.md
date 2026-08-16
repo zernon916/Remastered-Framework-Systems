@@ -43,12 +43,11 @@ Not started (do not build during HACK 3.10 testing). Planned player/host visual 
 
 **Planned, not in current build.** Do not implement or copy yet. Always-on or toggle corner HUD minimap; refine existing `/map` live camera; markers for player, beacons, allies (letters later). **Preferred path:** after permission from Nutt (Workshop **3780282057**), incorporate that minimap + map. Credit Nutt in Steam / `description.json` **and** in-game/docs **when implemented**. **Fallback:** original RFS HUD schematic if permission or code cannot ship — study approach only, no copy. Today we have clock+compass HUD and a locked top-down camera, not a walking HUD map. Cross-ref: `HIJACK_ROADMAP.txt` Phase 6, `PHASES.md`, `PENDING_FIXES.md` §6.
 
-## Digital Signs — **[FUTURE]** (Phase 7)
+## Digital Signs — **[DONE minimum]** (Phase 7)
 
-Not started. Later systems stretch after MiniMap / factories. Flesh out later — not a full spec. Does not scramble shipped Phase 3.
+Craftbot **Digital Sign** S / L / XL. Press **E** to type text (Survival Digital Sign GUI). Optional logic switch: no parent = always show; wired + off = hide. Logic output follows display-on. No battery. Vanilla Survival textsigns stay non-logic.
 
-- Can be connected to logic
-- Can actually show information on them
+Gaps (spec was high-level only): no ON/OFF dual messages; no Hideout trade; no dedicated MyGUI layout.
 
 Cross-ref: `HIJACK_ROADMAP.txt` Phase 7, `PENDING_FIXES.md` §7.
 

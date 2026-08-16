@@ -69,7 +69,6 @@ Easy to miss: scale 0.25, `maxViewDistance` 15 m. Look at ground in **orange aut
 - Phase 3.5 pathfinding & painted chests (§4)
 - Phase 3.6 Menu GUI tab (§5)
 - Phase 6 MiniMap HUD (§6) — WAITING ON PERMISSION; do not implement copy
-- Phase 7 Digital Signs (§7) — later stretch after MiniMap / factories
 - chat `/botorder`
 
 See `HIJACK_ROADMAP.txt` Phase 3 checklist for the full scannable list.
@@ -155,9 +154,11 @@ Logged in `HIJACK_ROADMAP.txt` under **Phase 6**. Status: **WAITING ON PERMISSIO
 
 ---
 
-## 7) Digital Signs — **[FUTURE]** (Phase 7; logged, not started)
+## 7) Digital Signs — **[DONE minimum]** (Phase 7)
 
-Logged in `HIJACK_ROADMAP.txt` under **Phase 7**. Later systems stretch after MiniMap / factories. Flesh out later — not a full spec. Does not scramble shipped Phase 3.
+Shipped on `rush/digital-signs`. Spec was high-level only.
 
-- Can be connected to logic
-- Can actually show information on them
+- Craftbot Digital Sign S / L / XL show editable text (Survival textsign face)
+- Optional logic switch: unpowered logic hides text; no parent = always on
+- Logic output follows display-on
+- Gaps: no ON/OFF dual messages; no Hideout trade; vanilla Survival signs stay non-logic
