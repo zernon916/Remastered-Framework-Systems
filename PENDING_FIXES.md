@@ -65,12 +65,11 @@ Easy to miss: scale 0.25, `maxViewDistance` 15 m. Look at ground in **orange aut
 
 ### [FUTURE] — end of phase / later (do not build during 3.10)
 
-- Recall bots + Stay in area (Orders)
-- Phase 3.5 pathfinding & painted chests (§4)
-- Phase 3.6 Menu GUI tab (§5)
+- Stay / Recall / `/botorder` / tapebot Sentry — **shipped** (R2)
+- Phase 3.5 pathfinding & painted chests (§4) — **shipped** (R3)
+- Phase 3.6 Menu GUI tab (§5) — **shipped** (R4; block overlay cut)
 - Phase 6 MiniMap HUD (§6) — **shipped** (Nutt 3780282057; HUD/camera fallback)
 - Phase 7 Digital Signs (§7) — **minimum shipped** (Craftbot S/L/XL; logic hide)
-- chat `/botorder`
 
 See `HIJACK_ROADMAP.txt` Phase 3 checklist for the full scannable list.
 
@@ -116,26 +115,13 @@ stuff that was added. Keep out-of-range farm bots out of RAID behavior
 
 ---
 
-## 4) Pathfinding & painted chests — **[FUTURE]** (Phase 3.5; not started)
+## 4) Pathfinding & painted chests — **[DONE]** (Phase 3.5)
 
-Logged in `HIJACK_ROADMAP.txt` under **Phase 3.5**. Improves shipped Farm / Collect / Oil
-navigation and deposit targeting. Do not treat as shipped.
+Shipped on `rush/r3`. Farm / Collect / Oil walk to chests; doorway side-step if LOS blocked. Yellow = seeds, green = produce, other = drop-off. Assigned = same creation as the beacon or logic-connected.
 
-- Reliable bot pathfinding (chests, doorways) beyond vanilla unit AI
-- Color-coded / connection-tool assigned chests (seeds vs produce vs drop-off)
+## 5) Menu tab: GUI (visuals) — **[DONE]** (Phase 3.6)
 
----
-
-## 5) Menu tab: GUI (visuals) — **[FUTURE]** (Phase 3.6; logged, not started)
-
-Logged in `HIJACK_ROADMAP.txt` under **Phase 3.6**. Do **not** block Orders
-HACK 3.9 testing. Prefer `/menu` or `/gensettings` FEATURES/GUI tab (TBD).
-Cross-ref Phase 2 nametag / naming polish and Orders type+number badges.
-
-- Names on/off (world nametags)
-- Farmbots as **"Big Red"** (vs generic Farm / type name)
-- Health bar Enemy (default red) + Neutral/ally (default green) with color dropdowns
-- Block health overlay (green→red) — **research/feasibility**; may not be exposed in SM
+Shipped on `/menu` (not Beacon Orders). Names on/off, Big Red, enemy/neutral tag color cycle. Block health overlay **cut** (no SM API). Vanilla engine HP bars are not recolorable.
 
 ---
 

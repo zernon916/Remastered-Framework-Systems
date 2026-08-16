@@ -6,6 +6,7 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsMiniMap.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCarry.lua" )
+pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" ) end )
 
 Player = class( SurvivalPlayer )
 
@@ -42,6 +43,13 @@ function Player.server_onCreate( self )
 	self.network:sendToClient( self.player, "cl_rfs_growthOverlayState", {
 		enabled = self.sv.rfsGrowthOverlay and true or false,
 	} )
+	pcall( function()
+		if type( RfsGuiPrefs ) == "table" then
+			local prefs = RfsGuiPrefs.load( self.player )
+			self.sv.rfsGuiPrefs = prefs
+			self.network:sendToClient( self.player, "cl_rfs_guiPrefState", prefs )
+		end
+	end )
 	pcall( function()
 		RfsCarry.ensureHooks()
 	end )
@@ -102,6 +110,37 @@ function Player.cl_rfs_growthOverlayState( self, data )
 		if type( data ) == "table" and data.msg then
 			sm.gui.chatMessage( "[RFS] " .. tostring( data.msg ) )
 		end
+	end
+end
+
+function Player.sv_rfs_guiPref( self, params )
+	if type( RfsGuiPrefs ) ~= "table" then
+		return
+	end
+	self.sv = self.sv or {}
+	local prefs = self.sv.rfsGuiPrefs or RfsGuiPrefs.load( self.player )
+	prefs = RfsGuiPrefs.toggle( prefs, params and params.key )
+	prefs = RfsGuiPrefs.save( self.player, prefs )
+	self.sv.rfsGuiPrefs = prefs
+	self.network:sendToClient( self.player, "cl_rfs_guiPrefState", prefs )
+end
+
+function Player.cl_rfs_guiPrefState( self, data )
+	if type( RfsGuiPrefs ) == "table" then
+		data = RfsGuiPrefs.applyClient( data )
+	end
+	self.cl = self.cl or {}
+	self.cl.rfsGuiPrefs = data
+	if self.player == sm.localPlayer.getPlayer() then
+		pcall( function()
+			local game = _G.g_rfsGame
+			if game and game.cl then
+				game.cl.rfsGuiPrefs = data
+				if type( RfsMenuGui ) == "table" and game.cl.rfsMenuGui then
+					RfsMenuGui.refresh( game )
+				end
+			end
+		end )
 	end
 end
 

@@ -8,7 +8,7 @@ Set "setupQuestTab": false to hide the /setup Quest tab.
 
 Help
 ----
-  /menu                Open player menu (Map + Growth Time overlay) — all players
+  /menu                Open player menu (Map, Growth Time, GUI visuals) — all players
   /help
   /commands
   /setup               Host-only world setup (Main / Farming / Quest / Inventory)

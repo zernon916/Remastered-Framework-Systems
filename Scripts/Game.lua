@@ -18,6 +18,7 @@ dofile( "$CONTENT_DATA/Scripts/game/ModRecipeScan.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsSetupGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsGenGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
+pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" ) end )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsMenuGui.lua" ) end )
 dofile( "$CONTENT_DATA/Scripts/game/RfsStreamer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsChatRelay.lua" )
@@ -2286,6 +2287,50 @@ end
 
 function RecipeFrameworkSurvival.cl_rfs_menuToggleGrowthOverlay( self )
 	self.network:sendToServer( "sv_rfs_toggleGrowthOverlay", { player = sm.localPlayer.getPlayer() } )
+end
+
+local function cl_menuGuiPref( self, key )
+	self.network:sendToServer( "sv_rfs_guiPref", { player = sm.localPlayer.getPlayer(), key = key } )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_menuToggleNames( self )
+	cl_menuGuiPref( self, "names" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_menuToggleBigRed( self )
+	cl_menuGuiPref( self, "bigRed" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_menuCycleEnemyHp( self )
+	cl_menuGuiPref( self, "enemyHp" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_menuCycleNeutralHp( self )
+	cl_menuGuiPref( self, "neutralHp" )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_guiPref( self, params, player )
+	local target = player
+	if params and params.player then
+		target = params.player
+	end
+	target = target or sm.player.getAllPlayers()[1]
+	if not target then
+		return
+	end
+	sm.event.sendToPlayer( target, "sv_rfs_guiPref", params or {} )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_guiPrefState( self, data )
+	self.cl = self.cl or {}
+	if type( RfsGuiPrefs ) == "table" then
+		self.cl.rfsGuiPrefs = RfsGuiPrefs.applyClient( data )
+	else
+		self.cl.rfsGuiPrefs = data
+	end
+	if self.cl.rfsMenuGui and type( RfsMenuGui ) == "table" then
+		RfsMenuGui.refresh( self )
+	end
 end
 
 function RecipeFrameworkSurvival.sv_rfs_toggleGrowthOverlay( self, params, player )

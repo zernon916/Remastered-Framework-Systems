@@ -6,6 +6,9 @@
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsFeatures.lua" )
 end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" )
+end )
 
 RfsBotHijack = RfsBotHijack or {}
 
@@ -2220,7 +2223,22 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 	self.cl = self.cl or {}
 	local text = data and tostring( data.text or "" ) or ""
 	local kind = ( data and data.kind ) or kindFromText( text )
+	local prefs = nil
+	if type( RfsGuiPrefs ) == "table" and RfsGuiPrefs.client then
+		prefs = RfsGuiPrefs.client()
+	end
 	local prev = self.cl.rfsLastTag
+	if kind == "name" and prefs then
+		if prefs.names == false then
+			-- Do not wipe jam/drop/chain overlays with a blank identity refresh.
+			if prev and prev.kind ~= "name" and prev.text and prev.text ~= "" then
+				return
+			end
+			text = ""
+		elseif prefs.bigRed then
+			text = tostring( text ):gsub( "Farm ", "Big Red " )
+		end
+	end
 	-- Skip no-op re-applies (client_onUpdate used to recreate FX every frame).
 	if prev and prev.text == text and prev.kind == kind and text ~= "" then
 		local fx = self.cl.rfsTagFx
@@ -2284,6 +2302,16 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 		name = sm.color.new( 0.35, 0.95, 0.55, 1.0 ),
 		chain = sm.color.new( 0.75, 0.95, 0.35, 1.0 ),
 	}
+	if type( RfsGuiPrefs ) == "table" and prefs then
+		if prefs.neutralHp then
+			colors.name = RfsGuiPrefs.hpColor( prefs.neutralHp )
+		end
+		if prefs.enemyHp then
+			local enemy = RfsGuiPrefs.hpColor( prefs.enemyHp )
+			colors.jam = enemy
+			colors.drop = enemy
+		end
+	end
 	if fx then
 		pcall( function()
 			fx:setParameter( "TextContent", text )

@@ -13,6 +13,24 @@ local function growthOn( host )
 	return _G.g_rfsGrowthOverlay == true
 end
 
+local function guiPrefs( host )
+	if host and host.cl and type( host.cl.rfsGuiPrefs ) == "table" then
+		return host.cl.rfsGuiPrefs
+	end
+	if type( RfsGuiPrefs ) == "table" and RfsGuiPrefs.client then
+		return RfsGuiPrefs.client()
+	end
+	return { names = true, bigRed = false, enemyHp = "red", neutralHp = "green" }
+end
+
+local function titleCase( s )
+	s = tostring( s or "" )
+	if s == "" then
+		return s
+	end
+	return string.upper( string.sub( s, 1, 1 ) ) .. string.sub( s, 2 )
+end
+
 function RfsMenuGui.refresh( host )
 	local gui = host.cl and host.cl.rfsMenuGui
 	if not gui then return end
@@ -22,9 +40,23 @@ function RfsMenuGui.refresh( host )
 	pcall( function()
 		gui:setButtonState( "BtnGrowthOverlay", overlay )
 	end )
+
+	local prefs = guiPrefs( host )
+	local names = prefs.names ~= false
+	local bigRed = prefs.bigRed and true or false
+	pcall( function()
+		gui:setText( "BtnNames", "Names: " .. ( names and "ON" or "OFF" ) )
+		gui:setButtonState( "BtnNames", names )
+		gui:setText( "BtnBigRed", "Big Red: " .. ( bigRed and "ON" or "OFF" ) )
+		gui:setButtonState( "BtnBigRed", bigRed )
+		gui:setText( "BtnEnemyHp", "Enemy bar: " .. titleCase( prefs.enemyHp ) )
+		gui:setText( "BtnNeutralHp", "Neutral bar: " .. titleCase( prefs.neutralHp ) )
+	end )
+
 	gui:setText( "Status", string.format(
-		"Map + Growth Time (yours only) | overlay=%s",
-		overlay and "ON" or "OFF"
+		"Map + Growth + GUI (yours only) | overlay=%s names=%s",
+		overlay and "ON" or "OFF",
+		names and "ON" or "OFF"
 	) )
 end
 
@@ -35,6 +67,10 @@ function RfsMenuGui.bind( host, gui )
 	gui:setButtonCallback( "CloseButton", "cl_rfs_menuClose" )
 	gui:setButtonCallback( "BtnMap", "cl_rfs_menuMap" )
 	gui:setButtonCallback( "BtnGrowthOverlay", "cl_rfs_menuToggleGrowthOverlay" )
+	gui:setButtonCallback( "BtnNames", "cl_rfs_menuToggleNames" )
+	gui:setButtonCallback( "BtnBigRed", "cl_rfs_menuToggleBigRed" )
+	gui:setButtonCallback( "BtnEnemyHp", "cl_rfs_menuCycleEnemyHp" )
+	gui:setButtonCallback( "BtnNeutralHp", "cl_rfs_menuCycleNeutralHp" )
 	gui:setOnCloseCallback( "cl_rfs_menuClose" )
 end
 

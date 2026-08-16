@@ -4,9 +4,12 @@
 
 Author: Zernon916  
 Written: 2026-08-16  
+Updated: 2026-08-16 (all implementable Rush phases merged; waiting on playtest)  
 Sources: `PHASES.md`, `HIJACK_ROADMAP.txt`, `COMMANDS.txt`, `PENDING_FIXES.md`, `GITHUB.md`, `docs/wiki/*`, `description.json`
 
-This is the back-burner queue. Agents and the user **move items between the four lists** below. Do not invent extra phases. Do not execute while another agent is repairing the Orders menu.
+This is the back-burner queue. Agents and the user **move items between the four lists** below. Do not invent extra phases.
+
+**Restore point:** tag `rush-base` = `75abb2f0b7d5fdd97cad7a89547413efb0a796e1`. Revert a phase with `git revert <phase-commit>` or `git checkout rush-base -- <files>`. Independent branches still exist.
 
 ---
 
@@ -38,27 +41,11 @@ Apply these on every implement / copy / test cycle:
 | **Custom Game, not Mod Tool Test** | Playtest via Scrap Mechanic → **Custom Game** (Remastered / Recipe Framework Survival). Do not use Mod Tool Test as the play path. |
 | **discord-bridge GitHub-only** | Companion lives at https://github.com/zernon916/Remastered-Framework-Systems (`discord-bridge/`). Older name `Recipe-Framework-Systems` redirects. **Not** in Steam / Workshop / local-backup packs. In-game Streamer still polls `%USER_DATA%/rfs_discord_bridge`. |
 | **No Steam / Fant from doc workflow** | Push git from Desktop `C:\Users\benko\Desktop\RecipeFrameworkSurvival` only when the user asks (`GITHUB.md`). |
-| **Nutt credit only when MiniMap ships** | Workshop **3780282057**. Credit Nutt in Steam / `description.json` **and** in-game/docs **when Phase 6 is implemented**, not before. Do not copy that mod until permission is confirmed. |
-| **Do not stomp NOW Orders GUI** | See **NOW / not Rush**. Battery spend, E open/close, and thin SHOW RANGE are frozen. |
+| **Nutt MiniMap credit shipped** | Workshop **3780282057**. Credit Nutt in Steam / `description.json` **and** in-game/docs. Subscribe World Map; do **not** enable it as a world mod. |
+| **Do not stomp Orders GUI** | Battery spend, E open/close (`queueOpen` / `cl_rfs_ordersOpen`), and thin SHOW RANGE stay frozen. |
 | **Intelligentia optional** | RFS remains the AI host. Official skip paste is `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua` — optional, not a Rush phase. |
 
-Typical local test dest: `C:\sm\RFS`. Workshop content dest (only after SM is quit, and only if that is the pack being tested): `C:\Steam\steamapps\workshop\content\387990\3782487760`.
-
----
-
-## NOW / not Rush
-
-**Do not treat the current Orders GUI repair as a Rush phase.** Another agent is repairing an invisible Orders menu. Rush must **not** stomp:
-
-- **Battery** spend / circuit (`RfsHackBeacon` consume path — user called it perfect)
-- **E open/close** — `queueOpen`, E, `cl_rfs_ordersOpen`, do not recreate GUI on the E frame
-- **SHOW RANGE thin** — user likes the thin Game-hosted ring; do not thicken, recolor, or rehost range FX onto the beacon electrical net
-- In-flight items: **rebind** (select / color / SHOW RANGE on every list refresh), **Return**, **Seed nametags** (`Seed N` not `Bot N`), **CLEAR MASTER** persist, **Master-off split later** (parked; do not “fix” re-split as part of Rush)
-- GitHub issues **#15–#20** (and still-open **#6** SHOW RANGE): [Color](https://github.com/zernon916/Remastered-Framework-Systems/issues/15), [Select](https://github.com/zernon916/Remastered-Framework-Systems/issues/16), [Seed names](https://github.com/zernon916/Remastered-Framework-Systems/issues/17), [Return](https://github.com/zernon916/Remastered-Framework-Systems/issues/18), [#19 list 1 of N](https://github.com/zernon916/Remastered-Framework-Systems/issues/19), [#20 Defend/Hay/Tote/Water](https://github.com/zernon916/Remastered-Framework-Systems/issues/20)
-
-Off-limits for Rush until the user says the Orders menu is stable: `Gui/Layouts/Rfs_BeaconOrders.layout`, `Scripts/game/RfsBeaconOrdersGui.lua`, `Scripts/game/RfsBotHijack.lua`, `Scripts/game/RfsHijackHost.lua`, `Scripts/game/interactables/RfsHackBeacon.lua`, `Scripts/Game.lua` (Orders RPC / range viz / E bind). Later Rush phases that need those files (Stay / Recall / `/botorder` / RAID filter / naming) **wait** until NOW is done, then touch them without regressing the bullets above.
-
-Shipped Phase 3 jobs (M1–M5 Rest/Defend/Farm/Collect/Oil, Master/Slave, colors, usable E) stay as-is. Rush does not re-implement them.
+Typical local test dest: `C:\sm\RFS`. Workshop content dest (only after SM is quit, and only if that is the pack being tested): `C:\Steam\steamapps\workshop\content\387990\3782487760`. Roaming dest: `%AppData%\Axolot Games\Scrap Mechanic\User\User_76561198019395152\Mods\RemasteredFrameworkSurvival`.
 
 ---
 
@@ -66,106 +53,15 @@ Shipped Phase 3 jobs (M1–M5 Rest/Defend/Farm/Collect/Oil, Master/Slave, colors
 
 Remaining phases **not started or not finished**. Implement in this order. After implement, move the item to **TO BE TESTED**.
 
----
-
-### R1 — Phase 2/5 full polish (identity + RAID)
-
-**Source:** `PHASES.md` remaining **Phase 2/5 full polish**; `HIJACK_ROADMAP.txt` Phase 2 full / Phase 5 full; `PENDING_FIXES.md` §3a–3c; wiki [[Known-Issues]]; `COMMANDS.txt` hijack polish.
-
-**What “done” means:**
-
-- **Numbers above bots** — idle identity + numbers actually render on clients (issue #2 style). Phase 2 lite claimed `pushTag`; world type+number tags exist but numbers still incomplete/missing.
-- **Bot naming** — player can set a custom name via **E on bot** *or* rename through the hack device / Orders GUI. Names show above the head **with** the numbers.
-- **RAID farm-range filter** — bots **out of range of farms** must **not** take RAID jam / range mul / raid notes (`RfsBotHijack`). Keep out-of-range farm bots out of RAID behavior.
-- **Melee-on-hit chain flavor** — light extra flavor on melee hit (beyond the shipped ~15 s / 10 m chain convert). Respect `hackableRobots`, underground flag, no new chains in raid, never undo raid bans.
-- **Richer raid help / callouts** — beyond Phase 5 lite; identity/release UI polish as needed.
-
-**Likely files:** `Scripts/game/RfsBotHijack.lua`, `Scripts/game/RfsHijackHost.lua`, `Scripts/game/interactables/RfsHackBeacon.lua`, `Scripts/game/RfsBeaconOrdersGui.lua` (rename via device), `Scripts/Game.lua` (only if E-on-bot needs a client RPC — **after NOW is stable**).
-
-**Frozen extra:** Do not start this while NOW Orders GUI is in flight. Do not change battery, E open/close, or thin range. Nametag work must keep Seed N / type+number behavior.
-
----
-
-### R2 — Phase 3 leftovers (Stay / Recall / chat `/botorder` / tapebot sentry)
-
-**Source:** `PHASES.md` remaining **Phase 3 — farm orders** (core M1–M5 already shipped; this is the unfinished tail); `HIJACK_ROADMAP.txt` Phase 3 `[FUTURE]`; `PENDING_FIXES.md` §3 `[FUTURE]`; wiki [[Bot-Orders]] / [[Known-Issues]] Recall/Stay.
-
-**What “done” means:**
-
-- **Stay in area** — Orders checkbox: leash / stay near beacon job range (16 / 32 / 48 m).
-- **Recall bots** — order allies back to the beacon (distinct from shipped **Return**, which walks each bot to **its** converting hack device `hackBeaconKey`).
-- **chat `/botorder`** — host/player chat path for the same order modes (optional if GUI is the source of truth; ship if it does not fight the GUI).
-- **Tapebot ranged sentry** — per-type flavor from the roadmap (tapebot sentry; farmbot stays Rest+Defend / tank escort). Do not redo Hay Farm / Tote Collect / Waterbot Oil.
-
-**Likely files:** `Scripts/game/RfsBotOrders.lua`, `Scripts/game/RfsBotOrdersFarm.lua`, `Scripts/game/RfsBotOrdersCollect.lua`, `Scripts/game/RfsBotOrdersOil.lua`, `Scripts/game/RfsBeaconOrdersGui.lua`, `Gui/Layouts/Rfs_BeaconOrders.layout`, `Scripts/Game.lua` (chat bind), `COMMANDS.txt` / wiki [[Bot-Orders]] when behavior ships.
-
-**Frozen extra:** **After NOW is stable.** Do not restyle SHOW RANGE. Do not recreate Orders GUI on the E frame. Do not change battery spend. Return stays “walk to own hack device.”
-
----
-
-### R3 — Phase 3.5 — pathfinding & painted chests
-
-**Source:** `PHASES.md` **Phase 3.5**; `HIJACK_ROADMAP.txt` Phase 3.5; `PENDING_FIXES.md` §4; wiki [[Known-Issues]] / [[Bot-Orders]].
-
-**What “done” means:**
-
-- Bots find chests and go through doorways more reliably than vanilla unit AI chase (Farm / Collect / Oil jobs).
-- Painted / assigned chests: color-coded roles (e.g. seeds vs veggies/fruits vs drop-off) and optional connection tool to assign chests to a beacon / Orders domain.
-- Does not scramble shipped Phase 3 job modes.
-
-**Likely files:** `Scripts/game/RfsBotOrders*.lua`, possible new `Scripts/game/RfsBotPath.lua` (or similar), chest paint / connect interactable under `Scripts/game/interactables/`, hijack/orders domain keys in `RfsBotHijack.lua` / `RfsHackBeacon.lua`.
-
-**Frozen extra:** Place **before Phase 4 factories**. Do not replace job logic; improve navigation + deposit targeting. No Fant pathing assets.
-
----
-
-### R4 — Phase 3.6 — Menu tab: GUI (visuals)
-
-**Source:** `PHASES.md` **Phase 3.6**; `HIJACK_ROADMAP.txt` Phase 3.6; `PENDING_FIXES.md` §5; wiki [[Commands]] / [[Known-Issues]].
-
-**What “done” means:**
-
-Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab — **not** Beacon Orders):
-
-1. **Names** — toggle names above bots (world nametags on/off).
-2. **Big Red** — farmbots display as “Big Red” instead of generic Farm / type name.
-3. **Health bar (Enemy)** — default red; color dropdown.
-4. **Health bar (Neutral)** — default green; color dropdown (ally / neutral).
-5. **Block health overlay** — green → red for damaged blocks. **Research / feasibility only:** ship only if SM API allows; else cut.
-
-**Likely files:** `Scripts/game/RfsMenuGui.lua`, `Gui/Layouts/Rfs_Menu.layout`, and/or `Scripts/game/RfsGenGui.lua`, `Gui/Layouts/Rfs_GenSettings.layout`, `Scripts/game/RfsFeatures.lua`, `Scripts/game/RfsBotHijack.lua` (nametag gate), `Scripts/Game.lua` (tab bind). MiniMap toggle on this tab is **optional later** (Phase 6), not required here.
-
-**Frozen extra:** After Phase 3.5 (roadmap). Does not block pathfinding or factories. Do not put these toggles on Beacon Orders.
-
----
-
-### R5 — Phase 4 — factories
-
-**Source:** `PHASES.md` **Phase 4**; `HIJACK_ROADMAP.txt` Phase 4.
-
-**Shipped** on `rush/factories` (`46cf97e`), merged to main. Factory UUID remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` so Digital Sign keeps `f8c2a5e4-…`. Hideout crate→80 seed trades kept.
-
-### R6 — Phase 6 — MiniMap (HUD)
-
-**Source:** `PHASES.md` **Phase 6**; `HIJACK_ROADMAP.txt` Phase 6.
-
-**Shipped** on `rush/minimap` (`24a3ad1`). Nutt World Map HUD while Workshop **3780282057** is subscribed (do not enable World Map as a world mod). `/map` atlas; fallback lock-camera + original RfsHud clock/compass/ammo (ammo lower-right). Credit Nutt in `description.json`.
-
-### R7 — Phase 7 — Digital Signs
-
-**Shipped** minimum on `rush/digital-signs` (`c96b042`). Craftbot S/L/XL, E to edit text, optional logic hide. Gaps: no ON/OFF dual messages; no Hideout trade; vanilla textsigns stay non-logic.
-
----
-
 ### R8 — Phase E — Steam Workshop push (gated)
 
 **Source:** `PHASES.md` remaining **Phase E**.
 
 **What “done” means:** Full menus / streamer / discord-batch **Workshop publish** of pack `3782487760` when the **user asks**.
 
-**Likely files / tools:** steamcmd workflow the user already uses; `description.json` (Nutt MiniMap credit already on `rush/minimap`); do **not** pack `discord-bridge/` into Workshop.
+**Likely files / tools:** steamcmd workflow the user already uses; `description.json` (Nutt MiniMap credit shipped); do **not** pack `discord-bridge/` into Workshop.
 
-**Frozen extra:** **Do not steamcmd or Workshop-push during Rush unless the user explicitly asks for Phase E.** GitHub push is also ask-only (`GITHUB.md`). This item stays in TO BE EXECUTED until that ask.
+**Frozen extra:** **Do not steamcmd or Workshop-push unless the user explicitly asks for Phase E.** GitHub push is also ask-only (`GITHUB.md`). No `git push origin` unless asked.
 
 ---
 
@@ -173,21 +69,54 @@ Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab
 
 Implemented, waiting for the user to playtest. Bugs keep the item here until fixed. Testing good → **PENDING DONE**.
 
-### R7 — Phase 7 — Digital Signs (minimum)
+### R1 — Phase 2/5 polish (`rush/r1` `1ed3196`, merge `a21cd2a`)
 
-Craftbot Digital Sign S/L/XL. E edits text via Survival Digital Sign GUI. Optional logic switch hides the face; logic output follows display-on. No battery. Isolated on `rush/digital-signs` (`c96b042`).
+Nametag numbers via `RfsHackText` plus `sm.gui.setCharacterDebugText` refresh. Custom names (`/botname`, E-on-bot rename, Orders NameEdit). `RfsBotHijack.allyIgnoresRaid` (farm/collect/oil outside home radius skip RAID jam/range mul). Melee-on-hit chain flavor (~5s). Raid jam callouts. Keep Seed N / type+number.
 
-**Gaps (spec was high-level only):** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; no dedicated MyGUI layout (reuses Survival `DigitalSign.gui`).
+### R2 — Stay / Recall / `/botorder` / sentry (`rush/r2` `355eca4`, merge `b3b9b27`)
 
-### R5 — Phase 4 — factories (`rush/factories` `46cf97e`)
+Modes `stay` / `recall` / `sentry`. Stay = leash at beacon tier 16/32/48. Recall = walk to Orders home (`workBeaconKey`), distinct from Return (hack device). `/botorder rest|defend|stay|recall|return|farm|collect|oil|sentry`. Tapebot Sentry in dropdown.
 
-RFS Ally Factory part. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to spawn a player ally. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage.
+### R3 — Phase 3.5 pathfinding + painted chests (`rush/r3` `b9c0e9f`)
 
-**Merge note:** factory UUID was `f8c2a5e4-…` which collided with Digital Sign. Factory was remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` so both parts exist. Seed crate→80 trades kept.
+Farm / Collect / Oil walk to chests; doorway side-step if LOS blocked. Paint: **yellow = seeds**, **green = produce**, other/unpainted = drop-off. Assigned: same creation as the home beacon, or logic-connected to it. Does not scramble M1–M5 jobs.
 
-### R6 — Phase 6 — MiniMap (HUD)
+### R4 — Phase 3.6 GUI visuals (`/menu`)
 
-Nutt World Map HUD (Workshop **3780282057**) hosted as an RFS autoTool. `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ring pinned off lower-right). Fallback: lock-camera `/map` if Nutt content is missing. Credit Nutt in `description.json` / Steam text / in-game chat. Branch: `rush/minimap`.
+Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle (tints RFS tags). **Block health overlay CUT** — no SM custom-game API.
+
+### R5 — Phase 4 factories (`rush/factories` `46cf97e`, merge `1d5a861`)
+
+RFS Ally Factory. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to spawn a player ally. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage. Factory UUID remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` (Digital Sign keeps `f8c2a5e4-…`). **Crate→80 seed trades kept.**
+
+### R6 — Phase 6 MiniMap (`rush/minimap` `24a3ad1`, merge `7a89516`)
+
+Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enable World Map as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ammo lower-right). Fallback: lock-camera `/map`. Credit Nutt in `description.json`. Player.lua keeps **both** pickup-dupe carry hooks and MiniMap toggle.
+
+### R7 — Phase 7 Digital Signs (`rush/digital-signs` `c96b042`, merge `e6329b4`)
+
+Craftbot Digital Sign S/L/XL. E edits text. Optional logic switch hides the face. No battery.
+
+### Pickup-dupe harden (`rush/pickup-dupe` `216143c`, merge `9c7b9c6`)
+
+Carry/use: LMB while carrying a large pickup cannot clone the hotbar item. Keep with MiniMap `Player.lua` merge.
+
+### Hack-block leftovers (pre-Rush; still verify)
+
+Do not “fix” as Rush. Playtest and report:
+
+- GitHub **#15–#20** (Color, Select, Seed names, Return, list 1 of N, Defend/Hay/Tote/Water) and **#6** SHOW RANGE
+- Select / Color stick after list refresh
+- Return (walk to converting hack device)
+- Seed nametags (`Seed N` not `Bot N`)
+- CLEAR MASTER persist
+- Thin SHOW RANGE (do not thicken / recolor / rehost onto the beacon electrical net)
+- Multi-select
+- Caps 2 / 4 / 6
+- Master-off split (**parked** — do not “fix” re-split)
+- Orders menu visible with cursor
+- Battery spend unchanged
+- E open/close: `queueOpen` / `cl_rfs_ordersOpen` (do not recreate GUI on the E frame)
 
 ---
 
@@ -207,6 +136,22 @@ _(empty — use **Already shipped (not Rush)** below for historical DONE, not th
 
 ---
 
+## UNSURE / CHECK WITH ME
+
+Do not silently drop or “fix” these:
+
+- **Digital Signs:** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; reuses Survival `DigitalSign.gui` (no dedicated MyGUI layout)
+- **Factories:** 200 Farmers vs schematic; metal UUID; caps 16/2; spawn costs; infected spawn / no beacon tether; one machine vs three shapes; works if hijack host-disabled; factory UUID remap vs Digital Sign
+- **CHAIN:** melee flavor shipped in R1; larger CHAIN rewrite not done
+- **MiniMap:** letters / fog / GPS not v1; World Map must stay subscribed, not enabled as a world mod
+- **Master-off split:** parked, do not “fix” as Rush
+- **Block health overlay:** cut — no SM custom-game API for damaged-block gradient
+- **Vanilla engine HP bars:** Enemy/Neutral dropdowns tint RFS nametags / jam tags only; engine health bars are not recolorable
+- **Cotton in autumn:** not an RFS fix
+- **Connection tool for chests:** no new tool; weld to beacon creation or Connect Tool logic to the beacon
+
+---
+
 ## Already shipped (not Rush)
 
 Do not re-open these as Rush phases. Sources: `PHASES.md` DONE, `HIJACK_ROADMAP.txt` Phase 1 / 2 lite / 3 `[DONE]` / 5 lite, `PENDING_FIXES.md`.
@@ -220,27 +165,30 @@ Do not re-open these as Rush phases. Sources: `PHASES.md` DONE, `HIJACK_ROADMAP.
 | Phase D | `/say` + `/d` → `chat_outbox.json` → Discord (gated) |
 | Phase F / hijack lite | Identity persist + nametag hooks; light chain convert; `/unhijack`; underground miner/cable flag (default ON) |
 | Phase 1 hijack | `/hijack`, `/hijacklist`, `/givehack`; Hack 16 / Control 32 / Infection 48; Hideout 20/50/120 Farmers; tether hop; cheat infect |
-| Phase 3 jobs (M1–M5) | Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil, colors, Master/Slave, usable E, raid-list clear, icon+number list — **GUI still being repaired under NOW** |
+| Phase 3 jobs (M1–M5) | Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil, colors, Master/Slave, usable E, raid-list clear, icon+number list |
 | Phase 5 lite | `/unhijack`; `hackUndergroundBots`; ally FF gated |
 | Craftbot extras | Client merge GUI — DONE (`PENDING_FIXES.md` §1) |
 | Cotton in autumn | Investigated, **not an RFS fix** — do not Rush |
+| rush-base extras | Host/admin cheat gating, public `/rfsmenu`, hideout 1-crate→80 seed trades, weapon ammo HUD |
 
 Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua`.
 
 ---
 
-## Suggested Rush night order (short)
+## Per-phase commits (this Rush)
 
-1. R1 Phase 2/5 polish (numbers, naming, RAID filter, melee-chain, raid callouts)  
-2. R2 Phase 3 leftovers (Stay, Recall, `/botorder`, tapebot sentry)  
-3. R3 Phase 3.5 pathfinding + painted chests  
-4. R4 Phase 3.6 GUI visuals tab  
-5. R5 Phase 4 factories  
-6. R6 Phase 6 MiniMap — **in TO BE TESTED** (`rush/minimap`)  
-7. R7 Phase 7 Digital Signs — **TO BE TESTED**  
-8. R8 Phase E Workshop — **only if the user asks**
-
-If NOW Orders GUI is still broken when Rush starts: **skip R1–R2** (they share hijack/Orders files) and start at **R3** only if those files are untouched — otherwise wait.
+| Item | Branch | Tip commit | Merge on main |
+|------|--------|------------|---------------|
+| Restore | `rush-base` tag | `75abb2f` | — |
+| R1 Phase 2/5 | `rush/r1` | `1ed3196` | `a21cd2a` |
+| R2 Stay/Recall | `rush/r2` | `355eca4` | `b3b9b27` |
+| R3 pathfinding | `rush/r3` | `b9c0e9f` | (on main) |
+| R4 GUI visuals | `rush/r4` | (this ship) | (on main) |
+| R5 factories | `rush/factories` | `46cf97e` | `1d5a861` |
+| R6 MiniMap | `rush/minimap` | `24a3ad1` | `7a89516` |
+| R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
+| Pickup-dupe | `rush/pickup-dupe` | `216143c` | `9c7b9c6` |
+| R8 Phase E | — | — | gated |
 
 ---
 
@@ -254,5 +202,5 @@ If NOW Orders GUI is still broken when Rush starts: **skip R1–R2** (they share
 | `COMMANDS.txt` | Player commands + Phase 3 status note |
 | `GITHUB.md` | Git push from Desktop folder, ask-only |
 | `docs/wiki/Home.md` | Wiki index (shipped vs roadmap) |
-| `docs/wiki/Known-Issues.md` | Open polish + future phases |
-| `description.json` | Steam blurb; Nutt MiniMap credit **shipped on rush/minimap** |
+| `docs/wiki/Known-Issues.md` | Open polish + shipped 3.5 / 3.6 |
+| `description.json` | Steam blurb; Nutt MiniMap credit shipped |

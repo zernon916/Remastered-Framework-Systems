@@ -31,13 +31,13 @@ Desired: names show above the head **with** the numbers.
 
 Bots that are **out of range of farms** should **not** be affected by RAID jam / range mul / raid notes. Still open in Phase 5 polish.
 
-## Pathfinding & painted chests — **[FUTURE]** (Phase 3.5)
+## Pathfinding & painted chests — **[DONE]** (Phase 3.5)
 
-Not started. Farm / Collect / Oil still use vanilla unit AI navigation. Planned: reliable pathfinding through doorways to chests, plus painted / assigned chests (color roles + optional connection tool to beacon Orders domain). Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.5, `PENDING_FIXES.md` §4, [[Bot-Orders]].
+Farm / Collect / Oil walk to chests; doorway side-step if line of sight is blocked. Paint yellow = seeds, green = produce, other/unpainted = drop-off. Chests on the beacon creation or logic-connected to the beacon are assigned. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.5.
 
-## Menu tab: GUI visuals — **[FUTURE]** (Phase 3.6)
+## Menu tab: GUI visuals — **[DONE]** (Phase 3.6)
 
-Not started (do not build during HACK 3.10 testing). Planned player/host visual prefs — Names on/off, Farmbots as **"Big Red"**, enemy/neutral health-bar color dropdowns, and a block health overlay (green→red) only if SM exposes damage visuals. Menu home TBD (`/menu` or `/gensettings` FEATURES/GUI). Relates to Phase 2 nametag/naming polish and Orders type+number badges. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6, `PENDING_FIXES.md` §5.
+Player `/menu` GUI section: Names on/off, Farmbots as **Big Red**, enemy/neutral color cycle (tints RFS tags; vanilla HP bars are engine-fixed). Block health overlay cut — no SM custom-game API. Cross-ref: `HIJACK_ROADMAP.txt` Phase 3.6.
 
 ## MiniMap HUD — **shipped** (Phase 6)
 

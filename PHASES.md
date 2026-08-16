@@ -16,6 +16,8 @@ Author: Zernon916
 - **Phase F — hijack one-pass (lite)** — identity persist + nametag; light chain convert; `/unhijack` voluntary release; underground miner/cable flag (default ON). Docs honesty for Hideout Control/Infection (50/120 Farmers). See `HIJACK_ROADMAP.txt`.
 - **Phase 7 — Digital Signs (minimum)** — Craftbot logic-connectable signs (S/L/XL) that show editable text. Optional logic switch hides the face. Does not scramble Phase 3.
 - **Phase 6 — MiniMap (HUD)** — Nutt World Map HUD + `/map` atlas (Workshop 3780282057); original HUD/camera fallback; Nutt credited. Beacon/ally letters later.
+- **Phase 3.5 — Pathfinding & painted chests** — Farm/Collect/Oil walk to chests (doorway side-step). Yellow=seeds, green=produce, other=drop-off. Same-creation or logic-connected chests are assigned to that beacon.
+- **Phase 3.6 — Menu GUI visuals** — `/menu` Names / Big Red / enemy+neutral tag colors. Block health overlay cut (no SM API).
 
 ---
 

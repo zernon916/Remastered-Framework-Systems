@@ -117,28 +117,19 @@ Paint: yellow = seeds, green = produce, other/unpainted = drop-off.
 Assigned: chest on the same creation as the home beacon, or logic-connected
 to that beacon. No new connection tool — weld or Connect Tool to the beacon.
 
-Phase 3.6 — Menu tab: GUI (visuals) [FUTURE]
---------------------------------------------
-Not started. Prefer player `/menu` or host `/gensettings` FEATURES / GUI tab
-(not Beacon Orders). Confirm placement when building. Do not block Orders 3.9.
-
-Planned options:
-  1. Names — toggle names above bots (world nametags on/off)
-  2. Farmbots display as "Big Red" instead of generic Farm / type name
-  3. Health bar (Enemy) — default red; color dropdown
-  4. Health bar (Neutral) — default green; color dropdown (ally / neutral bots)
-  5. Block health overlay — gradient green → red for damaged blocks
-     **RESEARCH / feasibility only:** may need Survival damage visuals, or
-     may not be exposed to custom games. Ship only if SM API allows; else cut.
+Phase 3.6 — Menu tab: GUI (visuals) [SHIPPED]
+---------------------------------------------
+Player `/menu` GUI section (not Beacon Orders):
+  1. Names — toggle world nametags on/off
+  2. Big Red — farmbots display as "Big Red" instead of Farm
+  3. Health bar (Enemy) — color cycle; tints RFS jam/drop tags (vanilla HP bars are engine-fixed)
+  4. Health bar (Neutral) — color cycle; tints ally name tags
+  5. Block health overlay — CUT: no SM custom-game API for damaged-block gradient
 
 Relation to earlier work:
   - Builds on Phase 2 lite nametags (`pushTag`) and Phase 2 full naming polish
   - Orders list already has type+number badges (H1/T2…); this phase is
     client visual prefs on top, not a redo of that identity system
-
-Place after Phase 3.5; before Phase 4 factories. Does not block pathfinding
-or factories. MiniMap HUD is Phase 6 (not this tab); a later toggle on this
-tab is optional.
 
 Phase 4 — Factories (late game / Wonk) — implemented on rush/factories
 ----------------------------------------------------------------------
