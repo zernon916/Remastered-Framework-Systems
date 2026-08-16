@@ -1007,6 +1007,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self:rfs_bindOne( "/say", sayArgs, "Send chat to Discord (Streamer + chat relay)" )
 	self:rfs_bindOne( "/d", sayArgs, "Alias of /say (game → Discord)" )
 	self:rfs_bindOne( "/unhijack", { { "number", "range", true } }, "Release nearest owned ally robot (host can release any)" )
+	self:rfs_bindOne( "/botname", { { "string", "name", false } }, "Rename nearest owned ally (or the bot you E'd)" )
 
 	-- Cheats in the chat list: host or admin only. Regular clients never see them.
 	if cheats and admin then
@@ -1211,6 +1212,19 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		sm.gui.chatMessage( "[RFS] /unhijack — releasing nearest owned ally..." )
 		self.network:sendToServer( "sv_rfs_unhijack", {
 			range = params[2] or 16,
+			player = sm.localPlayer.getPlayer(),
+		} )
+		return
+	end
+
+	if cmd == "/botname" then
+		local name = params[2]
+		if type( name ) ~= "string" or name == "" then
+			sm.gui.chatMessage( "[RFS] Usage: /botname <name>  (nearest owned ally, or E on a bot first)" )
+			return
+		end
+		self.network:sendToServer( "sv_rfs_botRename", {
+			name = name,
 			player = sm.localPlayer.getPlayer(),
 		} )
 		return
@@ -1627,6 +1641,130 @@ function RecipeFrameworkSurvival.sv_rfs_unhijack( self, params, player )
 		range = ( params and params.range ) or 16,
 		allowAny = allowAny,
 	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_botRenameLook( self, params, player )
+	params = params or {}
+	player = player or params.player
+	if not player then
+		return
+	end
+	self.sv = self.sv or {}
+	self.sv.rfsRenameLook = self.sv.rfsRenameLook or {}
+	local pid = nil
+	pcall( function() pid = player.id end )
+	local unitKey = params.unitKey and tostring( params.unitKey ) or nil
+	if pid then
+		self.sv.rfsRenameLook[pid] = unitKey
+	end
+	local name = ""
+	if unitKey and type( RfsBotHijack ) == "table" and RfsBotHijack.allies then
+		local info = RfsBotHijack.allies[unitKey]
+		if info then
+			name = tostring( info.customName or info.displayName or "" )
+		end
+	end
+	self.network:sendToClient( player, "cl_rfs_botRenameOpen", {
+		unitKey = unitKey,
+		name = name,
+	} )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botRenameOpen( self, data )
+	data = data or {}
+	self.cl = self.cl or {}
+	self.cl.rfsRenameUnitKey = data.unitKey
+	if self.cl.rfsRenameGui then
+		pcall( function() self.cl.rfsRenameGui:close() end )
+		self.cl.rfsRenameGui = nil
+	end
+	local ok, gui = pcall( sm.gui.createGuiFromLayout, "$CONTENT_DATA/Gui/Layouts/Rfs_BotRename.layout" )
+	if not ok or not gui then
+		sm.gui.chatMessage( "[RFS] Type /botname <name> to rename this bot." )
+		return
+	end
+	self.cl.rfsRenameGui = gui
+	pcall( function()
+		gui:setText( "NameEdit", tostring( data.name or "" ) )
+		gui:setButtonCallback( "CloseButton", "cl_rfs_botRenameClose" )
+		gui:setButtonCallback( "BtnApply", "cl_rfs_botRenameApply" )
+		gui:setOnCloseCallback( "cl_rfs_botRenameClose" )
+		gui:open()
+	end )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botRenameClose( self )
+	local gui = self.cl and self.cl.rfsRenameGui
+	if gui then
+		pcall( function() gui:close() end )
+	end
+	if self.cl then
+		self.cl.rfsRenameGui = nil
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botRenameApply( self )
+	local gui = self.cl and self.cl.rfsRenameGui
+	local name = ""
+	pcall( function()
+		name = gui:getText( "NameEdit" )
+	end )
+	self.network:sendToServer( "sv_rfs_botRename", {
+		name = name,
+		unitKey = self.cl and self.cl.rfsRenameUnitKey,
+		player = sm.localPlayer.getPlayer(),
+	} )
+	self:cl_rfs_botRenameClose()
+end
+
+function RecipeFrameworkSurvival.sv_rfs_botRename( self, params, player )
+	params = params or {}
+	player = player or params.player
+	if not player then
+		return
+	end
+	local allowHost = rfsServerPlayerIsHost( player )
+	local name = tostring( params.name or "" )
+	local unitKey = params.unitKey and tostring( params.unitKey ) or nil
+	if ( not unitKey or unitKey == "" ) and self.sv and self.sv.rfsRenameLook then
+		local pid = nil
+		pcall( function() pid = player.id end )
+		unitKey = pid and self.sv.rfsRenameLook[pid] or nil
+	end
+	local ok, result = false, "no bot"
+	if unitKey and unitKey ~= "" and type( RfsBotHijack ) == "table" and RfsBotHijack.setCustomName then
+		ok, result = RfsBotHijack.setCustomName( unitKey, name, player, allowHost )
+	elseif type( RfsBotHijack ) == "table" and RfsBotHijack.convertNearest then
+		-- Nearest owned ally in 16 m.
+		local best, bestD2 = nil, nil
+		local origin = nil
+		pcall( function()
+			origin = player.character.worldPosition
+		end )
+		if origin and RfsBotHijack.allies then
+			for key, info in pairs( RfsBotHijack.allies ) do
+				if info and info.controlled then
+					local isOwner = tostring( info.owner ) == tostring( player.id )
+					if isOwner or allowHost then
+						local u = RfsBotHijack.unitByKey( key )
+						if u and sm.exists( u ) and u.character then
+							local d2 = ( u.character.worldPosition - origin ):length2()
+							if d2 <= 16 * 16 and ( bestD2 == nil or d2 < bestD2 ) then
+								best = key
+								bestD2 = d2
+							end
+						end
+					end
+				end
+			end
+		end
+		if best then
+			ok, result = RfsBotHijack.setCustomName( best, name, player, allowHost )
+		end
+	end
+	pcall( function()
+		self.network:sendToClient( player, "client_showMessage", ok and ( "[RFS] Named: " .. tostring( result ) ) or ( "[RFS] Rename failed: " .. tostring( result ) ) )
+	end )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_givehack( self, params, player )
@@ -2841,6 +2979,12 @@ function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
 	end
 end
 
+function RecipeFrameworkSurvival.cl_rfs_ordersRename( self )
+	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onRename then
+		RfsBeaconOrdersGui.onRename( self )
+	end
+end
+
 -- Pre-Close-fix: open immediately on Game (createGui owned here so Close binds).
 -- Only queues when a Close settle (~0.5s) is still active.
 function RecipeFrameworkSurvival.cl_rfs_ordersOpen( self, data )
@@ -3258,4 +3402,27 @@ function RecipeFrameworkSurvival.sv_rfs_ordersSetColor( self, params, player )
 		colorCount = count,
 		unitKey = unitKey,
 	} )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ordersRename( self, params, player )
+	params = params or {}
+	player = player or params.player
+	local name = tostring( params.name or "" )
+	local allowHost = rfsServerPlayerIsHost( player )
+	local keys = params.unitKeys
+	local n = 0
+	if type( keys ) == "table" and type( RfsBotHijack ) == "table" and RfsBotHijack.setCustomName then
+		for _, k in ipairs( keys ) do
+			local ok = RfsBotHijack.setCustomName( tostring( k ), name, player, allowHost )
+			if ok then
+				n = n + 1
+			end
+		end
+	end
+	pcall( function()
+		self.network:sendToClient( player, "client_showMessage", "[RFS] Renamed " .. tostring( n ) .. " bot(s)" )
+	end )
+	if player then
+		self:sv_rfs_ordersList( { beaconKey = params.beaconKey }, player )
+	end
 end
