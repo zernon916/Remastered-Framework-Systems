@@ -1514,6 +1514,7 @@ local function buildOrdersListPayload( self, player )
 						controlled = true,
 						displayName = info.displayName and tostring( info.displayName ) or nil,
 						displayIndex = info.displayIndex ~= nil and tonumber( info.displayIndex ) or nil,
+						customName = info.customName and tostring( info.customName ) or false,
 						allyColor = info.allyColor and tostring( info.allyColor ) or nil,
 						rfsOrder = type( info.rfsOrder ) == "table" and {
 							mode = info.rfsOrder.mode,
