@@ -4,6 +4,7 @@ dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalPlayer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHud.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsCarry.lua" )
 
 Player = class( SurvivalPlayer )
 
@@ -40,6 +41,9 @@ function Player.server_onCreate( self )
 	self.network:sendToClient( self.player, "cl_rfs_growthOverlayState", {
 		enabled = self.sv.rfsGrowthOverlay and true or false,
 	} )
+	pcall( function()
+		RfsCarry.ensureHooks()
+	end )
 end
 
 function Player.client_onCreate( self )
@@ -58,6 +62,9 @@ function Player.client_onCreate( self )
 		RfsFarming.cl_setLocalGrowthOverlay( false )
 		RfsHud.ensure( self )
 	end
+	pcall( function()
+		RfsCarry.ensureHooks()
+	end )
 end
 
 function Player.sv_rfs_toggleGrowthOverlay( self )
@@ -458,6 +465,16 @@ end
 function Player.server_onFixedUpdate( self, dt )
 	SurvivalPlayer.server_onFixedUpdate( self, dt )
 
+	do
+		local tick = sm.game.getCurrentTick()
+		local carrying = type( RfsCarry ) == "table" and RfsCarry.playerIsCarrying( self.player )
+		if carrying or ( tick % 40 ) == 0 then
+			pcall( function()
+				RfsCarry.ensureHooks()
+			end )
+		end
+	end
+
 	if self.sv and self.sv.rfsMapOpen then
 		local character = self.player:getCharacter()
 		local dead = ( character == nil ) or ( not sm.exists( character ) ) or character:isDowned()
@@ -502,6 +519,13 @@ function Player.client_onUpdate( self, dt )
 	SurvivalPlayer.client_onUpdate( self, dt )
 
 	if self.player == sm.localPlayer.getPlayer() then
+		local tick = sm.game.getCurrentTick()
+		local carrying = type( RfsCarry ) == "table" and RfsCarry.localIsCarrying()
+		if carrying or ( tick % 40 ) == 0 then
+			pcall( function()
+				RfsCarry.ensureHooks()
+			end )
+		end
 		RfsHud.update( self )
 	end
 
