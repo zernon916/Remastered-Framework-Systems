@@ -21,6 +21,12 @@ Author: Zernon916
 
 ---
 
+## CUT (not shipping)
+
+- **Phase 4 — Ally Factory — CUT** — not worth the lag. Unwired from the playable pack (`rush/cut-factories`). Digital Signs unchanged. Hideout crate→80 seed trades kept.
+
+---
+
 ## REMAINING (unfinished only)
 
 - **Phase E** — Steam Workshop push (full menus / streamer / discord batch) — only when the user asks

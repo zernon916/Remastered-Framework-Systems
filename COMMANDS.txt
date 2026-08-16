@@ -130,13 +130,10 @@ Phase 3 Orders status (not commands — see HIJACK_ROADMAP Phase 3 checklist)
   [DONE]   Phase 7 Digital Signs (minimum): Craftbot S/L/XL, E to edit text,
           optional logic switch hides the face
 
-Phase 4 Ally Factory (not a chat command)
------------------------------------------
-  Hideout: Ally Factory 200 Farmers (item, not a Craftbot auto-unlock).
-  Place the part. E builds a player ally; U cycles Tote line / Hay barn /
-  Tape assembly / Farm garage. Spends Metal + Battery from a wired chest or
-  inventory. Army cap 16 (farmbot cap 2). Capsules stay hostile. Optional
-  logic switch. See HIJACK_ROADMAP.txt Phase 4.
+Phase 4 Ally Factory — CUT (not a chat command)
+----------------------------------------------
+  CUT from the playable pack (not worth the lag). No Hideout factory listing.
+  Hideout 1 crate → 80 seeds trades kept. See HIJACK_ROADMAP.txt Phase 4.
 
 Hijack polish still open (not commands — see PENDING_FIXES.md §3a–3c + HIJACK_ROADMAP)
 -------------------------------------------------------------------------------------

@@ -131,13 +131,12 @@ Relation to earlier work:
   - Orders list already has type+number badges (H1/T2…); this phase is
     client visual prefs on top, not a redo of that identity system
 
-Phase 4 — Factories (late game / Wonk) — implemented on rush/factories
+Phase 4 — Factories (late game / Wonk) — CUT (not worth the lag)
 ----------------------------------------------------------------------
-- RFS Ally Factory part (not Intelligentia). Hideout item 200 Farmers (not auto-unlocked Craftbot).
-- E spends Metal + Battery to sm.unit.createUnit(..., { playerAlly=true, color=..., tetherPoint=... })
-- Capsules stay hostile (vanilla); factory is the ally spawner
-- Army cap 16 total allies; farmbot cap 2
-- Optional flavor on one machine: U cycles tote line / hay barn / tape assembly / farm garage
+- CUT from the playable pack on rush/cut-factories. User: not worth the lag.
+- Ally Factory script/shape/Hideout 200 Farmers listing removed. Digital Signs unchanged.
+- Hideout 1 crate → 80 seeds trades KEPT.
+- Historical implement (do not restore unless asked): rush/factories 46cf97e, merge 1d5a861.
 
 Phase 5 lite (SHIPPED — one-pass / Phase F)
 -------------------------------------------
@@ -166,7 +165,7 @@ lock-camera `/map`. Ring stays off lower-right ammo.
 Letters for beacons/allies (H1/T2-style) stay later, after Phase 2 naming.
 Size/corner prefs may later share the Phase 3.6 GUI tab. Fog of war: skip v1.
 
-Phase 6 does not block factories or Orders.
+Phase 6 does not block Orders. Factories are CUT.
 
 Phase 7 — Digital Signs [DONE minimum]
 --------------------------------------

@@ -65,12 +65,6 @@ Craftbot: Digital Sign / Large / Extra Large (1 Metal placeholder each).
 Press E to type text. Optional logic switch: no wire = always show; switch off = hide.
 No battery. Vanilla Survival textsigns still exist and are not logic-connectable.
 
-Ally Factory
-------------
-Hideout: 200 Farmers (item, not schematic). E spends Metal + Battery to spawn a player ally.
-U cycles Tote / Hay barn / Tape assembly / Farm garage. Army cap 16 (2 farmbots).
-Capsules stay hostile. Optional logic switch.
-
 Always-on HUD
 -------------
 Top-center game clock and facing compass (N/NE/E/…). Lower-right weapon ammo count.

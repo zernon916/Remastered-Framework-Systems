@@ -52,11 +52,5 @@
 		"upperCaseTitle": "DIGITAL SIGN EXTRA LARGE",
 		"keywords": [ "sign", "text", "logic", "display", "rfs" ],
 		"description": "Extra-large digital sign. Shows custom text. Press E to edit. Optional logic switch hides the text when off."
-	},
-	"2bf5d817-4e96-41f8-c3a5-96e815232c6e": {
-		"title": "Ally Factory",
-		"upperCaseTitle": "ALLY FACTORY",
-		"keywords": [ "factory", "ally", "robot", "rfs", "barn", "garage" ],
-		"description": "Spends Metal + Battery from a wired chest or your inventory to spawn a player ally (capsules stay hostile). E builds; U cycles Tote / Hay barn / Tape assembly / Farm garage. Army cap 16 (2 farmbots). Optional logic switch. Hideout 200 Farmers."
 	}
 }

@@ -85,10 +85,6 @@ Farm / Collect / Oil walk to chests; doorway side-step if LOS blocked. Paint: **
 
 Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle (tints RFS tags). **Block health overlay CUT** — no SM custom-game API.
 
-### R5 — Phase 4 factories (`rush/factories` `46cf97e`, merge `1d5a861`)
-
-RFS Ally Factory. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to spawn a player ally. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage. Factory UUID remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` (Digital Sign keeps `f8c2a5e4-…`). **Crate→80 seed trades kept.**
-
 ### R6 — Phase 6 MiniMap (`rush/minimap` `24a3ad1`, merge `7a89516`)
 
 Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enable World Map as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ammo lower-right). Fallback: lock-camera `/map`. Credit Nutt in `description.json`. Player.lua keeps **both** pickup-dupe carry hooks and MiniMap toggle.
@@ -136,12 +132,22 @@ _(empty — use **Already shipped (not Rush)** below for historical DONE, not th
 
 ---
 
+## CUT (not shipping)
+
+Dropped from the playable pack. Do not re-implement unless the user asks.
+
+### R5 — Phase 4 factories — CUT (`rush/cut-factories`)
+
+**Not worth the lag.** Ally Factory unwired: no `RfsFactory`, no Hideout 200 Farmers listing, no factory shape. Digital Sign keeps `f8c2a5e4-…`. **Crate→80 seed trades kept.** Historical implement: `rush/factories` `46cf97e`, merge `1d5a861`.
+
+---
+
 ## UNSURE / CHECK WITH ME
 
 Do not silently drop or “fix” these:
 
 - **Digital Signs:** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; reuses Survival `DigitalSign.gui` (no dedicated MyGUI layout)
-- **Factories:** 200 Farmers vs schematic; metal UUID; caps 16/2; spawn costs; infected spawn / no beacon tether; one machine vs three shapes; works if hijack host-disabled; factory UUID remap vs Digital Sign
+- **Factories:** CUT — not worth the lag (`rush/cut-factories`). Do not restore unless asked. Crate→80 seed trades stay.
 - **CHAIN:** melee flavor shipped in R1; larger CHAIN rewrite not done
 - **MiniMap:** letters / fog / GPS not v1; World Map must stay subscribed, not enabled as a world mod
 - **Master-off split:** parked, do not “fix” as Rush
@@ -184,7 +190,7 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | R2 Stay/Recall | `rush/r2` | `355eca4` | `b3b9b27` |
 | R3 pathfinding | `rush/r3` | `b9c0e9f` | (on main) |
 | R4 GUI visuals | `rush/r4` | `45a039a` | (on main) |
-| R5 factories | `rush/factories` | `46cf97e` | `1d5a861` |
+| R5 factories | `rush/cut-factories` | CUT (not worth the lag) | do not merge unless asked |
 | R6 MiniMap | `rush/minimap` | `24a3ad1` | `7a89516` |
 | R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
 | Pickup-dupe | `rush/pickup-dupe` | `216143c` | `9c7b9c6` |

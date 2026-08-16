@@ -26,9 +26,6 @@
 			<Index name="1ae4c706-3d85-40f7-b294-85f704121b4d">
 				<Frame point="288 0"/>
 			</Index>
-			<Index name="2bf5d817-4e96-41f8-c3a5-96e815232c6e">
-				<Frame point="0 0"/>
-			</Index>
 		</Group>
 	</Resource>
 	<!-- MiniMap atlas from Nutt World Map (Workshop 3780282057). Textures stay in $CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162. Do not enable World Map as a world mod. -->
