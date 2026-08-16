@@ -23,6 +23,9 @@ RfsBotOrders.MODE_FARM = "farm" -- M2
 RfsBotOrders.MODE_COLLECT = "collect" -- M3
 RfsBotOrders.MODE_OIL = "oil" -- M4
 RfsBotOrders.MODE_RETURN = "return" -- walk to converting hack device
+RfsBotOrders.MODE_STAY = "stay" -- leash / stay near beacon job range
+RfsBotOrders.MODE_RECALL = "recall" -- walk to Orders home beacon (not hack device)
+RfsBotOrders.MODE_SENTRY = "sentry" -- tapebot ranged sentry
 
 local DEFAULT_MODE = RfsBotOrders.MODE_DEFEND
 local DEFAULT_RANGE = 16
@@ -80,7 +83,16 @@ local function normalizeMode( mode )
 	if mode == "oil" or mode == "collectoil" or mode == "collect oil" then
 		return RfsBotOrders.MODE_OIL
 	end
-	if mode == "return" or mode == "recall" or mode == "home" then
+	if mode == "stay" or mode == "leash" then
+		return RfsBotOrders.MODE_STAY
+	end
+	if mode == "recall" then
+		return RfsBotOrders.MODE_RECALL
+	end
+	if mode == "sentry" then
+		return RfsBotOrders.MODE_SENTRY
+	end
+	if mode == "return" or mode == "home" then
 		return RfsBotOrders.MODE_RETURN
 	end
 	return nil
@@ -215,10 +227,23 @@ local function isInfected( unit )
 	return info and info.mode == "infected"
 end
 
+local function isTapebotType( typeStr )
+	typeStr = tostring( typeStr or "" )
+	local lower = string.lower( typeStr )
+	if string.find( lower, "tape", 1, true ) then
+		return true
+	end
+	if unit_tapebot and sameUuid( typeStr, unit_tapebot ) then
+		return true
+	end
+	return false
+end
+
 -- Expose type helpers for GUI / hijack short names.
 RfsBotOrders.isWaterbotType = isWaterbotType
 RfsBotOrders.isTotebotType = isTotebotType
 RfsBotOrders.isHaybotType = isHaybotType
+RfsBotOrders.isTapebotType = isTapebotType
 
 -- True if this unit type may run the mode (Rest/Defend always; Collect = tote; Farm = hay; Oil = water).
 local function modeAllowedForType( mode, typeStr )
@@ -226,8 +251,12 @@ local function modeAllowedForType( mode, typeStr )
 	if not mode then
 		return false
 	end
-	if mode == RfsBotOrders.MODE_REST or mode == RfsBotOrders.MODE_DEFEND or mode == RfsBotOrders.MODE_RETURN then
+	if mode == RfsBotOrders.MODE_REST or mode == RfsBotOrders.MODE_DEFEND or mode == RfsBotOrders.MODE_RETURN
+		or mode == RfsBotOrders.MODE_STAY or mode == RfsBotOrders.MODE_RECALL then
 		return true
+	end
+	if mode == RfsBotOrders.MODE_SENTRY then
+		return isTapebotType( typeStr )
 	end
 	if mode == RfsBotOrders.MODE_COLLECT then
 		return isTotebotType( typeStr )
@@ -357,6 +386,27 @@ function RfsBotOrders.effectiveMode( unit )
 	-- Return walks to the converting device even if the Orders home is unpowered.
 	if mode == RfsBotOrders.MODE_RETURN then
 		return RfsBotOrders.MODE_RETURN
+	end
+	if mode == RfsBotOrders.MODE_RECALL then
+		return RfsBotOrders.MODE_RECALL
+	end
+	if mode == RfsBotOrders.MODE_STAY then
+		local ready = RfsBotOrders.homeBeaconReady( unit )
+		if not ready then
+			return RfsBotOrders.MODE_REST
+		end
+		return RfsBotOrders.MODE_STAY
+	end
+	if mode == RfsBotOrders.MODE_SENTRY then
+		local ready = RfsBotOrders.homeBeaconReady( unit )
+		if not ready then
+			return RfsBotOrders.MODE_REST
+		end
+		local t = typeStrOf( unit )
+		if modeAllowedForType( mode, t ) then
+			return RfsBotOrders.MODE_SENTRY
+		end
+		return RfsBotOrders.MODE_DEFEND
 	end
 	local ready = RfsBotOrders.homeBeaconReady( unit )
 	if not ready then
@@ -493,8 +543,11 @@ end
 -- Role matrix: Rest+Defend all. Farm = hay (M2). Collect = tote (M3). Oil = water/blue (M4).
 function RfsBotOrders.modesForType( unitType )
 	unitType = tostring( unitType or "" )
-	local modes = { RfsBotOrders.MODE_REST, RfsBotOrders.MODE_DEFEND, RfsBotOrders.MODE_RETURN }
+	local modes = { RfsBotOrders.MODE_REST, RfsBotOrders.MODE_DEFEND, RfsBotOrders.MODE_RETURN, RfsBotOrders.MODE_STAY, RfsBotOrders.MODE_RECALL }
 	local soon = {}
+	if isTapebotType( unitType ) then
+		modes[#modes + 1] = RfsBotOrders.MODE_SENTRY
+	end
 	if isWaterbotType( unitType ) then
 		modes[#modes + 1] = RfsBotOrders.MODE_OIL
 	elseif isHaybotType( unitType ) then
@@ -592,7 +645,9 @@ function RfsBotOrders.applySelect( self )
 		or mode == RfsBotOrders.MODE_COLLECT
 		or mode == RfsBotOrders.MODE_FARM
 		or mode == RfsBotOrders.MODE_OIL
-		or mode == RfsBotOrders.MODE_RETURN then
+		or mode == RfsBotOrders.MODE_RETURN
+		or mode == RfsBotOrders.MODE_STAY
+		or mode == RfsBotOrders.MODE_RECALL then
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.standDown then
 			RfsBotHijack.standDown( self )
 		end
@@ -601,10 +656,19 @@ function RfsBotOrders.applySelect( self )
 			and type( RfsBotHijack.driveReturnToHackBeacon ) == "function" then
 			pcall( RfsBotHijack.driveReturnToHackBeacon, self )
 		end
+		if mode == RfsBotOrders.MODE_RECALL and type( RfsBotHijack ) == "table"
+			and type( RfsBotHijack.driveRecallToHome ) == "function" then
+			pcall( RfsBotHijack.driveRecallToHome, self )
+		end
+		if mode == RfsBotOrders.MODE_STAY and type( RfsBotHijack ) == "table"
+			and type( RfsBotHijack.driveStayAtHome ) == "function" then
+			pcall( RfsBotHijack.driveStayAtHome, self )
+		end
 		return true
 	end
 
-	-- Defend: ally combat vs hostiles, chase clamped to home beacon jobRadius.
+	-- Defend / Sentry: ally combat vs hostiles, chase clamped to home beacon jobRadius.
+	-- Sentry (tapebot) holds the outer ring and still shoots.
 	local ready, rec = RfsBotOrders.homeBeaconReady( self.unit )
 	if not ready or not rec or not rec.pos then
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.standDown then
@@ -620,6 +684,10 @@ function RfsBotOrders.applySelect( self )
 		self.lastTargetPosition = hostile.worldPosition
 	else
 		clearCombatTarget( self )
+		if mode == RfsBotOrders.MODE_SENTRY and type( RfsBotHijack ) == "table"
+			and type( RfsBotHijack.driveStayAtHome ) == "function" then
+			pcall( RfsBotHijack.driveStayAtHome, self )
+		end
 	end
 	return true
 end
@@ -718,4 +786,4 @@ if type( RfsBotOrdersFarm ) == "table" and RfsBotOrdersFarm.install then
 	pcall( RfsBotOrdersFarm.install )
 end
 
-print( "[RFS] RfsBotOrders loaded (Rest/Defend M1 + Farm M2 + Collect M3 + Oil M4 + Return)" )
+print( "[RFS] RfsBotOrders loaded (Rest/Defend/Stay/Recall/Sentry + Farm M2 + Collect M3 + Oil M4 + Return)" )

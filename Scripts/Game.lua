@@ -1008,6 +1008,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self:rfs_bindOne( "/d", sayArgs, "Alias of /say (game → Discord)" )
 	self:rfs_bindOne( "/unhijack", { { "number", "range", true } }, "Release nearest owned ally robot (host can release any)" )
 	self:rfs_bindOne( "/botname", { { "string", "name", false } }, "Rename nearest owned ally (or the bot you E'd)" )
+	self:rfs_bindOne( "/botorder", { { "string", "mode", false } }, "Set order on nearest owned ally: rest/defend/stay/recall/return/farm/collect/oil/sentry" )
 
 	-- Cheats in the chat list: host or admin only. Regular clients never see them.
 	if cheats and admin then
@@ -1225,6 +1226,19 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		end
 		self.network:sendToServer( "sv_rfs_botRename", {
 			name = name,
+			player = sm.localPlayer.getPlayer(),
+		} )
+		return
+	end
+
+	if cmd == "/botorder" then
+		local mode = params[2]
+		if type( mode ) ~= "string" or mode == "" then
+			sm.gui.chatMessage( "[RFS] Usage: /botorder rest|defend|stay|recall|return|farm|collect|oil|sentry" )
+			return
+		end
+		self.network:sendToServer( "sv_rfs_botOrder", {
+			mode = mode,
 			player = sm.localPlayer.getPlayer(),
 		} )
 		return
@@ -1764,6 +1778,45 @@ function RecipeFrameworkSurvival.sv_rfs_botRename( self, params, player )
 	end
 	pcall( function()
 		self.network:sendToClient( player, "client_showMessage", ok and ( "[RFS] Named: " .. tostring( result ) ) or ( "[RFS] Rename failed: " .. tostring( result ) ) )
+	end )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_botOrder( self, params, player )
+	params = params or {}
+	player = player or params.player
+	if not player then
+		return
+	end
+	local allowHost = rfsServerPlayerIsHost( player )
+	local mode = tostring( params.mode or "rest" )
+	local origin = nil
+	pcall( function()
+		origin = player.character.worldPosition
+	end )
+	local best, bestD2 = nil, nil
+	if origin and type( RfsBotHijack ) == "table" and RfsBotHijack.allies then
+		for key, info in pairs( RfsBotHijack.allies ) do
+			if info and info.controlled then
+				local isOwner = tostring( info.owner ) == tostring( player.id )
+				if isOwner or allowHost then
+					local u = RfsBotHijack.unitByKey( key )
+					if u and sm.exists( u ) and u.character then
+						local d2 = ( u.character.worldPosition - origin ):length2()
+						if d2 <= 32 * 32 and ( bestD2 == nil or d2 < bestD2 ) then
+							best = key
+							bestD2 = d2
+						end
+					end
+				end
+			end
+		end
+	end
+	local ok, result = false, "no nearby ally"
+	if best and type( RfsBotHijack ) == "table" and RfsBotHijack.setOrder then
+		ok, result = RfsBotHijack.setOrder( best, { mode = mode }, player, allowHost )
+	end
+	pcall( function()
+		self.network:sendToClient( player, "client_showMessage", ok and ( "[RFS] /botorder " .. mode ) or ( "[RFS] /botorder failed: " .. tostring( result ) ) )
 	end )
 end
 

@@ -3136,6 +3136,115 @@ function RfsBotHijack.driveReturnToHackBeacon( self )
 	return false
 end
 
+local function driveToBeaconPos( self, dest, leash )
+	if not self or not dest then
+		return false
+	end
+	pcall( function()
+		RfsBotHijack.standDown( self )
+	end )
+	self.target = nil
+	self.lastTargetPosition = nil
+	self.eventTarget = nil
+	leash = tonumber( leash ) or 8
+	local arrived = false
+	pcall( function()
+		local char = self.unit.character
+		if char and sm.exists( char ) then
+			arrived = ( char.worldPosition - dest ):length2() <= ( leash * leash )
+		end
+	end )
+	local function switchState( nextState )
+		if not nextState or self.currentState == nextState then
+			return
+		end
+		pcall( function()
+			if self.currentState and self.currentState.stop then
+				self.currentState:stop()
+			end
+			self.currentState = nextState
+			if nextState.start then
+				nextState:start()
+			end
+		end )
+	end
+	if arrived then
+		if self.roamState then
+			pcall( function()
+				self.roamState.tetherPosition = dest
+				self.roamState.maxTetherDistance = leash
+				self.roamState.maxRadius = leash
+				self.roamState.minMoveDistance = 1
+				self.roamState.roamCenterOffset = 0
+			end )
+			switchState( self.roamState )
+			return true
+		end
+		switchState( self.idleState )
+		return true
+	end
+	local pathing = self.pathingState or self.minerbotPathingState
+	if pathing and pathing.sv_setDestination then
+		pcall( function()
+			pathing:sv_setDestination( dest )
+			if pathing.sv_setRaider then
+				pathing:sv_setRaider( false )
+			end
+		end )
+		switchState( pathing )
+		return true
+	end
+	if self.roamState then
+		pcall( function()
+			self.roamState.tetherPosition = dest
+			self.roamState.maxTetherDistance = leash
+			self.roamState.maxRadius = leash
+			self.roamState.minMoveDistance = 1
+			self.roamState.roamCenterOffset = 0
+		end )
+		switchState( self.roamState )
+		return true
+	end
+	return false
+end
+
+-- Recall: walk to Orders home beacon (workBeaconKey), not the converting hack device.
+function RfsBotHijack.driveRecallToHome( self )
+	if not self or not self.unit or not sm.exists( self.unit ) then
+		return false
+	end
+	local key = unitKey( self.unit )
+	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
+	local homeKey = info and RfsBotHijack.homeBeaconKey( info )
+	if not homeKey then
+		return false
+	end
+	local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[tostring( homeKey )]
+	if not rec or not rec.pos then
+		return false
+	end
+	return driveToBeaconPos( self, rec.pos, 6 )
+end
+
+-- Stay: leash near beacon job range (16 / 32 / 48 from the beacon tier).
+function RfsBotHijack.driveStayAtHome( self )
+	if not self or not self.unit or not sm.exists( self.unit ) then
+		return false
+	end
+	local key = unitKey( self.unit )
+	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
+	local homeKey = info and RfsBotHijack.homeBeaconKey( info )
+	if not homeKey then
+		return false
+	end
+	local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[tostring( homeKey )]
+	if not rec or not rec.pos then
+		return false
+	end
+	local leash = tonumber( rec.range ) or DEFAULT_RANGE
+	return driveToBeaconPos( self, rec.pos, math.max( 4, leash * 0.35 ) )
+end
+
 -- Same ally set as Orders GUI / listHomeAllies (Master domain + orphan migrate + in-range).
 function RfsBotHijack.homeAllyCount( beaconKey )
 	if not beaconKey then
@@ -3335,7 +3444,7 @@ function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
 		return RfsBotOrders.setOrder( unit, saved )
 	end
 	-- Fallback without RfsBotOrders: allow Rest/Defend/Collect/Farm/Oil/Return strings.
-	if mode ~= "defend" and mode ~= "rest" and mode ~= "collect" and mode ~= "farm" and mode ~= "oil" and mode ~= "return" then
+	if mode ~= "defend" and mode ~= "rest" and mode ~= "collect" and mode ~= "farm" and mode ~= "oil" and mode ~= "return" and mode ~= "stay" and mode ~= "recall" and mode ~= "sentry" then
 		mode = "rest"
 	end
 	saved.mode = mode
