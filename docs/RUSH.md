@@ -139,23 +139,6 @@ Player or host visual prefs (prefer `/menu` or `/gensettings` FEATURES / GUI tab
 
 ---
 
-### R5 — Phase 4 — factories
-
-**Source:** `PHASES.md` **Phase 4**; `HIJACK_ROADMAP.txt` Phase 4.
-
-**What “done” means:**
-
-- Craftable factory interactable (Intelligentia **or** RFS part) that spends resources to `sm.unit.createUnit(uuid, pos, yaw, { playerAlly=true, color=..., tetherPoint=... })`.
-- Capsules stay hostile (vanilla); factory is the ally spawner.
-- Caps on army size.
-- Optional flavor: tapebot assembly line, haybot “barn”, farmbot “garage”.
-
-**Likely files:** new interactable under `Scripts/game/interactables/`, `CraftingRecipes/craftbot.json` and/or Hideout trades, `Scripts/game/RfsBotHijack.lua` (ally create / cap), `Scripts/Game.lua` (dofile), Beacons B&P only if a new shape lives there.
-
-**Frozen extra:** After 3.5 (jobs navigate first). Do not auto-unlock recipes. Hideout currency stays Farmers. Optional Intelligentia restyle later; RFS remains AI host.
-
----
-
 ### R6 — Phase 6 — MiniMap (HUD)
 
 **Source:** `PHASES.md` **Phase 6**; `HIJACK_ROADMAP.txt` Phase 6; `PENDING_FIXES.md` §6; `COMMANDS.txt` Map; wiki [[Known-Issues]] / [[Commands]]; `description.json` (credit **when shipped**).
@@ -202,9 +185,15 @@ Implemented, waiting for the user to playtest. Bugs keep the item here until fix
 
 ### R7 — Phase 7 — Digital Signs (minimum)
 
-Craftbot Digital Sign S/L/XL. E edits text via Survival Digital Sign GUI. Optional logic switch hides the face; logic output follows display-on. No battery. Isolated on `rush/digital-signs`.
+Craftbot Digital Sign S/L/XL. E edits text via Survival Digital Sign GUI. Optional logic switch hides the face; logic output follows display-on. No battery. Isolated on `rush/digital-signs` (`c96b042`).
 
 **Gaps (spec was high-level only):** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; no dedicated MyGUI layout (reuses Survival `DigitalSign.gui`).
+
+### R5 — Phase 4 — factories (`rush/factories` `46cf97e`)
+
+RFS Ally Factory part. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to spawn a player ally. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage.
+
+**Merge note:** factory UUID was `f8c2a5e4-…` which collided with Digital Sign. Factory was remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` so both parts exist. Seed crate→80 trades kept.
 
 ---
 

@@ -24,7 +24,7 @@ Author: Zernon916
 - **Phase 3 — farm orders** — follow/stay/guard/harvest/replant/chest (`/botorder` or beacon GUI) — future
 - **Phase 3.5 — pathfinding & painted chests** — future (see `HIJACK_ROADMAP.txt`)
 - **Phase 3.6 — Menu tab: GUI (visuals)** — Names / Big Red / health bars / block overlay (feasibility TBD); prefer `/menu` or `/gensettings` — future
-- **Phase 4 — factories** — craftable ally spawners / army caps — future
+- **Phase 4 — factories** — Ally Factory (`rush/factories`): Hideout 200 Farmers; E spends Metal+Battery to spawn player allies; army cap 16 (2 farmbots). Capsules stay hostile.
 - **Phase 2/5 full polish** — richer identity UI, melee-chain flavor, raid callouts (beyond lite)
 - **Phase 6 — MiniMap (HUD)** — PLANNED, **NOT IN CURRENT BUILD** — do not implement or copy yet. After permission: incorporate Nutt's minimap (Steam Workshop **3780282057**). Credit Nutt in Steam / `description.json` **and** in-game/docs **when implemented** (not before). Fallback: original RFS HUD schematic if permission or code cannot ship. Always-on/toggle corner map; refine `/map`; player/beacon/ally markers (letters later) — future
 

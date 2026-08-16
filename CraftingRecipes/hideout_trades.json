@@ -28,6 +28,15 @@
 			"ingredientList": [
 				{ "quantity": 120, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
 			]
+		},
+		{
+			"itemId": "2bf5d817-4e96-41f8-c3a5-96e815232c6e",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": false,
+			"ingredientList": [
+				{ "quantity": 200, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
 		}
 	]
 }

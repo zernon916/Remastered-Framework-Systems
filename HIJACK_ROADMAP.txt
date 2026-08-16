@@ -150,13 +150,13 @@ Place after Phase 3.5; before Phase 4 factories. Does not block pathfinding
 or factories. MiniMap HUD is Phase 6 (not this tab); a later toggle on this
 tab is optional.
 
-Phase 4 — Factories (late game / Wonk) — FUTURE
------------------------------------------------
-- Craftable factory interactable (Intelligentia or RFS part)
-- Spend resources to sm.unit.createUnit(uuid, pos, yaw, { playerAlly=true, color=..., tetherPoint=... })
+Phase 4 — Factories (late game / Wonk) — implemented on rush/factories
+----------------------------------------------------------------------
+- RFS Ally Factory part (not Intelligentia). Hideout item 200 Farmers (not auto-unlocked Craftbot).
+- E spends Metal + Battery to sm.unit.createUnit(..., { playerAlly=true, color=..., tetherPoint=... })
 - Capsules stay hostile (vanilla); factory is the ally spawner
-- Caps on army size
-- Optional: tapebot assembly line, haybot "barn", farmbot "garage"
+- Army cap 16 total allies; farmbot cap 2
+- Optional flavor on one machine: U cycles tote line / hay barn / tape assembly / farm garage
 
 Phase 5 lite (SHIPPED — one-pass / Phase F)
 -------------------------------------------
