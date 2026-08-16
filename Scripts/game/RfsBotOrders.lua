@@ -664,6 +664,13 @@ function RfsBotOrders.applySelect( self )
 			and type( RfsBotHijack.driveStayAtHome ) == "function" then
 			pcall( RfsBotHijack.driveStayAtHome, self )
 		end
+		if ( mode == RfsBotOrders.MODE_FARM
+			or mode == RfsBotOrders.MODE_COLLECT
+			or mode == RfsBotOrders.MODE_OIL )
+			and type( RfsBotHijack ) == "table"
+			and type( RfsBotHijack.driveJobWalk ) == "function" then
+			pcall( RfsBotHijack.driveJobWalk, self )
+		end
 		return true
 	end
 

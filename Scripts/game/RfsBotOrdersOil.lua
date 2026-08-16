@@ -10,6 +10,10 @@
 
 RfsBotOrdersOil = RfsBotOrdersOil or {}
 
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsBotPath.lua" )
+end )
+
 local CARRY_SLOTS = 8
 local CARRY_MAX_STACK = 40
 local PICKUPS_PER_TICK = 2
@@ -373,7 +377,10 @@ local function findLooseOilShapes( homePos, radius, preferPos )
 	return out
 end
 
-local function findChests( homePos, radius, preferPos )
+local function findChests( homePos, radius, preferPos, role, homeRec )
+	if type( RfsBotPath ) == "table" and type( RfsBotPath.findChests ) == "function" then
+		return RfsBotPath.findChests( homePos, radius, preferPos, role or "drop", homeRec )
+	end
 	local out = {}
 	if not homePos or not radius then
 		return out
@@ -627,7 +634,10 @@ function RfsBotOrdersOil.sv_tickAlly( unit, info, homeRec, searchRadius, deposit
 
 	-- Prefer deposit when buffer is getting full (chests only in base beacon range).
 	if carryFull( carry ) or ( #carry > 0 and carryCount( carry ) >= math.floor( CARRY_MAX_STACK * 0.75 ) ) then
-		local chests = findChests( homePos, depositRadius, prefer )
+		local chests = findChests( homePos, depositRadius, prefer, "drop", homeRec )
+		if type( RfsBotPath ) == "table" and RfsBotPath.ensureNear and not RfsBotPath.ensureNear( unit, info, chests[1] ) then
+			return
+		end
 		depositCarry( carry, chests )
 		if carryFull( carry ) then
 			return
@@ -669,8 +679,13 @@ function RfsBotOrdersOil.sv_tickAlly( unit, info, homeRec, searchRadius, deposit
 	end
 
 	if #carry > 0 and picked == 0 then
-		local chests = findChests( homePos, depositRadius, prefer )
+		local chests = findChests( homePos, depositRadius, prefer, "drop", homeRec )
+		if type( RfsBotPath ) == "table" and RfsBotPath.ensureNear and not RfsBotPath.ensureNear( unit, info, chests[1] ) then
+			return
+		end
 		depositCarry( carry, chests )
+	elseif type( RfsBotPath ) == "table" and RfsBotPath.clearWalk then
+		RfsBotPath.clearWalk( info )
 	end
 end
 

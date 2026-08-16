@@ -110,22 +110,12 @@ Per-type flavor (author list):
 Files: Rfs_BeaconOrders.layout, RfsBeaconOrdersGui.lua, RfsBotOrders*.lua,
        RfsBotHijack.lua, RfsHackBeacon.lua, Game RPCs
 
-Phase 3.5 — Pathfinding & painted chests [FUTURE]
--------------------------------------------------
-Not started. Today Farm / Collect / Oil use vanilla unit AI best-effort
-navigation (no reliable doorway / chest pathing).
-
-- Bot pathfinding — find chests, go through doorways, more reliable job
-  navigation than vanilla unit AI chase
-- Painted / assigned chests (same phase; author idea):
-  - Color-coded roles, e.g. one color = seeds, one = veggies/fruits,
-    one = drop-off / general deposit
-  - Optional: connection tool to assign chests to a beacon / Orders domain
-  Why paint+connect: Farm and Collect already need deposit targets;
-  explicit paint + connect is clearer and more controllable than auto-scan
-  of every chest in radius
-
-Place before Phase 4 factories — improves shipped Phase 3 jobs first.
+Phase 3.5 — Pathfinding & painted chests [SHIPPED]
+---------------------------------------------------
+Farm / Collect / Oil walk to chests (doorway side-step if LOS blocked).
+Paint: yellow = seeds, green = produce, other/unpainted = drop-off.
+Assigned: chest on the same creation as the home beacon, or logic-connected
+to that beacon. No new connection tool — weld or Connect Tool to the beacon.
 
 Phase 3.6 — Menu tab: GUI (visuals) [FUTURE]
 --------------------------------------------

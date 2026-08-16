@@ -10,6 +10,9 @@ RfsBotOrdersFarm = RfsBotOrdersFarm or {}
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsBotPath.lua" )
+end )
 
 local CARRY_SLOTS = 8
 local CARRY_MAX_STACK = 40
@@ -179,7 +182,10 @@ end
 -- Chests / harvestables in job radius
 ---------------------------------------------------------------------------
 
-local function findChests( homePos, radius, preferPos )
+local function findChests( homePos, radius, preferPos, role, homeRec )
+	if type( RfsBotPath ) == "table" and type( RfsBotPath.findChests ) == "function" then
+		return RfsBotPath.findChests( homePos, radius, preferPos, role, homeRec )
+	end
 	local out = {}
 	if not homePos or not radius then
 		return out
@@ -238,6 +244,13 @@ local function findChests( homePos, radius, preferPos )
 		return ( a.d2 or 0 ) < ( b.d2 or 0 )
 	end )
 	return out
+end
+
+local function ensureNearChest( unit, info, row )
+	if type( RfsBotPath ) == "table" and type( RfsBotPath.ensureNear ) == "function" then
+		return RfsBotPath.ensureNear( unit, info, row )
+	end
+	return true
 end
 
 local function findSoil( world, homePos, radius, preferPos )
@@ -482,11 +495,15 @@ function RfsBotOrdersFarm.sv_tickAlly( unit, info, homeRec, radius )
 	local homePos = homeRec.pos
 	local prefer = botPosOf( unit ) or homePos
 	local world = botWorld( unit )
-	local chests = findChests( homePos, radius, prefer )
+	local chestsProduce = findChests( homePos, radius, prefer, "produce", homeRec )
+	local chestsSeed = findChests( homePos, radius, prefer, "seed", homeRec )
 
 	-- 1) Deposit when buffer is busy / full (harvest produce + leftover seeds).
 	if carryFull( carry ) or ( #carry > 0 and carryCount( carry ) >= math.floor( CARRY_MAX_STACK * 0.6 ) ) then
-		depositCarry( carry, chests )
+		if not ensureNearChest( unit, info, chestsProduce[1] ) then
+			return
+		end
+		depositCarry( carry, chestsProduce )
 		if carryFull( carry ) then
 			return
 		end
@@ -539,7 +556,10 @@ function RfsBotOrdersFarm.sv_tickAlly( unit, info, homeRec, radius )
 
 	-- 4) Withdraw seeds from chests when buffer has none.
 	if actions < ACTIONS_PER_TICK and carryQty( carry, seedUuid ) < 1 and not carryFull( carry ) then
-		local got = withdrawSeeds( chests, seedUuid, carry, SEED_WITHDRAW )
+		if not ensureNearChest( unit, info, chestsSeed[1] ) then
+			return
+		end
+		local got = withdrawSeeds( chestsSeed, seedUuid, carry, SEED_WITHDRAW )
 		if got > 0 then
 			actions = actions + 1
 		end
@@ -547,7 +567,14 @@ function RfsBotOrdersFarm.sv_tickAlly( unit, info, homeRec, radius )
 
 	-- 5) Idle deposit leftovers.
 	if actions == 0 and #carry > 0 then
-		depositCarry( carry, chests )
+		if not ensureNearChest( unit, info, chestsProduce[1] ) then
+			return
+		end
+		depositCarry( carry, chestsProduce )
+	end
+
+	if type( RfsBotPath ) == "table" and RfsBotPath.clearWalk then
+		RfsBotPath.clearWalk( info )
 	end
 end
 

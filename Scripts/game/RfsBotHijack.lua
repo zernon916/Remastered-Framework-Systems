@@ -3208,6 +3208,23 @@ local function driveToBeaconPos( self, dest, leash )
 	return false
 end
 
+function RfsBotHijack.driveToWorldPos( self, dest, leash )
+	return driveToBeaconPos( self, dest, leash or 3 )
+end
+
+function RfsBotHijack.driveJobWalk( self )
+	if not self or not self.unit or not sm.exists( self.unit ) then
+		return false
+	end
+	local key = unitKey( self.unit )
+	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
+	local dest = info and info.jobWalkDest
+	if not dest then
+		return false
+	end
+	return driveToBeaconPos( self, dest, 3 )
+end
+
 -- Recall: walk to Orders home beacon (workBeaconKey), not the converting hack device.
 function RfsBotHijack.driveRecallToHome( self )
 	if not self or not self.unit or not sm.exists( self.unit ) then
