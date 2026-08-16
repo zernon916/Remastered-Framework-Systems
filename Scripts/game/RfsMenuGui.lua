@@ -20,7 +20,7 @@ local function guiPrefs( host )
 	if type( RfsGuiPrefs ) == "table" and RfsGuiPrefs.client then
 		return RfsGuiPrefs.client()
 	end
-	return { names = true, bigRed = false, enemyHp = "red", neutralHp = "green" }
+	return { names = true, bigRed = false, enemyHp = "red", neutralHp = "green", blockOverlay = true }
 end
 
 local function titleCase( s )
@@ -44,19 +44,23 @@ function RfsMenuGui.refresh( host )
 	local prefs = guiPrefs( host )
 	local names = prefs.names ~= false
 	local bigRed = prefs.bigRed and true or false
+	local blockOn = prefs.blockOverlay ~= false
 	pcall( function()
 		gui:setText( "BtnNames", "Names: " .. ( names and "ON" or "OFF" ) )
 		gui:setButtonState( "BtnNames", names )
 		gui:setText( "BtnBigRed", "Big Red: " .. ( bigRed and "ON" or "OFF" ) )
 		gui:setButtonState( "BtnBigRed", bigRed )
+		gui:setText( "BtnBlockOverlay", "Block overlay: " .. ( blockOn and "ON" or "OFF" ) )
+		gui:setButtonState( "BtnBlockOverlay", blockOn )
 		gui:setText( "BtnEnemyHp", "Enemy bar: " .. titleCase( prefs.enemyHp ) )
 		gui:setText( "BtnNeutralHp", "Neutral bar: " .. titleCase( prefs.neutralHp ) )
 	end )
 
 	gui:setText( "Status", string.format(
-		"Map + Growth + GUI (yours only) | overlay=%s names=%s",
+		"Map + Growth + GUI (yours only) | crop=%s names=%s blocks=%s",
 		overlay and "ON" or "OFF",
-		names and "ON" or "OFF"
+		names and "ON" or "OFF",
+		blockOn and "ON" or "OFF"
 	) )
 end
 
@@ -69,6 +73,7 @@ function RfsMenuGui.bind( host, gui )
 	gui:setButtonCallback( "BtnGrowthOverlay", "cl_rfs_menuToggleGrowthOverlay" )
 	gui:setButtonCallback( "BtnNames", "cl_rfs_menuToggleNames" )
 	gui:setButtonCallback( "BtnBigRed", "cl_rfs_menuToggleBigRed" )
+	gui:setButtonCallback( "BtnBlockOverlay", "cl_rfs_menuToggleBlockOverlay" )
 	gui:setButtonCallback( "BtnEnemyHp", "cl_rfs_menuCycleEnemyHp" )
 	gui:setButtonCallback( "BtnNeutralHp", "cl_rfs_menuCycleNeutralHp" )
 	gui:setOnCloseCallback( "cl_rfs_menuClose" )

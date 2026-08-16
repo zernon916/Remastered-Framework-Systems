@@ -12,7 +12,7 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 [*][b]Bot Hijack / Beacons[/b] - Powered Hack / Control / Infection Beacons (needs [b]RFS Beacons[/b] B&P). Hideout: 20 / 50 / 120 Farmers. Wire a Battery; tethered allies need power/range; infected stay loyal. Light chain convert + host/owner [b]/unhijack[/b]. Beacon [b]E[/b] Orders: Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil.
 [*][b]Expanded Inventory[/b] - Scale inventory capacity from +1 row up to +5 extra rows.
 [*][b]Advanced Farming[/b] - Instant growth options, permanent watering, soil planting, and live crop growth countdown timers.
-[*][b]MiniMap HUD[/b] - Always-on corner map while you walk; [b]/map[/b] / [b]/rfsmap[/b] opens the full atlas (no GPS item). Terrain map by [b]Nutt[/b] ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map[/url], Workshop 3780282057). Weapon ammo count stays on the HUD.
+[*][b]Map[/b] - Always-on corner MiniMap while you walk; [b]/map[/b] / [b]/rfsmap[/b] / [b]/menu[/b] Map opens the full atlas (no GPS item). Terrain map by [b]Nutt[/b] ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map[/url], Workshop 3780282057). Subscribe; do [b]not[/b] enable World Map as a world mod. Weapon ammo count stays on the HUD.
 [*][b]Dev Tools[/b] - Full suite of built-in developer mode tools at your fingertips.
 [*][b]Anchor Devices / Tile Loaders[/b] - Keep distant areas active ([i]WARNING: Loading more than 2-3 tiles can severely impact performance, even on high-end PCs[/i]).
 [*][b]Faster Loads[/b] - Quieter console and snappier startup from a smarter recipe scan (less DirectoryManager spam).
@@ -58,6 +58,6 @@ Community Discord: [url]https://discord.gg/DfjDMRx9ab[/url]
 From that clone: configure [b].env[/b], then [b]npm install[/b] and [b]npm run watch[/b].
 
 [b]Author:[/b] Zernon916
-[b]MiniMap:[/b] Nutt (World Map, Workshop 3780282057)
+[b]Map / MiniMap:[/b] Nutt (World Map, Workshop 3780282057)
 
 If you enjoy this project, please consider leaving a Thumbs Up and Favorite on the Steam Workshop! Feedback and bug reports are always welcome in the comments.

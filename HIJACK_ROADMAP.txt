@@ -93,10 +93,9 @@ Tags: [DONE] shipped/working locally  |  [NEXT] verify/test now  |  [FUTURE] lat
 === [FUTURE] — do not build during 3.10 test ===
   [FUTURE] chat /botorder
   [FUTURE] Stay in area — Orders checkbox (leash / stay near beacon range)
-  [FUTURE] Phase 3.5 Pathfinding & painted chests (see below)
-  [FUTURE] Phase 3.6 Menu GUI tab (Names, Big Red, health bars, block overlay)
-  [FUTURE] Phase 6 MiniMap HUD (see below) — not Orders 3.x;
-           PLANNED, NOT IN CURRENT BUILD — do not implement or copy yet
+  [DONE]   Phase 3.5 Pathfinding & painted chests (see below)
+  [DONE]   Phase 3.6 Menu GUI tab (Names, Big Red, HP billboards, block overlay)
+  [DONE]   Phase 6 Map (Nutt atlas + MiniMap HUD — see below) — not Orders 3.x
   [DONE]   Phase 7 Digital Signs (minimum — see below) — not Orders 3.x;
            logic-connectable RFS signs that show editable text
 
@@ -122,9 +121,11 @@ Phase 3.6 — Menu tab: GUI (visuals) [SHIPPED]
 Player `/menu` GUI section (not Beacon Orders):
   1. Names — toggle world nametags on/off
   2. Big Red — farmbots display as "Big Red" instead of Farm
-  3. Health bar (Enemy) — color cycle; tints RFS jam/drop tags (vanilla HP bars are engine-fixed)
-  4. Health bar (Neutral) — color cycle; tints ally name tags
-  5. Block health overlay — CUT: no SM custom-game API for damaged-block gradient
+  3. Health bar (Enemy) — color cycle; custom HP billboards on hostiles + RFS jam/drop tag tint
+     (engine HP bars cannot be recolored — we draw our own)
+  4. Health bar (Neutral) — color cycle; custom HP billboards on allies / wocs + name-tag tint
+  5. Block health overlay — best-effort: look-at HUD + world text + nearby creation
+     labels (shape count / mass / static vs moving). SM has no per-block HP API.
 
 Relation to earlier work:
   - Builds on Phase 2 lite nametags (`pushTag`) and Phase 2 full naming polish
@@ -155,13 +156,15 @@ OPEN BUGS / polish (also in PENDING_FIXES.md):
 - More polish on identity tags / release UI
   (cross-ref Phase 2: numbers above bots + bot naming)
 
-Phase 6 — MiniMap (HUD) [SHIPPED on rush/minimap]
+Phase 6 — Map [COMPLETE on rush/map-complete]
 --------------------------------
-Always-on Nutt World Map HUD (Workshop 3780282057) while walking.
-`/map` / `/rfsmap` open the full atlas (no GPS). Credit Nutt in Steam /
-description.json / in-game chat. Subscribe to World Map; do not enable
-as a world mod. Fallback: original RfsHud (clock + compass + ammo) and
-lock-camera `/map`. Ring stays off lower-right ammo.
+This is the Map phase, not a HUD sidecar. Nutt World Map (Workshop 3780282057)
+is the atlas + the walking MiniMap HUD.
+
+`/map` / `/rfsmap` / `/menu` Map open the full atlas (no GPS). Credit Nutt in
+Steam / description.json / in-game chat. Subscribe to World Map; do not enable
+as a world mod. Fallback only if that pack is missing: original RfsHud
+(clock + compass + ammo) and lock-camera `/map`. Ring stays off lower-right ammo.
 
 Letters for beacons/allies (H1/T2-style) stay later, after Phase 2 naming.
 Size/corner prefs may later share the Phase 3.6 GUI tab. Fog of war: skip v1.

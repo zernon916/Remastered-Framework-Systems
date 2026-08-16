@@ -20,6 +20,8 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsGenGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" ) end )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsMenuGui.lua" ) end )
+pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsHealthBars.lua" ) end )
+pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsBlockOverlay.lua" ) end )
 dofile( "$CONTENT_DATA/Scripts/game/RfsStreamer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsChatRelay.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsChatOutbox.lua" )
@@ -501,6 +503,9 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	_G.g_rfsGame = self
 	pcall( function() RfsFarming.ensureHooks() end )
 	pcall( function() RfsBotHijack.ensureHooks() end )
+	pcall( function()
+		if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
+	end )
 	self.sv = self.sv or {}
 	self.sv.rfsPendingQuestTracks = self.sv.rfsPendingQuestTracks or {}
 	-- Expose quest API early for RFS + guest mods (_G.RfsQuest from RfsQuest.lua dofile).
@@ -580,6 +585,9 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 	if ( tick % 80 ) == 0 then
 		pcall( function() RfsFarming.ensureHooks() end )
 		pcall( function() RfsBotHijack.ensureHooks() end )
+		pcall( function()
+			if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
+		end )
 	end
 	local pending = self.sv and self.sv.rfsPendingQuestTracks
 	if not pending or #pending == 0 then
@@ -628,6 +636,9 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 	_G.g_rfsGame = self
 	RfsFarming.ensureHooks()
 	pcall( function() RfsBotHijack.ensureHooks() end )
+	pcall( function()
+		if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
+	end )
 	self:rfs_bindCommands()
 	-- Pull world farming prefs + GenSettings feature flags
 	pcall( function()
@@ -689,11 +700,17 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
 			RfsBotHijack.ensureCharHooks()
 		end
+		if type( RfsHealthBars ) == "table" and RfsHealthBars.ensureHooks then
+			RfsHealthBars.ensureHooks()
+		end
 	end )
 	-- Re-apply Farming hooks if Survival reloaded tool/harvestable classes
 	if ( sm.game.getCurrentTick() % 200 ) == 0 then
 		pcall( function() RfsFarming.ensureHooks() end )
 		pcall( function() RfsBotHijack.ensureHooks() end )
+		pcall( function()
+			if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
+		end )
 		pcall( rfsWrapCrafterRecipeGrid )
 	end
 	-- Keep /setup Main/Farming and /menu labels in sync after toggles / chat cmds
@@ -990,16 +1007,16 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	-- Player menu first. /help is often engine-reserved; a failed /help must not
 	-- skip /menu. /menu itself can also be reserved (InGameMenu) — then /rfsmenu
 	-- is the name that actually appears in the client's chat list.
-	self:rfs_bindOne( "/menu", {}, "Open player menu (map and growth overlay)" )
-	self:rfs_bindOne( "/rfsmenu", {}, "Open player menu (map and growth overlay)" )
+	self:rfs_bindOne( "/menu", {}, "Open player menu (map, growth, HP bars, block overlay)" )
+	self:rfs_bindOne( "/rfsmenu", {}, "Open player menu (map, growth, HP bars, block overlay)" )
 	-- Always available (/help is often engine-reserved; skip after first reserved fail)
 	if not self.cl.rfsHelpReserved then
 		self:rfs_bindOne( "/help", {}, "List Recipe Framework Survival commands" )
 	end
 	self:rfs_bindOne( "/commands", {}, "Alias of /help" )
 	self:rfs_bindOne( "/gensettings", {}, "Open RFS gen settings (host only)" )
-	self:rfs_bindOne( "/map", {}, "Toggle top-down camera map (WASD pan, scroll zoom)" )
-	self:rfs_bindOne( "/mapclose", {}, "Close top-down camera map" )
+	self:rfs_bindOne( "/map", {}, "Open world map atlas (Nutt) or camera fallback" )
+	self:rfs_bindOne( "/mapclose", {}, "Close atlas / map camera" )
 	self:rfs_bindOne( "/rfsmap", {}, "Alias of /map" )
 	self:rfs_bindOne( "/mods", {}, "List scanned mod recipe sources" )
 
@@ -1177,7 +1194,7 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 
 	if cmd == "/map" or cmd == "/rfsmap" then
 		print( "[RFS] /map chat command received" )
-		sm.gui.chatMessage( "[RFS] /map - requesting open/toggle..." )
+		sm.gui.chatMessage( "[RFS] /map — Nutt atlas (or camera fallback)..." )
 		self.network:sendToServer( "sv_rfs_mapToggle", { player = sm.localPlayer.getPlayer() } )
 		return
 	end
@@ -2281,7 +2298,7 @@ function RecipeFrameworkSurvival.cl_rfs_menuMap( self )
 		RfsMenuGui.close( self )
 	end
 	print( "[RFS] /menu Map button" )
-	sm.gui.chatMessage( "[RFS] /map - requesting open/toggle..." )
+	sm.gui.chatMessage( "[RFS] Map — Nutt atlas (or camera fallback)..." )
 	self.network:sendToServer( "sv_rfs_mapToggle", { player = sm.localPlayer.getPlayer() } )
 end
 
@@ -2299,6 +2316,10 @@ end
 
 function RecipeFrameworkSurvival.cl_rfs_menuToggleBigRed( self )
 	cl_menuGuiPref( self, "bigRed" )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_menuToggleBlockOverlay( self )
+	cl_menuGuiPref( self, "blockOverlay" )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_menuCycleEnemyHp( self )

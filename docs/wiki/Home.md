@@ -17,7 +17,7 @@ Display name on GitHub: **Remastered Framework Survival** (repo: `Remastered-Fra
 | [[Commands]] | `/setup`, `/menu`, `/gensettings`, hijack, shops, cheats |
 | [[Hack-Beacons]] | Beacon tiers, power, E Orders, Tinker, Master/Slave, range, color |
 | [[Bot-Orders]] | Rest / Defend / Farm / Collect / Oil |
-| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) + Phase 3.5 / 3.6. Phase 6 MiniMap shipped (Nutt World Map). Phase 7 Digital Signs: minimum shipped. |
+| [[Known-Issues]] | Open polish (nametags, rename, RAID farm-range) + Phase 3.5 / 3.6. Phase 6 Map complete (Nutt World Map). Phase 7 Digital Signs: minimum shipped. |
 | [[Modder-Hooks]] | Store / quest / feature flags (see also `MODDER_API.txt`) |
 | [[Discord-Streamer]] | GitHub-only companion bot (not in Workshop) |
 
@@ -35,7 +35,7 @@ Display name on GitHub: **Remastered Framework Survival** (repo: `Remastered-Fra
 - Beacon Orders GUI: Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil, ally color presets
 - Master/Slave beacon linking + SHOW/HIDE range ring
 - Host `/setup` + `/gensettings`, player `/menu` + `/map`
-- MiniMap HUD (Nutt World Map) + `/map` atlas; ammo HUD kept
+- MiniMap HUD (Nutt World Map) is the Map phase: `/map` atlas + walking HUD; ammo HUD kept
 - Modder store merge (Craftbot / Hideout / Mining Hub) and `RfsQuest` wrappers
 
 This wiki matches **current shipped code**, not the full hijack roadmap.

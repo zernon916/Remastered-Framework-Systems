@@ -37,7 +37,7 @@
 			</Widget>
 		</Widget>
 
-		<!-- Tool ammo (lower-right). Vanilla engine ammo HUD is covered by this always-on HUD. -->
+		<!-- Tool ammo (lower-right). Vanilla engine ammo HUD is covered by this always-on HUD. Keep visible with MiniMap. -->
 		<Widget type="Widget" skin="PanelEmpty" position_real="0.82 0.76 0.16 0.08" name="RfsAmmoPanel">
 			<Property key="NeedKey" value="false"/>
 			<Property key="NeedMouse" value="false"/>
@@ -50,6 +50,24 @@
 				<Property key="FontHeight" value="32"/>
 				<Property key="TextShadow" value="true"/>
 				<Property key="TextShadowColour" value="0 0 0 0.4"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+
+		<!-- Block/creation overlay (left-center, away from MiniMap BL and ammo BR). -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.012 0.42 0.30 0.08" name="RfsOverlayPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsOverlayText">
+				<Property key="Caption" value=""/>
+				<Property key="TextAlign" value="Left VCenter"/>
+				<Property key="TextColour" value="0.85 1 0.55"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="16"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="WordWrap" value="true"/>
 				<Property key="NeedKey" value="false"/>
 				<Property key="NeedMouse" value="false"/>
 			</Widget>

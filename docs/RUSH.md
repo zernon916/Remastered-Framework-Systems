@@ -83,15 +83,15 @@ Farm / Collect / Oil walk to chests; doorway side-step if LOS blocked. Paint: **
 
 ### R4 — Phase 3.6 GUI visuals (`rush/r4` `45a039a`)
 
-Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle (tints RFS tags). **Block health overlay CUT** — no SM custom-game API.
+Player `/menu` GUI section (not Beacon Orders): Names on/off, Big Red farmbot label, Enemy/Neutral color cycle. **HP billboards** + **block overlay** completed on `rush/map-complete` (engine bars cannot be recolored; overlay is mass/shape-count).
 
 ### R5 — Phase 4 factories (`rush/factories` `46cf97e`, merge `1d5a861`)
 
 RFS Ally Factory. Hideout 200 Farmers (item, not auto-unlocked Craftbot). E spends Metal+Battery to spawn a player ally. Capsules stay hostile. Army cap 16 / farmbot 2. U cycles tote / hay barn / tape assembly / farm garage. Factory UUID remapped to `2bf5d817-4e96-41f8-c3a5-96e815232c6e` (Digital Sign keeps `f8c2a5e4-…`). **Crate→80 seed trades kept.**
 
-### R6 — Phase 6 MiniMap (`rush/minimap` `24a3ad1`, merge `7a89516`)
+### R6 — Phase 6 Map complete (`rush/map-complete`)
 
-Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enable World Map as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ammo lower-right). Fallback: lock-camera `/map`. Credit Nutt in `description.json`. Player.lua keeps **both** pickup-dupe carry hooks and MiniMap toggle.
+MiniMap HUD is the Map phase, not a sidecar. Nutt World Map HUD while Workshop **3780282057** is subscribed (do **not** enable World Map as a world mod). `/map` / `/rfsmap` / `/menu` Map open the atlas. Original RfsHud clock/compass/**ammo** kept (ammo lower-right). Fallback: lock-camera `/map`. Credit Nutt in `description.json`. Player.lua keeps **both** pickup-dupe carry hooks and Map toggle. Prior HUD-only ship: `rush/minimap` `24a3ad1` merge `7a89516`.
 
 ### R7 — Phase 7 Digital Signs (`rush/digital-signs` `c96b042`, merge `e6329b4`)
 
@@ -143,10 +143,10 @@ Do not silently drop or “fix” these:
 - **Digital Signs:** no ON/OFF dual messages; no Hideout trade; vanilla Survival textsigns stay non-logic; reuses Survival `DigitalSign.gui` (no dedicated MyGUI layout)
 - **Factories:** 200 Farmers vs schematic; metal UUID; caps 16/2; spawn costs; infected spawn / no beacon tether; one machine vs three shapes; works if hijack host-disabled; factory UUID remap vs Digital Sign
 - **CHAIN:** melee flavor shipped in R1; larger CHAIN rewrite not done
-- **MiniMap:** letters / fog / GPS not v1; World Map must stay subscribed, not enabled as a world mod
+- **MiniMap / Map:** letters / fog / GPS not v1; World Map must stay subscribed, not enabled as a world mod
 - **Master-off split:** parked, do not “fix” as Rush
-- **Block health overlay:** cut — no SM custom-game API for damaged-block gradient
-- **Vanilla engine HP bars:** Enemy/Neutral dropdowns tint RFS nametags / jam tags only; engine health bars are not recolorable
+- **Block health overlay:** shipped best-effort (look-at HUD + world text + nearby creation mass/shape-count). SM has no per-block HP API — do not expect a damaged-block gradient
+- **Unit HP bars:** custom billboards colored by Enemy/Neutral `/menu` settings (engine bars cannot be recolored). Allies/hacked bots use Neutral
 - **Cotton in autumn:** not an RFS fix
 - **Connection tool for chests:** no new tool; weld to beacon creation or Connect Tool logic to the beacon
 
@@ -185,7 +185,8 @@ Optional, not a phase: Intelligentia `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua
 | R3 pathfinding | `rush/r3` | `b9c0e9f` | (on main) |
 | R4 GUI visuals | `rush/r4` | `45a039a` | (on main) |
 | R5 factories | `rush/factories` | `46cf97e` | `1d5a861` |
-| R6 MiniMap | `rush/minimap` | `24a3ad1` | `7a89516` |
+| R6 MiniMap HUD | `rush/minimap` | `24a3ad1` | `7a89516` |
+| R6 Map complete | `rush/map-complete` | (this branch) | — |
 | R7 Digital Signs | `rush/digital-signs` | `c96b042` | `e6329b4` |
 | Pickup-dupe | `rush/pickup-dupe` | `216143c` | `9c7b9c6` |
 | R8 Phase E | — | — | gated |

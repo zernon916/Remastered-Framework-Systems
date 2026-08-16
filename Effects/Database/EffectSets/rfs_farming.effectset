@@ -87,6 +87,94 @@
 			"anchor" : "CENTER"
 		}
 	},
+	"RfsHpBar" :
+	{
+		"effectList" :
+		[
+			{
+				"delay" : 0.0,
+				"direction" :
+				{
+					"x" : 0.0,
+					"y" : 1.0,
+					"z" : 0.0
+				},
+				"name" : "text",
+				"type" : "text",
+				"Color" : [ 1.0, 0.18, 0.18, 1.0 ],
+				"TextContent" : "[##########] 100%",
+				"TextMaterial" : "InWorldText",
+				"FontName" : "SM_IntlText",
+				"FontSize" : 18,
+				"lineOfSight" : false,
+				"distanceFade" : true,
+				"maxRenderDistance" : 48.0,
+				"distanceFadeRange" : 10.0,
+				"shadow" : true,
+				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
+				"shadowOffset" : [ 1.0, -1.0 ],
+				"anchor" : "CENTER"
+			}
+		],
+		"parameterList" :
+		{
+			"ASG" :
+			[
+				0.0,
+				0.0,
+				1.0
+			],
+			"Color" : [ 1.0, 0.18, 0.18, 1.0 ],
+			"FontName" : "SM_IntlText",
+			"TextContent" : "[##########] 100%",
+			"TextMaterial" : "InWorldText",
+			"anchor" : "CENTER"
+		}
+	},
+	"RfsBlockText" :
+	{
+		"effectList" :
+		[
+			{
+				"delay" : 0.0,
+				"direction" :
+				{
+					"x" : 0.0,
+					"y" : 1.0,
+					"z" : 0.0
+				},
+				"name" : "text",
+				"type" : "text",
+				"Color" : [ 0.85, 1.0, 0.45, 1.0 ],
+				"TextContent" : "12 shp",
+				"TextMaterial" : "InWorldText",
+				"FontName" : "SM_IntlText",
+				"FontSize" : 20,
+				"lineOfSight" : false,
+				"distanceFade" : true,
+				"maxRenderDistance" : 24.0,
+				"distanceFadeRange" : 8.0,
+				"shadow" : true,
+				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
+				"shadowOffset" : [ 1.0, -1.0 ],
+				"anchor" : "CENTER"
+			}
+		],
+		"parameterList" :
+		{
+			"ASG" :
+			[
+				0.0,
+				0.0,
+				1.0
+			],
+			"Color" : [ 0.85, 1.0, 0.45, 1.0 ],
+			"FontName" : "SM_IntlText",
+			"TextContent" : "12 shp",
+			"TextMaterial" : "InWorldText",
+			"anchor" : "CENTER"
+		}
+	},
 	"RfsRangeLine" :
 	{
 		"effectList" :

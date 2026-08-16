@@ -15,9 +15,9 @@ Author: Zernon916
 - **Phase D — game → Discord chat outbox** — `/say` + `/d` → `chat_outbox.json` → `chat-outbox.js` → `CHAT_CHANNEL_ID` (gated by Streamer + chat relay)
 - **Phase F — hijack one-pass (lite)** — identity persist + nametag; light chain convert; `/unhijack` voluntary release; underground miner/cable flag (default ON). Docs honesty for Hideout Control/Infection (50/120 Farmers). See `HIJACK_ROADMAP.txt`.
 - **Phase 7 — Digital Signs (minimum)** — Craftbot logic-connectable signs (S/L/XL) that show editable text. Optional logic switch hides the face. Does not scramble Phase 3.
-- **Phase 6 — MiniMap (HUD)** — Nutt World Map HUD + `/map` atlas (Workshop 3780282057); original HUD/camera fallback; Nutt credited. Beacon/ally letters later.
+- **Phase 6 — Map (complete)** — Nutt World Map is the map: corner MiniMap HUD while walking + `/map` `/rfsmap` `/menu` Map atlas (Workshop 3780282057). Subscribe only; never enable as a world mod. Clock/compass/ammo HUD and lock-camera `/map` if Nutt is missing. Ammo stays lower-right. Nutt credited. Beacon/ally letters later.
 - **Phase 3.5 — Pathfinding & painted chests** — Farm/Collect/Oil walk to chests (doorway side-step). Yellow=seeds, green=produce, other=drop-off. Same-creation or logic-connected chests are assigned to that beacon.
-- **Phase 3.6 — Menu GUI visuals** — `/menu` Names / Big Red / enemy+neutral tag colors. Block health overlay cut (no SM API).
+- **Phase 3.6 — Menu GUI visuals** — `/menu` Names / Big Red / enemy+neutral colors. Custom unit HP billboards (engine bars cannot be recolored). Best-effort block/creation overlay (mass/shape-count; no per-block HP API).
 
 ---
 
