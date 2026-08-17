@@ -49,6 +49,11 @@ local RFS_BEACON_UI = {
 		desc = "48 m computer. E infects permanently. Tethered bots in the field ~8 s also submit.",
 		icon = "1d4793af-cb66-4628-804a-9d7404712643",
 	},
+	["d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"] = {
+		title = "GPS",
+		desc = "Hideout schematic (1 Farmer). Craft at Craftbot Tools: 1 Metal, 1 Circuit, 1 Component, 1 Glass.",
+		icon = "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76",
+	},
 }
 local function rfsItemPresentOnPeer( itemId )
 	local id = tostring( itemId or "" )
@@ -60,6 +65,7 @@ local function rfsItemPresentOnPeer( itemId )
 		return false
 	end
 	local exists = false
+	local isTool = false
 	pcall( function()
 		if sm.shape.uuidExists and sm.shape.uuidExists( uuid ) then
 			exists = true
@@ -69,11 +75,27 @@ local function rfsItemPresentOnPeer( itemId )
 		pcall( function()
 			if sm.tool and sm.tool.uuidExists and sm.tool.uuidExists( uuid ) then
 				exists = true
+				isTool = true
+			elseif sm.item and sm.item.isTool and sm.item.isTool( uuid ) then
+				exists = true
+				isTool = true
+			end
+		end )
+	else
+		pcall( function()
+			if sm.item and sm.item.isTool and sm.item.isTool( uuid ) then
+				isTool = true
+			elseif sm.tool and sm.tool.uuidExists and sm.tool.uuidExists( uuid ) then
+				isTool = true
 			end
 		end )
 	end
 	if not exists then
 		return false
+	end
+	-- Tools have no shape title; "not found" used to drop GPS from Hideout.
+	if isTool then
+		return true
 	end
 	local title = nil
 	pcall( function()
@@ -108,7 +130,13 @@ local function rfsIconForTrade( itemId )
 	-- Shape exists; icon atlas may still be missing. Beacon-only vanilla icon, never a ghost row.
 	local meta = RFS_BEACON_UI[id]
 	if meta then
-		return rfsLookupItemIcon( meta.icon )
+		local okIcon, resource, group, name = rfsLookupItemIcon( meta.icon )
+		if okIcon then
+			return true, resource, group, name
+		end
+		if id == "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76" then
+			return true, "ItemIconsSet0", "ItemIcons", id
+		end
 	end
 	return false
 end

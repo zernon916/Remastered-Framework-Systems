@@ -1,0 +1,1016 @@
+{
+ "1ec32974d07c4ad1a16c57dcf90ca342": {
+  "label": "Excavation Island Beach",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "01e4e9d7b4ba4362b90d8cb2b40ca50b": {
+  "label": "Excavation Island Forest",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "ba31a52276594ec5b9338b83960c57f2": {
+  "label": "Excavation Island Kinematic Bridge",
+  "tier": 1,
+  "sx": 16,
+  "sy": 16
+ },
+ "bf0ba240416f4f32b87d3a445919e72a": {
+  "label": "Excavation Island Mountain",
+  "tier": 1,
+  "sx": 16,
+  "sy": 16
+ },
+ "3d8544c664394fa498f0ca6d172af467": {
+  "label": "Overworld To Underground Small Elevator",
+  "tier": 1,
+  "sx": 1,
+  "sy": 1
+ },
+ "3ffa9284021e46798c616c35b04361f4": {
+  "label": "Bunk Investigation Quest",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "16a6315e897a4186abe9cdf83470757a": {
+  "label": "Camping Spot Autumn Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "05b6d44859fa4abd89865e331eb49af1": {
+  "label": "Camping Spot Autumn Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "9b11721e3df5438e92a39ce08c5a8e84": {
+  "label": "Camping Spot Autumn Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "0556fb22cacc44028d7c6cfd6f5d39ce": {
+  "label": "Camping Spot Burnt Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "afa0fd489c1143c08519def13c56eb7f": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "bfd3e6e5bd624bb98ab5a12d2d44ffa3": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "2cc399c07f6047378ce9dfebe1cff997": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "2baccd93fb0149babbcef26bd6bba53c": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "f78626975c60412d85082e37e8ec7d16": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "150b28d32c4840b8a657907629c63637": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "139ff08919e74c65b02e0bcdb30e4600": {
+  "label": "Camping Spot Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "e4fbd2dd6d4a4bfaa3116ae40fdd0f64": {
+  "label": "Camping Spot Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "75adfa70b50e428ea035580091009aee": {
+  "label": "Camping Spot Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "adc981bf6a974c97a303b0066ccea342": {
+  "label": "Camping Spot Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "ddc4161220f3484eb7ebc0d510d190be": {
+  "label": "Camping Spot Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "33f54ce422874d9ca5b1a62eeca38127": {
+  "label": "Camping Spot Water Front",
+  "tier": 2,
+  "sx": 4,
+  "sy": 4
+ },
+ "e7703a6688a444c3b99db22b8418c28b": {
+  "label": "Chemical Lake",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "b0355ca42aec4a088a4aac5ea8542055": {
+  "label": "Chemical Lake",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "4df0a6717c8c4db79a6d3be6e987731e": {
+  "label": "Chemical Lake",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "61e5f92c54eb478f943b38a32348c713": {
+  "label": "Chemical Plant Field",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "9755ee407f2343808a638055060fd18b": {
+  "label": "Chemical Plant Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "013e980d242542759c4bc0eee0dba7f1": {
+  "label": "Chemical Plant Road",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "7736cd400adf459b8ffcd0fa4caa5f59": {
+  "label": "Crashed Ship",
+  "tier": 2,
+  "sx": 4,
+  "sy": 4
+ },
+ "25b787f7f1f04191985e0cbbc22821c8": {
+  "label": "Farmbot Graveyard",
+  "tier": 3,
+  "sx": 4,
+  "sy": 4
+ },
+ "f245182c5f04462ab58f258ec9ad6992": {
+  "label": "Farmbot Graveyard",
+  "tier": 3,
+  "sx": 4,
+  "sy": 4
+ },
+ "761f7dca19314efcad9022c970ce9ce4": {
+  "label": "Farming Patch",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "52e21267288f483facd99e5e84adc4e7": {
+  "label": "Farming Patch",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "8a2d4fa6d97a46e8b7de198b9eb54353": {
+  "label": "Farming Patch",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "c63fd690594e4398966884c9c5527df5": {
+  "label": "Hay Bale Labyrinth",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "2510a9a4cef54888b5b8ecfcdf042c6d": {
+  "label": "Hay Bale Labyrinth 128 01 NEW",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "7d7556b30dc74b959d92731013b19fc0": {
+  "label": "Hideout",
+  "tier": 1,
+  "sx": 8,
+  "sy": 8
+ },
+ "5174bec60c874a03abfd21e88c3d1e8a": {
+  "label": "Kiosk",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "69c5db9724524f959ec0573721249137": {
+  "label": "Kiosk",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "cdaaf82767c24e24b7a06daf2dbd9d30": {
+  "label": "Kiosk",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "a0be1f825a6c4dc68a38c09fbb63c002": {
+  "label": "Kiosk Desert",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "fd3351f89af64c58933d48185fe2c151": {
+  "label": "Kiosk Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "2c36976be008408ca5b51baaaf01df04": {
+  "label": "Mechanic Station",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "c60fb4085ca645eb98d0dc9a05ed7a66": {
+  "label": "Oil Lake Desert",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "84b610872a1641eeb23f56aa4ff5d056": {
+  "label": "Oil Pool Desert",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "465b42d94db14b10925b8d517ad37edb": {
+  "label": "Oil Pool Desert",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "9f3b2d02a1b2471799b883cae87bcb7c": {
+  "label": "Packing Station Fruit",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "f3dda4db84504e9da501ec6dbf14a78a": {
+  "label": "Packing Station Vegetable",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "2ce743d884664e7eb1a80385617b2549": {
+  "label": "Random Desert",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "8ff1b5310988437bb261c002dd6e69fc": {
+  "label": "Random Desert 64 01 NEW",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "28573376d18d4f60a595e9b27b41cebd": {
+  "label": "Random Desert",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "6a36603fc0b04a2398c56c4df4a1f254": {
+  "label": "Random Desert 64 02 NEW",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "2eb07292e9014c84add578130abb32ef": {
+  "label": "Random Field",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "3d64303d2a5440b1a7f457382403b2c1": {
+  "label": "Random Field",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "3f72fa102b484a1aac6533d481ce3785": {
+  "label": "Random Field",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "910e80a5294d41a0930e6887a6cab9cf": {
+  "label": "Random Forest",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "ba690f455e2842c6b53968a5a91303a9": {
+  "label": "Random Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "ae4cc1ea64074baaa353620ee1600306": {
+  "label": "Random Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "6c103a80f20046e3abb82857c36f27cb": {
+  "label": "Random Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "4efb5dcb6f394648af7c26433cb31a18": {
+  "label": "Random Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "0b12d848284e4ffb9e1fddc1de9c42f0": {
+  "label": "Random Lake",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "f384215855ff4e0e9bdce4e83a4c82f6": {
+  "label": "Random Lake",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "53320dd6a8f944f3b39b1b7b42bfbb7b": {
+  "label": "Random Lake",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "886a58f4305e458badff7da04b161707": {
+  "label": "Random Lake",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "2bd45a6c9da747d3bc0606ae127a0f8f": {
+  "label": "Random Lake",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "0e74d86bb2bb4f5787d7bd51faa5242c": {
+  "label": "Random Lake",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "f9ea368e98734c39a3e17dd1cbba6cd5": {
+  "label": "Random Meadow",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "cf65814d3bd44e268ec11658202727a4": {
+  "label": "Random Meadow",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "8d4c4773a2e54fdbb748ebed4b8eec5e": {
+  "label": "Random Meadow",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "5d3f7eac7e134529862765b3c9f8d281": {
+  "label": "Random Meadow",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "f31d8dd8982a4637b8d81b333d966663": {
+  "label": "Random Meadow",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "bdd72d25f3b84fb6bb8ba033e44223fa": {
+  "label": "Random Meadow",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "f3535095b8844596a4320aee1b5d742a": {
+  "label": "Random Road",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "7281c2959748496bbc1e6efe5f5f2541": {
+  "label": "Random Road",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "af25cff817004842b6f8b486558cfefc": {
+  "label": "Random Road",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "ea30c62b944a4763be94454cd03fa218": {
+  "label": "Random Road",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "d4e2cbc362e148c58bd195ab3f7448ac": {
+  "label": "Ruin City",
+  "tier": 2,
+  "sx": 8,
+  "sy": 8
+ },
+ "c1af7c3242e8471f93b6019f2c22ed10": {
+  "label": "Ruin City 512 01 NEW",
+  "tier": 2,
+  "sx": 8,
+  "sy": 8
+ },
+ "190ac4851f214490abdb0fb1592ab356": {
+  "label": "Ruin Autumn Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "dd8b2c81c9c54314a06965fa9cea3024": {
+  "label": "Ruin Autumn Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "afe1dcc608944e95a43984463fc2a2e4": {
+  "label": "Ruin Autumn Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "51ee58d45d914914aa42d35c4521a23b": {
+  "label": "Ruin Burnt Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "c3bda64c61c74dec9ae0c6bb2b7a395d": {
+  "label": "Ruin Burnt Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "c0261f9ba288475a957a33e01e964002": {
+  "label": "Ruin Burnt Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "61fbf2377ca14310a70b85c5c047aa1c": {
+  "label": "Ruin Field",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "2fc07dd0482c4eb586a02d48ba50fad3": {
+  "label": "Ruin Field",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "a372e03c800644aba8ee15bffec72dbe": {
+  "label": "Ruin Field",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "921eeedd3f1047a5aabb81b65db23b06": {
+  "label": "Ruin Forest",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "0a028fbe55804abcb48a66c6a0f67c8e": {
+  "label": "Ruin Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "6cca7d2fa07b41339ac3265715be70f6": {
+  "label": "Ruin Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "19f3fd491aa94aea9fe56be46f73844f": {
+  "label": "Ruin Forest",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "9958e99584164970945f181c0c8add04": {
+  "label": "Ruin Lake",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "3600476518864e659c6126526ae925e3": {
+  "label": "Ruin Lake",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "3d581892c3514a03a117562f2a25f18d": {
+  "label": "Ruin Lake",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "a3b7e0662530404e9c4bd311f569748c": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "70e2d9317c974290bdbf436db8582f71": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "31d05f8fc1a5493b8ff091dc9af302e4": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "10bac32b48ac401a9d7cb215fc84aa98": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "68794ad2e70f4f688dc14b396a927d07": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "ca8cce514e864c38b2a0e21facb13229": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "1f041ba44fc149ecbf9863ad8e1f1b96": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "240b28e9e29843068d77aca4b2581670": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "182162177c4940eeafb338d2e9555fb8": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "0de47979bf124665bf58692b5e129b1c": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "a132fdc02417418191b626176657ea4e": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "95da146889604fa79157b5bc478466a4": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "5b2285e15d7045988831619911c22d5a": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "8e3f35e9c142450887fdd48affb22fea": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "7ba6fefb8a0749b8b61fa4d4305ecb47": {
+  "label": "Ruin Meadow",
+  "tier": 2,
+  "sx": 1,
+  "sy": 1
+ },
+ "2908dd4597674c9aaa00871a3a0b04b5": {
+  "label": "Schematic Station",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "d26c918624ea42faa6d3fc6536bb2725": {
+  "label": "Schematic Station Desert",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "f32ebca6dd04462fa614884dcb55ccfe": {
+  "label": "Schematic Station Field",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "560ee0c05a35429d95339b9351d82df5": {
+  "label": "Schematic Station Forest",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "9e5e4d7f020d4eecad19ee2b19d6283a": {
+  "label": "Silo District",
+  "tier": 1,
+  "sx": 8,
+  "sy": 8
+ },
+ "bd9b7d46b57e42cba4703e2371921b5d": {
+  "label": "Sleep Capsule Burial",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "e8dfc039787940cb8b69696f88d1cb2c": {
+  "label": "Warehouse Exterior 2Floors",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "887b1866009d430d923c53f7f6e21f4c": {
+  "label": "Warehouse Exterior 2Floors 256 01 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "71acfa845a934d718263abff15908985": {
+  "label": "Warehouse Exterior 2Floors",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "457232e582334dc885653433405ecd77": {
+  "label": "Warehouse Exterior 2Floors 256 02 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "5861d377b27d4ba791672ca064915e81": {
+  "label": "Warehouse Exterior 2Floors",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "dc5c1caf885c4b9ea3d7d2578b04e633": {
+  "label": "Warehouse Exterior 2Floors 256 03 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "afc8dacfa2ec4bc59ffb166372b5fcd2": {
+  "label": "Warehouse Exterior 2Floors",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "4283ed6898114fc691b6156fda5c444f": {
+  "label": "Warehouse Exterior 2Floors 256 04 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "cbeb135720274a90bd03632ccd4509b5": {
+  "label": "Warehouse Exterior 3Floors",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "3f35b614e5da41b1ad2c2959a9ae77d6": {
+  "label": "Warehouse Exterior 3Floors 256 01 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "b626a6fa5930419699ddbf36f629bd0d": {
+  "label": "Warehouse Exterior 4Floors",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "669a9132e9c24961a6ad869044058024": {
+  "label": "Warehouse Exterior 4Floors 256 01 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "5e9fa63076fe4693be6300ecd9acf201": {
+  "label": "Warehouse Exterior 4Floors 256 Quest",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "d92fa65f9eda4e95ac607cd35af64abf": {
+  "label": "Builder Quest Baguette",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "4bb322786e87482da9e33476a45a194b": {
+  "label": "Builder Quest Beesuit",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "84cce463a967443f95ff9fcdb73262b0": {
+  "label": "Builder Quest Bigfan",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "cd2e757d249d49af979c14428b41f7ad": {
+  "label": "Builder Quest Cardboardpoop",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "86854faa1d4f4f2abb57877abb8dfbc3": {
+  "label": "Builder Quest Carousel",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "e010fb272d2844fba8e6e9f9664850a7": {
+  "label": "Builder Quest Catapult",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "9269286f6bde4d6dad573ef57c88980e": {
+  "label": "Builder Quest Compass",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "d5532a2644504bc79db9ff370be3dee9": {
+  "label": "Builder Quest Cornheart",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "6ddf24cbdb84453481a8a9ce81e83d84": {
+  "label": "Builder Quest Cozybed",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "5c34eac0287049788f057478d6e03baa": {
+  "label": "Builder Quest Crowbar",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "405bb852e0904ee58a2f24f2395d5d5f": {
+  "label": "Builder Quest Garden",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "eb056a4781224fd58f45fbd96c249997": {
+  "label": "Builder Quest Musicbox",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "da1275c82133442ab6496961a5ddeb7f": {
+  "label": "Builder Quest Nicehouse",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "d149b9cfde7e4fcd8e8269c07214d3af": {
+  "label": "Builder Quest Popcorn",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "e732c8c945804ca998fddbb79c97a623": {
+  "label": "Builder Quest Resource Car",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "49b86128327e457c98f51949bee17c3d": {
+  "label": "Builder Quest Sawbladearm",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "311d997eb8b0491dac9d176335e94e97": {
+  "label": "Builder Quest Sledgehammer",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "328be143d67d4b73a15a3df26c106f20": {
+  "label": "Builder Quest Steelbridge",
+  "tier": 3,
+  "sx": 2,
+  "sy": 2
+ },
+ "6c57b05d36c746dfae457403f756199d": {
+  "label": "Builder Quest Totebotkey",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "bb5acabd562f449fbece5a8351c34b6e": {
+  "label": "Builder Quest Wochouse",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "c62ca22831904c09bd1a88eb32e0695b": {
+  "label": "Builder Quest Xylophone",
+  "tier": 3,
+  "sx": 1,
+  "sy": 1
+ },
+ "3ef314616f4e4fb5938d875fb837d736": {
+  "label": "Mechanic Station Quest Tile",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "08f0037b92334fe8b7e1c1a0c4a2913b": {
+  "label": "Minidungeon Overworld Entrance Chemical",
+  "tier": 3,
+  "sx": 8,
+  "sy": 8
+ },
+ "8e1538ae61694053b9aed80258c6fb3b": {
+  "label": "Minidungeon Overworld Entrance Water",
+  "tier": 3,
+  "sx": 8,
+  "sy": 8
+ },
+ "312e8d1cde9c479d861acace1cb480f7": {
+  "label": "Minidungeon Overworld Entrance",
+  "tier": 3,
+  "sx": 4,
+  "sy": 4
+ },
+ "b5b956c1bab04bbeabb0e0ab8d3f1fab": {
+  "label": "Minidungeon Overworld Entrance",
+  "tier": 3,
+  "sx": 4,
+  "sy": 4
+ },
+ "d159bbf67b8740738da7c6cc3b85e4b5": {
+  "label": "Minidungeon Overworld Entrance",
+  "tier": 3,
+  "sx": 4,
+  "sy": 4
+ },
+ "e70e6ba129a340a49ec3cc2ed60a69c9": {
+  "label": "Minidungeon Overworld Entrance Dungeon Quest",
+  "tier": 3,
+  "sx": 4,
+  "sy": 4
+ },
+ "a47695ef202844c782475fcad4e10bf8": {
+  "label": "Ruin Autumn Forest Ruins Quest",
+  "tier": 2,
+  "sx": 2,
+  "sy": 2
+ },
+ "6b099f5a4a59430396293b38a394119d": {
+  "label": "Start: Big Ruin",
+  "tier": 1,
+  "sx": 2,
+  "sy": 2
+ },
+ "baf427f12bb141e8886844fc12af5590": {
+  "label": "Start: Big Ruin 01 NEW",
+  "tier": 1,
+  "sx": 2,
+  "sy": 2
+ },
+ "5deb2830b52e40af91c2e53aee6c5165": {
+  "label": "Start: Boss Mountain",
+  "tier": 1,
+  "sx": 2,
+  "sy": 2
+ },
+ "f6e1a6f1ac234fa5b08333ea37f4550e": {
+  "label": "Start: Crashed Ship",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "28c8f354391946e4a3116c3ceee5b5d9": {
+  "label": "Start: Crashed Ship 01 NEW",
+  "tier": 1,
+  "sx": 4,
+  "sy": 4
+ },
+ "ff1f81e2c68f4421ab493a68926e3947": {
+  "label": "Start: Crashed Tower Cliff",
+  "tier": 1,
+  "sx": 1,
+  "sy": 1
+ },
+ "af576b76b6a249ea84514001f1c28d7c": {
+  "label": "Start: Crashed Tower",
+  "tier": 1,
+  "sx": 2,
+  "sy": 2
+ },
+ "943c232aa7804099bffc54ce08c184c5": {
+  "label": "Start: Crashed Tower 01 NEW",
+  "tier": 1,
+  "sx": 2,
+  "sy": 2
+ },
+ "e7c4f9d91e574a99949275342d65f3c8": {
+  "label": "Start: Small Ruin A",
+  "tier": 1,
+  "sx": 1,
+  "sy": 1
+ },
+ "410858cb6aa8418f8bed00c0dc920316": {
+  "label": "Start: Small Ruin B",
+  "tier": 1,
+  "sx": 1,
+  "sy": 1
+ },
+ "e416821eaabf464eba61b7314c651556": {
+  "label": "Start: Small Ruin C",
+  "tier": 1,
+  "sx": 1,
+  "sy": 1
+ },
+ "2141d12aae8646588d3f405d5a301190": {
+  "label": "Start: Small Ruin D",
+  "tier": 1,
+  "sx": 1,
+  "sy": 1
+ }
+}

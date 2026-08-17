@@ -12,7 +12,7 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 [*][b]Bot Hijack / Beacons[/b] - Powered Hack / Control / Infection Beacons (needs [b]RFS Beacons[/b] B&P). Hideout: 20 / 50 / 120 Farmers. Wire a Battery; tethered allies need power/range; infected stay loyal. Light chain convert + host/owner [b]/unhijack[/b]. Beacon [b]E[/b] Orders: Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil.
 [*][b]Expanded Inventory[/b] - Scale inventory capacity from +1 row up to +5 extra rows.
 [*][b]Advanced Farming[/b] - Instant growth options, permanent watering, soil planting, and live crop growth countdown timers.
-[*][b]Map[/b] - Always-on MiniMap (upper-left). Research/craft Nutt's GPS (Metal Block + Circuit + Component Kit + Glass), then LMB to open the atlas. Terrain/atlas map by [b]Nutt[/b] (Steam Workshop World Map [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]3780282057[/url]). Subscribe; do [b]not[/b] enable as a world mod. Weapon ammo count stays on the HUD.
+[*][b]Map[/b] - Always-on MiniMap (upper-left). Research/craft Nutt's GPS (Metal Block + Circuit + Component Kit + Glass), then LMB to open the atlas. Terrain/atlas map by [b]Nutt[/b] (Steam Workshop World Map [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]3780282057[/url]). Do [b]not[/b] enable World Map as a world mod if you already have it (double HUD). Weapon ammo count stays on the HUD.
 [*][b]Dev Tools[/b] - Full suite of built-in developer mode tools at your fingertips.
 [*][b]Anchor Devices / Tile Loaders[/b] - Keep distant areas active ([i]WARNING: Loading more than 2-3 tiles can severely impact performance, even on high-end PCs[/i]).
 [*][b]Faster Loads[/b] - Quieter console and snappier startup from a smarter recipe scan (less DirectoryManager spam).
@@ -33,9 +33,9 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 [h2]Install[/h2]
 [olist]
 [*]Subscribe to [b]ModDatabase[/b] (keep installed; do [b]not[/b] enable it as a world mod).
-[*]Subscribe to [b]World Map[/b] by Nutt (keep installed; do [b]not[/b] enable it as a world mod).
 [*]Create a new world with [b]Remastered Framework Survival[/b].
 [*]Enable the Blocks & Parts mods you want (e.g. Intelligentia, Scrap Computers, RFS Beacons).
+[*]If you already have [b]World Map[/b] by Nutt, do [b]not[/b] enable it as a world mod (double HUD).
 [/olist]
 
 [hr][/hr]
@@ -60,7 +60,7 @@ From that clone: configure [b].env[/b], then [b]npm install[/b] and [b]npm run w
 [hr][/hr]
 
 [h2]Credits[/h2]
-MiniMap and atlas terrain by [b]Nutt[/b] (Steam Workshop [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map 3780282057[/url]). Subscribe to World Map; do [b]not[/b] enable it as a world mod.
+MiniMap and atlas terrain by [b]Nutt[/b] (Steam Workshop [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map 3780282057[/url]). Do [b]not[/b] enable World Map as a world mod if you already have it (double HUD).
 
 [b]Author:[/b] Zernon916
 

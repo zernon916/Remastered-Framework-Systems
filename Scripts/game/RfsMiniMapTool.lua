@@ -1,24 +1,24 @@
 -- RfsMiniMapTool.lua — Map phase autoTool (HUD MiniMap + Nutt atlas host).
--- Preferred path: host Nutt World Map (Steam Workshop 3780282057) HUD + atlas.
--- Credit: Nutt. Do not enable World Map as a world mod (duplicate HUD / GPS grant).
+-- Vendored Nutt World Map (Workshop 3780282057) HUD + atlas under $CONTENT_DATA.
+-- Credit: Nutt. Do not also enable World Map as a world mod (double HUD / GPS grant).
 -- Full atlas opens from the crafted GPS (SpikeHand LMB), not chat.
 -- Fallback: this tool stays inert; RfsHud clock/compass/ammo remain.
+-- One MiniMap only: this wrapper hosts MinimapHud; never also run Nutt as a world mod.
 
 RfsMiniMapTool = class()
 
-local NUTT_LOCAL = "58df2b8e-a86f-44ed-b4f9-aa5b00b44162"
-local NUTT = "$CONTENT_" .. NUTT_LOCAL
+local NUTT = "$CONTENT_DATA"
 
 g_rfsNuttMap = false
 g_rfsNuttMapErr = nil
 
 local function probeNutt()
-	local ok, idx = pcall( sm.json.open, NUTT .. "/Scripts/data/atlas_index.json" )
+	local ok, idx = pcall( sm.json.open, NUTT .. "/Scripts/nutt/data/atlas_index.json" )
 	if not ok or type( idx ) ~= "table" or type( idx.mini ) ~= "table" then
 		return false, "atlas_index missing (" .. tostring( idx ) .. ")"
 	end
 	local ok2, err2 = pcall( function()
-		dofile( NUTT .. "/Scripts/MinimapHud.lua" )
+		dofile( NUTT .. "/Scripts/nutt/MinimapHud.lua" )
 	end )
 	if not ok2 then
 		return false, tostring( err2 )
@@ -38,7 +38,7 @@ do
 		_G.g_rfsNuttMapErr = g_rfsNuttMapErr
 	end
 	if ok then
-		print( "[RFS] Map: Nutt World Map HUD + atlas loaded (3780282057)" )
+		print( "[RFS] Map: Nutt World Map HUD + atlas vendored (3780282057)" )
 	else
 		print( "[RFS] Map: Nutt atlas unavailable (" .. tostring( err ) .. ") — clock/compass/ammo" )
 	end
@@ -60,16 +60,22 @@ local function pinUpperLeft( self )
 	c.lastPos = MINIMAP_TL
 end
 
--- Embedding blit: jsonGui ImageBox can V-flip each ResourceImageSet frame when
--- the sheets live in another $CONTENT_ pack. That rotates every cell in place
--- (Hideout ring disjointed, lighting checkerboard) while the cell GRID stays
--- north-up. ImageCoord height < 0 undoes the V-flip in frame space (64px mini).
+-- Embedding blit: jsonGui ImageBox can V-flip each ResourceImageSet frame.
+-- ImageCoord height < 0 undoes that in frame space (64px mini atlas cells).
+-- Keep Flip=V + negative-height UV together (they are one sample, not two
+-- rotations). Atlas is now $CONTENT_DATA; do not also apply RotatingSkin on
+-- mini baked rN frames — remapRotName picks the matching atlas_index key.
 local TILE_PX = 64
+local TILE_UV = "0 " .. tostring( TILE_PX ) .. " " .. tostring( TILE_PX ) .. " -" .. tostring( TILE_PX )
 local function flipTileBlit( w )
 	if type( w ) ~= "table" then
 		return
 	end
-	w.ImageCoord = "0 " .. tostring( TILE_PX ) .. " " .. tostring( TILE_PX ) .. " -" .. tostring( TILE_PX )
+	-- Same UV every refill so neighbors share one sample rect (no mixed Flip).
+	if w.ImageCoord == TILE_UV and w.Flip == "V" then
+		return
+	end
+	w.ImageCoord = TILE_UV
 	w.Flip = "V"
 end
 
@@ -224,7 +230,7 @@ if g_rfsNuttMap and MinimapHud then
 			if not self.cl.rfsNuttCredit then
 				self.cl.rfsNuttCredit = true
 				pcall( function()
-					sm.gui.chatMessage( "[RFS] Map: World Map by Nutt (Workshop 3780282057). Upper-left MiniMap on. Craft/research the GPS to open the atlas. Do not enable World Map as a world mod." )
+					sm.gui.chatMessage( "[RFS] Map: World Map by Nutt (Workshop 3780282057). Upper-left MiniMap on. Craft/research the GPS to open the atlas. Do not enable World Map as a world mod if you already have it (double HUD)." )
 				end )
 			end
 		end

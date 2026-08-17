@@ -161,8 +161,8 @@ This is the Map phase, not a HUD sidecar. Nutt World Map (Workshop 3780282057)
 is the atlas + the walking MiniMap HUD.
 
 `/map` / `/rfsmap` / `/menu` Map open the full atlas (no GPS). Credit Nutt in
-Steam / description.json / in-game chat. Subscribe to World Map; do not enable
-as a world mod. Fallback only if that pack is missing: original RfsHud
+Steam / description.json / in-game chat. Atlas is vendored; do not enable
+World Map as a world mod (double HUD). Fallback only if atlas is missing: original RfsHud
 (clock + compass + ammo) and lock-camera `/map`. Ring stays off lower-right ammo.
 
 Letters for beacons/allies (H1/T2-style) stay later, after Phase 2 naming.

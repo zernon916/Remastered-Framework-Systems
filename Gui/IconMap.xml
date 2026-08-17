@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MyGUI type="Resource" version="1.1">
-	<Resource type="ResourceImageSet" name="ItemIconsSet0">
+	<!-- GPS inventory/hotbar icon — match Nutt ItemIconsSet0 (relative Gui/gps_icon_b4.png). -->
+	<Resource name="ItemIconsSet0" type="ResourceImageSet">
+		<Group name="ItemIcons" texture="gps_icon_b4.png" size="256 256">
+			<Index name="d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"><Frame point="0 0" /></Index>
+		</Group>
+	</Resource>
+	<Resource name="ItemIconsSet1" type="ResourceImageSet">
 		<Group name="ItemIcons" texture="IconMap.png" size="96 96">
 			<Index name="Empty">
 				<Frame point="0 0"/>
@@ -37,14 +43,9 @@
 			</Index>
 		</Group>
 	</Resource>
-	<Resource type="ResourceImageSet" name="ItemIconsSet1">
-		<Group name="ItemIcons" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/gps_icon_b4.png" size="256 256">
-			<Index name="d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"><Frame point="0 0" /></Index>
-		</Group>
-	</Resource>
-	<!-- MiniMap atlas from Nutt World Map (Workshop 3780282057). Textures stay in $CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162. Do not enable World Map as a world mod. -->
+	<!-- MiniMap atlas from Nutt World Map (Workshop 3780282057). Textures stay in $CONTENT_29c99287-1213-48c7-9471-19a4a5c12247. Do not enable World Map as a world mod. -->
 	<Resource name="MMap_mini_0_0" type="ResourceImageSet">
-		<Group name="MMap_mini_0_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_mini_0_b2.png" size="64 64">
+		<Group name="MMap_mini_0_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_mini_0_b2.png" size="64 64">
 			<Index name="0123c758c3d445fba9a8ad1b54578012_0_0_r0"><Frame point="3 3" /></Index>
 			<Index name="0123c758c3d445fba9a8ad1b54578012_0_0_r1"><Frame point="73 3" /></Index>
 			<Index name="0123c758c3d445fba9a8ad1b54578012_0_0_r2"><Frame point="143 3" /></Index>
@@ -1948,7 +1949,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_mini_0_1" type="ResourceImageSet">
-		<Group name="MMap_mini_0_1" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_mini_0_b2.png" size="64 64">
+		<Group name="MMap_mini_0_1" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_mini_0_b2.png" size="64 64">
 			<Index name="79b955b573e34dc7b787a19f34df2c66_0_0_r0"><Frame point="3083 2243" /></Index>
 			<Index name="79b955b573e34dc7b787a19f34df2c66_0_0_r1"><Frame point="3153 2243" /></Index>
 			<Index name="79b955b573e34dc7b787a19f34df2c66_0_0_r2"><Frame point="3223 2243" /></Index>
@@ -3416,7 +3417,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_mini_1_0" type="ResourceImageSet">
-		<Group name="MMap_mini_1_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_mini_1_b2.png" size="64 64">
+		<Group name="MMap_mini_1_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_mini_1_b2.png" size="64 64">
 			<Index name="ba31a52276594ec5b9338b83960c57f2_13_11_r0"><Frame point="3 3" /></Index>
 			<Index name="ba31a52276594ec5b9338b83960c57f2_13_11_r1"><Frame point="73 3" /></Index>
 			<Index name="ba31a52276594ec5b9338b83960c57f2_13_11_r2"><Frame point="143 3" /></Index>
@@ -5320,7 +5321,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_mini_1_1" type="ResourceImageSet">
-		<Group name="MMap_mini_1_1" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_mini_1_b2.png" size="64 64">
+		<Group name="MMap_mini_1_1" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_mini_1_b2.png" size="64 64">
 			<Index name="c1af7c3242e8471f93b6019f2c22ed10_0_7_r0"><Frame point="3083 2243" /></Index>
 			<Index name="c1af7c3242e8471f93b6019f2c22ed10_0_7_r1"><Frame point="3153 2243" /></Index>
 			<Index name="c1af7c3242e8471f93b6019f2c22ed10_0_7_r2"><Frame point="3223 2243" /></Index>
@@ -6364,7 +6365,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_0_0" type="ResourceImageSet">
-		<Group name="MMap_big_0_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_0_b2.png" size="256 256">
+		<Group name="MMap_big_0_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_0_b2.png" size="256 256">
 			<Index name="0123c758c3d445fba9a8ad1b54578012_0_0"><Frame point="3 3" /></Index>
 			<Index name="013e980d242542759c4bc0eee0dba7f1_0_0"><Frame point="265 3" /></Index>
 			<Index name="0158273515b640589a393a96f5d7c985_0_0"><Frame point="527 3" /></Index>
@@ -6593,7 +6594,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_1_0" type="ResourceImageSet">
-		<Group name="MMap_big_1_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_1_b2.png" size="256 256">
+		<Group name="MMap_big_1_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_1_b2.png" size="256 256">
 			<Index name="33f54ce422874d9ca5b1a62eeca38127_0_2"><Frame point="3 3" /></Index>
 			<Index name="33f54ce422874d9ca5b1a62eeca38127_0_3"><Frame point="265 3" /></Index>
 			<Index name="33f54ce422874d9ca5b1a62eeca38127_1_0"><Frame point="527 3" /></Index>
@@ -6822,7 +6823,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_2_0" type="ResourceImageSet">
-		<Group name="MMap_big_2_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_2_b2.png" size="256 256">
+		<Group name="MMap_big_2_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_2_b2.png" size="256 256">
 			<Index name="76502521ea684db083477ef7480ea590_0_0"><Frame point="3 3" /></Index>
 			<Index name="76838c0bf3594a1bb7acd33117644e03_0_0"><Frame point="265 3" /></Index>
 			<Index name="76f90b3708fc4433a646642adc6b3bf1_0_0"><Frame point="527 3" /></Index>
@@ -7051,7 +7052,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_3_0" type="ResourceImageSet">
-		<Group name="MMap_big_3_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_3_b2.png" size="256 256">
+		<Group name="MMap_big_3_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_3_b2.png" size="256 256">
 			<Index name="92b6ed7f91e24f05bbc9261d320fa23a_0_0"><Frame point="3 3" /></Index>
 			<Index name="943c232aa7804099bffc54ce08c184c5_0_0"><Frame point="265 3" /></Index>
 			<Index name="943c232aa7804099bffc54ce08c184c5_0_1"><Frame point="527 3" /></Index>
@@ -7280,7 +7281,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_4_0" type="ResourceImageSet">
-		<Group name="MMap_big_4_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_4_b2.png" size="256 256">
+		<Group name="MMap_big_4_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_4_b2.png" size="256 256">
 			<Index name="ba31a52276594ec5b9338b83960c57f2_1_8"><Frame point="3 3" /></Index>
 			<Index name="ba31a52276594ec5b9338b83960c57f2_1_9"><Frame point="265 3" /></Index>
 			<Index name="ba31a52276594ec5b9338b83960c57f2_2_0"><Frame point="527 3" /></Index>
@@ -7509,7 +7510,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_5_0" type="ResourceImageSet">
-		<Group name="MMap_big_5_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_5_b2.png" size="256 256">
+		<Group name="MMap_big_5_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_5_b2.png" size="256 256">
 			<Index name="bf0ba240416f4f32b87d3a445919e72a_13_6"><Frame point="3 3" /></Index>
 			<Index name="bf0ba240416f4f32b87d3a445919e72a_13_7"><Frame point="265 3" /></Index>
 			<Index name="bf0ba240416f4f32b87d3a445919e72a_13_8"><Frame point="527 3" /></Index>
@@ -7738,7 +7739,7 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_6_0" type="ResourceImageSet">
-		<Group name="MMap_big_6_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_6_b2.png" size="256 256">
+		<Group name="MMap_big_6_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_6_b2.png" size="256 256">
 			<Index name="c1af7c3242e8471f93b6019f2c22ed10_5_1"><Frame point="3 3" /></Index>
 			<Index name="c1af7c3242e8471f93b6019f2c22ed10_5_2"><Frame point="265 3" /></Index>
 			<Index name="c1af7c3242e8471f93b6019f2c22ed10_5_3"><Frame point="527 3" /></Index>
@@ -7967,12 +7968,12 @@
 		</Group>
 	</Resource>
 	<Resource name="MMap_big_7_0" type="ResourceImageSet">
-		<Group name="MMap_big_7_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_big_7_b2.png" size="256 256">
+		<Group name="MMap_big_7_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_big_7_b2.png" size="256 256">
 			<Index name="unknown"><Frame point="3 3" /></Index>
 		</Group>
 	</Resource>
 	<Resource name="MMap_roads_0_0" type="ResourceImageSet">
-		<Group name="MMap_roads_0_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_roads_0_b2.png" size="128 128">
+		<Group name="MMap_roads_0_0" texture="$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Atlas/sheet_roads_0_b2.png" size="128 128">
 			<Index name="road_1"><Frame point="3 3" /></Index>
 			<Index name="road_2"><Frame point="137 3" /></Index>
 			<Index name="road_3"><Frame point="271 3" /></Index>

@@ -14,8 +14,8 @@
 	"d96c2fe4-177b-49bb-be40-e4b1bcdd8f76": {
 		"title": "GPS",
 		"upperCaseTitle": "GPS",
-		"keywords": [ "gps", "map", "minimap", "navigation", "waypoint", "nutt" ],
-		"description": "World Map by Nutt. In hand: LMB opens the atlas, RMB cycles MiniMap zoom, Q moves/hides the MiniMap, R cycles MiniMap size. On the atlas: pan arrows, mouse wheel zoom, click/drag waypoints. E/Esc closes. Research and craft at the Craftbot."
+		"keywords": [ "gps", "map", "minimap", "navigation", "waypoint", "nutt", "tool" ],
+		"description": "GPS. Buy the schematic at the Hideout (1 Farmer), then craft at the Craftbot (1 Metal, 1 Circuit, 1 Component, 1 Glass). In hand: LMB opens the atlas, RMB cycles MiniMap zoom, Q moves/hides the MiniMap, R cycles MiniMap size. Atlas terrain by Nutt."
 	},
 	"b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7": {
 		"title": "Hack Beacon",

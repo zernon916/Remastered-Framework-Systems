@@ -16,10 +16,9 @@ Requirements
 ------------
 1) Subscribe to ModDatabase (Steam Workshop fileId 2504530003).
    Keep it installed. Do NOT enable it as a manual world mod.
-2) Subscribe to World Map by Nutt (Steam Workshop fileId 3780282057).
-   Keep it installed. Do NOT enable it as a world mod (RFS hosts the HUD;
-   enabling it as a B&P would duplicate the ring and auto-grant a GPS).
-3) This Custom Game: Recipe Framework Survival.
+2) This Custom Game: Recipe Framework Survival.
+   MiniMap/atlas by Nutt is bundled. If you already have World Map
+   (Workshop 3780282057), do NOT enable it as a world mod (double HUD).
 
 How to start a world
 --------------------
@@ -73,14 +72,13 @@ rows and scroll. Optional logic switch hides the face. Not a computer.
 Always-on HUD
 -------------
 Top-center game clock and facing compass (N/NE/E/…). Lower-right weapon ammo count.
-Corner MiniMap HUD (Nutt World Map, Workshop 3780282057) while you walk.
-If World Map is not subscribed, clock/compass/ammo stay; MiniMap is skipped.
+Corner MiniMap HUD (Nutt World Map, Workshop 3780282057, bundled) while you walk.
 
 Map — complete
 --------------
 Always-on MiniMap HUD (upper-left). Research/craft Nutt's GPS (Metal Block +
 Circuit + Component Kit + Glass), then LMB to open the atlas (E / Esc / CLOSE
-to exit). Subscribe to World Map; do not enable it as a world mod.
+to exit). Do not enable World Map as a world mod if you already have it.
 Reload tip: exit to menu and reload the world after updating this Custom Game so Scripts/Objects refresh.
 
 Streamer / Discord (optional)

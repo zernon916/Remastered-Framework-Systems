@@ -22,6 +22,10 @@ dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsAreaLoader.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsDigitalSign.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsInventoryLcd.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/ModRecipeScan.lua" )
+-- Survival Craftbot uses this file. Load it here so RfsCrafterGrid can patch Craftbot
+-- (class(Crafter) copies methods; wrapping Crafter alone does not change Craftbot).
+pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/interactables/Crafter.lua" ) end )
+dofile( "$CONTENT_DATA/Scripts/game/RfsCrafterGrid.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsSetupGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsGenGui.lua" )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" ) end )
@@ -39,9 +43,11 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Bump this string on every Workshop/Roaming copy so chat proves the running pack.
-RFS_PACK_STAMP = "[RFS] pack 0817-n drop"
+RFS_PACK_STAMP = "[RFS] pack 0817-y steam"
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
+-- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
+local RFS_GPS_UUID = "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"
 local FARMERS_UUID = sm.uuid.new( "8d601982-4608-4d5e-bb9e-e4041486f7c7" )
 local RFS_HIDEOUT_TRADER_UUID = sm.uuid.new( "614c3193-13da-40f4-9b03-37f26e760fd6" )
 local RFS_MININGHUB_TRADER_UUID = sm.uuid.new( "90762ac2-5082-461d-9028-480d38a7da10" )
@@ -211,53 +217,10 @@ local function rfsPathHas( path, needle )
 	return string.find( tostring( path or "" ):gsub( "\\", "/" ), needle, 1, true ) ~= nil
 end
 
--- addGridItemsFromFile reads a real file in C++. Write a per-peer local copy that is
--- NOT Workshop and NOT Survival CraftingRecipes. Each peer writes at load.
-local RFS_CRAFTBOT_LOCAL_CANDIDATES = {
-	"$USER_DATA/Cache/rfs_craftbot_other.json",
-	"$USER_DATA/rfs_craftbot_other.json",
-	"$TEMP_DATA/rfs_craftbot_other.json",
-	"$SURVIVAL_DATA/LocalBlueprints/rfs_craftbot_other.json"
-}
-
-local function rfsSaveCraftbotLocal( mergedSafe )
-	for _, path in ipairs( RFS_CRAFTBOT_LOCAL_CANDIDATES ) do
-		local okSave = pcall( function()
-			sm.json.save( mergedSafe, path )
-		end )
-		if okSave then
-			local okOpen, data = pcall( sm.json.open, path )
-			if okOpen and type( data ) == "table" and #data == #mergedSafe then
-				print( "[RFS] craftbot_other GUI file saved " .. path )
-				return path
-			end
-		end
-	end
-	print( "[RFS] craftbot_other GUI file save failed â€” relying on sm.json.open hook" )
-	return nil
-end
-
--- Last resort: point Crafter GUI at the local merged path without editing Survival Crafter.lua.
-local function rfsWrapCrafterRecipeGrid()
-	if _G.g_rfsCrafterGridWrapped then
-		return
-	end
-	if type( Crafter ) ~= "table" or type( Crafter.cl_updateRecipeGrid ) ~= "function" then
-		return
-	end
-	_G.g_rfsCrafterGridWrapped = true
-	local orig = Crafter.cl_updateRecipeGrid
-	Crafter.cl_updateRecipeGrid = function( self, ... )
-		if g_craftingRecipeSets and g_craftingRecipeSets.craftbot_other then
-			local guiPath = _G.g_rfsCraftbotOtherGuiPath
-			if type( guiPath ) == "string" and guiPath ~= "" then
-				g_craftingRecipeSets.craftbot_other.path = guiPath
-			end
-		end
-		return orig( self, ... )
-	end
-	print( "[RFS] wrapped Crafter.cl_updateRecipeGrid" )
-end
+-- C++ addGridItemsFromFile ignores Lua sm.json.open hooks. Real pack files only:
+-- $CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/CraftingRecipes/craftbot.json
+-- (C++ does not resolve $CONTENT_DATA; same as IconMap) + each loaded B&P
+-- $CONTENT_<lid>/CraftingRecipes/craftbot.json. See RfsCrafterGrid.lua.
 
 -- Find a loaded trader interactable by shape UUID (client or server bodies).
 local function rfsFindInteractableByShapeUuid( shapeUuid )
@@ -383,9 +346,17 @@ end
 
 local function collectModCraftbotPaths( scan )
 	local paths = {}
+	local seenPath = {}
+	local function addPath( p )
+		if type( p ) ~= "string" or p == "" or seenPath[p] then
+			return
+		end
+		seenPath[p] = true
+		paths[#paths + 1] = p
+	end
 	if scan and scan.craftPaths then
 		for _, p in ipairs( scan.craftPaths ) do
-			paths[#paths + 1] = p
+			addPath( p )
 		end
 	end
 	return paths
@@ -555,6 +526,11 @@ end
 
 function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 	SurvivalGame.server_onFixedUpdate( self, timeStep )
+	pcall( function()
+		if type( RfsCrafterGrid ) == "table" and RfsCrafterGrid.tick then
+			RfsCrafterGrid.tick()
+		end
+	end )
 	pcall( function() RfsFarming.sv_tick( self ) end )
 	pcall( function()
 		if type( RfsStreamer ) == "table" and RfsStreamer.sv_think then
@@ -654,6 +630,11 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 		if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
 	end )
 	self:rfs_bindCommands()
+	pcall( function()
+		if type( RfsCrafterGrid ) == "table" and RfsCrafterGrid.tick then
+			RfsCrafterGrid.tick()
+		end
+	end )
 	-- Pull world farming prefs + GenSettings feature flags
 	pcall( function()
 		self.network:sendToServer( "sv_rfs_farmingGet" )
@@ -661,8 +642,7 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 	pcall( function()
 		self.network:sendToServer( "sv_rfs_featuresGet" )
 	end )
-	pcall( rfsWrapCrafterRecipeGrid )
-	print( "[RFS] client_onCreate host=" .. tostring( sm.isHost ) .. " craftbotMerged=" .. tostring( _G.g_rfsCraftbotMerged == true ) )
+	print( "[RFS] client_onCreate host=" .. tostring( sm.isHost ) .. " craftbotGrid=" .. tostring( type( _G.g_rfsCraftbotGridFiles ) ) )
 end
 
 function RecipeFrameworkSurvival.client_onClientDataUpdate( self, clientData, channel )
@@ -687,6 +667,11 @@ end
 
 function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	SurvivalGame.client_onUpdate( self, dt )
+	pcall( function()
+		if type( RfsCrafterGrid ) == "table" and RfsCrafterGrid.tick then
+			RfsCrafterGrid.tick()
+		end
+	end )
 	-- Fallback: if create/clientData paths skipped binding, catch it on first tick.
 	if not ( self.cl and self.cl.rfsCmdsBound ) then
 		self:rfs_bindCommands()
@@ -725,7 +710,6 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 		pcall( function()
 			if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
 		end )
-		pcall( rfsWrapCrafterRecipeGrid )
 	end
 	-- Keep /setup Main/Farming and /menu labels in sync after toggles / chat cmds
 	if self.cl and self.cl.rfsSetupGui then
@@ -765,8 +749,10 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 	recipeSets.mininghubDispenser = "$SURVIVAL_DATA/CraftingRecipes/mininghubDispenser.json"
 	recipeSets.sawtable = "$SURVIVAL_DATA/CraftingRecipes/sawtable.json"
 
-	-- Scan mods first so craftbot paths exist before LoadCraftingRecipes.
-	local scan = ModRecipeScan.run()
+	-- Scan ModDatabase-loaded B&P mods. This Custom Game's craftbot.json is not
+	-- in that catalog — RfsCrafterGrid always adds $CONTENT_29c99287-…/CraftingRecipes/craftbot.json.
+	local scan = ModRecipeScan.run() or { craftPaths = {} }
+	scan.craftPaths = scan.craftPaths or {}
 
 	-- RFS Hideout: Hack Beacon for 20 Farmers (item, not schematic).
 	do
@@ -781,12 +767,16 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 				end
 			end
 			if type( list ) == "table" then
+				_G.g_extraHideoutSchematicUnlocks = _G.g_extraHideoutSchematicUnlocks or {}
 				for _, raw in ipairs( list ) do
 					if type( raw ) == "table" and raw.itemId then
 						local id = tostring( raw.itemId )
 						if not seenHide[id] then
 							_G.g_extraHideoutTrades[#_G.g_extraHideoutTrades + 1] = raw
 							seenHide[id] = true
+						end
+						if raw.schematic ~= false and not raw.cosmetic then
+							_G.g_extraHideoutSchematicUnlocks[id] = true
 						end
 					end
 				end
@@ -796,113 +786,19 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 		end
 	end
 
-	-- Merge mod craftbot arrays into craftbot_other so the vanilla Crafter GUI lists them
-	-- (CraftbotRecipeSets is a fixed local list - injecting a new set name would not show).
-	local merged = {}
-	local seen = {}
-	local otherPath = recipeSets.craftbot_other or "$SURVIVAL_DATA/CraftingRecipes/craftbot/craftbot_other.json"
-	local okOther, otherJson = pcall( sm.json.open, otherPath )
-	if okOther and type( otherJson ) == "table" then
-		for _, recipe in ipairs( otherJson ) do
-			if type( recipe ) == "table" and recipe.itemId then
-				local id = tostring( recipe.itemId )
-				if not seen[id] then
-					merged[#merged + 1] = recipe
-					seen[id] = true
-				end
-			end
-		end
-	end
-	local modAdded = 0
-	for _, path in ipairs( collectModCraftbotPaths( scan ) ) do
-		local ok, json = pcall( sm.json.open, path )
-		if ok and type( json ) == "table" then
-			local list = json
-			if json.craftbot_core or json.craftbot_beams then
-				list = {}
-				for _, subPath in pairs( json ) do
-					if type( subPath ) == "string" then
-						local okSub, sub = pcall( sm.json.open, subPath )
-						if okSub and type( sub ) == "table" then
-							for _, r in ipairs( sub ) do
-								list[#list + 1] = r
-							end
-						end
-					end
-				end
-			end
-			for _, recipe in ipairs( list ) do
-				if type( recipe ) == "table" and recipe.itemId then
-					local id = tostring( recipe.itemId )
-					if not seen[id] then
-						merged[#merged + 1] = recipe
-						seen[id] = true
-						modAdded = modAdded + 1
-					end
-				end
-			end
-		end
-	end
-
-	-- RFS own recipes (Hack Beacon, etc.) â€” always-available, not schematic-locked.
-	do
-		local okRfs, rfsCraft = pcall( sm.json.open, "$CONTENT_DATA/CraftingRecipes/craftbot_rfs.json" )
-		if okRfs and type( rfsCraft ) == "table" then
-			for _, recipe in ipairs( rfsCraft ) do
-				if type( recipe ) == "table" and recipe.itemId then
-					local id = tostring( recipe.itemId )
-					if not seen[id] then
-						merged[#merged + 1] = recipe
-						seen[id] = true
-						modAdded = modAdded + 1
-					end
-					if g_unlockableCraftItems then
-						if recipe.rfsResearch then
-							g_unlockableCraftItems[id] = true
-						else
-							g_unlockableCraftItems[id] = nil
-						end
-					end
-				end
-			end
-		end
-	end
-
-	-- Deep-copy BEFORE LoadCraftingRecipes mutates ingredient UUIDs in place.
-	-- Hook + GUI file must keep string UUIDs.
-	local mergedSafe = rfsJsonSafeCopy( merged )
-	_G.g_rfsCraftbotMergedSafe = mergedSafe
-	_G.g_rfsCraftbotMerged = true
-
-	-- Serve merged craftbot recipes in-memory. Never sm.json.save into $CONTENT_DATA â€”
-	-- that rewrites Workshop files on the host and breaks multiplayer checksums.
-	local mergedPath = "$CONTENT_DATA/CraftingRecipes/craftbot_other_rfs.json"
-	recipeSets.craftbot_other = mergedPath
-
-	local hostFlag = false
-	do
-		local okHost, hostVal = pcall( function() return sm.isHost end )
-		if okHost then
-			hostFlag = hostVal and true or false
-		end
-	end
-	print( "[RFS] craftbot_other in-memory merge modRecipes+=" .. tostring( modAdded ) .. " total=" .. tostring( #merged ) .. " host=" .. tostring( hostFlag ) )
-
 	-- Survival's LoadCraftingRecipes unconditionally sm.json.open(hideout.json).
-	-- If Survival's file is missing, return {} â€” do NOT write hideout.json to disk.
-	-- Hook craftbot_other_rfs.json by filename suffix (engine may resolve $CONTENT_DATA).
+	-- If Survival's file is missing, return {} — do NOT write hideout.json to disk.
+	-- Do NOT redirect craftbot_other: C++ addGridItemsFromFile reads that path from disk.
+	-- GPS / B&P extras are extra addGridItemsFromFile calls in RfsCrafterGrid.
 	local SURV_HIDEOUT = "$SURVIVAL_DATA/CraftingRecipes/hideout.json"
 	local _jsonOpen = sm.json.open
 	sm.json.open = function( path, ... )
-		if rfsPathHas( path, "craftbot_other_rfs.json" ) then
-			return rfsJsonSafeCopy( _G.g_rfsCraftbotMergedSafe or mergedSafe )
-		end
 		local ok, result = pcall( _jsonOpen, path, ... )
 		if ok then
 			return result
 		end
 		if path == SURV_HIDEOUT then
-			print( "[RFS] Survival hideout.json missing â€” empty trade list (in-memory only)" )
+			print( "[RFS] Survival hideout.json missing — empty trade list (in-memory only)" )
 			return {}
 		end
 		error( result )
@@ -911,10 +807,9 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 	local okLoad, errLoad = pcall( LoadCraftingRecipes, recipeSets )
 	if not okLoad then
 		print( "[RFS] LoadCraftingRecipes failed: " .. tostring( errLoad ) )
-		-- Keep world init alive so QuestManager / tutorial can still start.
 		local okRetry, errRetry = pcall( LoadCraftingRecipes, {
 			craftbot = "$SURVIVAL_DATA/CraftingRecipes/craftbot/craftbot.json",
-			craftbot_other = recipeSets.craftbot_other or "$SURVIVAL_DATA/CraftingRecipes/craftbot/craftbot_other.json",
+			craftbot_other = "$SURVIVAL_DATA/CraftingRecipes/craftbot/craftbot_other.json",
 			workbench = recipeSets.workbench,
 			portablecrafter = recipeSets.portablecrafter,
 			dispenser = recipeSets.dispenser,
@@ -927,48 +822,11 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 			print( "[RFS] LoadCraftingRecipes retry failed: " .. tostring( errRetry ) )
 		end
 	end
-	-- Keep sm.json.open hooked: merged craftbot stays in-memory; never write hideout.json.
 
-	-- C++ addGridItemsFromFile ignores the Lua hook. Point GUI at a local JSON-safe file.
-	local guiPath = rfsSaveCraftbotLocal( mergedSafe )
-	if not guiPath then
-		guiPath = mergedPath
-	end
-	_G.g_rfsCraftbotOtherGuiPath = guiPath
-	if g_craftingRecipeSets and g_craftingRecipeSets.craftbot_other then
-		g_craftingRecipeSets.craftbot_other.path = guiPath
-	end
-	pcall( rfsWrapCrafterRecipeGrid )
-
-	-- Re-apply unlockable marks after LoadCraftingRecipes resets g_unlockableCraftItems.
-	-- Do NOT unlock - players keep schematic progression.
-	if scan then
-		for _, path in ipairs( collectModCraftbotPaths( scan ) ) do
-			local ok, json = pcall( sm.json.open, path )
-			if ok and type( json ) == "table" then
-				for _, recipe in ipairs( json ) do
-					if type( recipe ) == "table" and recipe.itemId then
-						g_unlockableCraftItems[tostring( recipe.itemId )] = true
-					end
-				end
-			end
-		end
-	end
-	-- RFS own recipes stay always-available (Hack Beacon, etc.)
-	do
-		local okRfs, rfsCraft = pcall( sm.json.open, "$CONTENT_DATA/CraftingRecipes/craftbot_rfs.json" )
-		if okRfs and type( rfsCraft ) == "table" then
-			g_unlockableCraftItems = g_unlockableCraftItems or {}
-			for _, recipe in ipairs( rfsCraft ) do
-				if type( recipe ) == "table" and recipe.itemId then
-					if recipe.rfsResearch then
-						g_unlockableCraftItems[tostring( recipe.itemId )] = true
-					else
-						g_unlockableCraftItems[tostring( recipe.itemId )] = nil
-					end
-				end
-			end
-		end
+	-- Real pack files C++ can read. Custom Game is not a ModDatabase world mod.
+	if type( RfsCrafterGrid ) == "table" then
+		RfsCrafterGrid.installRecipeSet( scan )
+		RfsCrafterGrid.installHook()
 	end
 end
 

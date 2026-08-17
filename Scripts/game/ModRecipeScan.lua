@@ -11,6 +11,11 @@ local MD_DESC = "$CONTENT_40639a2c-bb9f-4d4f-b88c-41bfe264ffa8/Scripts/data/desc
 local MD_SHAPES = "$CONTENT_40639a2c-bb9f-4d4f-b88c-41bfe264ffa8/Scripts/data/shapesets.json"
 local MD_TOOLS = "$CONTENT_40639a2c-bb9f-4d4f-b88c-41bfe264ffa8/Scripts/data/toolsets.json"
 local FARMERS_UUID = "8d601982-4608-4d5e-bb9e-e4041486f7c7"
+-- This Custom Game. Not in ModDatabase shapesets/toolsets (those catalog B&P mods).
+local RFS_LOCAL = "29c99287-1213-48c7-9471-19a4a5c12247"
+-- Nutt World Map in ModDatabase toolsets.json owns GPS uuid d96c2fe4-… .
+-- RFS vendors that tool. Do not scan World Map (wrong recipe + double HUD).
+local NUTT_MAP_LOCAL = "58df2b8e-a86f-44ed-b4f9-aa5b00b44162"
 
 -- Session caches: never re-probe known-missing paths / unmounted content roots.
 local missingPath = {}
@@ -175,14 +180,15 @@ local function collectLoadedLocalIds( shapesets, toolsets )
 
 	local loaded = {}
 	for lid in pairs( candidates ) do
-		if isContentMounted( lid ) then
+		if lid ~= NUTT_MAP_LOCAL and isContentMounted( lid ) then
 			loaded[#loaded + 1] = lid
 		end
 	end
 	return loaded
 end
 
-local function itemPresentOnPeer( itemId )
+-- Fant RecipeLoader is_uuid_valid: shape OR tool (Tools tab items are tools).
+local function recipeItemIsShapeOrTool( itemId )
 	local id = tostring( itemId or "" )
 	if id == "" then
 		return false
@@ -201,11 +207,35 @@ local function itemPresentOnPeer( itemId )
 		pcall( function()
 			if sm.tool and sm.tool.uuidExists and sm.tool.uuidExists( uuid ) then
 				exists = true
+			elseif sm.item and sm.item.isTool and sm.item.isTool( uuid ) then
+				exists = true
 			end
 		end )
 	end
-	if not exists then
+	return exists
+end
+
+local function itemPresentOnPeer( itemId )
+	if not recipeItemIsShapeOrTool( itemId ) then
 		return false
+	end
+	local id = tostring( itemId or "" )
+	local okUuid, uuid = pcall( sm.uuid.new, id )
+	if not okUuid or not uuid then
+		return false
+	end
+	-- Tools have no shape title; getShapeTitle often returns "not found" and
+	-- used to drop GPS from Hideout. Fant RecipeLoader accepts tools as-is.
+	local isTool = false
+	pcall( function()
+		if sm.item and sm.item.isTool and sm.item.isTool( uuid ) then
+			isTool = true
+		elseif sm.tool and sm.tool.uuidExists and sm.tool.uuidExists( uuid ) then
+			isTool = true
+		end
+	end )
+	if isTool then
+		return true
 	end
 	local title = nil
 	pcall( function()
@@ -375,6 +405,20 @@ function ModRecipeScan.run()
 	local shapesets = openKnownJson( MD_SHAPES )
 	local toolsets = openKnownJson( MD_TOOLS )
 	local loadedList = collectLoadedLocalIds( shapesets, toolsets )
+	-- Custom Game is not a ModDatabase B&P lid. Feed this pack through the
+	-- same per-lid scan as Intelligentia: $CONTENT_<localId>/CraftingRecipes/…
+	do
+		local hasRfs = false
+		for _, lid in ipairs( loadedList ) do
+			if lid == RFS_LOCAL then
+				hasRfs = true
+				break
+			end
+		end
+		if not hasRfs then
+			loadedList[#loadedList + 1] = RFS_LOCAL
+		end
+	end
 	result.modsLoaded = #loadedList
 
 	local hideSeen = {}
@@ -398,9 +442,15 @@ function ModRecipeScan.run()
 	g_unlockableCraftItems = g_unlockableCraftItems or {}
 
 	for _, lid in ipairs( loadedList ) do
+		if lid == NUTT_MAP_LOCAL then
+			-- skip World Map craftbot.json (GPS uuid cataloged there)
+		else
 		result.modsScanned = result.modsScanned + 1
 		local meta = md[lid]
 		local name = ( type( meta ) == "table" and ( meta.name or meta.title ) ) or lid
+		if lid == RFS_LOCAL then
+			name = "RFS"
+		end
 		local source = { localId = lid, name = tostring( name ), craft = 0, hideout = 0, mining = 0, loot = 0 }
 
 		local craftPath = contentPath( lid, "CraftingRecipes/craftbot.json" )
@@ -425,8 +475,13 @@ function ModRecipeScan.run()
 			for _, recipe in ipairs( list ) do
 				if type( recipe ) == "table" and recipe.itemId then
 					local id = tostring( recipe.itemId )
-					-- Mark unlockable; do NOT auto-unlock (blue schematic progression).
-					g_unlockableCraftItems[id] = true
+					-- Tools are valid (Fant is_uuid_valid); do not require a shape.
+					-- This pack: GPS stays visible on Craftbot Tools without Hideout buy.
+					if id ~= "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76" then
+						g_unlockableCraftItems[id] = true
+					else
+						g_unlockableCraftItems[id] = nil
+					end
 					n = n + 1
 				end
 			end
@@ -434,10 +489,16 @@ function ModRecipeScan.run()
 				source.craft = n
 				result.craftRecipeCount = result.craftRecipeCount + n
 				result.craftPaths[#result.craftPaths + 1] = craftPath
+				if lid == RFS_LOCAL then
+					print( "[RFS] scan RFS craftbot.json path=" .. tostring( craftPath ) .. " n=" .. tostring( n ) )
+				end
 			end
 		end
 
 		local hideCfg = openJson( contentPath( lid, "CraftingRecipes/hideout_trades.json" ) )
+		if hideCfg == nil and lid == RFS_LOCAL then
+			hideCfg = openJson( "$CONTENT_DATA/CraftingRecipes/hideout_trades.json" )
+		end
 		-- Prefer hideout_trades.json only. Full hideout.json dumps from other games/mods
 		-- can inject unknown UUIDs that show as "BLOCK NOT FOUND" in the shop.
 		if hideCfg == nil then
@@ -494,6 +555,7 @@ function ModRecipeScan.run()
 
 		if source.craft > 0 or source.hideout > 0 or source.mining > 0 or source.loot > 0 then
 			result.sources[#result.sources + 1] = source
+		end
 		end
 	end
 

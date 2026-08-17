@@ -90,8 +90,8 @@ Map — complete
 --------------
 Always-on MiniMap HUD (upper-left). Research/craft Nutt's GPS at the Craftbot
 (Metal Block + Circuit + Component Kit + Glass), then LMB to open the atlas
-(pan/zoom, click waypoints; E / Esc / CLOSE to exit). Subscribe to World Map
-(do **not** enable it as a world mod). Credit: Nutt, Workshop 3780282057.
+(pan/zoom, click waypoints; E / Esc / CLOSE to exit). Do not enable World Map
+as a world mod if you already have it (double HUD). Credit: Nutt, Workshop 3780282057.
 
 Streamer / Discord
 ------------------

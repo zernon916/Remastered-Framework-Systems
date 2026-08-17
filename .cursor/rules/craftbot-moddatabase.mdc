@@ -1,0 +1,53 @@
+---
+description: 0817-x Craftbot grid SOP. Never wrap-only-Crafter or use $CONTENT_DATA. GPS needs RfsCrafterGrid.
+alwaysApply: true
+---
+
+# Craftbot grid SOP (0817-x) — never repeat V/W
+
+Pack **V** used `$CONTENT_DATA`. Pack **W** wrapped only `Crafter.cl_updateRecipeGrid`. Both failed. **0817-x is the fix.** Edit `Scripts/game/RfsCrafterGrid.lua` only for this path.
+
+## Custom Game vs ModDatabase
+
+Custom Game Craftbot does **not** get this pack’s recipes via ModDatabase lid-scan. A Custom Game is not a world mod; RFS lid `29c99287-1213-48c7-9471-19a4a5c12247` is not in ModDatabase’s catalog.
+
+ModDatabase (`40639a2c-bb9f-4d4f-b88c-41bfe264ffa8` in `description.json`) still loads **subscribed B&P** packs (Intelligentia). Do not enable it as a world mod. Skip Nutt World Map lid `58df2b8e-…`.
+
+GPS/tools **in this Custom Game** need `RfsCrafterGrid.lua`. Appending our lid to the scan does nothing.
+
+## Patch Craftbot, not only Crafter
+
+Survival `Craftbot = class(Crafter)` **copies methods** at `class()` time. Wrapping only `Crafter.cl_updateRecipeGrid` leaves vanilla `Craftbot.cl_updateRecipeGrid` running.
+
+Must `dofile("$SURVIVAL_DATA/Scripts/game/interactables/Crafter.lua")` then patch **Craftbot** (and Crafter; PortableCraftbot if present).
+
+## C++ path — never `$CONTENT_DATA`
+
+```
+# BAD (V): C++ does not resolve $CONTENT_DATA (same as GPS IconMap)
+addGridItemsFromFile("RecipeGrid", "$CONTENT_DATA/CraftingRecipes/craftbot.json", opts)
+
+# GOOD (0817-x)
+addGridItemsFromFile("RecipeGrid", "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/CraftingRecipes/craftbot.json", opts)
+```
+
+Hack Beacon shapes stay the same lid prefix + `CraftingRecipes/craftbot_rfs.json`.
+
+## Hideout toast ≠ grid
+
+Hideout “learned” is `RecipeManager.Sv_UnlockRecipe` only. Unlock only unhides a uuid **already on the C++ grid**. Toast is not proof GPS is on Craftbot.
+
+## Tools tab = ToolSet uuid
+
+GPS `d96c2fe4-177b-49bb-be40-e4b1bcdd8f76` in `Tools/Database/ToolSets/rfs_minimap.toolset`. C++ puts `sm.tool.uuidExists` items on Tools. Same uuid on Hideout trade `itemId`. Tools have no shape title — do not drop the row on `getShapeTitle` == "not found".
+
+## Do not invent
+
+- `$USER_DATA` / `$TEMP_DATA` merge files / `rfs_craftbot_other.json`
+- `skipGps`, Lua `sm.json.open` hooks, rewriting Survival `craftbot_other`
+- Wrap-only-Crafter (W)
+- `$CONTENT_DATA` for `addGridItemsFromFile` (V)
+
+## Schematic lock — after the row exists
+
+After the GPS row is proven on the C++ grid, lock is Hideout **1 Farmer** (`CraftingRecipes/hideout_trades.json`) + `g_unlockableCraftItems` / hidden. Do not add that lock until the uuid is in that `craftbot.json` file C++ actually loads.

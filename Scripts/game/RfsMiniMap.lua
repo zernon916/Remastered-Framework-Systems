@@ -1,11 +1,11 @@
--- RfsMiniMap.lua — Map phase helpers (Nutt World Map 3780282057).
+-- RfsMiniMap.lua — Map phase helpers (Nutt World Map 3780282057, vendored).
 -- HUD MiniMap + Nutt atlas are one phase. Atlas opens from the crafted GPS.
 -- AutoTool class lives in RfsMiniMapTool.lua so Player.lua can dofile this
--- without loading Nutt's tool class twice.
+-- without loading Nutt's tool class twice. Credit: Nutt.
 
 RfsMiniMap = RfsMiniMap or {}
 
-local NUTT = "$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162"
+local NUTT = "$CONTENT_DATA"
 
 local function ensureViewSize( hud )
 	local c = hud and hud.cl
@@ -35,7 +35,7 @@ local function ensureAtlas( hud )
 		return
 	end
 	pcall( function()
-		local ok, idx = pcall( sm.json.open, NUTT .. "/Scripts/data/atlas_index.json" )
+		local ok, idx = pcall( sm.json.open, NUTT .. "/Scripts/nutt/data/atlas_index.json" )
 		if ok and type( idx ) == "table" then
 			c.atlas = idx
 		end
