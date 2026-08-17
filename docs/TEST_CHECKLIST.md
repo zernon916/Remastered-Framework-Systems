@@ -10,7 +10,7 @@ Durable list for **Custom Game** playtest. The **parent agent updates this file*
 
 **Order:** hack menus first. MiniMap / LCD / traders come later.
 
-**Current small follow-ups (not hack-block):** MiniMap must start **upper-left** (must not cover chat); host `/unlimited` turns GLOBAL unlimited on with a warning, `/limited` restores.
+**Current small follow-ups (not hack-block):** MiniMap must start **upper-left** (must not cover chat); GPS research/craft then **LMB** opens the atlas (not `/map`); host `/unlimited` turns GLOBAL unlimited on with a warning, `/limited` restores.
 
 **Deferred (do not block hack testing):** block overlay is **known broken** (grass `2 shp · 426 kg · static`) — refine later. HP hash-symbols (`[########--] 80%`) → **actual bars** wait until Map/HUD testing.
 
@@ -81,8 +81,9 @@ Do this after hack menus. Block overlay is **not** in this block (deferred, sect
 
 ## 4. Map
 
-- [ ] **MiniMap HUD upper-left (Nutt 3780282057)** — How: subscribe Workshop **World Map** `3780282057`; do **not** enable it as a world mod. Walk around with chat open. Pass: MiniMap starts **upper-left** while walking; must **not** cover chat; credit Nutt. If pack missing: original clock/compass/ammo still there. **Hack-test note (Aug 16):** MiniMap covered chat → being moved upper-left. Leave unchecked until user confirms.
-- [ ] **`/map` atlas quality vs other Nutt Custom Game** — How: `/map` or `/rfsmap` or `/menu` Map; also open another Custom Game that uses Nutt's map and compare. Pass: full atlas (Nutt) or lock-camera fallback; E / Esc / `/mapclose` exits; atlas is not badly tiled vs that other game. **Hack-test note (Aug 16):** full atlas “very bad” (tiled). Unchecked until user confirms.
+- [ ] **MiniMap HUD upper-left (Nutt 3780282057)** — How: subscribe Workshop **World Map** `3780282057`; do **not** enable it as a world mod. Walk around with chat open. Pass: MiniMap starts **upper-left** while walking; must **not** cover chat; credit Nutt. If pack missing: original clock/compass/ammo still there. Unchecked until user confirms.
+- [ ] **GPS research / Craftbot / LMB atlas** — How: research then Craftbot **1 Metal Block + 1 Circuit + 1 Component Kit + 1 Glass**; hold GPS and **LMB**. Pass: GPS crafts; LMB opens the full atlas (do **not** use `/map` as the way to open it); atlas **buttons work**. E / Esc / `/mapclose` can still exit. Unchecked until user confirms.
+- [ ] **Tile rotation** — How: open atlas with GPS LMB. Pass: Hideout on the **left**, lake **top-right**, north **up**; no per-tile spin / checkerboard. Unchecked until user confirms.
 
 ---
 
