@@ -70,7 +70,7 @@
 			</Widget>
 
 			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.595 0.92 0.38" name="MenuHint">
-				<Property key="Caption" value="Map: always-on MiniMap (upper-left). Full atlas: research/craft Nutt's GPS, then LMB. Growth Time: yours only. Block overlay: nearby creation mass/shape-count (SM has no per-block HP). Names: world tags. Big Red: farmbots. Enemy/Neutral colors tint real HP billboards and RFS tags (engine HP bars cannot be recolored)."/>
+				<Property key="Caption" value="MiniMap upper-left. Craft Nutt GPS, then LMB for atlas. Lua fills the rest after open."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>

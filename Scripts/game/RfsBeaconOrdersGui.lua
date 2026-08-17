@@ -650,13 +650,18 @@ function RfsBeaconOrdersGui.refresh( host )
 		roleTxt = mk and ( "Slave of " .. tostring( mk ) ) or "Slave"
 	end
 	pcall( function()
-		gui:setText( "Status", string.format(
-			"%s — %d ally(ies) | %s | key %s",
-			tostring( beaconName ),
-			#rows,
-			roleTxt,
-			tostring( key )
-		) )
+		local notice = host.cl.rfsOrdersNotice
+		if type( notice ) == "string" and notice ~= "" then
+			gui:setText( "Status", notice )
+		else
+			gui:setText( "Status", string.format(
+				"%s - %d ally(ies) | %s | key %s",
+				tostring( beaconName ),
+				#rows,
+				roleTxt,
+				tostring( key )
+			) )
+		end
 	end )
 	pcall( function()
 		gui:setText( "RoleLabel", "Role: " .. roleTxt )
@@ -844,6 +849,11 @@ local function applyOpenMeta( host, opts )
 			z = tonumber( opts.pos.z ) or 0,
 		}
 	end
+	if opts.notice ~= nil then
+		host.cl.rfsOrdersNotice = tostring( opts.notice )
+	else
+		host.cl.rfsOrdersNotice = nil
+	end
 end
 
 local function currentTick()
@@ -898,7 +908,17 @@ function RfsBeaconOrdersGui.open( host, opts )
 		pcall( function() old:close() end )
 	end
 
-	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
+	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false, {
+		isHud = false,
+		isInteractive = true,
+		needsCursor = true,
+	} )
+	if not ok or not gui then
+		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false )
+	end
+	if not ok or not gui then
+		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
+	end
 	if not ok or not gui then
 		sm.gui.chatMessage( "[RFS] Failed to open Beacon Orders GUI" )
 		print( "[RFS] orders GUI create failed: " .. tostring( gui ) )

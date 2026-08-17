@@ -1,21 +1,21 @@
 -- RfsAreaLoader.lua — Area Loader (radio-like).
 -- Pins the device's world cell with World:loadCellWithHandle while powered.
 -- Cell streaming is all-or-nothing: units/bots in that cell may still exist/run.
--- Do not strip units. Wire a Battery container; optional logic switch.
+-- Do not strip units. Optional logic switch. Battery spend DISABLED (hack devices only).
+-- Not an engine electrical consumer (no electricity input / never setActive true).
 
 RfsAreaLoader = class( nil )
-RfsAreaLoader.maxParentCount = 2
+RfsAreaLoader.maxParentCount = 1
 RfsAreaLoader.maxChildCount = 0
-RfsAreaLoader.connectionInput = sm.interactable.connectionType.logic + sm.interactable.connectionType.electricity
+RfsAreaLoader.connectionInput = sm.interactable.connectionType.logic
 RfsAreaLoader.connectionOutput = sm.interactable.connectionType.none
 RfsAreaLoader.colorNormal = sm.color.new( 0x3a8fd4ff )
 RfsAreaLoader.colorHighlight = sm.color.new( 0x6ec0ffff )
-RfsAreaLoader.connectIcon = "electrical"
+RfsAreaLoader.connectIcon = "logic"
 
 -- One Scrap Mechanic terrain cell (64 m × 64 m).
 RfsAreaLoader.CELL_SIZE = 64
--- Light drain: 1 Battery about every 60 s while pinned (40 ticks/s).
-RfsAreaLoader.DRAIN_EVERY = 40 * 60
+-- Battery spend disabled. Hack beacons own the frozen work timer.
 
 pcall( function()
 	dofile( "$SURVIVAL_DATA/Scripts/game/survival_items.lua" )
@@ -61,14 +61,7 @@ local function containersFromInteractable( ia, list, seen )
 	if not ia or not sm.exists( ia ) then
 		return
 	end
-	if type( sm.pipeGraph ) == "table" and type( sm.pipeGraph.getMatchingPipedContainers ) == "function" then
-		local okPipe, piped = pcall( sm.pipeGraph.getMatchingPipedContainers, ia )
-		if okPipe and type( piped ) == "table" then
-			for _, c in ipairs( piped ) do
-				addContainer( list, seen, c )
-			end
-		end
-	end
+	-- Direct containers only. Do not pipeGraph-walk (dumps the box).
 	for _, idx in ipairs( { 0, 1 } ) do
 		local ok, c = pcall( function()
 			return ia:getContainer( idx )
@@ -114,24 +107,18 @@ local function elecContainers( self )
 	return list
 end
 
+local function loaderContainers( self )
+	-- Own parent/child lookup only. Do not use RfsHackPower.elecContainers
+	-- (beacon electricity cable finder). Spend stays off on this device.
+	return elecContainers( self )
+end
+
 local function totalBatteries( containers )
 	local n = 0
 	for _, c in ipairs( containers ) do
 		n = n + batteryCount( c )
 	end
 	return n
-end
-
-local function spendOneBattery( containers )
-	for _, container in ipairs( containers ) do
-		if batteryCount( container ) > 0 then
-			local ok = pcall( sm.container.spend, container, BATTERY_UUID, 1, true )
-			if ok then
-				return true
-			end
-		end
-	end
-	return false
 end
 
 local function logicAllows( self )
@@ -213,19 +200,12 @@ local function isPowered( self )
 	if not logicAllows( self ) then
 		return false
 	end
-	local containers = elecContainers( self )
+	local containers = loaderContainers( self )
 	if totalBatteries( containers ) > 0 then
 		return true
 	end
-	for _, c in ipairs( containers ) do
-		if containerHasAnything( c ) then
-			return true
-		end
-	end
-	if hasElectricityNeighbor( self ) then
-		if #containers == 0 or not fuelConsumptionOn() then
-			return true
-		end
+	if not fuelConsumptionOn() then
+		return true
 	end
 	return false
 end
@@ -294,7 +274,7 @@ local function publish( self )
 		self.interactable:setPublicData( data )
 	end )
 	pcall( function()
-		self.interactable:setActive( ( not disabled ) and self.sv.powered and self.sv.pinned and true or false )
+		self.interactable:setActive( false )
 	end )
 	pcall( function()
 		self.interactable:setPoseWeight( 0, ( not disabled ) and self.sv.powered and self.sv.pinned and 1 or 0 )
@@ -302,7 +282,7 @@ local function publish( self )
 end
 
 local function syncPowerAndPin( self )
-	local containers = elecContainers( self )
+	local containers = loaderContainers( self )
 	self.sv.batteries = totalBatteries( containers )
 
 	-- Host disabled: never pin cells / never drain for loading.
@@ -328,7 +308,6 @@ function RfsAreaLoader.server_onCreate( self )
 		powered = false,
 		pinned = false,
 		loadHandle = nil,
-		drainAcc = 0,
 		batteries = 0,
 		cellX = nil,
 		cellY = nil,
@@ -349,20 +328,6 @@ function RfsAreaLoader.server_onFixedUpdate( self )
 	local wasPowered = self.sv.powered and true or false
 	local wasPinned = self.sv.pinned and true or false
 	syncPowerAndPin( self )
-
-	if self.sv.powered and self.sv.pinned and fuelConsumptionOn() then
-		self.sv.drainAcc = ( self.sv.drainAcc or 0 ) + 1
-		if self.sv.drainAcc >= RfsAreaLoader.DRAIN_EVERY then
-			self.sv.drainAcc = 0
-			local containers = elecContainers( self )
-			if totalBatteries( containers ) > 0 then
-				spendOneBattery( containers )
-			end
-			syncPowerAndPin( self )
-		end
-	else
-		self.sv.drainAcc = 0
-	end
 
 	if self.sv.powered ~= wasPowered or self.sv.pinned ~= wasPinned or ( sm.game.getCurrentTick() % 20 ) == 0 then
 		publish( self )
@@ -403,7 +368,7 @@ function RfsAreaLoader.client_canInteract( self )
 	elseif pd.powered then
 		sm.gui.setInteractionText( "", "", "Powered — waiting for cell pin…" )
 	else
-		sm.gui.setInteractionText( "", "", "Connect FROM Battery container TO this (optional switch)" )
+		sm.gui.setInteractionText( "", "", "Weld a Battery container on this creation (optional switch)" )
 	end
 	return true
 end

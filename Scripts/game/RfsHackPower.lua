@@ -1,8 +1,9 @@
 -- RfsHackPower.lua
 -- OWNER: hacked-device battery spend / circuit helpers.
--- FROZEN: battery spend. Do not change rates/idle rules unless the user explicitly asks.
--- Idle powered = no drain. Work = 1 battery every 40*56 / 40*36 / 40*22 ticks
--- (Hack / Control / Infection) while tethered bots are linked OR auto-hijack is converting.
+-- FROZEN: work timer. Idle powered = no drain. Work = 1 battery every 40*56 / 40*36 / 40*22
+-- ticks (Hack / Control / Infection) while tethered bots are linked OR auto-hijack is converting.
+-- Spend is Lua sm.container.spend of exactly 1. Never TryConsumePowerResource / pipeGraph / setActive.
+-- Finder: electricity-connected parents/children (battery box → cable → beacon). Not welded/nearby.
 
 RfsHackPower = RfsHackPower or {}
 rfsHackPower = RfsHackPower
@@ -78,14 +79,8 @@ local function containersFromInteractable( ia, list, seen )
 	if not ia or not sm.exists( ia ) then
 		return
 	end
-	if type( sm.pipeGraph ) == "table" and type( sm.pipeGraph.getMatchingPipedContainers ) == "function" then
-		local okPipe, piped = pcall( sm.pipeGraph.getMatchingPipedContainers, ia )
-		if okPipe and type( piped ) == "table" then
-			for _, c in ipairs( piped ) do
-				addContainer( list, seen, c )
-			end
-		end
-	end
+	-- Direct containers only. pipeGraph.getMatchingPipedContainers walks the
+	-- whole creation and is how TryConsumePowerResource dumps a battery box.
 	for _, idx in ipairs( { 0, 1 } ) do
 		local ok, c = pcall( function()
 			return ia:getContainer( idx )
@@ -124,21 +119,42 @@ local function isElectricityNode( ia )
 end
 
 function RfsHackPower.elecContainers( self )
-	local list, seen = {}, {}
-	local nodes = {}
+	-- rush-base 75abb2f: containers on electricity-connected parents/children.
+	-- Player wires Battery container → electricity cable → beacon. No radius search.
+	local list, seen, seenIa = {}, {}, {}
+	local function consider( ia )
+		if not ia or not sm.exists( ia ) then
+			return
+		end
+		local id = tostring( ia )
+		if seenIa[id] then
+			return
+		end
+		seenIa[id] = true
+		if isElectricityNode( ia ) then
+			containersFromInteractable( ia, list, seen )
+		end
+	end
 	pcall( function()
 		for _, p in ipairs( self.interactable:getParents() or {} ) do
-			nodes[#nodes + 1] = p
+			consider( p )
+		end
+	end )
+	pcall( function()
+		for _, p in ipairs( self.interactable:getParents( ELEC ) or {} ) do
+			consider( p )
 		end
 	end )
 	pcall( function()
 		for _, c in ipairs( self.interactable:getChildren() or {} ) do
-			nodes[#nodes + 1] = c
+			consider( c )
 		end
 	end )
-	for _, ia in ipairs( nodes ) do
-		containersFromInteractable( ia, list, seen )
-	end
+	pcall( function()
+		for _, c in ipairs( self.interactable:getChildren( ELEC ) or {} ) do
+			consider( c )
+		end
+	end )
 	return list
 end
 
@@ -151,19 +167,17 @@ function RfsHackPower.totalBatteries( containers )
 end
 
 function RfsHackPower.spendBatteries( containers, count )
-	local left = count
+	-- Hard rule: never spend a stack. Callers must ask for exactly 1.
+	if tonumber( count ) ~= 1 then
+		return false
+	end
 	for _, container in ipairs( containers or {} ) do
-		if left <= 0 then
-			break
-		end
-		local have = batteryCount( container )
-		local take = math.min( have, left )
-		if take > 0 then
+		if batteryCount( container ) >= 1 then
 			local spent = false
 			local okTx = pcall( function()
 				if sm.container.beginTransaction() then
-					local n = sm.container.spend( container, BATTERY_UUID, take, false )
-					if n == take and sm.container.endTransaction() then
+					local n = sm.container.spend( container, BATTERY_UUID, 1, false )
+					if n == 1 and sm.container.endTransaction() then
 						spent = true
 					else
 						sm.container.abortTransaction()
@@ -171,15 +185,15 @@ function RfsHackPower.spendBatteries( containers, count )
 				end
 			end )
 			if not ( okTx and spent ) then
-				local ok = pcall( sm.container.spend, container, BATTERY_UUID, take, true )
-				spent = ok and true or false
+				local ok, n = pcall( sm.container.spend, container, BATTERY_UUID, 1, true )
+				spent = ok and ( n == 1 or n == true ) and true or false
 			end
 			if spent then
-				left = left - take
+				return true
 			end
 		end
 	end
-	return left == 0
+	return false
 end
 
 function RfsHackPower.logicAllows( self )
@@ -216,15 +230,18 @@ function RfsHackPower.fuelConsumptionOn()
 	return on
 end
 
-function RfsHackPower.spendOne( self )
+function RfsHackPower.canSpendOne( self )
 	if not RfsHackPower.fuelConsumptionOn() then
 		return true
 	end
-	if type( TryConsumePowerResource ) == "function" then
-		local ok, result = pcall( TryConsumePowerResource, self.interactable, BATTERY_UUID, ELEC, 1 )
-		if ok and ( result == 2 or result == true or ( type( PowerConsumeType ) == "table" and result == PowerConsumeType.resource ) ) then
-			return true
-		end
+	return RfsHackPower.totalBatteries( RfsHackPower.elecContainers( self ) ) > 0
+end
+
+-- force=true: convert/hijack (1 bat per bot). false/nil: work-drain interval only.
+-- Always exactly 1 via spendBatteries. Never TryConsumePowerResource.
+function RfsHackPower.spendOne( self, force )
+	if not RfsHackPower.fuelConsumptionOn() then
+		return true
 	end
 	return RfsHackPower.spendBatteries( RfsHackPower.elecContainers( self ), 1 )
 end
@@ -251,34 +268,24 @@ function RfsHackPower.isPowered( self )
 	if not RfsHackPower.logicAllows( self ) then
 		return false
 	end
-	if not RfsHackPower.fuelConsumptionOn() then
-		return RfsHackPower.hasElectricityNeighbor( self )
-			or RfsHackPower.totalBatteries( RfsHackPower.elecContainers( self ) ) > 0
-	end
-	local containers = RfsHackPower.elecContainers( self )
-	if RfsHackPower.totalBatteries( containers ) > 0 then
+	if RfsHackPower.totalBatteries( RfsHackPower.elecContainers( self ) ) > 0 then
 		return true
 	end
-	if type( CanSpendFromConnectedContainer ) == "function" then
-		local parents = {}
-		pcall( function()
-			parents = self.interactable:getParents() or {}
-		end )
-		for _, p in ipairs( parents ) do
-			local ok, can = pcall( CanSpendFromConnectedContainer, p, BATTERY_UUID, 1 )
-			if ok and can then
-				return true
-			end
-		end
+	-- Creative / fuel off: no box required. Do not call CanSpendFromConnectedContainer
+	-- (pipe-graph walk; companion of TryConsumePowerResource).
+	if not RfsHackPower.fuelConsumptionOn() then
+		return true
 	end
 	return false
 end
 
 -- Work drain: tethered bots linked OR auto-hijack converting. Idle = none.
+-- Lua 0 is truthy — never let every=0 spend every tick.
 function RfsHackPower.tickWorkDrain( self, working )
 	self.sv = self.sv or {}
 	if not working then
 		self.sv.drainAcc = 0
+		self.sv.powered = RfsHackPower.isPowered( self )
 		return self.sv.powered and true or false
 	end
 	local uuid = nil
@@ -286,16 +293,21 @@ function RfsHackPower.tickWorkDrain( self, working )
 		uuid = tostring( self.shape.uuid )
 	end )
 	local every = RfsHackPower.drainEvery( uuid )
+	if type( every ) ~= "number" or every < ( 40 * 22 ) then
+		every = 40 * 56
+	end
 	self.sv.drainAcc = ( self.sv.drainAcc or 0 ) + 1
-	if self.sv.drainAcc >= ( every or 1200 ) then
+	if self.sv.drainAcc >= every then
 		self.sv.drainAcc = 0
-		if not RfsHackPower.spendOne( self ) then
+		if not RfsHackPower.spendOne( self, false ) then
 			self.sv.powered = false
 		else
 			self.sv.powered = RfsHackPower.isPowered( self )
 		end
+	else
+		self.sv.powered = RfsHackPower.isPowered( self )
 	end
 	return self.sv.powered and true or false
 end
 
-print( "[RFS] RfsHackPower loaded (frozen battery spend)" )
+print( "[RFS] RfsHackPower loaded (0817-i wired; lua spend = 1 bat / 56s work only)" )

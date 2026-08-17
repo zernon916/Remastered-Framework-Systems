@@ -1,8 +1,6 @@
--- RfsCarry.lua — Anti-dupe is a short place cooldown, not a permanent carry lock.
--- Vanilla CarryTool.client_onEquippedUpdate does not consume LMB for large pickups
--- (craftbot, seed crate, …), so the previously selected hand item can still place/use.
--- After a successful place, ignore further place for 0.5s (20 ticks at 40Hz).
--- Drop/throw of carried units must still go through; never swallow server drop.
+-- RfsCarry.lua — VOLATILE: never wrap CarryTool LMB/RMB (that blocked Craftbot drop/place).
+-- Vanilla lift drop/place for large items. Optional anti-dupe is server-only: ignore a
+-- second identical big-item place RPC within 0.5s. Do not consume client clicks.
 
 RfsCarry = RfsCarry or {}
 
@@ -30,6 +28,28 @@ function RfsCarry.placeLocked()
 	return unlock > 0 and currentTick() < unlock
 end
 
+local function playerIdOf( player )
+	if not player then
+		return nil
+	end
+	local id = nil
+	pcall( function()
+		id = player.id
+	end )
+	return id
+end
+
+local function uuidKey( uuid )
+	if not uuid then
+		return nil
+	end
+	local s = nil
+	pcall( function()
+		s = tostring( uuid )
+	end )
+	return s
+end
+
 local function itemUuidOk( item )
 	if not item or not item.uuid then
 		return false
@@ -44,50 +64,69 @@ local function itemUuidOk( item )
 	return true
 end
 
-local function containerOccupied( container )
-	if not container then
+-- True only for a real lift that does not go in inventory: units/characters,
+-- harvestables, multi-shapes, large interactables (Craftbot, refinery, …).
+-- False for empty carry, tools (hammer/guns), and inventory blocks.
+local function itemIsBigLift( item )
+	if not itemUuidOk( item ) then
 		return false
 	end
-	local empty = true
+	local uuid = item.uuid
+
+	local isTool = false
 	pcall( function()
-		empty = container:isEmpty()
+		isTool = sm.item.isTool( uuid )
 	end )
-	if empty then
+	if isTool then
 		return false
 	end
-	-- Phantom occupy (no slot 0 item): do not lock place/drop forever.
-	local item = nil
-	pcall( function()
-		item = container:getItem( 0 )
-	end )
-	return itemUuidOk( item )
-end
 
-function RfsCarry.playerIsCarrying( player )
-	if not player then
+	local isBlock = false
+	pcall( function()
+		isBlock = sm.item.isBlock( uuid )
+	end )
+	if isBlock then
 		return false
 	end
-	local carry = nil
-	pcall( function()
-		carry = player:getCarry()
-	end )
-	return containerOccupied( carry )
-end
 
-function RfsCarry.localIsCarrying()
-	local carry = nil
+	local charShape = nil
 	pcall( function()
-		carry = sm.localPlayer.getCarry()
+		charShape = sm.item.getCharacterShape( uuid )
 	end )
-	return containerOccupied( carry )
-end
+	if charShape then
+		return true
+	end
 
-local function toolOwner( self )
-	local player = nil
+	local isMulti = false
 	pcall( function()
-		player = self.tool:getOwner()
+		isMulti = sm.item.isMultiShape( uuid )
 	end )
-	return player
+	if isMulti then
+		return true
+	end
+
+	local isHvs = false
+	pcall( function()
+		if type( sm.item.isHarvestablePart ) == "function" then
+			isHvs = sm.item.isHarvestablePart( uuid )
+		end
+	end )
+	if isHvs then
+		return true
+	end
+
+	local size = nil
+	pcall( function()
+		size = sm.item.getShapeSize( uuid )
+	end )
+	if size then
+		local vol = math.abs( ( size.x or 0 ) * ( size.y or 0 ) * ( size.z or 0 ) )
+		if vol > 1 then
+			return true
+		end
+	end
+
+	return false
 end
 
 local function carrySlot0( player )
@@ -111,19 +150,74 @@ local function carrySlot0( player )
 	return carry, item
 end
 
--- Bind drop/insert to the server carry slot. Ignore client-supplied item identity.
-local function bindServerCarryItem( params, player )
-	if type( params ) ~= "table" then
+local function localCarryItem()
+	local carry = nil
+	pcall( function()
+		carry = sm.localPlayer.getCarry()
+	end )
+	if not carry then
+		return nil
+	end
+	local item = nil
+	pcall( function()
+		item = carry:getItem( 0 )
+	end )
+	if not itemUuidOk( item ) then
+		return nil
+	end
+	return item
+end
+
+function RfsCarry.playerIsCarrying( player )
+	if not player then
 		return false
 	end
-	local carry, item = carrySlot0( player )
-	if not carry or not item then
+	local _, item = carrySlot0( player )
+	return itemIsBigLift( item )
+end
+
+function RfsCarry.localIsCarrying()
+	return itemIsBigLift( localCarryItem() )
+end
+
+-- Server only. First identical big-item place always goes through; a second within 0.5s is ignored.
+local function svIgnoreDuplicateBigPlace( player )
+	local _, item = carrySlot0( player )
+	if not itemIsBigLift( item ) then
 		return false
 	end
-	params.containerA = carry
-	params.itemA = item.uuid
-	params.quantityA = 1
-	return true
+	local id = playerIdOf( player )
+	local u = uuidKey( item.uuid )
+	if not id or not u then
+		return false
+	end
+	RfsCarry._svPlace = RfsCarry._svPlace or {}
+	local rec = RfsCarry._svPlace[id]
+	local tick = currentTick()
+	if rec and rec.uuid == u and rec.unlock and tick < rec.unlock then
+		return true
+	end
+	RfsCarry._svPlace[id] = { uuid = u, unlock = tick + PLACE_COOLDOWN_TICKS }
+	return false
+end
+
+local function toolOwner( self )
+	local player = nil
+	pcall( function()
+		player = self.tool:getOwner()
+	end )
+	return player
+end
+
+local function unwrapIfOurs( cls, key, wrapKey, origKey )
+	if type( cls ) ~= "table" then
+		return
+	end
+	if cls[origKey] and ( cls[key] == cls[wrapKey] or cls[wrapKey] ) then
+		cls[key] = cls[origKey]
+	end
+	cls[wrapKey] = nil
+	cls[origKey] = nil
 end
 
 local function wrapIfChanged( cls, key, wrapKey, origKey, makeWrap )
@@ -149,96 +243,69 @@ function RfsCarry.ensureCarryToolHooks()
 		return false
 	end
 
-	wrapIfChanged( CarryTool, "client_onEquippedUpdate", "_rfsCarryEqWrap", "_rfsCarryEqOrig",
-		function( orig )
-			return function( self, primaryState, secondaryState, ... )
-				local c1, c2 = false, false
-				if orig then
-					c1, c2 = orig( self, primaryState, secondaryState, ... )
-				end
-				c1 = c1 and true or false
-				c2 = c2 and true or false
-				-- Orig already sent drop/place. Honor that; never force-consume RMB.
-				if c1 then
-					RfsCarry.markPlace()
-				end
-				-- After a successful place, ignore further PLACE for 0.5s (anti-dupe).
-				if RfsCarry.placeLocked() then
-					c1 = true
-				end
-				-- While a real carry item is held, do not let unconsumed LMB clone the hotbar.
-				if RfsCarry.localIsCarrying() then
-					c1 = true
-				end
-				return c1, c2
-			end
-		end )
+	-- Never consume LMB/RMB on CarryTool. Vanilla drop/place for Craftbot/refinery/units.
+	unwrapIfOurs( CarryTool, "client_onEquippedUpdate", "_rfsCarryEqWrap", "_rfsCarryEqOrig" )
+	unwrapIfOurs( CarryTool, "client_onEquippedUpdate", "_rfsCarry2EqWrap", "_rfsCarry2EqOrig" )
 
-	wrapIfChanged( CarryTool, "sv_n_dropCarry", "_rfsCarryDropWrap", "_rfsCarryDropOrig",
-		function( orig )
-			return function( self, params, player )
-				bindServerCarryItem( params, player )
-				return orig( self, params, player )
-			end
-		end )
-
-	wrapIfChanged( CarryTool, "sv_n_sendItem", "_rfsCarrySendWrap", "_rfsCarrySendOrig",
-		function( orig )
-			return function( self, params, player )
-				bindServerCarryItem( params, player )
-				return orig( self, params, player )
-			end
-		end )
-
-	wrapIfChanged( CarryTool, "sv_n_sendItemToHarvestable", "_rfsCarrySendHvsWrap", "_rfsCarrySendHvsOrig",
-		function( orig )
-			return function( self, params, player )
-				bindServerCarryItem( params, player )
-				return orig( self, params, player )
-			end
-		end )
-
-	if type( Sv_DropCarry ) == "function" then
-		if Sv_DropCarry ~= RfsCarry._svDropWrap then
-			RfsCarry._svDropOrig = Sv_DropCarry
-			RfsCarry._svDropWrap = function( params )
-				local player = params and params.player or nil
-				bindServerCarryItem( params, player )
-				return RfsCarry._svDropOrig( params )
-			end
-			Sv_DropCarry = RfsCarry._svDropWrap
-		end
+	-- Drop stays vanilla. Do not rebind or swallow drop RPCs.
+	unwrapIfOurs( CarryTool, "sv_n_dropCarry", "_rfsCarryDropWrap", "_rfsCarryDropOrig" )
+	if RfsCarry._svDropOrig and ( Sv_DropCarry == RfsCarry._svDropWrap or RfsCarry._svDropWrap ) then
+		Sv_DropCarry = RfsCarry._svDropOrig
 	end
+	RfsCarry._svDropWrap = nil
+	RfsCarry._svDropOrig = nil
 
-	if not CarryTool._rfsCarryHardened then
+	-- Unwrap old param-bind place wraps; optional anti-dupe is ignore-only (no client consume).
+	unwrapIfOurs( CarryTool, "sv_n_sendItem", "_rfsCarrySendWrap", "_rfsCarrySendOrig" )
+	unwrapIfOurs( CarryTool, "sv_n_sendItemToHarvestable", "_rfsCarrySendHvsWrap", "_rfsCarrySendHvsOrig" )
+
+	wrapIfChanged( CarryTool, "sv_n_sendItem", "_rfsCarry3SendWrap", "_rfsCarry3SendOrig",
+		function( orig )
+			return function( self, params, player )
+				if svIgnoreDuplicateBigPlace( player ) then
+					return
+				end
+				return orig( self, params, player )
+			end
+		end )
+
+	wrapIfChanged( CarryTool, "sv_n_sendItemToHarvestable", "_rfsCarry3SendHvsWrap", "_rfsCarry3SendHvsOrig",
+		function( orig )
+			return function( self, params, player )
+				if svIgnoreDuplicateBigPlace( player ) then
+					return
+				end
+				return orig( self, params, player )
+			end
+		end )
+
+	if not CarryTool._rfsCarry3Hardened then
 		CarryTool._rfsCarryHardened = true
-		print( "[RFS] CarryTool place cooldown 0.5s (drop always reaches vanilla)" )
+		CarryTool._rfsCarry2Hardened = true
+		CarryTool._rfsCarry3Hardened = true
+		print( "[RFS] CarryTool LMB/RMB wrap removed; vanilla drop/place (server 0.5s duplicate place ignore)" )
 	end
 	return true
 end
 
--- Client: other tools skip PLACE during the 0.5s cooldown (equip-race dupe window).
--- Do not consume input for the whole carry — that permanently stuck craftbot drop.
--- Skip Eat/SoilBag equipped-update — RfsFarming owns those pointers.
+-- Client consume wraps on hand tools also ate LMB. Unwrap only; never re-wrap equipped-update.
 local HAND_USE_CLIENT = {
 	"ResourceTool", "Planter", "Fertilizer", "Bucket", "Glowstick",
-	"Feeder", "ClayTool", "KeyTool", "Cornade", "Sledgehammer",
+	"Feeder", "ClayTool", "KeyTool", "Cornade",
 }
 
-local function wrapHandEquippedUpdate( cls )
-	wrapIfChanged( cls, "client_onEquippedUpdate", "_rfsCarryHandEqWrap", "_rfsCarryHandEqOrig",
-		function( orig )
-			return function( self, primaryState, secondaryState, ... )
-				if RfsCarry.placeLocked() then
-					return true, false
-				end
-				local c1, c2 = orig( self, primaryState, secondaryState, ... )
-				if c1 then
-					RfsCarry.markPlace()
-				end
-				return c1, c2
-			end
-		end )
+-- Tools that must never have CarryTool/hand consume wraps (inventory-held, not lifts).
+local NEVER_WRAP_CLIENT = {
+	"Sledgehammer", "PotatoRifle", "PotatoShotgun", "PotatoGatling",
+	"PotatoLauncher", "ScrapPotatoRifle", "ClayRifle", "ExtinguisherTool",
+	"LogBook", "SurvivalLift",
+}
+
+local function unwrapHandEquippedUpdate( cls )
+	unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarryHandEqWrap", "_rfsCarryHandEqOrig" )
+	unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarry2HandEqWrap", "_rfsCarry2HandEqOrig" )
+	unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarryEqWrap", "_rfsCarryEqOrig" )
+	unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarry2EqWrap", "_rfsCarry2EqOrig" )
 end
 
 local function wrapSvRejectIfCarrying( cls, methodName )
@@ -260,12 +327,21 @@ local function wrapSvRejectIfCarrying( cls, methodName )
 end
 
 function RfsCarry.ensureHandUseHooks()
-	-- Wrap only classes the engine already loaded (currently equipped / used).
-	-- Do not dofile tool scripts here — that can reset vanilla class tables.
+	for _, name in ipairs( NEVER_WRAP_CLIENT ) do
+		local cls = _G[name]
+		if type( cls ) == "table" then
+			unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarryHandEqWrap", "_rfsCarryHandEqOrig" )
+			unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarry2HandEqWrap", "_rfsCarry2HandEqOrig" )
+			unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarryEqWrap", "_rfsCarryEqOrig" )
+			unwrapIfOurs( cls, "client_onEquippedUpdate", "_rfsCarry2EqWrap", "_rfsCarry2EqOrig" )
+		end
+	end
+
+	-- Unwrap leftover client consume wraps. Do not dofile tool scripts here.
 	for _, name in ipairs( HAND_USE_CLIENT ) do
 		local cls = _G[name]
 		if type( cls ) == "table" then
-			wrapHandEquippedUpdate( cls )
+			unwrapHandEquippedUpdate( cls )
 		end
 	end
 

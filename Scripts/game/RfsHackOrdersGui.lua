@@ -60,7 +60,9 @@ function RfsHackOrdersGui.cl_openOrders( self )
 			return
 		end
 	end
-	self.network:sendToServer( "sv_openOrdersGui", payload )
+	pcall( function()
+		self.network:sendToServer( "sv_openOrdersGui", payload )
+	end )
 end
 
 local function scheduleOrdersOpenOnGame( player, openData )
@@ -76,6 +78,7 @@ local function scheduleOrdersOpenOnGame( player, openData )
 		range = openData.range,
 		rows = openData.rows,
 		pos = openData.pos,
+		notice = openData.notice,
 	}
 	local game = _G.g_rfsGame
 	if game and type( game.sv_rfs_ordersScheduleOpen ) == "function" then
@@ -223,6 +226,7 @@ local function sv_sendOrdersOpen( self, player, params )
 		range = t and t.range or 16,
 		rows = listPayload.rows,
 		pos = params and params.pos or nil,
+		notice = params and params.notice or nil,
 	}
 	if not data.pos then
 		pcall( function()

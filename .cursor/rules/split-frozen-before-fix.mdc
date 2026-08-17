@@ -23,6 +23,12 @@ We spent many hours rebreaking bots by editing the same files for unrelated tick
 
 `RfsHackBeacon` spend is bit-identical to `rush-base` (`75abb2f`). If batteries dump, look at hosted range FX or deploy overlay — do not retune `drainEvery`.
 
+## Pack stamp
+
+Bump `RFS_PACK_STAMP` in `Scripts/Game.lua` on **every** Workshop/Roaming copy (chat must change). Never ship two builds with the same stamp.
+
 ## Deploy
 
 One play dest. Quit Scrap Mechanic, copy once (Workshop + Roaming). Do not treat GitHub vs Steam vs three local folders as “the code changed.”
+
+**Always delete Cache after copy.** Scrap Mechanic keeps compiled Lua in Roaming `Cache\` (especially `Cache\Raw\*.rco`). A copy without wiping Cache can keep running the previous spend/`setActive` bytecode while chat shows a new pack stamp. After every Roaming/Workshop copy: delete the dest `Cache\` folder (or at least `Cache\Raw\`). Then relaunch.

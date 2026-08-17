@@ -2753,32 +2753,61 @@ function RfsBotHijack.tickAuto( world )
 					if not RfsBotHijack.canHackOnto( bkey, unit ) then
 						setUnitTag( unit, "" )
 					else
-						local spent = true
-						if type( rec.spendOne ) == "function" then
-							local okSpend, result = pcall( rec.spendOne )
-							spent = okSpend and result and true or false
-						end
-						if spent then
-							local mode = rec.canInfect and "infected" or "tethered"
-							local workKey = bkey
-							if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
-								pcall( function()
-									workKey = RfsBotHijack.orderDomainMasterKey( bkey ) or bkey
-								end )
-							end
-							RfsBotHijack.convertUnit( unit, rec.ownerId or 0, {
-								mode = mode,
-								beaconKey = bkey,
-								workBeaconKey = workKey,
-								hijackTicks = rec.hijackTicks or need,
-							} )
-							setUnitTag( unit, "" )
-						else
-							pend.text = "NO BAT"
+						-- F dump: spendOne ran every tick while remainTicks <= 0
+						-- (convert fail ignored, or NO BAT reset startTick so the next
+						-- tick was immediately due). Spend once per successful convert.
+						RfsBotHijack._luaSpendTick = RfsBotHijack._luaSpendTick or {}
+						local bk = tostring( bkey or "" )
+						local lastPay = tonumber( RfsBotHijack._luaSpendTick[bk] ) or -9999
+						if ( now - lastPay ) < 20 then
 							capturePos( pend, unit )
-							setUnitTag( unit, "NO BAT", "nobat" )
-							pend.startTick = now - ( pend.need - 1 )
+							if pend.text == "NO BAT" then
+								setUnitTag( unit, "NO BAT", "nobat" )
+							else
+								pend.text = string.format( "HACK %.1f", 0 )
+								setUnitTag( unit, pend.text, "hack" )
+							end
 							nextPending[key] = pend
+						else
+							local canPay = true
+							if type( rec.canSpendOne ) == "function" then
+								local okCan, resultCan = pcall( rec.canSpendOne )
+								canPay = okCan and resultCan and true or false
+							end
+							if not canPay then
+								pend.text = "NO BAT"
+								capturePos( pend, unit )
+								setUnitTag( unit, "NO BAT", "nobat" )
+								RfsBotHijack._luaSpendTick[bk] = now
+								nextPending[key] = pend
+							else
+								local mode = rec.canInfect and "infected" or "tethered"
+								local workKey = bkey
+								if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
+									pcall( function()
+										workKey = RfsBotHijack.orderDomainMasterKey( bkey ) or bkey
+									end )
+								end
+								local okCall, okConv = pcall( RfsBotHijack.convertUnit, unit, rec.ownerId or 0, {
+									mode = mode,
+									beaconKey = bkey,
+									workBeaconKey = workKey,
+									hijackTicks = rec.hijackTicks or need,
+								} )
+								if not okCall or not okConv then
+									RfsBotHijack._luaSpendTick[bk] = now
+									capturePos( pend, unit )
+									pend.text = string.format( "HACK %.1f", 0 )
+									setUnitTag( unit, pend.text, "hack" )
+									nextPending[key] = pend
+								else
+									if type( rec.spendOne ) == "function" then
+										pcall( rec.spendOne )
+									end
+									RfsBotHijack._luaSpendTick[bk] = now
+									setUnitTag( unit, "" )
+								end
+							end
 						end
 					end
 				else

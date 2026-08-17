@@ -39,7 +39,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Bump this string on every Workshop/Roaming copy so chat proves the running pack.
-RFS_PACK_STAMP = "[RFS] pack 0817-l carry"
+RFS_PACK_STAMP = "[RFS] pack 0817-n drop"
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 local FARMERS_UUID = sm.uuid.new( "8d601982-4608-4d5e-bb9e-e4041486f7c7" )
