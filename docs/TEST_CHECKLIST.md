@@ -10,6 +10,10 @@ Durable list for **Custom Game** playtest. The **parent agent updates this file*
 
 **Order:** hack menus first. MiniMap / LCD / traders come later.
 
+**Current small follow-ups (not hack-block):** MiniMap must start **upper-left** (must not cover chat); host `/unlimited` turns GLOBAL unlimited on with a warning, `/limited` restores.
+
+**Deferred (do not block hack testing):** block overlay is **known broken** (grass `2 shp · 426 kg · static`) — refine later. HP hash-symbols (`[########--] 80%`) → **actual bars** wait until Map/HUD testing.
+
 ---
 
 ## 1. Hack menus — Orders / hijack / Hack Control Infection
@@ -67,17 +71,18 @@ Source: [Remastered-Framework-Systems issues](https://github.com/zernon916/Remas
 
 ## 3. HUD
 
+Do this after hack menus. Block overlay is **not** in this block (deferred, section 11). Hash-symbol HP → real bars is also deferred (section 11).
+
 - [ ] **Ammo HUD** — How: hold a gun with ammo; look at lower-right. Pass: ammo count stays visible; MiniMap / atlas do not cover it.
-- [ ] **Block overlay** — How: `/menu` → Block overlay on; look at a creation. Pass: look-at HUD / world text (mass / shape-count). Not a per-block HP gradient (no engine API).
-- [ ] **HP bars** — How: `/menu` Enemy / Neutral color cycle; look at a hostile and an ally. Pass: custom billboards use those colors (engine bars cannot be recolored). Allies/hacked use Neutral.
+- [ ] **HP colors** — How: `/menu` Enemy / Neutral color cycle; look at a hostile and an ally. Pass: custom billboards use those colors (engine bars cannot be recolored). Allies/hacked use Neutral. **Actual bars** (not `[########--] 80%`) is later — section 11.
 - [ ] **`/menu` Names + Big Red** — How: Names off/on; Big Red on a farmbot. Pass: nametags hide/show; farmbot label becomes **Big Red**.
 
 ---
 
 ## 4. Map
 
-- [ ] **MiniMap HUD (Nutt 3780282057)** — How: subscribe Workshop **World Map** `3780282057`; do **not** enable it as a world mod. Walk around. Pass: corner MiniMap while walking; credit Nutt. If pack missing: original clock/compass/ammo still there.
-- [ ] **`/map` atlas** — How: `/map` or `/rfsmap` or `/menu` Map. Pass: full atlas (Nutt) or lock-camera fallback; E / Esc / `/mapclose` exits.
+- [ ] **MiniMap HUD upper-left (Nutt 3780282057)** — How: subscribe Workshop **World Map** `3780282057`; do **not** enable it as a world mod. Walk around with chat open. Pass: MiniMap starts **upper-left** while walking; must **not** cover chat; credit Nutt. If pack missing: original clock/compass/ammo still there. **Hack-test note (Aug 16):** MiniMap covered chat → being moved upper-left. Leave unchecked until user confirms.
+- [ ] **`/map` atlas quality vs other Nutt Custom Game** — How: `/map` or `/rfsmap` or `/menu` Map; also open another Custom Game that uses Nutt's map and compare. Pass: full atlas (Nutt) or lock-camera fallback; E / Esc / `/mapclose` exits; atlas is not badly tiled vs that other game. **Hack-test note (Aug 16):** full atlas “very bad” (tiled). Unchecked until user confirms.
 
 ---
 
@@ -104,7 +109,7 @@ Source: [Remastered-Framework-Systems issues](https://github.com/zernon916/Remas
 ## 8. Cheats
 
 - [ ] **Cheats host/admin only** — How: enable cheats in `/gensettings`; try `/god` / `/hijack` as host vs a non-admin client. Pass: host/admin get cheats in the chat list; regular clients do not.
-- [ ] **`/unlimited` does not unlock the world** — How: host types `/unlimited`. Pass: chat says the world-wide flag is **not** applied (would unlock all clients); inventories stay limited.
+- [ ] **Host `/unlimited` global + warn; `/limited` restores** — How: host types `/unlimited` (clients should see a warning); then `/limited`. Pass: world-wide unlimited **does** turn on for everyone; **everyone** gets a warning; `/limited` restores limited inventories. Regular clients cannot toggle. **Hack-test note (Aug 16):** `/unlimited` was fully locked; host will turn GLOBAL unlimited on with a warning. Unchecked until user confirms.
 
 ---
 
@@ -117,6 +122,15 @@ Source: [Remastered-Framework-Systems issues](https://github.com/zernon916/Remas
 ## 10. Factory CUT
 
 - [ ] **Ally Factory GONE** — How: Craftbot + Hideout shop; search for factory shape / `RfsFactory` / 200 Farmers factory. Pass: **no** factory script, shape, or Hideout factory row. Digital Sign UUID unchanged. Crate→80 still exists (section 7).
+
+---
+
+## 11. Deferred — Map / HUD polish (later)
+
+Do **not** treat these as current hack-menu testing. Leave unchecked until a later Map/HUD pass.
+
+- [ ] **Block overlay (DEFERRED — known broken)** — Yellow look-at text like `2 shp · 426 kg · static` is the **block overlay** (shape count, mass, static). User was blocked by not knowing what it was. **Known broken:** spams on grass/terrain. Refine later: overlay must not spam on grass/terrain; must be understandable and **off by default**. Not a per-block HP gradient (no engine API). Unchecked until user confirms after a later HUD pass.
+- [ ] **HP as actual bars (DEFERRED — Map/HUD testing)** — How: look at unit HP. Current look is hash-symbol meters (`[########--] 80%`). Pass: **actual bars**, not number symbols. Do **not** treat as current hack-block work. Unchecked until Map/HUD testing.
 
 ---
 
