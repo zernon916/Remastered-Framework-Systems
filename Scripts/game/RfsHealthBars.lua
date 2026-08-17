@@ -252,12 +252,8 @@ local function wrapUnit( cls, className )
 end
 
 function RfsHealthBars.ensureHooks()
-	for _, name in ipairs( UNIT_CLASSES ) do
-		wrapUnit( _G[name], name )
-	end
-	for _, name in ipairs( CHAR_CLASSES ) do
-		wrapCharacter( _G[name] )
-	end
+	-- Overlay deferred (b6eb83f): wrapping server_onFixedUpdate can look like HP
+	-- is frozen / make bots seem invulnerable. Do not wrap unit ticks.
 end
 
 print( "[RFS] RfsHealthBars loaded (custom unit HP bars)" )

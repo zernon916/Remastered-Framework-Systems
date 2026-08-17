@@ -88,42 +88,10 @@ local function groundZ( x, y, fallbackZ )
 	return fallbackZ
 end
 
+-- Dead: never host ShapeRenderable / plastic on the beacon (welds onto the electrical net).
+-- SHOW RANGE is Game-hosted RfsRangeViz only.
 local function buildHostRangeRing( host, range, color )
 	destroyHostRangeRing( host )
-	host.cl = host.cl or {}
-	local pos = host.cl.rfsOrdersBeaconPos
-	if type( pos ) ~= "table" or pos.x == nil then
-		return
-	end
-	range = tonumber( range ) or tonumber( host.cl.rfsOrdersRange ) or 16
-	if range < 1 then
-		return
-	end
-	local n = math.floor( ( 2 * math.pi * range ) / RING_SEG_SPACING + 0.5 )
-	if n < RING_SEG_MIN then n = RING_SEG_MIN end
-	if n > RING_SEG_MAX then n = RING_SEG_MAX end
-	local ring = {}
-	local col = color or sm.color.new( 0.55, 0.95, 0.25, 1.0 )
-	local scale = sm.vec3.new( 0.28, 0.28, 0.08 )
-	for i = 0, n - 1 do
-		local ang = ( i / n ) * math.pi * 2
-		local x = pos.x + math.cos( ang ) * range
-		local y = pos.y + math.sin( ang ) * range
-		local z = groundZ( x, y, pos.z )
-		local ok, fx = pcall( sm.effect.createEffect, "ShapeRenderable" )
-		if ok and fx then
-			pcall( function()
-				fx:setParameter( "uuid", RING_BLOCK )
-				fx:setParameter( "color", col )
-				fx:setScale( scale )
-				fx:setPosition( sm.vec3.new( x, y, z ) )
-				fx:setRotation( sm.quat.identity() )
-				fx:start()
-			end )
-			ring[#ring + 1] = fx
-		end
-	end
-	host.cl.rfsOrdersRangeRing = ring
 end
 
 local function colorLabels()

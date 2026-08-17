@@ -1,5 +1,11 @@
 # Secrets & local runtime
 .env
+_hack35_*
+_hack35_extract/
+_hack35_recover/
+_tmp_*
+_tmp_atlas_rot/
+Cache/
 **/.env
 node_modules/
 discord-bridge/node_modules/

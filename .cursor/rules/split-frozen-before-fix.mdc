@@ -1,0 +1,28 @@
+---
+description: Split frozen working code out before the next hack/bot fix so we stop rebreaking spend, damage, and menus.
+alwaysApply: true
+---
+
+# Split first, then fix
+
+We spent many hours rebreaking bots by editing the same files for unrelated tickets. Extra files are preferred.
+
+## Before touching a new hack/bot bug
+
+1. Name the **last known-good slice** (spend, caps, Orders open, hijack HP, SHOW RANGE host, …).
+2. If it still lives in a mixed file (`RfsHackBeacon.lua`, hijack, `Game.lua`, `RfsBeaconOrdersGui.lua`), **extract it first** into its own module with a header: `FROZEN` or `VOLATILE`.
+3. Fix only the broken module. Do not commit frozen files for menu/rename/range/overlay/#6.
+
+## Frozen vs volatile (do not mix)
+
+- **FROZEN** unless the user explicitly asks: battery spend (idle = no drain; 56/36/22s), caps 2/4/6, hijack damage/HP (bots must take hits), Orders `queueOpen` / E / `cl_rfs_ordersOpen` open path.
+- **VOLATILE**: Orders GUI widgets, rename labels, `/menu` names, Stay/Recall copy.
+- **SHOW RANGE**: Game-hosted `RfsRangeViz` only. Never parent FX/`ShapeRenderable`/lights onto the beacon interactable (welds onto the electrical net and dumps the battery box). Do not “finish #6” by re-hosting on the beacon.
+
+## Spend Lua is not the drain bug
+
+`RfsHackBeacon` spend is bit-identical to `rush-base` (`75abb2f`). If batteries dump, look at hosted range FX or deploy overlay — do not retune `drainEvery`.
+
+## Deploy
+
+One play dest. Quit Scrap Mechanic, copy once (Workshop + Roaming). Do not treat GitHub vs Steam vs three local folders as “the code changed.”

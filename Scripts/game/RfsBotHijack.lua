@@ -667,7 +667,6 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 		workBeaconKey = info.workBeaconKey,
 		hackBeaconKey = info.hackBeaconKey,
 		allyColor = info.allyColor,
-		playerAlly = true,
 	} )
 	pcall( function()
 		sm.event.sendToUnit( unit, "sv_e_rfsSetCustomName", {
@@ -2449,7 +2448,7 @@ function RfsBotHijack.ensureCharHooks()
 							player = player,
 						} )
 					end )
-					return
+					-- 3cd2a9c swallowed Survival orig here. Restore orig so E-on-bot is not a dead path.
 				end
 				if origInt then
 					return origInt( self, character, state )
@@ -3079,6 +3078,9 @@ function RfsBotHijack.hackCapFor( beaconKey )
 		end
 		if rec.canInfect then
 			return 6
+		end
+		if type( RfsHackCaps ) == "table" and RfsHackCaps.forRange then
+			return RfsHackCaps.forRange( rec.range )
 		end
 		local r = tonumber( rec.range ) or 16
 		if r >= 48 then
@@ -4350,68 +4352,9 @@ function RfsBotHijack.ensureUnitHooks()
 end
 
 function RfsBotHijack.ensureDamageHooks()
-	local classNames = {
-		"TotebotGreenUnit", "TotebotBlueUnit", "TotebotRedUnit", "TotebotLeafUnit",
-		"TotebotYellowUnit", "HaybotUnit", "FarmbotUnit", "TapebotUnit",
-		"MinerbotUnit", "CablebotUnit", "LootbotUnit", "SeedbotUnit",
-		"BaseTotebotUnit", "TrashbotUnit",
-	}
-
-	local function wrapFn( cls, name, make )
-		local orig = cls[name]
-		if type( orig ) ~= "function" then
-			return
-		end
-		if _rfsDmgWrapped[orig] then
-			cls[name] = _rfsDmgWrapped[orig]
-			return
-		end
-		local wrapped = make( orig )
-		_rfsDmgWrapped[orig] = wrapped
-		_rfsDmgWrapped[wrapped] = wrapped
-		cls[name] = wrapped
-	end
-
-	for _, className in ipairs( classNames ) do
-		local cls = _G[className]
-		if type( cls ) == "table" then
-			wrapFn( cls, "server_onMelee", function( orig )
-				return function( self, hitPos, attacker, damage, power, hitDirection )
-					local atk = unitFromAttacker( attacker )
-					if atk and self.unit and opposingFactions( self.unit, atk ) then
-						local impact = hitDirection
-						if impact then
-							impact = impact * 6
-						end
-						applyFactionDamage( self, damage, impact, hitPos )
-						pcall( function()
-							RfsBotHijack.noteMeleeChain( atk, self.unit )
-						end )
-						return
-					end
-					return orig( self, hitPos, attacker, damage, power, hitDirection )
-				end
-			end )
-
-			wrapFn( cls, "server_onProjectile", function( orig )
-				return function( self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
-					local atk = unitFromAttacker( attacker )
-					if atk and self.unit and opposingFactions( self.unit, atk ) then
-						local impact = nil
-						if hitVelocity then
-							pcall( function()
-								impact = hitVelocity:normalize() * 6
-							end )
-						end
-						applyFactionDamage( self, damage, impact, hitPos )
-						return
-					end
-					return orig( self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
-				end
-			end )
-
-			-- Collision is every physics tick — don't turn body-checks into instakill.
-			-- Melee + tape shots are the real faction hits.
-		end
+	-- Frozen in RfsHackTether: Player/Shape always Survival orig (rush-base hits).
+	-- Do not wrap twice — unit-vs-unit return-without-orig was 1ed3196 godmode.
+	if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
+		RfsHackTether.ensureHooks()
 	end
 end
