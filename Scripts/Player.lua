@@ -53,6 +53,7 @@ function Player.server_onCreate( self )
 		end
 	end )
 	pcall( function()
+		RfsCarry.resetPlaceLock()
 		RfsCarry.ensureHooks()
 	end )
 end
@@ -74,6 +75,7 @@ function Player.client_onCreate( self )
 		RfsHud.ensure( self )
 	end
 	pcall( function()
+		RfsCarry.resetPlaceLock()
 		RfsCarry.ensureHooks()
 	end )
 end

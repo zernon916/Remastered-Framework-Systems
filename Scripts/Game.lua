@@ -38,6 +38,10 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 -- Engine reads this class field when creating player inventories (vanilla Survival = 40).
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
+-- Bump this string on every Workshop/Roaming copy so chat proves the running pack.
+RFS_PACK_STAMP = "[RFS] pack 0817-l carry"
+RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
+
 local FARMERS_UUID = sm.uuid.new( "8d601982-4608-4d5e-bb9e-e4041486f7c7" )
 local RFS_HIDEOUT_TRADER_UUID = sm.uuid.new( "614c3193-13da-40f4-9b03-37f26e760fd6" )
 local RFS_MININGHUB_TRADER_UUID = sm.uuid.new( "90762ac2-5082-461d-9028-480d38a7da10" )
@@ -151,7 +155,7 @@ local function rfsOpenPlayerMenu( game )
 		RfsMenuGui.open( game )
 		return true
 	end
-	sm.gui.chatMessage( "[RFS] /menu â€” player menu not ready yet (RfsMenuGui)." )
+	sm.gui.chatMessage( "[RFS] /rfsmenu - player menu not ready yet (RfsMenuGui)." )
 	return false
 end
 
@@ -496,7 +500,8 @@ function RecipeFrameworkSurvival.server_onPlayerJoined( self, player, newPlayer 
 		RfsInventory.applyToPlayer( player, id )
 	end )
 	pcall( function()
-		self.network:sendToClient( player, "client_showMessage", "[RFS] pack 0817-b unlimited-on" )
+		self.network:sendToClient( player, "client_showMessage", RFS_PACK_STAMP )
+		self.network:sendToClient( player, "client_showMessage", RFS_SPEND_CHAT )
 	end )
 end
 
@@ -521,7 +526,7 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	if type( RfsQuest ) == "table" then
 		_G.RfsQuest = RfsQuest
 	end
-	print( "[RFS] pack 0817-b unlimited-on server_onCreate (g_survivalDev left for normal quest flow; RfsQuest=" .. tostring( type( _G.RfsQuest ) ) .. ")" )
+	print( RFS_PACK_STAMP .. " server_onCreate (g_survivalDev left for normal quest flow; RfsQuest=" .. tostring( type( _G.RfsQuest ) ) .. ")" )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_ensureHijackHost( self )
@@ -980,6 +985,12 @@ function RecipeFrameworkSurvival.rfs_bindOne( self, name, args, desc )
 		if reserved then
 			if name == "/help" then
 				self.cl.rfsHelpReserved = true
+			elseif name == "/menu" then
+				self.cl.rfsMenuReserved = true
+				print( "[RFS] bind /menu reserved: " .. errStr )
+				pcall( function()
+					sm.gui.chatMessage( "[RFS] /menu is engine-reserved. Use /rfsmenu" )
+				end )
 			else
 				self.cl.rfsBindFailLogged = self.cl.rfsBindFailLogged or {}
 				if not self.cl.rfsBindFailLogged[name] then
@@ -1021,11 +1032,10 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		self:rfs_bindOne( "/setup", {}, "Open RFS host setup GUI (admin)" )
 	end
 
-	-- Player menu first. /help is often engine-reserved; a failed /help must not
-	-- skip /menu. /menu itself can also be reserved (InGameMenu) — then /rfsmenu
-	-- is the name that actually appears in the client's chat list.
-	self:rfs_bindOne( "/menu", {}, "Open player menu (map, growth, HP bars, block overlay)" )
+	-- /rfsmenu first: /menu can be engine-reserved (InGameMenu). A failed /menu
+	-- bind must not skip the public alias. If /menu bind succeeds, both open GUI.
 	self:rfs_bindOne( "/rfsmenu", {}, "Open player menu (map, growth, HP bars, block overlay)" )
+	self:rfs_bindOne( "/menu", {}, "Open player menu (map, growth, HP bars, block overlay)" )
 	-- Always available (/help is often engine-reserved; skip after first reserved fail)
 	if not self.cl.rfsHelpReserved then
 		self:rfs_bindOne( "/help", {}, "List Recipe Framework Survival commands" )
@@ -1121,15 +1131,19 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	if not self.cl.rfsCmdsReadyMsg then
 		self.cl.rfsCmdsReadyMsg = true
 		pcall( function()
-			sm.gui.chatMessage( "[RFS] pack 0817-b unlimited-on" )
+			sm.gui.chatMessage( RFS_PACK_STAMP )
+			sm.gui.chatMessage( RFS_SPEND_CHAT )
 			if RfsSettings.frameworkOnly() then
-				sm.gui.chatMessage( "RFS framework-only: /menu /setup /gensettings /mods /help (cheats + quest UI OFF; hooks stay on)" )
+				sm.gui.chatMessage( "RFS framework-only: /rfsmenu /menu /setup /gensettings /mods /help (cheats + quest UI OFF; hooks stay on)" )
 			elseif cheats and admin then
-				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /fly /hijack /givehack /tshop /mods /help" )
+				sm.gui.chatMessage( "RFS commands ready: /rfsmenu /menu /setup /gensettings /fly /hijack /givehack /tshop /mods /help" )
 			elseif cheats then
-				sm.gui.chatMessage( "RFS commands ready: /menu /rfsmenu /mods /help (cheats host/admin only)" )
+				sm.gui.chatMessage( "RFS commands ready: /rfsmenu /menu /mods /help (cheats host/admin only)" )
 			else
-				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /mods /help (cheats OFF)" )
+				sm.gui.chatMessage( "RFS commands ready: /rfsmenu /menu /setup /gensettings /mods /help (cheats OFF)" )
+			end
+			if self.cl.rfsMenuReserved then
+				sm.gui.chatMessage( "[RFS] /menu is engine-reserved. Use /rfsmenu" )
 			end
 		end )
 		pcall( function()
@@ -1157,12 +1171,12 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		local showCheats = cheats and rfsClientIsAdmin()
 		if RfsSettings.frameworkOnly() then
 			lines = {
-				"RFS framework-only: /menu /setup(host) /gensettings(host) /mods /say /d /unhijack /help",
+				"RFS framework-only: /rfsmenu /menu /setup(host) /gensettings(host) /mods /say /d /unhijack /help",
 				"Store scan + RfsQuest hooks stay on. Cheats/quest tooling forced off. Beacons/loader use /gensettings.",
 			}
 		elseif showCheats then
 			lines = {
-				"RFS: /menu /setup(host) /gensettings(host) /say /d /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath",
+				"RFS: /rfsmenu /menu /setup(host) /gensettings(host) /say /d /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath",
 				"/timeofday /timeprogress /weather /goto /spawn /give /farmers /tshop /mshop /components /ammo",
 				"/foodplease /seedsplease /clearinv /cleanup /killall /hijack /hijacklist /givehack /unhijack /noaggro /aggroall",
 				"/unlockrecipe /unlockmodded /unlockvanilla /mods",
@@ -1171,7 +1185,7 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 			}
 		else
 			lines = {
-				"RFS commands: /menu /rfsmenu /setup(admin) /gensettings(host) /mods /say /d /unhijack /help",
+				"RFS commands: /rfsmenu /menu /setup(admin) /gensettings(host) /mods /say /d /unhijack /help",
 				cheats and "Cheats are host/admin only." or "Toggle cheats in host /gensettings (or pack rfs_settings.json) for fly/give/quests/shops.",
 			}
 		end
@@ -1472,7 +1486,7 @@ function RecipeFrameworkSurvival.sv_setLimitedInventory( self, state, player )
 	pcall( function()
 		self.network:sendToClients( "client_showMessage", msg )
 	end )
-	print( "[RFS] pack 0817-b setLimitedInventory limited=" .. tostring( limited ) )
+	print( RFS_PACK_STAMP .. " setLimitedInventory limited=" .. tostring( limited ) )
 end
 
 function RecipeFrameworkSurvival.sv_n_switchAggroMode( self, params, player )
@@ -3215,6 +3229,7 @@ function RecipeFrameworkSurvival.sv_rfs_ordersScheduleOpen( self, params )
 			range = tonumber( params.range ) or 16,
 			rows = rows,
 			pos = pos,
+			notice = params.notice ~= nil and tostring( params.notice ) or nil,
 		},
 	}
 end

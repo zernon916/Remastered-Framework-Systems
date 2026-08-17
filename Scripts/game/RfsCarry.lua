@@ -1,8 +1,48 @@
--- RfsCarry.lua — Harden vanilla carry/use so LMB while carrying cannot clone the hotbar item.
+-- RfsCarry.lua — Anti-dupe is a short place cooldown, not a permanent carry lock.
 -- Vanilla CarryTool.client_onEquippedUpdate does not consume LMB for large pickups
 -- (craftbot, seed crate, …), so the previously selected hand item can still place/use.
+-- After a successful place, ignore further place for 0.5s (20 ticks at 40Hz).
+-- Drop/throw of carried units must still go through; never swallow server drop.
 
 RfsCarry = RfsCarry or {}
+
+-- 0.5s at Survival 40Hz. Short window is the anti-dupe; then place works again.
+local PLACE_COOLDOWN_TICKS = 20
+
+local function currentTick()
+	local tick = 0
+	pcall( function()
+		tick = sm.game.getCurrentTick()
+	end )
+	return tick
+end
+
+function RfsCarry.resetPlaceLock()
+	RfsCarry._clUnlockTick = 0
+end
+
+function RfsCarry.markPlace()
+	RfsCarry._clUnlockTick = currentTick() + PLACE_COOLDOWN_TICKS
+end
+
+function RfsCarry.placeLocked()
+	local unlock = RfsCarry._clUnlockTick or 0
+	return unlock > 0 and currentTick() < unlock
+end
+
+local function itemUuidOk( item )
+	if not item or not item.uuid then
+		return false
+	end
+	local nilUuid = nil
+	pcall( function()
+		nilUuid = sm.uuid.getNil()
+	end )
+	if nilUuid and item.uuid == nilUuid then
+		return false
+	end
+	return true
+end
 
 local function containerOccupied( container )
 	if not container then
@@ -12,7 +52,15 @@ local function containerOccupied( container )
 	pcall( function()
 		empty = container:isEmpty()
 	end )
-	return not empty
+	if empty then
+		return false
+	end
+	-- Phantom occupy (no slot 0 item): do not lock place/drop forever.
+	local item = nil
+	pcall( function()
+		item = container:getItem( 0 )
+	end )
+	return itemUuidOk( item )
 end
 
 function RfsCarry.playerIsCarrying( player )
@@ -57,14 +105,7 @@ local function carrySlot0( player )
 	pcall( function()
 		item = carry:getItem( 0 )
 	end )
-	if not item or not item.uuid then
-		return carry, nil
-	end
-	local nilUuid = nil
-	pcall( function()
-		nilUuid = sm.uuid.getNil()
-	end )
-	if nilUuid and item.uuid == nilUuid then
+	if not itemUuidOk( item ) then
 		return carry, nil
 	end
 	return carry, item
@@ -111,21 +152,32 @@ function RfsCarry.ensureCarryToolHooks()
 	wrapIfChanged( CarryTool, "client_onEquippedUpdate", "_rfsCarryEqWrap", "_rfsCarryEqOrig",
 		function( orig )
 			return function( self, primaryState, secondaryState, ... )
+				local c1, c2 = false, false
 				if orig then
-					orig( self, primaryState, secondaryState, ... )
+					c1, c2 = orig( self, primaryState, secondaryState, ... )
 				end
-				-- Always consume LMB/RMB while this tool is equipped so the
-				-- previous hotbar item cannot place or use.
-				return true, true
+				c1 = c1 and true or false
+				c2 = c2 and true or false
+				-- Orig already sent drop/place. Honor that; never force-consume RMB.
+				if c1 then
+					RfsCarry.markPlace()
+				end
+				-- After a successful place, ignore further PLACE for 0.5s (anti-dupe).
+				if RfsCarry.placeLocked() then
+					c1 = true
+				end
+				-- While a real carry item is held, do not let unconsumed LMB clone the hotbar.
+				if RfsCarry.localIsCarrying() then
+					c1 = true
+				end
+				return c1, c2
 			end
 		end )
 
 	wrapIfChanged( CarryTool, "sv_n_dropCarry", "_rfsCarryDropWrap", "_rfsCarryDropOrig",
 		function( orig )
 			return function( self, params, player )
-				if not bindServerCarryItem( params, player ) then
-					return
-				end
+				bindServerCarryItem( params, player )
 				return orig( self, params, player )
 			end
 		end )
@@ -133,9 +185,7 @@ function RfsCarry.ensureCarryToolHooks()
 	wrapIfChanged( CarryTool, "sv_n_sendItem", "_rfsCarrySendWrap", "_rfsCarrySendOrig",
 		function( orig )
 			return function( self, params, player )
-				if not bindServerCarryItem( params, player ) then
-					return
-				end
+				bindServerCarryItem( params, player )
 				return orig( self, params, player )
 			end
 		end )
@@ -143,9 +193,7 @@ function RfsCarry.ensureCarryToolHooks()
 	wrapIfChanged( CarryTool, "sv_n_sendItemToHarvestable", "_rfsCarrySendHvsWrap", "_rfsCarrySendHvsOrig",
 		function( orig )
 			return function( self, params, player )
-				if not bindServerCarryItem( params, player ) then
-					return
-				end
+				bindServerCarryItem( params, player )
 				return orig( self, params, player )
 			end
 		end )
@@ -155,9 +203,7 @@ function RfsCarry.ensureCarryToolHooks()
 			RfsCarry._svDropOrig = Sv_DropCarry
 			RfsCarry._svDropWrap = function( params )
 				local player = params and params.player or nil
-				if not bindServerCarryItem( params, player ) then
-					return
-				end
+				bindServerCarryItem( params, player )
 				return RfsCarry._svDropOrig( params )
 			end
 			Sv_DropCarry = RfsCarry._svDropWrap
@@ -166,12 +212,13 @@ function RfsCarry.ensureCarryToolHooks()
 
 	if not CarryTool._rfsCarryHardened then
 		CarryTool._rfsCarryHardened = true
-		print( "[RFS] CarryTool LMB/use hardened (no hand-item clone while carrying)" )
+		print( "[RFS] CarryTool place cooldown 0.5s (drop always reaches vanilla)" )
 	end
 	return true
 end
 
--- Client: other tools must not use while carry is occupied (equip-race window).
+-- Client: other tools skip PLACE during the 0.5s cooldown (equip-race dupe window).
+-- Do not consume input for the whole carry — that permanently stuck craftbot drop.
 -- Skip Eat/SoilBag equipped-update — RfsFarming owns those pointers.
 local HAND_USE_CLIENT = {
 	"ResourceTool", "Planter", "Fertilizer", "Bucket", "Glowstick",
@@ -182,10 +229,14 @@ local function wrapHandEquippedUpdate( cls )
 	wrapIfChanged( cls, "client_onEquippedUpdate", "_rfsCarryHandEqWrap", "_rfsCarryHandEqOrig",
 		function( orig )
 			return function( self, primaryState, secondaryState, ... )
-				if RfsCarry.localIsCarrying() then
-					return true, true
+				if RfsCarry.placeLocked() then
+					return true, false
 				end
-				return orig( self, primaryState, secondaryState, ... )
+				local c1, c2 = orig( self, primaryState, secondaryState, ... )
+				if c1 then
+					RfsCarry.markPlace()
+				end
+				return c1, c2
 			end
 		end )
 end
@@ -319,6 +370,9 @@ function RfsCarry.ensurePlayerClassHooks()
 end
 
 function RfsCarry.ensureHooks()
+	if RfsCarry._clUnlockTick == nil then
+		RfsCarry.resetPlaceLock()
+	end
 	RfsCarry.ensureCarryToolHooks()
 	RfsCarry.ensureHandUseHooks()
 	RfsCarry.ensurePlayerClassHooks()
