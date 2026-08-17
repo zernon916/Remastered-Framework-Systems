@@ -6,6 +6,13 @@
 			"previewRenderable": "$GAME_DATA/Character/Char_Tools/char_spudgun_preview.rend",
 			"script": { "file": "$CONTENT_DATA/Scripts/game/RfsMiniMapTool.lua", "class": "RfsMiniMapTool" },
 			"autoTool": true
+		},
+		{
+			"name": "GPS",
+			"uuid": "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76",
+			"previewRenderable": "$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Tools/GpsDevice_preview.rend",
+			"previewRotation": [ -1, 0, 0, 0, 0, 1, 0, 1, 0 ],
+			"script": { "file": "$CONTENT_DATA/Scripts/game/RfsGpsTool.lua", "class": "RfsGpsTool" }
 		}
 	]
 }

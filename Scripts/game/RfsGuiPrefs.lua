@@ -25,7 +25,7 @@ local function defaults()
 		bigRed = false,
 		enemyHp = "red",
 		neutralHp = "green",
-		blockOverlay = true,
+		blockOverlay = false,
 	}
 end
 

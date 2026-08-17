@@ -15,14 +15,16 @@ local MAP_LOCK = "9a1528a6-acd2-44db-8050-b2f493362191"
 
 local pool = { look = nil, near = {} }
 
+-- Default OFF (grass/terrain spam during HACK testing). /menu toggle still works.
+-- Overlay look-at-on-harvestables is a known bug — refine later, do not "fix" here.
 local function overlayOn()
 	if type( RfsGuiPrefs ) == "table" and RfsGuiPrefs.client then
 		local p = RfsGuiPrefs.client()
-		if p and p.blockOverlay == false then
-			return false
+		if p and p.blockOverlay == true then
+			return true
 		end
 	end
-	return true
+	return false
 end
 
 local function destroyFx( fx )

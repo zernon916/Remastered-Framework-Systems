@@ -14,9 +14,6 @@ Help
   /setup               Host-only world setup (Main / Farming / Quest / Inventory)
   /gensettings         Host-only gen settings (cheats, modded blocks, features,
                        Streamer mode for Discord vote drops — see below)
-  /map                 Toggle full atlas (Nutt World Map) or camera fallback
-  /mapclose            Close the atlas / map camera
-  /rfsmap              Alias of /map
 
 Cheats default from rfs_settings.json; host /gensettings can override per world.
 Set "frameworkOnly": true for baseline mode (cheats + quest UI off; hooks stay on).
@@ -27,8 +24,8 @@ Dev / movement / survival
   /fly                 toggle fly mode (swim/dive freefly — Space/Ctrl up/down)
   /flymode             alias of /fly
   /rfsfly              alias of /fly
-  /limited
-  /unlimited
+  /limited             Host: lock inventory for EVERYONE in the session
+  /unlimited           Host: unlock inventory for EVERYONE (engine world flag)
   /die
   /unstuck
   /sethp <hp>
@@ -89,15 +86,12 @@ Quests
   /startquest <name>      QuestManager.Sv_TryActivateQuest
   /resetquest <name>      abandons if active; full reset N/A (no API)
 
-Map (/map) — Map phase complete
--------------------------------
-  `/map` / `/rfsmap` / `/menu` Map open Nutt's full atlas when World Map is
-  subscribed (do **not** enable it as a world mod). Corner MiniMap HUD stays
-  on while you walk. E / Esc / CLOSE / `/mapclose` exit the atlas.
-  Fallback (Nutt content missing): original top-down camera (WASD pan, scroll
-  zoom, RMB/LMB recenter, character locked).
-  No GPS item. MiniMap HUD stays off the lower-right ammo count.
-  Credit: Nutt, Steam Workshop 3780282057 World Map.
+Map — complete
+--------------
+Always-on MiniMap HUD (upper-left). Research/craft Nutt's GPS at the Craftbot
+(Metal Block + Circuit + Component Kit + Glass), then LMB to open the atlas
+(pan/zoom, click waypoints; E / Esc / CLOSE to exit). Subscribe to World Map
+(do **not** enable it as a world mod). Credit: Nutt, Workshop 3780282057.
 
 Streamer / Discord
 ------------------

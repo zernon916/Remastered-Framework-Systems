@@ -489,6 +489,9 @@ function RecipeFrameworkSurvival.server_onPlayerJoined( self, player, newPlayer 
 		RfsInventory.applyGameDefault( RecipeFrameworkSurvival )
 		RfsInventory.applyToPlayer( player, id )
 	end )
+	pcall( function()
+		self.network:sendToClient( player, "client_showMessage", "[RFS] pack 0817-b unlimited-on" )
+	end )
 end
 
 function RecipeFrameworkSurvival.server_onCreate( self )
@@ -512,7 +515,7 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	if type( RfsQuest ) == "table" then
 		_G.RfsQuest = RfsQuest
 	end
-	print( "[RFS] server_onCreate (g_survivalDev left for normal quest flow; RfsQuest=" .. tostring( type( _G.RfsQuest ) ) .. ")" )
+	print( "[RFS] pack 0817-b unlimited-on server_onCreate (g_survivalDev left for normal quest flow; RfsQuest=" .. tostring( type( _G.RfsQuest ) ) .. ")" )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_ensureHijackHost( self )
@@ -843,7 +846,11 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 						modAdded = modAdded + 1
 					end
 					if g_unlockableCraftItems then
-						g_unlockableCraftItems[id] = nil
+						if recipe.rfsResearch then
+							g_unlockableCraftItems[id] = true
+						else
+							g_unlockableCraftItems[id] = nil
+						end
 					end
 				end
 			end
@@ -943,7 +950,11 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 			g_unlockableCraftItems = g_unlockableCraftItems or {}
 			for _, recipe in ipairs( rfsCraft ) do
 				if type( recipe ) == "table" and recipe.itemId then
-					g_unlockableCraftItems[tostring( recipe.itemId )] = nil
+					if recipe.rfsResearch then
+						g_unlockableCraftItems[tostring( recipe.itemId )] = true
+					else
+						g_unlockableCraftItems[tostring( recipe.itemId )] = nil
+					end
 				end
 			end
 		end
@@ -1015,9 +1026,6 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	end
 	self:rfs_bindOne( "/commands", {}, "Alias of /help" )
 	self:rfs_bindOne( "/gensettings", {}, "Open RFS gen settings (host only)" )
-	self:rfs_bindOne( "/map", {}, "Open world map atlas (Nutt) or camera fallback" )
-	self:rfs_bindOne( "/mapclose", {}, "Close atlas / map camera" )
-	self:rfs_bindOne( "/rfsmap", {}, "Alias of /map" )
 	self:rfs_bindOne( "/mods", {}, "List scanned mod recipe sources" )
 
 	-- Phase D: game → Discord (requires Streamer + chat relay in /gensettings)
@@ -1048,10 +1056,10 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		self:rfs_bindOne( "/seedsplease", {}, "Give seeds and soil" )
 		self:rfs_bindOne( "/tumble", { { "bool", "enable", true } }, "Set tumble state" )
 		self:rfs_bindOne( "/god", {}, "Mechanic characters take no damage" )
-		-- /limited /unlimited: host-only bind. sm.game.setLimitedInventory is world-wide.
+		-- /limited /unlimited: host-only bind. Flag is world-wide (everyone).
 		if host then
-			self:rfs_bindOne( "/limited", {}, "Keep world inventory limited (host)" )
-			self:rfs_bindOne( "/unlimited", {}, "Host-only; world-wide flag is not applied (would unlock clients)" )
+			self:rfs_bindOne( "/limited", {}, "Lock inventory for EVERYONE in the session (host)" )
+			self:rfs_bindOne( "/unlimited", {}, "Unlock inventory for EVERYONE in the session (host)" )
 		end
 		self:rfs_bindOne( "/timeofday", { { "number", "timeOfDay", true } }, "Set time of day 0..1" )
 		self:rfs_bindOne( "/timeprogress", { { "bool", "enabled", true } }, "Enable or disable time progress" )
@@ -1107,14 +1115,15 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	if not self.cl.rfsCmdsReadyMsg then
 		self.cl.rfsCmdsReadyMsg = true
 		pcall( function()
+			sm.gui.chatMessage( "[RFS] pack 0817-b unlimited-on" )
 			if RfsSettings.frameworkOnly() then
-				sm.gui.chatMessage( "RFS framework-only: /menu /setup /gensettings /map /mods /help (cheats + quest UI OFF; hooks stay on)" )
+				sm.gui.chatMessage( "RFS framework-only: /menu /setup /gensettings /mods /help (cheats + quest UI OFF; hooks stay on)" )
 			elseif cheats and admin then
-				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /map /fly /hijack /givehack /tshop /mods /help" )
+				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /fly /hijack /givehack /tshop /mods /help" )
 			elseif cheats then
-				sm.gui.chatMessage( "RFS commands ready: /menu /rfsmenu /map /mods /help (cheats host/admin only)" )
+				sm.gui.chatMessage( "RFS commands ready: /menu /rfsmenu /mods /help (cheats host/admin only)" )
 			else
-				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /map /mods /help (cheats OFF)" )
+				sm.gui.chatMessage( "RFS commands ready: /menu /setup /gensettings /mods /help (cheats OFF)" )
 			end
 		end )
 		pcall( function()
@@ -1142,21 +1151,21 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		local showCheats = cheats and rfsClientIsAdmin()
 		if RfsSettings.frameworkOnly() then
 			lines = {
-				"RFS framework-only: /menu /setup(host) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
+				"RFS framework-only: /menu /setup(host) /gensettings(host) /mods /say /d /unhijack /help",
 				"Store scan + RfsQuest hooks stay on. Cheats/quest tooling forced off. Beacons/loader use /gensettings.",
 			}
 		elseif showCheats then
 			lines = {
-				"RFS: /menu /setup(host) /gensettings(host) /map /say /d /mapclose /rfsmap /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath",
+				"RFS: /menu /setup(host) /gensettings(host) /say /d /fly /flymode /rfsfly /god /die /unstuck /sethp /setbreath",
 				"/timeofday /timeprogress /weather /goto /spawn /give /farmers /tshop /mshop /components /ammo",
 				"/foodplease /seedsplease /clearinv /cleanup /killall /hijack /hijacklist /givehack /unhijack /noaggro /aggroall",
 				"/unlockrecipe /unlockmodded /unlockvanilla /mods",
 				"/questlist /rfsquestlist /questinfo /completequest /startquest /resetquest /help",
-				"Cheats are host/admin only. /limited /unlimited are host-only and do not unlock client inventories.",
+				"Cheats are host/admin only. /limited /unlimited are host-only and apply to EVERYONE in the session.",
 			}
 		else
 			lines = {
-				"RFS commands: /menu /rfsmenu /setup(admin) /gensettings(host) /map /mapclose /rfsmap /mods /say /d /unhijack /help",
+				"RFS commands: /menu /rfsmenu /setup(admin) /gensettings(host) /mods /say /d /unhijack /help",
 				cheats and "Cheats are host/admin only." or "Toggle cheats in host /gensettings (or pack rfs_settings.json) for fly/give/quests/shops.",
 			}
 		end
@@ -1192,18 +1201,6 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 
-	if cmd == "/map" or cmd == "/rfsmap" then
-		print( "[RFS] /map chat command received" )
-		sm.gui.chatMessage( "[RFS] /map — Nutt atlas (or camera fallback)..." )
-		self.network:sendToServer( "sv_rfs_mapToggle", { player = sm.localPlayer.getPlayer() } )
-		return
-	end
-	if cmd == "/mapclose" then
-		print( "[RFS] /mapclose chat command received" )
-		sm.gui.chatMessage( "[RFS] /mapclose - requesting close..." )
-		self.network:sendToServer( "sv_rfs_mapClose", { player = sm.localPlayer.getPlayer() } )
-		return
-	end
 	if cmd == "/mods" then
 		self.network:sendToServer( "sv_rfs_listMods" )
 		return
@@ -1280,13 +1277,14 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		return
 	end
 
-	-- sm.game.setLimitedInventory is WORLD-WIDE (no per-player API). Never unlock clients.
+	-- sm.game.setLimitedInventory is WORLD-WIDE (no per-player API). Host-only invoke.
+	-- Never no-op: always sendToServer so the engine flag actually unlocks.
 	if cmd == "/unlimited" then
 		if not rfsClientIsHost() then
 			sm.gui.chatMessage( "[RFS] /unlimited is host-only." )
 			return
 		end
-		sm.gui.chatMessage( "[RFS] /unlimited is a world-wide engine flag — not applied (would unlock all clients). Stay limited." )
+		self.network:sendToServer( "sv_setLimitedInventory", false )
 		return
 	end
 	if cmd == "/limited" then
@@ -1425,27 +1423,50 @@ function RecipeFrameworkSurvival.sv_switchGodMode( self, params, player )
 	SurvivalGame.sv_switchGodMode( self )
 end
 
--- sm.game.setLimitedInventory is WORLD-WIDE. Never set false (unlimited) — that unlocks every client.
--- /limited (true) is allowed for the host so the world can be locked back to limited.
+-- sm.game.setLimitedInventory is WORLD-WIDE. Vanilla RPC is (self, state); SM may also
+-- inject the sender as `player`. Never no-op host /unlimited.
+-- BaseWorld starterkit only sendToGame(..., true) = keep limited.
 function RecipeFrameworkSurvival.sv_setLimitedInventory( self, state, player )
-	local unlimited = ( state == false or state == 0 )
-	if unlimited then
-		if player then
-			rfsServerDenyTo( self, player, "[RFS] /unlimited is a world-wide engine flag — not applied (would unlock all clients). Stay limited." )
+	if type( state ) == "table" then
+		if state.limited ~= nil then
+			state = state.limited
+		elseif state.unlimited ~= nil then
+			state = not state.unlimited
 		end
-		return
 	end
-	-- Locking to limited: host, or server-internal (starterkit / BaseWorld, player is nil).
-	if player ~= nil then
-		if not rfsServerPlayerIsHost( player ) then
+	-- Same as Survival: state false = unlimited, true = limited.
+	local limited = ( state ~= false and state ~= 0 )
+	-- Deny only when we can prove a non-host sender in a multiplayer session.
+	-- Single-player / nil player / host: always apply. Do not no-op.
+	if player ~= nil and not rfsServerPlayerIsHost( player ) then
+		local n = 0
+		pcall( function()
+			local all = sm.player.getAllPlayers()
+			if type( all ) == "table" then
+				for _ in pairs( all ) do
+					n = n + 1
+				end
+			end
+		end )
+		if n > 1 then
 			rfsServerDenyTo( self, player, "[RFS] /limited and /unlimited are host-only." )
 			return
 		end
-		if not rfsServerAllowCheat( self, player ) then
-			return
-		end
 	end
-	SurvivalGame.sv_setLimitedInventory( self, true )
+	sm.game.setLimitedInventory( limited )
+	self.network:sendToClients( "client_showMessage", limited
+		and "Limited inventory"
+		or "Unlimited inventory" )
+	local msg
+	if limited then
+		msg = "[RFS] Limited inventory is ON for EVERYONE in this session."
+	else
+		msg = "[RFS] Unlimited inventory is ON for EVERYONE in this session (not host-only). Host /limited locks everyone back."
+	end
+	pcall( function()
+		self.network:sendToClients( "client_showMessage", msg )
+	end )
+	print( "[RFS] pack 0817-b setLimitedInventory limited=" .. tostring( limited ) )
 end
 
 function RecipeFrameworkSurvival.sv_n_switchAggroMode( self, params, player )
@@ -2317,9 +2338,7 @@ function RecipeFrameworkSurvival.cl_rfs_menuMap( self )
 	if type( RfsMenuGui ) == "table" then
 		RfsMenuGui.close( self )
 	end
-	print( "[RFS] /menu Map button" )
-	sm.gui.chatMessage( "[RFS] Map — Nutt atlas (or camera fallback)..." )
-	self.network:sendToServer( "sv_rfs_mapToggle", { player = sm.localPlayer.getPlayer() } )
+	sm.gui.chatMessage( "[RFS] MiniMap is always on (upper-left). Research/craft Nutt's GPS, then LMB to open the atlas. E/Esc closes it." )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_menuToggleGrowthOverlay( self )
@@ -2550,12 +2569,8 @@ function RecipeFrameworkSurvival.cl_rfs_setupToggleInventory( self )
 	end
 	local limited = true
 	pcall( function() limited = sm.game.getLimitedInventory() end )
-	if limited then
-		-- World-wide flag: do not unlock every client.
-		sm.gui.chatMessage( "[RFS] Unlimited inventory is a world-wide engine flag — not applied (would unlock all clients)." )
-		return
-	end
-	self.network:sendToServer( "sv_setLimitedInventory", true )
+	-- World-wide engine flag: host toggle unlocks/locks EVERYONE.
+	self.network:sendToServer( "sv_setLimitedInventory", not limited )
 	self.cl = self.cl or {}
 	self.cl.rfsSetupRefreshAt = sm.game.getCurrentTick() + 8
 end

@@ -1,5 +1,5 @@
 -- RfsMiniMap.lua — Map phase helpers (Nutt World Map 3780282057).
--- HUD MiniMap + /map /rfsmap /menu Map atlas are one phase, not a sidecar.
+-- HUD MiniMap + Nutt atlas are one phase. Atlas opens from the crafted GPS.
 -- AutoTool class lives in RfsMiniMapTool.lua so Player.lua can dofile this
 -- without loading Nutt's tool class twice.
 

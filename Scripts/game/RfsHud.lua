@@ -3,7 +3,7 @@
 -- Original clock + compass HUD implementation.
 -- Tool ammo readout restored here: this always-on HUD sits on the default HUD layer
 -- and hides the engine weapon ammo number, so we draw remaining ammo ourselves.
--- Phase 6 Map (Nutt): MiniMap uses the bottom-left corner; ammo stays lower-right.
+-- Phase 6 Map (Nutt): MiniMap uses the upper-left corner (off chat); ammo stays lower-right.
 
 RfsHud = RfsHud or {}
 

@@ -76,13 +76,11 @@ Top-center game clock and facing compass (N/NE/E/…). Lower-right weapon ammo c
 Corner MiniMap HUD (Nutt World Map, Workshop 3780282057) while you walk.
 If World Map is not subscribed, clock/compass/ammo stay; MiniMap is skipped.
 
-Map (/map) — complete
-----------
-Chat `/map` or `/rfsmap` (or `/menu` Map) opens Nutt's full atlas when World Map is installed
-(pan/zoom on the overlay; E / Esc / CLOSE / `/mapclose` to exit). Corner MiniMap HUD stays on.
-No GPS item.
-If Nutt content is missing, `/map` falls back to the original top-down camera
-(WASD pan, scroll zoom, character locked). Weapon ammo stays lower-right.
+Map — complete
+--------------
+Always-on MiniMap HUD (upper-left). Research/craft Nutt's GPS (Metal Block +
+Circuit + Component Kit + Glass), then LMB to open the atlas (E / Esc / CLOSE
+to exit). Subscribe to World Map; do not enable it as a world mod.
 Reload tip: exit to menu and reload the world after updating this Custom Game so Scripts/Objects refresh.
 
 Streamer / Discord (optional)

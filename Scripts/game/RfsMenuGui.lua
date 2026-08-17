@@ -20,7 +20,7 @@ local function guiPrefs( host )
 	if type( RfsGuiPrefs ) == "table" and RfsGuiPrefs.client then
 		return RfsGuiPrefs.client()
 	end
-	return { names = true, bigRed = false, enemyHp = "red", neutralHp = "green", blockOverlay = true }
+	return { names = true, bigRed = false, enemyHp = "red", neutralHp = "green", blockOverlay = false }
 end
 
 local function titleCase( s )
@@ -44,7 +44,7 @@ function RfsMenuGui.refresh( host )
 	local prefs = guiPrefs( host )
 	local names = prefs.names ~= false
 	local bigRed = prefs.bigRed and true or false
-	local blockOn = prefs.blockOverlay ~= false
+	local blockOn = prefs.blockOverlay == true
 	pcall( function()
 		gui:setText( "BtnNames", "Names: " .. ( names and "ON" or "OFF" ) )
 		gui:setButtonState( "BtnNames", names )

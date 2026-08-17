@@ -37,6 +37,11 @@
 			</Index>
 		</Group>
 	</Resource>
+	<Resource type="ResourceImageSet" name="ItemIconsSet1">
+		<Group name="ItemIcons" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/gps_icon_b4.png" size="256 256">
+			<Index name="d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"><Frame point="0 0" /></Index>
+		</Group>
+	</Resource>
 	<!-- MiniMap atlas from Nutt World Map (Workshop 3780282057). Textures stay in $CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162. Do not enable World Map as a world mod. -->
 	<Resource name="MMap_mini_0_0" type="ResourceImageSet">
 		<Group name="MMap_mini_0_0" texture="$CONTENT_58df2b8e-a86f-44ed-b4f9-aa5b00b44162/Gui/Atlas/sheet_mini_0_b2.png" size="64 64">

@@ -47,6 +47,6 @@ Full list: pack file `COMMANDS.txt`.
 
 ## Dev / survival (when cheats on)
 
-Examples: `/god`, `/fly`, `/unlimited`, `/die`, `/unstuck`, `/sethp`, `/timeofday`, `/weather`, `/clearinv`, `/cleanup`, `/killall`, `/give`, `/spawn`, `/goto`, quest cmds (`/questlist`, `/startquest`, `/completequest`, …).
+Examples: `/god`, `/fly`, host `/unlimited` (unlocks **everyone** — chat warns), `/limited`, `/die`, `/unstuck`, `/sethp`, `/timeofday`, `/weather`, `/clearinv`, `/cleanup`, `/killall`, `/give`, `/spawn`, `/goto`, quest cmds (`/questlist`, `/startquest`, `/completequest`, …).
 
 Also available from Survival when bound: `/kick`, `/ban`, `/stopraid`, `/disableraids`, etc.

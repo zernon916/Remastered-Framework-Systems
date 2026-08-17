@@ -28,7 +28,7 @@
 			</Widget>
 
 			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.115 0.84 0.055" name="BtnMap">
-				<Property key="Caption" value="Map"/>
+				<Property key="Caption" value="Map: craft GPS"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
@@ -38,7 +38,7 @@
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
 			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.235 0.84 0.055" name="BtnBlockOverlay">
-				<Property key="Caption" value="Block overlay: ON"/>
+				<Property key="Caption" value="Block overlay: OFF"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
@@ -70,7 +70,7 @@
 			</Widget>
 
 			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.595 0.92 0.38" name="MenuHint">
-				<Property key="Caption" value="Map: Nutt atlas (/map /rfsmap) or camera fallback. MiniMap HUD is part of Map. Growth Time: yours only. Block overlay: nearby creation mass/shape-count (SM has no per-block HP). Names: world tags. Big Red: farmbots. Enemy/Neutral colors tint real HP billboards and RFS tags (engine HP bars cannot be recolored)."/>
+				<Property key="Caption" value="Map: always-on MiniMap (upper-left). Full atlas: research/craft Nutt's GPS, then LMB. Growth Time: yours only. Block overlay: nearby creation mass/shape-count (SM has no per-block HP). Names: world tags. Big Red: farmbots. Enemy/Neutral colors tint real HP billboards and RFS tags (engine HP bars cannot be recolored)."/>
 				<Property key="FontName" value="SM_Text"/>
 				<Property key="TextAlign" value="Left Top"/>
 				<Property key="WordWrap" value="true"/>
