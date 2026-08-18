@@ -1,0 +1,207 @@
+[
+  {
+    "name": "deepsleep",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v5.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v5.dae",
+    "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_deepsleep.rend",
+    "object": "rfs_deepsleep_v5",
+    "materials": [
+      "shell",
+      "stand",
+      "bed",
+      "bottom_display",
+      "light",
+      "top_display",
+      "pipes",
+      "wires"
+    ],
+    "mat_map": [
+      {
+        "material": "shell",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\shell_dif.png",
+        "from": "Shell"
+      },
+      {
+        "material": "stand",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\stand_dif.png",
+        "from": "Stand"
+      },
+      {
+        "material": "bed",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\bed_dif.png",
+        "from": "Light.001"
+      },
+      {
+        "material": "bottom_display",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\bottom_display_dif.png",
+        "from": "Bottom display"
+      },
+      {
+        "material": "light",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\light_dif.png",
+        "from": "Light"
+      },
+      {
+        "material": "top_display",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\top_display_dif.png",
+        "from": "Top display"
+      },
+      {
+        "material": "pipes",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\pipes_dif.png",
+        "from": "Pipes"
+      },
+      {
+        "material": "wires",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\wires_dif.png",
+        "from": "Wires"
+      }
+    ],
+    "meta": {
+      "scale": 4.736790750061737,
+      "size_blender": [
+        5.598219871520996,
+        6.766549110412598,
+        9.0
+      ],
+      "size_sm": [
+        5.598219871520996,
+        9.0,
+        6.766549110412598
+      ],
+      "min": [
+        -2.799109935760498,
+        -3.383274555206299,
+        -4.5
+      ],
+      "max": [
+        2.799110174179077,
+        3.383274793624878,
+        4.500000476837158
+      ]
+    },
+    "lie": {
+      "bed_object": "Bed",
+      "center_sm": [
+        -0.0007318258285522461,
+        0.7998878955841064,
+        -0.5919599533081055
+      ],
+      "size_sm": [
+        3.5569074153900146,
+        4.27203893661499,
+        5.259666919708252
+      ],
+      "front_sm": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "root_jnt": {
+        "x": -0.001,
+        "y": 1.02,
+        "z": -0.712,
+        "rotation_deg_x": -55.0,
+        "rotation": {
+          "w": 0.8870108331782217,
+          "x": -0.4617486132350339,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "exit": {
+        "forward_m": 1.55,
+        "lift_m": 0.45,
+        "local_axis": "+Z"
+      }
+    },
+    "verts": 11528,
+    "polys": 16517
+  },
+  {
+    "name": "solar",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v5.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v5.dae",
+    "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_solar.rend",
+    "object": "rfs_solar_v5",
+    "materials": [
+      "main_material",
+      "base_material",
+      "arm_material",
+      "hinge_material",
+      "support_material",
+      "panel_base_material",
+      "solar_mirror_material"
+    ],
+    "mat_map": [
+      {
+        "material": "main_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\main_material_dif.png",
+        "from": "Main Material",
+        "kept": true
+      },
+      {
+        "material": "base_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\base_material_dif.png",
+        "from": "Base Material",
+        "kept": true
+      },
+      {
+        "material": "arm_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\arm_material_dif.png",
+        "from": "Arm Material",
+        "kept": true
+      },
+      {
+        "material": "hinge_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\hinge_material_dif.png",
+        "from": "Hinge Material",
+        "kept": true
+      },
+      {
+        "material": "support_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\support_material_dif.png",
+        "from": "Support Material",
+        "kept": true
+      },
+      {
+        "material": "panel_base_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\panel_base_material_dif.png",
+        "from": "Panel Base Material",
+        "kept": true
+      },
+      {
+        "material": "solar_mirror_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\solar_mirror_material_dif.png",
+        "from": "Solar Mirror Material",
+        "kept": true
+      }
+    ],
+    "meta": {
+      "scale": 0.5621033933681646,
+      "size_blender": [
+        3.9601902961730957,
+        5.0,
+        4.249575614929199
+      ],
+      "size_sm": [
+        3.9601902961730957,
+        4.249575614929199,
+        5.0
+      ],
+      "min": [
+        -1.9800951480865479,
+        -2.5,
+        -2.1247880458831787
+      ],
+      "max": [
+        1.9800951480865479,
+        2.5,
+        2.1247878074645996
+      ]
+    },
+    "lie": null,
+    "verts": 17433,
+    "polys": 19230
+  }
+]

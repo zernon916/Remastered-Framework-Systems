@@ -1,0 +1,161 @@
+[
+  {
+    "name": "deepsleep",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep.fbx",
+    "meta": {
+      "scale": 1.488379135151401,
+      "size": [
+        1.7590546607971191,
+        2.1261634826660156,
+        2.827950954437256
+      ],
+      "min": [
+        -0.8795273303985596,
+        -1.0630816221237183,
+        -1.413975477218628
+      ],
+      "max": [
+        0.8795273900032043,
+        1.0630817413330078,
+        1.4139755964279175
+      ],
+      "meshes": [
+        "shell",
+        "shell_holder",
+        "stand",
+        "top_display",
+        "bed",
+        "bottom_display",
+        "vents",
+        "top_display_screen",
+        "lights",
+        "stand_001",
+        "stand_002",
+        "cable",
+        "cable_001",
+        "cable_002"
+      ]
+    },
+    "textures": [
+      {
+        "mesh": "bottom_display",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\bottom_display_dif.png"
+      },
+      {
+        "mesh": "top_display_screen",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\top_display_screen_dif.png"
+      }
+    ]
+  },
+  {
+    "name": "solar",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar.fbx",
+    "meta": {
+      "scale": 0.39624696734956316,
+      "size": [
+        2.7916808128356934,
+        3.5246803760528564,
+        2.9956793785095215
+      ],
+      "min": [
+        -1.3958404064178467,
+        -1.7623401880264282,
+        -1.4978398084640503
+      ],
+      "max": [
+        1.3958404064178467,
+        1.7623401880264282,
+        1.4978395700454712
+      ],
+      "meshes": [
+        "back_base_support",
+        "power_redirect",
+        "back_bottom_base_support",
+        "holder",
+        "front_unit",
+        "frot_base_support",
+        "side_vents",
+        "base_rotar",
+        "base_arm",
+        "hinge_side_2",
+        "hinge_side_1",
+        "top_arm",
+        "panel_rotar_parent",
+        "hinge_holder",
+        "panel_rotar",
+        "solar_panel_base",
+        "solar_mirrors"
+      ]
+    },
+    "textures": [
+      {
+        "mesh": "back_base_support",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\back_base_support_dif.png"
+      },
+      {
+        "mesh": "power_redirect",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\power_redirect_dif.png"
+      },
+      {
+        "mesh": "back_bottom_base_support",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\back_bottom_base_support_dif.png"
+      },
+      {
+        "mesh": "holder",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\holder_dif.png"
+      },
+      {
+        "mesh": "front_unit",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\front_unit_dif.png"
+      },
+      {
+        "mesh": "frot_base_support",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\frot_base_support_dif.png"
+      },
+      {
+        "mesh": "side_vents",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\side_vents_dif.png"
+      },
+      {
+        "mesh": "base_rotar",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\base_rotar_dif.png"
+      },
+      {
+        "mesh": "base_arm",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\base_arm_dif.png"
+      },
+      {
+        "mesh": "hinge_side_2",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\hinge_side_2_dif.png"
+      },
+      {
+        "mesh": "hinge_side_1",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\hinge_side_1_dif.png"
+      },
+      {
+        "mesh": "top_arm",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\top_arm_dif.png"
+      },
+      {
+        "mesh": "panel_rotar_parent",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\panel_rotar_parent_dif.png"
+      },
+      {
+        "mesh": "hinge_holder",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\hinge_holder_dif.png"
+      },
+      {
+        "mesh": "panel_rotar",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\panel_rotar_dif.png"
+      },
+      {
+        "mesh": "solar_panel_base",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\solar_panel_base_dif.png"
+      },
+      {
+        "mesh": "solar_mirrors",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\solar_mirrors_dif.png"
+      }
+    ]
+  }
+]

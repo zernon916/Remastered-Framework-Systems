@@ -9,6 +9,20 @@ end )
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" )
 end )
+pcall( function()
+	dofile( "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsHackApply.lua" )
+end )
+pcall( function()
+	if type( RfsHackApply ) ~= "table" then
+		dofile( "$CONTENT_DATA/Scripts/game/RfsHackApply.lua" )
+	end
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersIdentity.lua" )
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsBotInventory.lua" )
+end )
 
 RfsBotHijack = RfsBotHijack or {}
 
@@ -275,6 +289,44 @@ function RfsBotHijack.robotTypeSet()
 		end
 	end
 	return set
+end
+
+function RfsBotHijack.isKillbotCharacter( char )
+	if not char then
+		return false
+	end
+	local okPlayer, isP = pcall( function()
+		return char:isPlayer()
+	end )
+	if okPlayer and isP then
+		return false
+	end
+	if RfsBotHijack.isRobotCharacter( char ) then
+		return true
+	end
+	local t = nil
+	pcall( function()
+		t = tostring( char:getCharacterType() or "" )
+	end )
+	if not t or t == "" then
+		return false
+	end
+	local lower = string.lower( t )
+	if string.find( lower, "woc", 1, true )
+		or string.find( lower, "farmbot", 1, true )
+		or string.find( lower, "haybot", 1, true )
+		or string.find( lower, "totebot", 1, true )
+		or string.find( lower, "tapebot", 1, true )
+		or string.find( lower, "seedbot", 1, true )
+		or string.find( lower, "minerbot", 1, true )
+		or string.find( lower, "cablebot", 1, true ) then
+		return true
+	end
+	local woc = rawget( _G, "unit_woc" )
+	if woc and ( t == tostring( woc ) or lower == string.lower( tostring( woc ) ) ) then
+		return true
+	end
+	return false
 end
 
 function RfsBotHijack.isRobotCharacter( char )
@@ -579,10 +631,27 @@ local function makeDisplayName( unit, typeStr, opts )
 	return base .. " " .. tostring( idx ), idx, base
 end
 
--- Overhead text: custom name (if any) plus type+number so numbers always show.
+-- Overhead text: custom name alone (no "TestBot Bot"). Type+number only when unnamed.
 local function identityTagText( info )
 	if type( info ) ~= "table" then
 		return ""
+	end
+	local function stripBotSuffix( s )
+		s = tostring( s or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+		s = s:gsub( "%s+[Bb]ot%s*$", "" )
+		s = s:gsub( "%s+$", "" )
+		return s
+	end
+	local custom = info.customName and tostring( info.customName ) or ""
+	custom = custom:gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+		custom = RfsHackOrdersIdentity.sanitizeName( custom )
+	elseif custom == "NameEdit" then
+		custom = ""
+	end
+	custom = stripBotSuffix( custom )
+	if custom ~= "" then
+		return custom
 	end
 	local typeNum = info.displayName
 	if not typeNum or typeNum == "" then
@@ -593,12 +662,7 @@ local function identityTagText( info )
 			typeNum = base
 		end
 	end
-	local custom = info.customName and tostring( info.customName ) or ""
-	custom = custom:gsub( "^%s+", "" ):gsub( "%s+$", "" )
-	if custom ~= "" then
-		return custom .. "  " .. typeNum
-	end
-	return typeNum
+	return stripBotSuffix( typeNum )
 end
 
 function RfsBotHijack.identityTagText( info )
@@ -614,15 +678,28 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 	else
 		key = unitKey( unit )
 	end
-	if not key or not unit or not sm.exists( unit ) then
-		return false, "bot gone"
+	if not key then
+		return false, "no bot"
 	end
 	RfsBotHijack.allies = RfsBotHijack.allies or {}
 	local info = RfsBotHijack.allies[key]
-	-- Game sandbox may lack the live allies row (E-on-bot never opened Orders).
-	-- Still rename via the unit saved table when the robot exists.
+	if ( not unit or not sm.exists( unit ) ) and key then
+		unit = RfsBotHijack.unitByKey( key )
+	end
+	if ( not info or not info.controlled ) and unit and sm.exists( unit ) and publicTeamFlag( unit ) then
+		pcall( function()
+			RfsBotHijack.register( unit, ( player and player.id ) or 0, {
+				playerAlly = true,
+				unitType = charTypeStr( unit.character ),
+			} )
+		end )
+		info = RfsBotHijack.allies[key]
+	end
 	if info and not info.controlled then
 		return false, "not an ally"
+	end
+	if not info and not ( unit and sm.exists( unit ) ) then
+		return false, "bot gone"
 	end
 	local playerId = nil
 	pcall( function()
@@ -635,11 +712,37 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 		end
 	end
 	name = tostring( name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+		name = RfsHackOrdersIdentity.sanitizeName( name )
+	elseif name == "NameEdit" then
+		name = ""
+	end
 	if #name > 24 then
 		name = string.sub( name, 1, 24 )
 	end
-	if not info then
-		-- Do not invent a Game allies row. Unit saved.playerAlly is the gate.
+	if info then
+		if name == "" then
+			info.customName = nil
+		else
+			info.customName = name
+		end
+		RfsBotHijack.allies[key] = info
+	end
+	if unit and sm.exists( unit ) then
+		if info then
+			pushIdentityToUnit( unit, {
+				owner = info.owner,
+				displayName = info.displayName,
+				displayIndex = info.displayIndex,
+				customName = info.customName or false,
+				unitType = info.unitType or info.type,
+				firstSeenTick = info.firstSeenTick,
+				mode = info.mode,
+				workBeaconKey = info.workBeaconKey,
+				hackBeaconKey = info.hackBeaconKey,
+				allyColor = info.allyColor,
+			} )
+		end
 		pcall( function()
 			sm.event.sendToUnit( unit, "sv_e_rfsSetCustomName", {
 				name = name,
@@ -647,36 +750,16 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 				allowHost = allowHost and true or false,
 			} )
 		end )
-		return true, name ~= "" and name or "cleared"
+		if info then
+			RfsBotHijack.pushTag( unit, identityTagText( info ), "name" )
+		elseif type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.pushName ) == "function" then
+			pcall( RfsHackOrdersIdentity.pushName, unit )
+		end
+		return true, info and identityTagText( info ) or ( name ~= "" and name or "cleared" )
 	end
-	if name == "" then
-		info.customName = nil
-	else
-		info.customName = name
-	end
-	RfsBotHijack.allies[key] = info
-	-- false = explicit clear so the unit saved table does not keep a stale name.
-	pushIdentityToUnit( unit, {
-		owner = info.owner,
-		displayName = info.displayName,
-		displayIndex = info.displayIndex,
-		customName = info.customName or false,
-		unitType = info.unitType or info.type,
-		firstSeenTick = info.firstSeenTick,
-		mode = info.mode,
-		workBeaconKey = info.workBeaconKey,
-		hackBeaconKey = info.hackBeaconKey,
-		allyColor = info.allyColor,
-	} )
-	pcall( function()
-		sm.event.sendToUnit( unit, "sv_e_rfsSetCustomName", {
-			name = name,
-			playerId = playerId,
-			allowHost = allowHost and true or false,
-		} )
-	end )
-	RfsBotHijack.pushTag( unit, identityTagText( info ), "name" )
-	return true, identityTagText( info )
+	-- Game sandbox missed the live unit; HijackHost still gets sv_e_rfsSetCustomName
+	-- from RfsHackOrdersIdentity. Allies[] row is updated for the Orders list.
+	return true, name ~= "" and name or "cleared"
 end
 
 -- Farm/Collect/Oil bots outside their home job radius skip RAID jam / range mul / notes.
@@ -807,10 +890,77 @@ local function clearIdentityOnUnit( unit )
 	end )
 end
 
+local function publicTeamFlag( unit )
+	if not unit then
+		return false
+	end
+	local flagged = false
+	pcall( function()
+		local char = unit.character
+		if char and sm.exists( char ) and type( char.publicData ) == "table" then
+			if char.publicData.rfsPlayerAlly then
+				flagged = true
+			end
+		end
+	end )
+	if flagged then
+		return true
+	end
+	pcall( function()
+		if type( unit.publicData ) == "table" and unit.publicData.rfsPlayerAlly then
+			flagged = true
+		end
+	end )
+	return flagged
+end
+
+local function publishTeamAlly( unit, ally )
+	if not unit then
+		return
+	end
+	local flag = ally and true or false
+	local function stamp( pd )
+		if type( pd ) ~= "table" then
+			pd = {}
+		end
+		pd.rfsPlayerAlly = flag
+		if not flag then
+			pd.rfsHackApply = nil
+		end
+		return pd
+	end
+	pcall( function()
+		local char = unit.character
+		if char and sm.exists( char ) then
+			char.publicData = stamp( char.publicData )
+		end
+	end )
+	pcall( function()
+		unit.publicData = stamp( unit.publicData )
+	end )
+end
+
 function RfsBotHijack.isAlly( unit )
 	local key = unitKey( unit )
 	local info = key and RfsBotHijack.allies[key]
-	return info ~= nil and info.controlled == true
+	if info ~= nil and info.controlled == true then
+		return true
+	end
+	-- 0818-c painted saved.color but Select only read allies[] in THIS env.
+	-- Beacon writes rfsPlayerAlly on character.publicData (engine-shared).
+	if not unit then
+		return false
+	end
+	if key and RfsBotHijack.banned and RfsBotHijack.banned[key] then
+		return false
+	end
+	if not publicTeamFlag( unit ) then
+		return false
+	end
+	if RfsBotHijack.isHackable and not RfsBotHijack.isHackable( unit ) then
+		return false
+	end
+	return true
 end
 
 function RfsBotHijack.isDoomed( unit )
@@ -875,6 +1025,7 @@ local function applyUnhackableToSelf( self )
 	if self.unit then
 		RfsBotHijack.ban( self.unit )
 		publishHackable( self.unit, false )
+		publishTeamAlly( self.unit, false )
 	end
 end
 
@@ -965,6 +1116,15 @@ function RfsBotHijack.isAllyCharacter( char, world )
 	end )
 	if okP and isP then
 		return false
+	end
+	local flagged = false
+	pcall( function()
+		if type( char.publicData ) == "table" and char.publicData.rfsPlayerAlly then
+			flagged = true
+		end
+	end )
+	if flagged then
+		return true
 	end
 	if not world then
 		pcall( function()
@@ -1533,11 +1693,18 @@ function RfsBotHijack.coveringBeacon( unit, fullRange )
 		world = unit.character:getWorld()
 	end )
 	local function rangeOf( rec )
+		local r = tonumber( rec.range ) or DEFAULT_RANGE
+		if r < 1 then
+			r = DEFAULT_RANGE
+		end
+		if r > 64 then
+			r = DEFAULT_RANGE
+		end
 		if fullRange then
-			return tonumber( rec.range ) or DEFAULT_RANGE
+			return r
 		end
 		if unit and RfsBotHijack.allyIgnoresRaid( unit ) then
-			return tonumber( rec.range ) or DEFAULT_RANGE
+			return r
 		end
 		return RfsBotHijack.effectiveRange( rec )
 	end
@@ -1673,6 +1840,26 @@ function RfsBotHijack.register( unit, ownerId, opts )
 		allyColor = allyColor,
 		playerAlly = true,
 	} )
+	publishTeamAlly( unit, true )
+	if type( RfsHackApply ) == "table" and type( RfsHackApply.writePublicApply ) == "function" then
+		pcall( RfsHackApply.writePublicApply, unit, ownerId or 0, {
+			mode = mode,
+			beaconKey = beaconKey,
+			workBeaconKey = workBeaconKey,
+			hackBeaconKey = hackBeaconKey,
+			hijackTicks = RfsBotHijack.allies[key].hijackTicks,
+			allyColor = allyColor,
+			displayName = displayName,
+			displayIndex = displayIndex,
+			customName = customName,
+			unitType = unitType,
+			firstSeenTick = firstSeen,
+			rfsOrder = order,
+		} )
+	end
+	pcall( function()
+		RfsBotHijack.pushTag( unit, identityTagText( RfsBotHijack.allies[key] ), "name" )
+	end )
 	RfsBotHijack.publishGlobals()
 	return true
 end
@@ -1724,6 +1911,7 @@ function RfsBotHijack.revert( unit )
 	end
 	RfsBotHijack.ban( unit )
 	RfsBotHijack.setHackable( unit, false )
+	publishTeamAlly( unit, false )
 	RfsBotHijack.unregister( unit )
 	pcall( function()
 		sm.event.sendToUnit( unit, "sv_e_receiveTarget", { targetCharacter = nil, sendingUnit = unit } )
@@ -1943,7 +2131,19 @@ function RfsBotHijack.convertUnit( unit, ownerId, opts )
 		return false, "locked out"
 	end
 	if RfsBotHijack.isAlly( unit ) then
-		return false, "already ally"
+		-- publicData.rfsPlayerAlly makes isAlly true before THIS env has allies[].
+		-- Still register() so Orders list / nametags / setOrder resolve.
+		opts = opts or {}
+		if not opts.unitType then
+			opts.unitType = charTypeStr( unit.character )
+		end
+		RfsBotHijack.register( unit, ownerId, opts )
+		pcall( function()
+			if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_ensure then
+				RfsBotInventory.sv_ensure( unit )
+			end
+		end )
+		return true, "already ally"
 	end
 	opts = opts or {}
 	local hackKey = opts.beaconKey and tostring( opts.beaconKey ) or nil
@@ -1972,6 +2172,11 @@ function RfsBotHijack.convertUnit( unit, ownerId, opts )
 		opts.displayIndex = idx
 	end
 	RfsBotHijack.register( unit, ownerId, opts )
+	pcall( function()
+		if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_ensure then
+			RfsBotInventory.sv_ensure( unit )
+		end
+	end )
 	-- Captured raiders leave the raid list immediately (same as destroy).
 	pcall( function()
 		sm.event.sendToUnit( unit, "sv_e_rfsLeaveRaid", {} )
@@ -2008,6 +2213,7 @@ function RfsBotHijack.releaseVoluntary( unit )
 	end
 	RfsBotHijack.pushTag( unit, "" )
 	clearIdentityOnUnit( unit )
+	publishTeamAlly( unit, false )
 	if key then
 		RfsBotHijack.allies[key] = nil
 		if RfsBotHijack.drops then
@@ -2401,6 +2607,40 @@ function RfsBotHijack.ensureCharHooks()
 				} )
 			end )
 		end
+		function cls.sv_e_rfsOpenInv( self, params, player )
+			local unit = nil
+			pcall( function()
+				unit = self.character and self.character:getUnit()
+			end )
+			pcall( function()
+				if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_ensure then
+					RfsBotInventory.sv_ensure( unit )
+				end
+			end )
+			local dest = player
+			if not dest and type( params ) == "table" then
+				dest = params.player
+			end
+			if dest then
+				pcall( function()
+					self.network:sendToClient( dest, "cl_e_rfsOpenInv", {} )
+				end )
+			else
+				pcall( function()
+					self.network:sendToClients( "cl_e_rfsOpenInv", {} )
+				end )
+			end
+		end
+		function cls.cl_e_rfsOpenInv( self )
+			if type( RfsBotInventory ) == "table" and RfsBotInventory.cl_openFromCharacter then
+				pcall( RfsBotInventory.cl_openFromCharacter, self )
+			end
+		end
+		function cls.cl_e_rfsInvClose( self )
+			if self.cl then
+				self.cl.rfsInvGui = nil
+			end
+		end
 		if not cls._rfsRenameInteract then
 			local origCan = cls.client_canInteract
 			cls.client_canInteract = function( self )
@@ -2411,12 +2651,30 @@ function RfsBotHijack.ensureCharHooks()
 				end )
 				if okAlly then
 					pcall( function()
-						sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), "Rename bot" )
+						sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), "Rename" )
 					end )
 					return true
 				end
 				if origCan then
 					return origCan( self )
+				end
+				return false
+			end
+			local origCanTinker = cls.client_canTinker
+			cls.client_canTinker = function( self, character )
+				local okAlly = false
+				pcall( function()
+					okAlly = self.cl and ( self.cl.rfsCanRename
+						or ( self.cl.rfsLastTag and self.cl.rfsLastTag.kind == "name" ) )
+				end )
+				if okAlly then
+					pcall( function()
+						sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Tinker", true ), "Inventory" )
+					end )
+					return true
+				end
+				if origCanTinker then
+					return origCanTinker( self, character )
 				end
 				return false
 			end
@@ -2429,29 +2687,39 @@ function RfsBotHijack.ensureCharHooks()
 				end )
 				if state and okAlly then
 					pcall( function()
-						local key = nil
-						pcall( function()
-							local u = self.character and self.character:getUnit()
-							key = u and tostring( u.id ) or nil
-						end )
-						local player = nil
-						pcall( function()
-							player = character and character:getPlayer()
-						end )
-						if not player then
-							pcall( function()
-								player = sm.localPlayer.getPlayer()
-							end )
-						end
 						self.network:sendToServer( "sv_e_rfsRenameLook", {
-							unitKey = key,
-							player = player,
+							player = sm.localPlayer.getPlayer(),
 						} )
 					end )
-					-- 3cd2a9c swallowed Survival orig here. Restore orig so E-on-bot is not a dead path.
+					return
 				end
 				if origInt then
 					return origInt( self, character, state )
+				end
+			end
+			local origTinker = cls.client_onTinker
+			cls.client_onTinker = function( self, character, state )
+				local okAlly = false
+				pcall( function()
+					okAlly = self.cl and ( self.cl.rfsCanRename
+						or ( self.cl.rfsLastTag and self.cl.rfsLastTag.kind == "name" ) )
+				end )
+				if state and okAlly then
+					local opened = false
+					pcall( function()
+						if type( RfsBotInventory ) == "table" and RfsBotInventory.cl_openFromCharacter then
+							opened = RfsBotInventory.cl_openFromCharacter( self ) and true or false
+						end
+					end )
+					if not opened then
+						pcall( function()
+							self.network:sendToServer( "sv_e_rfsOpenInv" )
+						end )
+					end
+					return
+				end
+				if origTinker then
+					return origTinker( self, character, state )
 				end
 			end
 			cls._rfsRenameInteract = true
@@ -2496,7 +2764,7 @@ function RfsBotHijack.ensureCharHooks()
 		"TotebotYellowCharacter", "TotebotLeafCharacter", "HaybotCharacter",
 		"FarmbotCharacter", "TapebotCharacter", "MinerbotCharacter",
 		"CablebotCharacter", "LootbotCharacter", "SeedbotCharacter",
-		"TrashbotCharacter", "ScannerbotCharacter",
+		"TrashbotCharacter", "ScannerbotCharacter", "WocCharacter",
 	}
 	for _, name in ipairs( names ) do
 		wrapClientData( _G[name] )
@@ -2695,6 +2963,18 @@ end
 
 -- Auto-hijack hostiles inside a powered beacon field. 40 ticks = 1 s.
 -- Call from a world script (beacon / hideout). Deduped to once per game tick.
+local function beaconHijackNeed( rec )
+	if not rec then
+		return 0
+	end
+	local n = tonumber( rec.hijackTicks )
+	-- Never 0: missing/stale after load used to finish convert on the first tick.
+	if not n or n < ( 40 * 3 ) then
+		return 40 * 8
+	end
+	return n
+end
+
 function RfsBotHijack.tickAuto( world )
 	local now = 0
 	pcall( function()
@@ -2739,7 +3019,7 @@ function RfsBotHijack.tickAuto( world )
 		local unit = live[key]
 		if unit and sm.exists( unit ) and not RfsBotHijack.isAlly( unit ) and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
 			local rec, bkey = RfsBotHijack.coveringBeacon( unit )
-			local need = rec and ( tonumber( rec.hijackTicks ) or 320 ) or 0
+			local need = rec and beaconHijackNeed( rec ) or 0
 			if rec and rec.powered and need > 0 then
 				if pend.beaconKey ~= bkey then
 					pend.startTick = now
@@ -2750,64 +3030,78 @@ function RfsBotHijack.tickAuto( world )
 				local elapsed = now - ( pend.startTick or now )
 				local remainTicks = pend.need - elapsed
 				if remainTicks <= 0 then
-					if not RfsBotHijack.canHackOnto( bkey, unit ) then
-						setUnitTag( unit, "" )
-					else
-						-- F dump: spendOne ran every tick while remainTicks <= 0
-						-- (convert fail ignored, or NO BAT reset startTick so the next
-						-- tick was immediately due). Spend once per successful convert.
-						RfsBotHijack._luaSpendTick = RfsBotHijack._luaSpendTick or {}
-						local bk = tostring( bkey or "" )
-						local lastPay = tonumber( RfsBotHijack._luaSpendTick[bk] ) or -9999
-						if ( now - lastPay ) < 20 then
-							capturePos( pend, unit )
-							if pend.text == "NO BAT" then
-								setUnitTag( unit, "NO BAT", "nobat" )
-							else
-								pend.text = string.format( "HACK %.1f", 0 )
-								setUnitTag( unit, pend.text, "hack" )
-							end
-							nextPending[key] = pend
+					-- rush-base 75abb2f: convertUnit at 0, clear tag, do not re-queue.
+					-- Spend once per successful convert (not spendOne every tick).
+					local result = nil
+					if type( RfsHackApply ) == "table" and type( RfsHackApply.tryFinish ) == "function" then
+						local okR, r = pcall( RfsHackApply.tryFinish, unit, rec, bkey, need )
+						if okR and r then
+							result = r
+						end
+					end
+					if result == nil then
+						local spentOk = true
+						if type( rec.canSpendOne ) == "function" then
+							local okCan, can = pcall( rec.canSpendOne )
+							spentOk = okCan and can and true or false
+						end
+						if not spentOk then
+							result = "nobat"
+						elseif type( RfsBotHijack.canHackOnto ) == "function" and not RfsBotHijack.canHackOnto( bkey, unit ) then
+							result = "cap"
 						else
-							local canPay = true
-							if type( rec.canSpendOne ) == "function" then
-								local okCan, resultCan = pcall( rec.canSpendOne )
-								canPay = okCan and resultCan and true or false
+							local mode = rec.canInfect and "infected" or "tethered"
+							local workKey = bkey
+							if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
+								pcall( function()
+									workKey = RfsBotHijack.orderDomainMasterKey( bkey ) or bkey
+								end )
 							end
-							if not canPay then
-								pend.text = "NO BAT"
-								capturePos( pend, unit )
-								setUnitTag( unit, "NO BAT", "nobat" )
-								RfsBotHijack._luaSpendTick[bk] = now
-								nextPending[key] = pend
+							local opts = {
+								mode = mode,
+								beaconKey = bkey,
+								workBeaconKey = workKey,
+								hackBeaconKey = bkey,
+								hijackTicks = rec.hijackTicks or need,
+								playerAlly = true,
+							}
+							local did = false
+							if type( RfsHackApply ) == "table" and type( RfsHackApply.applyInThisEnv ) == "function" then
+								local okA, a = pcall( RfsHackApply.applyInThisEnv, unit, rec.ownerId or 0, opts )
+								did = okA and a and true or false
 							else
-								local mode = rec.canInfect and "infected" or "tethered"
-								local workKey = bkey
-								if type( RfsBotHijack.orderDomainMasterKey ) == "function" then
-									pcall( function()
-										workKey = RfsBotHijack.orderDomainMasterKey( bkey ) or bkey
-									end )
-								end
-								local okCall, okConv = pcall( RfsBotHijack.convertUnit, unit, rec.ownerId or 0, {
-									mode = mode,
-									beaconKey = bkey,
-									workBeaconKey = workKey,
-									hijackTicks = rec.hijackTicks or need,
-								} )
-								if not okCall or not okConv then
-									RfsBotHijack._luaSpendTick[bk] = now
-									capturePos( pend, unit )
-									pend.text = string.format( "HACK %.1f", 0 )
-									setUnitTag( unit, pend.text, "hack" )
-									nextPending[key] = pend
-								else
-									if type( rec.spendOne ) == "function" then
-										pcall( rec.spendOne )
-									end
-									RfsBotHijack._luaSpendTick[bk] = now
-									setUnitTag( unit, "" )
+								local okC, c = pcall( RfsBotHijack.convertUnit, unit, rec.ownerId or 0, opts )
+								did = okC and c and true or false
+								if ( not did ) and type( RfsBotHijack.register ) == "function" then
+									pcall( RfsBotHijack.register, unit, rec.ownerId or 0, opts )
+									did = RfsBotHijack.isAlly and RfsBotHijack.isAlly( unit ) and true or did
 								end
 							end
+							if did and type( rec.spendOne ) == "function" then
+								pcall( rec.spendOne )
+							end
+							if type( RfsHackApply ) == "table" and type( RfsHackApply.markDone ) == "function" then
+								pcall( RfsHackApply.markDone, unit, bkey )
+							end
+							result = "ok"
+						end
+					end
+					if result == "ok" or ( RfsBotHijack.isAlly and RfsBotHijack.isAlly( unit ) )
+						or ( type( RfsHackApply ) == "table" and RfsHackApply.isDone and RfsHackApply.isDone( unit ) ) then
+						setUnitTag( unit, "" )
+					elseif result == "cap" then
+						setUnitTag( unit, "" )
+					elseif result == "nobat" then
+						pend.text = "NO BAT"
+						capturePos( pend, unit )
+						setUnitTag( unit, "NO BAT", "nobat" )
+						pend.startTick = now - ( pend.need - 1 )
+						nextPending[key] = pend
+					else
+						-- Convert was attempted. Do not re-queue (0818-a loop).
+						setUnitTag( unit, "" )
+						if type( RfsHackApply ) == "table" and type( RfsHackApply.markDone ) == "function" then
+							pcall( RfsHackApply.markDone, unit, bkey )
 						end
 					end
 				else
@@ -2819,6 +3113,9 @@ function RfsBotHijack.tickAuto( world )
 				end
 			else
 				setUnitTag( unit, "" )
+				if type( RfsHackApply ) == "table" and type( RfsHackApply.clearDone ) == "function" then
+					pcall( RfsHackApply.clearDone, unit )
+				end
 			end
 		elseif unit then
 			setUnitTag( unit, "" )
@@ -2826,11 +3123,21 @@ function RfsBotHijack.tickAuto( world )
 	end
 
 	for key, unit in pairs( live ) do
-		if not nextPending[key] and not RfsBotHijack.isAlly( unit ) and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
+		local alreadyDone = type( RfsHackApply ) == "table" and RfsHackApply.isDone and RfsHackApply.isDone( unit )
+		if alreadyDone then
+			local coverRec = RfsBotHijack.coveringBeacon( unit )
+			if not coverRec then
+				pcall( function()
+					RfsHackApply.clearDone( unit )
+				end )
+				alreadyDone = false
+			end
+		end
+		if not nextPending[key] and not RfsBotHijack.isAlly( unit ) and not alreadyDone and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
 			if unit.character and sm.exists( unit.character ) and RfsBotHijack.isRobotCharacter( unit.character ) then
 				if not ( RfsBotHijack.isUndergroundBotCharacter( unit.character ) and not undergroundBotsOn() ) then
 					local rec, bkey = RfsBotHijack.coveringBeacon( unit )
-					local need = rec and ( tonumber( rec.hijackTicks ) or 0 ) or 0
+					local need = rec and beaconHijackNeed( rec ) or 0
 					if rec and rec.powered and need > 0 and RfsBotHijack.canHackOnto( bkey, unit ) then
 						local pend = {
 							startTick = now,
@@ -2897,10 +3204,13 @@ function RfsBotHijack._tickChainConvert( live, now )
 								and not RfsBotHijack.isLockedOut( u )
 								and not ( RfsBotHijack.isUndergroundBotCharacter( u.character ) and not undergroundBotsOn() )
 							then
+								local coverRec = RfsBotHijack.coveringBeacon( u )
+								if coverRec and coverRec.powered then
 								local d2 = ( u.character.worldPosition - pos ):length2()
 								if d2 <= maxD2 and ( bestD2 == nil or d2 < bestD2 ) then
 									best = u
 									bestD2 = d2
+								end
 								end
 							end
 						end
@@ -2920,19 +3230,25 @@ function RfsBotHijack._tickChainConvert( live, now )
 						local elapsed = now - ( ch.startTick or now )
 						local remain = ch.need - elapsed
 						if remain <= 0 then
+							local rec, bkey = RfsBotHijack.coveringBeacon( best )
+							if not rec or not rec.powered then
+								setUnitTag( best, "" )
+							else
 							local opts = {
 								mode = ( info.mode == "infected" ) and "infected" or "tethered",
-								beaconKey = ( info.mode ~= "infected" ) and info.beaconKey or nil,
-								workBeaconKey = info.workBeaconKey or info.beaconKey,
-								hijackTicks = info.hijackTicks,
+								beaconKey = bkey or ( ( info.mode ~= "infected" ) and info.beaconKey or nil ),
+								workBeaconKey = info.workBeaconKey or info.beaconKey or bkey,
+								hackBeaconKey = bkey,
+								hijackTicks = rec.hijackTicks or info.hijackTicks,
 							}
-							local ok = RfsBotHijack.convertUnit( best, info.owner or 0, opts )
+							local ok = RfsBotHijack.convertUnit( best, info.owner or rec.ownerId or 0, opts )
 							setUnitTag( best, "" )
 							if not ok then
 								-- Keep trying next tick if convert failed for a soft reason.
 								ch.startTick = now - ( ch.need - 40 )
 								capturePos( ch, best )
 								nextChain[hkey] = ch
+							end
 							end
 						else
 							ch.text = string.format( "CHAIN %.1f", remain / 40 )
@@ -2963,6 +3279,13 @@ end
 -- Tethered bots: same 8/5/3s as the beacon that held them, then they revert.
 -- Infected (permanent) bots ignore signal loss.
 function RfsBotHijack._tickSignalLoss( live, now )
+	-- World HijackHost has no beacon records. Do not DROP tether just adopted via identity.
+	if type( RfsHackApply ) == "table" and type( RfsHackApply.hasLiveBeacon ) == "function" then
+		local okLive, liveBeacons = pcall( RfsHackApply.hasLiveBeacon )
+		if okLive and not liveBeacons then
+			return
+		end
+	end
 	RfsBotHijack.drops = RfsBotHijack.drops or {}
 	local nextDrops = {}
 	local toRelease = {}
@@ -3152,7 +3475,10 @@ function RfsBotHijack.canHackOnto( beaconKey, unit )
 	local n = RfsBotHijack.hackedOntoCount( beaconKey, except )
 	for key, pend in pairs( RfsBotHijack.pending or {} ) do
 		if pend and tostring( pend.beaconKey ) == beaconKey and ( not except or tostring( key ) ~= except ) then
-			n = n + 1
+			local info = RfsBotHijack.allies and RfsBotHijack.allies[tostring( key )]
+			if not ( info and info.controlled ) then
+				n = n + 1
+			end
 		end
 	end
 	return n < cap
@@ -3176,26 +3502,45 @@ function RfsBotHijack.homeBeaconKey( info )
 	return nil
 end
 
+local function destVecFromOrder( self )
+	local order = self and self.saved and self.saved.rfsOrder
+	if type( order ) ~= "table" or type( order.dest ) ~= "table" then
+		return nil, nil
+	end
+	local x, y, z = tonumber( order.dest.x ), tonumber( order.dest.y ), tonumber( order.dest.z )
+	if x == nil or y == nil or z == nil then
+		return nil, nil
+	end
+	local ok, v = pcall( sm.vec3.new, x, y, z )
+	if not ok or not v then
+		return nil, nil
+	end
+	return v, tonumber( order.leash )
+end
+
 -- Walk this ally to the device that converted it (hackBeaconKey), not the Orders master home.
 function RfsBotHijack.driveReturnToHackBeacon( self )
 	if not self or not self.unit or not sm.exists( self.unit ) then
 		return false
 	end
-	local key = unitKey( self.unit )
-	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
-	local hackKey = convertingBeaconKey( info )
-	if not hackKey and self.saved then
-		hackKey = self.saved.rfsHackBeacon or self.saved.playerAllyBeacon
+	local dest, destLeash = destVecFromOrder( self )
+	if not dest then
+		local key = unitKey( self.unit )
+		local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
+		local hackKey = convertingBeaconKey( info )
+		if not hackKey and self.saved then
+			hackKey = self.saved.rfsHackBeacon or self.saved.playerAllyBeacon
+		end
+		if not hackKey and info then
+			hackKey = RfsBotHijack.homeBeaconKey( info )
+		end
+		if not hackKey then
+			return false
+		end
+		hackKey = tostring( hackKey )
+		local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[hackKey]
+		dest = rec and rec.pos
 	end
-	if not hackKey and info then
-		hackKey = RfsBotHijack.homeBeaconKey( info )
-	end
-	if not hackKey then
-		return false
-	end
-	hackKey = tostring( hackKey )
-	local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[hackKey]
-	local dest = rec and rec.pos
 	if not dest then
 		return false
 	end
@@ -3209,7 +3554,8 @@ function RfsBotHijack.driveReturnToHackBeacon( self )
 	pcall( function()
 		local char = self.unit.character
 		if char and sm.exists( char ) then
-			arrived = ( char.worldPosition - dest ):length2() <= 9
+			local lim = destLeash or 3
+			arrived = ( char.worldPosition - dest ):length2() <= ( lim * lim )
 		end
 	end )
 	local function switchState( nextState )
@@ -3349,6 +3695,10 @@ function RfsBotHijack.driveRecallToHome( self )
 	if not self or not self.unit or not sm.exists( self.unit ) then
 		return false
 	end
+	local dest, leash = destVecFromOrder( self )
+	if dest then
+		return driveToBeaconPos( self, dest, leash or 6 )
+	end
 	local key = unitKey( self.unit )
 	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
 	local homeKey = info and RfsBotHijack.homeBeaconKey( info )
@@ -3366,6 +3716,10 @@ end
 function RfsBotHijack.driveStayAtHome( self )
 	if not self or not self.unit or not sm.exists( self.unit ) then
 		return false
+	end
+	local dest, leash = destVecFromOrder( self )
+	if dest then
+		return driveToBeaconPos( self, dest, leash or 8 )
 	end
 	local key = unitKey( self.unit )
 	local info = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
@@ -3465,10 +3819,19 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 		if type( ord ) == "table" and ord.seedUuid ~= nil then
 			seedUuid = tostring( ord.seedUuid )
 		end
+		local custom = info.customName ~= nil and tostring( info.customName ) or nil
+		if custom and type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+			custom = RfsHackOrdersIdentity.sanitizeName( custom )
+			if custom == "" then
+				custom = nil
+			end
+		elseif custom == "NameEdit" then
+			custom = nil
+		end
 		rows[#rows + 1] = {
 			key = tostring( key ),
 			name = tostring( identityTagText( info ) ),
-			customName = info.customName ~= nil and tostring( info.customName ) or nil,
+			customName = custom,
 			displayIndex = tonumber( info.displayIndex ),
 			unitType = info.unitType ~= nil and tostring( info.unitType ) or ( info.type ~= nil and tostring( info.type ) or nil ),
 			type = info.type ~= nil and tostring( info.type ) or nil,
@@ -3495,11 +3858,10 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 		end
 	end
 
-	-- Fallback: still empty → any owned ally inside a domain beacon's range
-	-- (covers /hijack orphans and pre-Master Independent homes that missed migrate).
-	if #rows == 0 then
-		for key, info in pairs( RfsBotHijack.allies ) do
-			if info and info.controlled and ownerOk( info ) and not matched[key] then
+	-- In-range owned allies even when some home rows exist (second convert
+	-- often has publicData without this beacon's home key).
+	for key, info in pairs( RfsBotHijack.allies ) do
+		if info and info.controlled and ownerOk( info ) and not matched[key] then
 				local unit = RfsBotHijack.unitByKey( key )
 				local inRange = false
 				if unit and sm.exists( unit ) and unit.character and sm.exists( unit.character ) then
@@ -3530,7 +3892,6 @@ function RfsBotHijack.listHomeAllies( beaconKey, ownerFilterId )
 				end
 			end
 		end
-	end
 
 	-- Last resort intentionally omitted: listing every ally on every beacon would
 	-- mix unrelated bases. In-range fallback above covers orphan homes.
@@ -3551,17 +3912,48 @@ function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
 	else
 		key = unitKey( unit )
 	end
-	if not key or not unit or not sm.exists( unit ) then
+	if not key then
 		return false, "bot gone"
 	end
-	local info = RfsBotHijack.allies[key]
-	if not info or not info.controlled then
-		return false, "not an ally"
+	if ( not unit or not sm.exists( unit ) ) and key then
+		unit = RfsBotHijack.unitByKey( key )
 	end
+	RfsBotHijack.allies = RfsBotHijack.allies or {}
+	local info = RfsBotHijack.allies[key]
 	local playerId = nil
 	pcall( function()
 		playerId = player and player.id
 	end )
+	-- List can show a publicData ally before Game has allies[]. Rename already
+	-- sendToUnit-falls-back; Stay/Recall must too or chat says "not an ally".
+	if ( not info or not info.controlled ) and publicTeamFlag( unit ) then
+		pcall( function()
+			RfsBotHijack.register( unit, playerId or 0, {
+				playerAlly = true,
+				beaconKey = type( order ) == "table" and order.beaconKey or nil,
+				workBeaconKey = type( order ) == "table" and order.beaconKey or nil,
+			} )
+		end )
+		info = RfsBotHijack.allies[key]
+	end
+	if not info or not info.controlled then
+		if unit and sm.exists( unit ) and publicTeamFlag( unit ) then
+			order = order or {}
+			local saved = {
+				mode = string.lower( tostring( order.mode or "rest" ) ),
+				seedUuid = order.seedUuid,
+				beaconKey = order.beaconKey and tostring( order.beaconKey ) or nil,
+				owner = playerId,
+				dest = type( order.dest ) == "table" and order.dest or nil,
+				leash = tonumber( order.leash ),
+			}
+			pcall( function()
+				sm.event.sendToUnit( unit, "sv_e_rfsOrder", saved )
+			end )
+			return true, saved
+		end
+		return false, "not an ally"
+	end
 	local isOwner = playerId ~= nil and info.owner ~= nil and tostring( info.owner ) == tostring( playerId )
 	if not isOwner and not allowHost then
 		return false, "not owner"
@@ -3575,8 +3967,15 @@ function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
 		seedUuid = order.seedUuid,
 		beaconKey = home and tostring( home ) or nil,
 		owner = info.owner,
+		dest = type( order.dest ) == "table" and order.dest or nil,
+		leash = tonumber( order.leash ),
 	}
-	if type( RfsBotOrders ) == "table" and type( RfsBotOrders.setOrder ) == "function" then
+	info.rfsOrder = saved
+	info.order = saved
+	if home then
+		info.workBeaconKey = info.workBeaconKey or tostring( home )
+	end
+	if unit and sm.exists( unit ) and type( RfsBotOrders ) == "table" and type( RfsBotOrders.setOrder ) == "function" then
 		return RfsBotOrders.setOrder( unit, saved )
 	end
 	-- Fallback without RfsBotOrders: allow Rest/Defend/Collect/Farm/Oil/Return strings.
@@ -3586,12 +3985,11 @@ function RfsBotHijack.setOrder( unitOrKey, order, player, allowHost )
 	saved.mode = mode
 	info.rfsOrder = saved
 	info.order = saved
-	if home then
-		info.workBeaconKey = info.workBeaconKey or tostring( home )
+	if unit and sm.exists( unit ) then
+		pcall( function()
+			sm.event.sendToUnit( unit, "sv_e_rfsOrder", saved )
+		end )
 	end
-	pcall( function()
-		sm.event.sendToUnit( unit, "sv_e_rfsOrder", saved )
-	end )
 	return true, saved
 end
 
@@ -3618,6 +4016,16 @@ function RfsBotHijack.setAllyColor( unitOrKey, colorHex, player, allowHost )
 	pcall( function()
 		playerId = player and player.id
 	end )
+	if ( not info or not info.controlled ) and unit and sm.exists( unit ) and publicTeamFlag( unit ) then
+		pcall( function()
+			RfsBotHijack.register( unit, playerId or 0, {
+				playerAlly = true,
+				allyColor = hex,
+				unitType = charTypeStr( unit.character ),
+			} )
+		end )
+		info = RfsBotHijack.allies[key]
+	end
 	if type( info ) == "table" and info.controlled then
 		local isOwner = playerId ~= nil and info.owner ~= nil and tostring( info.owner ) == tostring( playerId )
 		if not isOwner and not allowHost then
@@ -3717,11 +4125,14 @@ function RfsBotHijack.setAllyColorDomain( beaconKey, colorHex, player, allowHost
 		end
 	end
 	-- Domain color is set even if the list is empty (next hijack still inherits).
-	if n == 0 and not unitKeyOnly then
-		return true, hex, 0
-	end
+	-- But if the GUI sent explicit keys, a 0-count "ok" hid "bot gone" / no tint.
+	local hadKeys = ( unitKeyOnly and tostring( unitKeyOnly ) ~= "" )
+		or ( type( unitKeys ) == "table" and #unitKeys > 0 )
 	if n == 0 then
-		return false, lastErr or "no bots", 0
+		if hadKeys then
+			return false, lastErr or "no bots", 0
+		end
+		return true, hex, 0
 	end
 	return true, hex, n
 end
@@ -3754,6 +4165,9 @@ function RfsBotHijack.ensureHooks()
 	-- Character text hooks must run on the CLIENT too. Unit globals
 	-- (RobotSelectTarget) only exist on the server — don't skip char hooks.
 	RfsBotHijack.ensureCharHooks()
+	-- Class RPCs (sv_e_rfsApplyHack / standDown) must install even before
+	-- unit_util globals exist in this sandbox.
+	RfsBotHijack.ensureUnitHooks()
 	if type( RobotSelectTarget ) ~= "function" or type( InitRobotParams ) ~= "function" then
 		return false
 	end
@@ -3881,26 +4295,48 @@ function RfsBotHijack.ensureHooks()
 			return
 		end
 		local isAlly = self.unit and RfsBotHijack.isAlly( self.unit )
-		if not isAlly and self.saved and self.saved.playerAlly and self.unit then
-			-- Saved convert, but beacon dropped them — clear persist and go hostile.
-			-- Never restore ally if this bot already lost hack.
-			if self.saved.rfsHackable == false or not RfsBotHijack.isHackable( self.unit ) then
-				applyUnhackableToSelf( self )
+		local localReady = false
+		if self.unit then
+			if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.localRowReady ) == "function" then
+				localReady = RfsHackOrdersIdentity.localRowReady( self.unit )
 			else
-				local info = RfsBotHijack.allies[unitKey( self.unit )]
-				if info and info.mode == "infected" then
-					RfsBotHijack.register( self.unit, self.saved.playerAllyOwner, {
-						mode = "infected",
-						beaconKey = self.saved.playerAllyBeacon,
-					} )
-					isAlly = true
-				else
-					self.saved.playerAlly = nil
-					self.saved.playerAllyMode = nil
-					self.saved.playerAllyBeacon = nil
-					self.saved.friendly = false
-					self.isDirty = true
+				local rec = RfsBotHijack.allies[unitKey( self.unit )]
+				localReady = rec and rec.controlled and rec.displayName and rec.displayName ~= "Bot"
+					and not tostring( rec.displayName ):match( "^Bot%s+%d+$" )
+			end
+		end
+		if ( not isAlly or not localReady ) and self.unit then
+			-- Missing allies[] row in THIS Lua env is a sandbox miss, not a drop.
+			-- Adopt only a device/infected identity — never a leftover rfsPlayerAlly stamp.
+			local wantTeam = ( self.saved and self.saved.playerAlly and type( RfsHackApply ) == "table"
+					and RfsHackApply.savedHasDevice and RfsHackApply.savedHasDevice( self.saved ) )
+				or ( type( RfsHackApply ) == "table" and RfsHackApply.readPublicApply and RfsHackApply.readPublicApply( self.unit ) )
+			if self.saved.playerAlly and not wantTeam and type( RfsHackApply ) == "table" and RfsHackApply.wipeFalseAlly then
+				pcall( RfsHackApply.wipeFalseAlly, self )
+			end
+			if self.saved.rfsHackable == false or not RfsBotHijack.isHackable( self.unit ) then
+				if wantTeam then
+					applyUnhackableToSelf( self )
 				end
+			elseif wantTeam then
+				if type( RfsHackApply ) == "table" then
+					if RfsHackApply.restoreFromSaved and self.saved and self.saved.playerAlly then
+						pcall( RfsHackApply.restoreFromSaved, self )
+					elseif RfsHackApply.pullPublicOntoUnit then
+						pcall( RfsHackApply.pullPublicOntoUnit, self )
+					end
+				end
+				pcall( RfsBotHijack.register, self.unit, self.saved and self.saved.playerAllyOwner, {
+					mode = ( self.saved and self.saved.playerAllyMode ) or "tethered",
+					beaconKey = self.saved and self.saved.playerAllyBeacon,
+					workBeaconKey = self.saved and ( self.saved.playerAllyWorkBeacon or self.saved.playerAllyBeacon ),
+					hackBeaconKey = self.saved and self.saved.rfsHackBeacon,
+					playerAlly = true,
+				} )
+				self.saved.playerAlly = true
+				self.saved.friendly = false
+				publishTeamAlly( self.unit, true )
+				isAlly = true
 			end
 		end
 
@@ -4087,7 +4523,7 @@ function RfsBotHijack.ensureUnitHooks()
 		"TotebotGreenUnit", "TotebotBlueUnit", "TotebotRedUnit", "TotebotLeafUnit",
 		"TotebotYellowUnit", "HaybotUnit", "FarmbotUnit", "TapebotUnit",
 		"MinerbotUnit", "CablebotUnit", "LootbotUnit", "SeedbotUnit",
-		"BaseTotebotUnit", "TrashbotUnit",
+		"BaseTotebotUnit", "TrashbotUnit", "WocUnit",
 	}
 	for _, className in ipairs( classNames ) do
 		local cls = _G[className]
@@ -4196,11 +4632,22 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.rfsOrder = params.rfsOrder
 					end
 					self.isDirty = true
+					-- Cross-sandbox apply: beacon convert sent identity; register in THIS env.
+					if params.playerAlly and type( RfsHackApply ) == "table" and RfsHackApply.adoptOnUnit then
+						pcall( RfsHackApply.adoptOnUnit, self, params )
+					end
 				end
 				function cls.sv_e_rfsSetCustomName( self, params )
 					self.saved = self.saved or {}
 					if not self.saved.playerAlly then
-						return
+						local publicAlly = false
+						pcall( function()
+							publicAlly = self.unit and publicTeamFlag( self.unit )
+						end )
+						if not publicAlly then
+							return
+						end
+						self.saved.playerAlly = true
 					end
 					params = params or {}
 					local playerId = params.playerId
@@ -4211,6 +4658,11 @@ function RfsBotHijack.ensureUnitHooks()
 						return
 					end
 					local name = tostring( params.name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+					if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+						name = RfsHackOrdersIdentity.sanitizeName( name )
+					elseif name == "NameEdit" then
+						name = ""
+					end
 					if #name > 24 then
 						name = string.sub( name, 1, 24 )
 					end
@@ -4248,11 +4700,91 @@ function RfsBotHijack.ensureUnitHooks()
 					RfsBotHijack.standDown( self )
 				end
 			end
+			-- Always (re)install: 0818-b never standDown / saved.color / register on unit self.
+			function cls.sv_e_rfsApplyHack( self, params )
+				params = params or {}
+				self.saved = self.saved or {}
+				if type( RfsHackApply ) == "table" and type( RfsHackApply.payloadHasDevice ) == "function" then
+					if not RfsHackApply.payloadHasDevice( params ) and not RfsHackApply.savedHasDevice( self.saved ) then
+						return
+					end
+				end
+				params.playerAlly = true
+				self.saved.playerAlly = true
+				self.saved.friendly = false
+				if params.mode then
+					self.saved.playerAllyMode = params.mode
+				end
+				if params.beaconKey ~= nil then
+					self.saved.playerAllyBeacon = params.beaconKey
+				end
+				if params.workBeaconKey ~= nil then
+					self.saved.playerAllyWorkBeacon = params.workBeaconKey
+				end
+				if params.hackBeaconKey ~= nil then
+					self.saved.rfsHackBeacon = params.hackBeaconKey
+				end
+				if params.owner ~= nil then
+					self.saved.playerAllyOwner = params.owner
+				elseif params.ownerId ~= nil then
+					self.saved.playerAllyOwner = params.ownerId
+				end
+				if params.allyColor ~= nil then
+					self.saved.rfsAllyColor = params.allyColor
+				end
+				self.isDirty = true
+				local ownerId = params.owner or params.ownerId or self.saved.playerAllyOwner or 0
+				if self.unit then
+					pcall( RfsBotHijack.register, self.unit, ownerId, {
+						mode = params.mode or self.saved.playerAllyMode,
+						beaconKey = params.beaconKey or self.saved.playerAllyBeacon,
+						workBeaconKey = params.workBeaconKey or self.saved.playerAllyWorkBeacon,
+						hackBeaconKey = params.hackBeaconKey or self.saved.rfsHackBeacon,
+						hijackTicks = params.hijackTicks,
+						allyColor = params.allyColor or self.saved.rfsAllyColor,
+						playerAlly = true,
+					} )
+				end
+				pcall( RfsBotHijack.standDown, self )
+				local hex = params.allyColor or self.saved.rfsAllyColor
+				if not hex and self.unit then
+					local rec = RfsBotHijack.allies[unitKey( self.unit )]
+					hex = rec and rec.allyColor
+				end
+				persistAllyTintOnUnit( self, hex )
+				self.target = nil
+				self.lastTargetPosition = nil
+				self.eventTarget = nil
+				if type( RfsHackApply ) == "table" and type( RfsHackApply.applyOnUnitSelf ) == "function" then
+					pcall( RfsHackApply.applyOnUnitSelf, self, params )
+				end
+				if self.unit then
+					if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.pushName ) == "function" then
+						pcall( RfsHackOrdersIdentity.pushName, self.unit )
+					elseif type( RfsBotHijack.pushTag ) == "function" then
+						local rec = RfsBotHijack.allies and RfsBotHijack.allies[unitKey( self.unit )]
+						pcall( RfsBotHijack.pushTag, self.unit, identityTagText( rec or {
+							displayName = self.saved.rfsDisplayName,
+							displayIndex = self.saved.rfsDisplayIndex,
+							customName = self.saved.rfsCustomName,
+							unitType = self.saved.rfsUnitType,
+						} ), "name" )
+					end
+				end
+			end
+			cls._rfsApplyHack0818c = true
 			if type( cls.sv_e_rfsSetCustomName ) ~= "function" then
 				function cls.sv_e_rfsSetCustomName( self, params )
 					self.saved = self.saved or {}
 					if not self.saved.playerAlly then
-						return
+						local publicAlly = false
+						pcall( function()
+							publicAlly = self.unit and publicTeamFlag( self.unit )
+						end )
+						if not publicAlly then
+							return
+						end
+						self.saved.playerAlly = true
 					end
 					params = params or {}
 					local playerId = params.playerId
@@ -4263,6 +4795,11 @@ function RfsBotHijack.ensureUnitHooks()
 						return
 					end
 					local name = tostring( params.name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+					if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+						name = RfsHackOrdersIdentity.sanitizeName( name )
+					elseif name == "NameEdit" then
+						name = ""
+					end
 					if #name > 24 then
 						name = string.sub( name, 1, 24 )
 					end
@@ -4308,6 +4845,8 @@ function RfsBotHijack.ensureUnitHooks()
 						seedUuid = params.seedUuid,
 						beaconKey = params.beaconKey,
 						owner = params.owner,
+						dest = type( params.dest ) == "table" and params.dest or nil,
+						leash = tonumber( params.leash ),
 					}
 					if params.beaconKey ~= nil and self.saved.playerAllyWorkBeacon == nil then
 						self.saved.playerAllyWorkBeacon = params.beaconKey
@@ -4327,6 +4866,10 @@ function RfsBotHijack.ensureUnitHooks()
 							end
 						end
 					end
+					-- Live unit think must path now; Game sandbox dest is in params.
+					if type( RfsBotOrders ) == "table" and type( RfsBotOrders.applySelect ) == "function" then
+						pcall( RfsBotOrders.applySelect, self )
+					end
 				end
 				cls._rfsOrderRpc = true
 			end
@@ -4342,6 +4885,9 @@ function RfsBotHijack.ensureUnitHooks()
 						if self.unit and RfsBotHijack.isAlly( self.unit ) then
 							RfsBotHijack.unregister( self.unit )
 						end
+					elseif type( RfsHackApply ) == "table" and RfsHackApply.pullPublicOntoUnit then
+						-- Adopt device-finish / infected identity only. Do not stamp every unit.
+						pcall( RfsHackApply.pullPublicOntoUnit, self )
 					end
 					if self.saved and self.saved.raider then
 						pcall( function()
@@ -4349,6 +4895,14 @@ function RfsBotHijack.ensureUnitHooks()
 						end )
 					end
 					if self.unit and RfsBotHijack.isAlly( self.unit ) then
+						if not self.saved.rfsInvReady then
+							pcall( function()
+								if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_ensure then
+									RfsBotInventory.sv_ensure( self.unit )
+									self.saved.rfsInvReady = true
+								end
+							end )
+						end
 						if self.saved.rfsHackable == false then
 							RfsBotHijack.unregister( self.unit )
 						else
@@ -4356,8 +4910,38 @@ function RfsBotHijack.ensureUnitHooks()
 						end
 					end
 					local result = orig( self, dt )
-					-- Re-apply after vanilla unit AI so saved.color / setColor stick.
-					if self.unit and sm.exists( self.unit ) and RfsBotHijack.isAlly( self.unit ) then
+					-- Re-apply after vanilla unit AI so saved.color / setColor stick
+					-- AND vanilla Select cannot keep a player target (0818-c color-only).
+					if self.unit and sm.exists( self.unit ) and ( RfsBotHijack.isAlly( self.unit ) or ( self.saved and self.saved.playerAlly ) ) then
+						if self.saved.rfsHackable ~= false then
+							RfsBotHijack.standDown( self )
+							local order = self.saved and self.saved.rfsOrder
+							local mode = order and string.lower( tostring( order.mode or "" ) ) or ""
+							if mode == "return" or mode == "recall" or mode == "stay" or mode == "rest"
+								or mode == "sentry" or mode == "defend" or mode == "farm"
+								or mode == "collect" or mode == "oil" then
+								if type( RfsBotOrders ) == "table" and type( RfsBotOrders.applySelect ) == "function" then
+									pcall( RfsBotOrders.applySelect, self )
+								elseif mode == "return" then
+									RfsBotHijack.driveReturnToHackBeacon( self )
+								end
+							else
+								local tgtPlayer = false
+								pcall( function()
+									tgtPlayer = self.target and sm.exists( self.target ) and self.target:isPlayer() and true or false
+								end )
+								if tgtPlayer or not ( self.target and sm.exists( self.target ) ) then
+									local hostile = closestOtherRobotCharacter( self.unit, false, ALLY_AGGRO_RANGE )
+									if hostile and sm.exists( hostile ) then
+										self.target = hostile
+										self.lastTargetPosition = hostile.worldPosition
+									else
+										self.target = nil
+										self.lastTargetPosition = nil
+									end
+								end
+							end
+						end
 						local info = RfsBotHijack.allies[unitKey( self.unit )]
 						local hex = normalizeColorHex( ( info and info.allyColor ) or ( self.saved and self.saved.rfsAllyColor ) )
 						if hex then
@@ -4366,10 +4950,25 @@ function RfsBotHijack.ensureUnitHooks()
 							end
 							persistAllyTintOnUnit( self, hex )
 						end
-						local order = self.saved and self.saved.rfsOrder
-						local mode = order and string.lower( tostring( order.mode or "" ) ) or ""
-						if mode == "return" then
-							RfsBotHijack.driveReturnToHackBeacon( self )
+						local now = 0
+						pcall( function()
+							now = sm.game.getCurrentTick() or 0
+						end )
+						self.saved.rfsLastNameTag = tonumber( self.saved.rfsLastNameTag ) or 0
+						if ( now - self.saved.rfsLastNameTag ) >= IDENTITY_TAG_EVERY then
+							self.saved.rfsLastNameTag = now
+							if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.pushName ) == "function" then
+								pcall( RfsHackOrdersIdentity.pushName, self.unit )
+							elseif info then
+								pcall( RfsBotHijack.pushTag, self.unit, identityTagText( info ), "name" )
+							elseif self.saved.rfsDisplayName or self.saved.rfsCustomName then
+								pcall( RfsBotHijack.pushTag, self.unit, identityTagText( {
+									displayName = self.saved.rfsDisplayName,
+									displayIndex = self.saved.rfsDisplayIndex,
+									customName = self.saved.rfsCustomName,
+									unitType = self.saved.rfsUnitType,
+								} ), "name" )
+							end
 						end
 					end
 					return result

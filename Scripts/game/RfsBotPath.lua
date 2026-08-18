@@ -1,7 +1,10 @@
 -- RfsBotPath.lua — Phase 3.5 painted chests + doorway approach for Farm/Collect/Oil.
--- Color roles: yellow = seeds, green = produce, other/unpainted = drop-off.
+-- Color roles (shape color, not hosted FX on the beacon electrical net):
+--   green = seeds (seedbot dump / hay withdraw)
+--   blue  = gathered material (tote Collect / hay Farm produce)
+--   any other color = overflow extra space
 -- Assigned: chest on the same creation as the home beacon, or logic-connected to it.
--- Jobs still run as M2–M4; this only improves targeting and walk-to-chest.
+-- In-range colored chests also work. Do not parent renderables onto the beacon.
 
 RfsBotPath = RfsBotPath or {}
 
@@ -59,14 +62,15 @@ local function colorRole( col )
 		g = col.g or g
 		b = col.b or b
 	end )
-	-- Yellow paint (seeds).
-	if r > 0.52 and g > 0.40 and b < 0.38 and ( r + g ) > ( b * 2.4 ) then
+	-- Green paint = seeds (seedbot dump / hay withdraw).
+	if g > 0.45 and g > ( r + 0.10 ) and g > ( b + 0.10 ) then
 		return RfsBotPath.ROLE_SEED
 	end
-	-- Green paint (produce / veggies / fruit).
-	if g > 0.45 and g > ( r + 0.10 ) and g > ( b + 0.10 ) then
+	-- Blue paint = gathered material (tote Collect / hay produce).
+	if b > 0.45 and b > ( r + 0.10 ) and b > ( g + 0.10 ) then
 		return RfsBotPath.ROLE_PRODUCE
 	end
+	-- Any other color = overflow extra space.
 	return RfsBotPath.ROLE_DROP
 end
 

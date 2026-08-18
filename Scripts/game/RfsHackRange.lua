@@ -194,6 +194,52 @@ function RfsRangeViz.destroyAll( host )
 	end
 end
 
+-- Drop Game-hosted ring for one beacon id (pickup / harvest / destroy).
+function RfsRangeViz.hideKey( host, key )
+	key = tostring( key or "" )
+	if key == "" or not host then
+		return
+	end
+	host.cl = host.cl or {}
+	if type( host.cl.rfsRangeWant ) == "table" then
+		host.cl.rfsRangeWant[key] = nil
+	end
+	RfsRangeViz.destroyKey( host, key )
+end
+
+-- Same-env Game client: nil rfsRangeWant so tick cannot keep the ring up.
+function RfsHackRange.hideOnGame( key )
+	key = tostring( key or "" )
+	if key == "" then
+		return
+	end
+	pcall( function()
+		_G.g_rfsBeaconRangeVisible = _G.g_rfsBeaconRangeVisible or {}
+		_G.g_rfsBeaconRangeVisible[key] = nil
+	end )
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.setRangeVisible then
+		pcall( function()
+			RfsBotHijack.setRangeVisible( key, false )
+		end )
+	end
+	local game = _G.g_rfsGame
+	if game and type( RfsRangeViz ) == "table" and RfsRangeViz.hideKey then
+		RfsRangeViz.hideKey( game, key )
+	end
+end
+
+-- Beacon sandbox often has no g_rfsGame. sendToGame reaches Game.lua.
+function RfsHackRange.notifyGameOff( key )
+	key = tostring( key or "" )
+	if key == "" then
+		return
+	end
+	RfsHackRange.hideOnGame( key )
+	pcall( function()
+		sm.event.sendToGame( "sv_rfs_rangeOff", { key = key } )
+	end )
+end
+
 local function vizSeat( rec, center, range, color, world )
 	if type( rec ) ~= "table" or type( rec.segs ) ~= "table" then
 		return
@@ -313,8 +359,15 @@ end
 -- Server: tell Game to draw/hide. Never spawn FX on the beacon interactable.
 function RfsHackRange.push( self, show, opts )
 	opts = opts or {}
+	local key = self and self.sv and self.sv.key and tostring( self.sv.key ) or nil
+	if not show then
+		if key then
+			RfsHackRange.notifyGameOff( key )
+		end
+		return
+	end
 	local game = _G.g_rfsGame
-	if not ( game and game.network and self and self.sv and self.sv.key ) then
+	if not ( game and game.network and key ) then
 		return
 	end
 	local t = opts.tier or {}
@@ -352,8 +405,8 @@ function RfsHackRange.push( self, show, opts )
 	end )
 	pcall( function()
 		game.network:sendToClients( "cl_rfs_rangeViz", {
-			key = tostring( self.sv.key ),
-			show = show and true or false,
+			key = key,
+			show = true,
 			range = t.range or 16,
 			raid = raid,
 			raidRange = raidRange,

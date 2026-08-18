@@ -16,6 +16,20 @@ local UNIT_CLASSES = {
 	"BaseTotebotUnit", "TrashbotUnit",
 }
 
+local function isPlayerAttacker( attacker )
+	if type( attacker ) == "Player" then
+		return true
+	end
+	if type( attacker ) == "Character" then
+		local isP = false
+		pcall( function()
+			isP = attacker:isPlayer() and true or false
+		end )
+		return isP
+	end
+	return false
+end
+
 local function unitFromAttacker( attacker )
 	if not attacker then
 		return nil
@@ -84,8 +98,11 @@ local function wrapFn( cls, name, make )
 	if type( orig ) ~= "function" then
 		return
 	end
-	if _wrapped[orig] then
-		cls[name] = _wrapped[orig]
+	local existing = _wrapped[orig]
+	if existing then
+		if cls[name] ~= existing then
+			cls[name] = existing
+		end
 		return
 	end
 	local wrapped = make( orig )
@@ -100,9 +117,19 @@ function RfsHackTether.ensureHooks()
 		if type( cls ) == "table" then
 			wrapFn( cls, "server_onMelee", function( orig )
 				return function( self, hitPos, attacker, damage, power, hitDirection )
-					-- Player / Shape: always Survival orig (rush-base vulnerability).
+					-- Player / Shape / player Character: Survival orig (rush-base vulnerability).
+					-- Named-bot invuln: Survival orig ignores Character even when isPlayer().
 					if type( attacker ) == "Player" or type( attacker ) == "Shape" then
 						return orig( self, hitPos, attacker, damage, power, hitDirection )
+					end
+					if isPlayerAttacker( attacker ) then
+						pcall( orig, self, hitPos, attacker, damage, power, hitDirection )
+						local impact = hitDirection
+						if impact then
+							impact = impact * 6
+						end
+						applyFactionDamage( self, damage, impact, hitPos )
+						return
 					end
 					local atk = unitFromAttacker( attacker )
 					if atk and self.unit and opposingFactions( self.unit, atk ) then
@@ -126,6 +153,17 @@ function RfsHackTether.ensureHooks()
 				return function( self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
 					if type( attacker ) == "Player" or type( attacker ) == "Shape" then
 						return orig( self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
+					end
+					if isPlayerAttacker( attacker ) then
+						pcall( orig, self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
+						local impact = nil
+						if hitVelocity then
+							pcall( function()
+								impact = hitVelocity:normalize() * 6
+							end )
+						end
+						applyFactionDamage( self, damage, impact, hitPos )
+						return
 					end
 					local atk = unitFromAttacker( attacker )
 					if atk and self.unit and opposingFactions( self.unit, atk ) then

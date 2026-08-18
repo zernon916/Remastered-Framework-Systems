@@ -1,5 +1,5 @@
 {
-	"_comment": "RFS Hideout trades. Farmers currency. schematic=false = buy the item.",
+	"_comment": "RFS Hideout trades. Farmers currency. schematic=true = unlock Craftbot recipe (same uuid as craftbot.json itemId). schematic=false = buy the item.",
 	"currencyItemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7",
 	"trades": [
 		{
@@ -40,6 +40,46 @@
 			"schematic": false,
 			"ingredientList": [
 				{ "quantity": 120, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Chemical Regeneration Station",
+			"ingredientList": [
+				{ "quantity": 10, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Solar Panel",
+			"ingredientList": [
+				{ "quantity": 5, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Rechargeable Battery",
+			"ingredientList": [
+				{ "quantity": 1, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "9c624f8e-b507-414a-cd93-f4081b5c7eaf",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Rechargeable Battery Box",
+			"ingredientList": [
+				{ "quantity": 2, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
 			]
 		}
 	]

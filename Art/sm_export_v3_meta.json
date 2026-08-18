@@ -1,0 +1,183 @@
+[
+  {
+    "name": "deepsleep",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v4.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v4.dae",
+    "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_deepsleep.rend",
+    "object": "rfs_deepsleep_v4",
+    "materials": [
+      "shell",
+      "stand",
+      "light_001",
+      "bottom_display",
+      "light",
+      "top_display",
+      "pipes",
+      "wires"
+    ],
+    "mat_map": [
+      {
+        "material": "shell",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\shell_dif.png",
+        "from": "Shell"
+      },
+      {
+        "material": "stand",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\stand_dif.png",
+        "from": "Stand"
+      },
+      {
+        "material": "light_001",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\light_001_dif.png",
+        "from": "Light.001"
+      },
+      {
+        "material": "bottom_display",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\bottom_display_dif.png",
+        "from": "Bottom display"
+      },
+      {
+        "material": "light",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\light_dif.png",
+        "from": "Light"
+      },
+      {
+        "material": "top_display",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\top_display_dif.png",
+        "from": "Top display"
+      },
+      {
+        "material": "pipes",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\pipes_dif.png",
+        "from": "Pipes"
+      },
+      {
+        "material": "wires",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\deepsleep\\wires_dif.png",
+        "from": "Wires"
+      }
+    ],
+    "meta": {
+      "scale": 3.6841701210839393,
+      "size_blender": [
+        4.354170799255371,
+        7.0,
+        5.262871742248535
+      ],
+      "size_sm": [
+        4.354170799255371,
+        5.262871742248535,
+        7.0
+      ],
+      "min": [
+        -2.1770853996276855,
+        -3.499999761581421,
+        -2.6314358711242676
+      ],
+      "max": [
+        2.1770851612091064,
+        3.5,
+        2.6314358711242676
+      ]
+    },
+    "lie": {
+      "bed_object": "Bed",
+      "center_sm": [
+        -0.0005692243576049805,
+        -0.46041321754455566,
+        -0.6221349239349365
+      ],
+      "size_sm": [
+        2.7664830684661865,
+        4.0908522605896,
+        3.3226962089538574
+      ],
+      "root_jnt": {
+        "x": -0.001,
+        "y": 0.153,
+        "z": -0.622
+      }
+    },
+    "verts": 11528,
+    "polys": 16517
+  },
+  {
+    "name": "solar",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v4.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v4.dae",
+    "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_solar.rend",
+    "object": "rfs_solar_v4",
+    "materials": [
+      "main_material",
+      "base_material",
+      "arm_material",
+      "hinge_material",
+      "support_material",
+      "panel_base_material",
+      "solar_mirror_material"
+    ],
+    "mat_map": [
+      {
+        "material": "main_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\main_material_dif.png",
+        "from": "Main Material"
+      },
+      {
+        "material": "base_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\base_material_dif.png",
+        "from": "Base Material"
+      },
+      {
+        "material": "arm_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\arm_material_dif.png",
+        "from": "Arm Material"
+      },
+      {
+        "material": "hinge_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\hinge_material_dif.png",
+        "from": "Hinge Material"
+      },
+      {
+        "material": "support_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\support_material_dif.png",
+        "from": "Support Material"
+      },
+      {
+        "material": "panel_base_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\panel_base_material_dif.png",
+        "from": "Panel Base Material"
+      },
+      {
+        "material": "solar_mirror_material",
+        "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\solar_mirror_material_dif.png",
+        "from": "Solar Mirror Material"
+      }
+    ],
+    "meta": {
+      "scale": 0.5621032728389299,
+      "size_blender": [
+        3.9601893424987793,
+        4.249576091766357,
+        5.0
+      ],
+      "size_sm": [
+        3.9601893424987793,
+        5.0,
+        4.249576091766357
+      ],
+      "min": [
+        -1.9800946712493896,
+        -2.1247880458831787,
+        -2.499999761581421
+      ],
+      "max": [
+        1.9800946712493896,
+        2.1247880458831787,
+        2.5
+      ]
+    },
+    "lie": null,
+    "verts": 17433,
+    "polys": 19230
+  }
+]

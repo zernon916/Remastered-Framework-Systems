@@ -144,6 +144,7 @@ end
 local UUID_TOTEBOT_BLUE = "58992f50-ca36-44e1-8c47-4996d89d6a9a"
 local UUID_HAYBOT = "c8bfb8f3-7efc-49ac-875a-eb85ac0614db"
 local UUID_FARMBOT = "9f4fde94-312f-4417-b13b-84029c5d6b52"
+local UUID_SEEDBOT = "4fbefe2d-83c7-4859-982e-1720f04079a3"
 
 local function sameUuid( a, b )
 	if a == nil or b == nil then
@@ -239,11 +240,30 @@ local function isTapebotType( typeStr )
 	return false
 end
 
+local function isSeedbotType( typeStr )
+	typeStr = tostring( typeStr or "" )
+	if unit_seedbot and sameUuid( typeStr, unit_seedbot ) then
+		return true
+	end
+	if sameUuid( typeStr, UUID_SEEDBOT ) then
+		return true
+	end
+	local lower = string.lower( typeStr )
+	if string.find( lower, "seedbot", 1, true ) then
+		return true
+	end
+	if string.find( lower, "seed", 1, true ) and not string.find( lower, "tote", 1, true ) then
+		return true
+	end
+	return false
+end
+
 -- Expose type helpers for GUI / hijack short names.
 RfsBotOrders.isWaterbotType = isWaterbotType
 RfsBotOrders.isTotebotType = isTotebotType
 RfsBotOrders.isHaybotType = isHaybotType
 RfsBotOrders.isTapebotType = isTapebotType
+RfsBotOrders.isSeedbotType = isSeedbotType
 
 -- True if this unit type may run the mode (Rest/Defend always; Collect = tote; Farm = hay; Oil = water).
 local function modeAllowedForType( mode, typeStr )
@@ -259,7 +279,7 @@ local function modeAllowedForType( mode, typeStr )
 		return isTapebotType( typeStr )
 	end
 	if mode == RfsBotOrders.MODE_COLLECT then
-		return isTotebotType( typeStr )
+		return isTotebotType( typeStr ) or isSeedbotType( typeStr )
 	end
 	if mode == RfsBotOrders.MODE_FARM then
 		return isHaybotType( typeStr )
@@ -445,11 +465,21 @@ function RfsBotOrders.setOrder( unit, order )
 	if not unit or not sm.exists( unit ) then
 		return false, "gone"
 	end
+	order = type( order ) == "table" and order or {}
 	local info, key = allyInfo( unit )
 	if not info or not key then
-		return false, "not ally"
+		-- Game/host may not have allies[] yet. Still sendToUnit so think applies.
+		local packed = {
+			mode = normalizeMode( order.mode ) or DEFAULT_MODE,
+			seedUuid = order.seedUuid,
+			beaconKey = order.beaconKey and tostring( order.beaconKey ) or nil,
+			owner = order.owner,
+			dest = type( order.dest ) == "table" and order.dest or nil,
+			leash = tonumber( order.leash ),
+		}
+		pushOrderToUnit( unit, packed )
+		return true, packed
 	end
-	order = type( order ) == "table" and order or {}
 	local mode = normalizeMode( order.mode ) or DEFAULT_MODE
 	local t = info.unitType or info.type or typeStrOf( unit )
 	if not modeAllowedForType( mode, t ) then
@@ -467,6 +497,8 @@ function RfsBotOrders.setOrder( unit, order )
 		seedUuid = order.seedUuid,
 		beaconKey = beaconKey,
 		owner = order.owner ~= nil and order.owner or info.owner,
+		dest = type( order.dest ) == "table" and order.dest or nil,
+		leash = tonumber( order.leash ),
 	}
 	info.order = packed
 	info.rfsOrder = packed
@@ -552,7 +584,7 @@ function RfsBotOrders.modesForType( unitType )
 		modes[#modes + 1] = RfsBotOrders.MODE_OIL
 	elseif isHaybotType( unitType ) then
 		modes[#modes + 1] = RfsBotOrders.MODE_FARM
-	elseif isTotebotType( unitType ) then
+	elseif isTotebotType( unitType ) or isSeedbotType( unitType ) then
 		modes[#modes + 1] = RfsBotOrders.MODE_COLLECT
 	end
 	return modes, soon
@@ -779,6 +811,18 @@ function RfsBotOrders.sv_think( timeStep, game )
 						local depositR = RfsBotOrders.depositRadius( unit )
 						pcall( RfsBotOrdersOil.sv_tickAlly, unit, info, rec, searchR, depositR )
 					end
+				elseif type( RfsBotInventory ) == "table" and RfsBotInventory.isFull
+					and RfsBotInventory.sv_dumpToChests then
+					-- Seedbot / hay / etc: when the E-inventory is full, dump to
+					-- green (seeds) / blue (gathered) / other (overflow) in range.
+					local c = RfsBotInventory.get( unit )
+					if c and RfsBotInventory.isFull( c ) then
+						local ready, rec = RfsBotOrders.homeBeaconReady( unit )
+						if ready and rec then
+							pcall( RfsBotInventory.sv_dumpToChests, unit, info, rec,
+								RfsBotOrders.depositRadius( unit ), rec.pos )
+						end
+					end
 				end
 			end
 		end
@@ -793,4 +837,4 @@ if type( RfsBotOrdersFarm ) == "table" and RfsBotOrdersFarm.install then
 	pcall( RfsBotOrdersFarm.install )
 end
 
-print( "[RFS] RfsBotOrders loaded (Rest/Defend/Stay/Recall/Sentry + Farm M2 + Collect M3 + Oil M4 + Return)" )
+print( "[RFS] RfsBotOrders loaded (Rest/Defend/Stay/Recall/Sentry + Farm M2 + Collect M3 tote/seed + Oil M4 + Return)" )

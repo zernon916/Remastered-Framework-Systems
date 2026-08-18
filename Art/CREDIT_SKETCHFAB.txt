@@ -1,0 +1,27 @@
+Remastered Framework Survival — Sketchfab mesh credits (CC BY 4.0)
+Commercial use allowed. Author must be credited.
+
+Chemical Regeneration Station mesh (was Deep Sleep Pod)
+  Title:  The science fiction Colba
+  Author: Helley (https://sketchfab.com/Helley)
+  URL:    https://sketchfab.com/3d-models/the-science-fiction-colba-76151618d40043d280cd3b354812742b
+  License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Based on: CryoCapsules concept by capitanraketa / Igor Bulygin
+  Source: Art/sketchfab_colba/source/the_science_fiction_colba.glb
+
+Deep Sleep Pod mesh (previous; no longer in-game)
+  Title:  Sci fi incubator
+  Author: A9908244
+  URL:    https://sketchfab.com/3d-models/sci-fi-incubator-63f6bee67df14292b8c9a952b568cc96
+  License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Source: Art/sketchfab_incubator/source/Incubator.glb (user download, not USDZ)
+
+Solar Panel mesh
+  Title:  Solar Panel (HEXARAY NODE A7)
+  Author: EdwinCGStudio
+  URL:    https://sketchfab.com/3d-models/solar-panel-0f444052d1e64ccfb065fb8d00405f19
+  License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Source: Art/sketchfab_solar/source/HexaRay Node - For texturing.glb (original glb)
+
+Converted to Scrap Mechanic FBX in Objects/Mesh/ via Blender 4.4.
+Do not ship USDZ. Do not strip this credit.

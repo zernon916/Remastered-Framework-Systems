@@ -21,5 +21,85 @@
 				"itemId": "5f41af56-df4c-4837-9b3c-10781335757f"
 			}
 		]
+	},
+	{
+		"_comment": "Rechargeable cell. Vanilla battery (craftbot_core) is 5 Metal + 1 Glow + 5 Chemicals -> 10 batteries. Same items, quantities x18. Output 1 cell. Hideout schematic 1 Farmer.",
+		"itemId": "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{
+				"quantity": 90,
+				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
+			},
+			{
+				"quantity": 18,
+				"itemId": "388adeab-67e5-4901-afe8-c56217754510"
+			},
+			{
+				"quantity": 90,
+				"itemId": "f74c2891-79a9-45e0-982e-4896651c2e25"
+			}
+		]
+	},
+	{
+		"_comment": "Rechargeable Battery Box. 2 Component Kits. Hideout schematic 2 Farmers.",
+		"itemId": "9c624f8e-b507-414a-cd93-f4081b5c7eaf",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{
+				"quantity": 2,
+				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
+			}
+		]
+	},
+	{
+		"_comment": "Chemical Regeneration Station. Hideout schematic 10 Farmers.",
+		"itemId": "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{
+				"quantity": 10,
+				"itemId": "5f41af56-df4c-4837-9b3c-10781335757f"
+			},
+			{
+				"quantity": 3,
+				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
+			},
+			{
+				"quantity": 10,
+				"itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3"
+			},
+			{
+				"quantity": 3,
+				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
+			}
+		]
+	},
+	{
+		"_comment": "Solar Panel. Hideout schematic 5 Farmers.",
+		"itemId": "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{
+				"quantity": 5,
+				"itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3"
+			},
+			{
+				"quantity": 5,
+				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
+			},
+			{
+				"quantity": 3,
+				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
+			},
+			{
+				"quantity": 5,
+				"itemId": "5f41af56-df4c-4837-9b3c-10781335757f"
+			}
+		]
 	}
 ]

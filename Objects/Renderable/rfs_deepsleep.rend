@@ -1,0 +1,84 @@
+{
+	"_comment": "Colba _v10. Mesh verts in hull BLOCKS (x4 from v9 meters). Base at -Y.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_deepsleep_v10.fbx",
+			"subMeshMap": {
+				"down": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/down_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"up": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/up_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"glass": {
+					"material": "Glass",
+					"custom": {
+						"glass": {
+							"ROI": 1.52,
+							"blurriness": 0.0,
+							"depthBlurDistance": 1,
+							"depthBlurMin": 0,
+							"magnification": 1.0,
+							"magnificationDirection": [
+								1.0,
+								1.0
+							],
+							"refraction": 0.12,
+							"responsiveGlow": 1.0,
+							"transmission": 0.82,
+							"transparencyBack": 0.18,
+							"transparencyFront": 0.68
+						}
+					},
+					"textureList": [
+						"$GAME_DATA/Objects/Textures/industrial/obj_industrial_windowglass_dif.tga",
+						"$GAME_DATA/Objects/Textures/industrial/obj_industrial_windowglass_asg.tga",
+						"$GAME_DATA/Objects/Textures/industrial/obj_industrial_windowglass_nor.tga"
+					],
+					"textures": {
+						"diffuse": "$GAME_DATA/Objects/Textures/industrial/obj_industrial_windowglass_dif.tga",
+						"asg": "$GAME_DATA/Objects/Textures/industrial/obj_industrial_windowglass_asg.tga",
+						"normalMap": "$GAME_DATA/Objects/Textures/industrial/obj_industrial_windowglass_nor.tga"
+					}
+				},
+				"decals": {
+					"material": "Glass",
+					"custom": {
+						"glass": {
+							"ROI": 1.52,
+							"blurriness": 0.0,
+							"depthBlurDistance": 1,
+							"depthBlurMin": 0,
+							"magnification": 1.0,
+							"magnificationDirection": [
+								1.0,
+								1.0
+							],
+							"refraction": 0.12,
+							"responsiveGlow": 1.0,
+							"transmission": 0.82,
+							"transparencyBack": 0.18,
+							"transparencyFront": 0.68
+						}
+					},
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/decals_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				}
+			},
+			"maxViewDistance": 1000.0
+		}
+	]
+}

@@ -1,5 +1,5 @@
 -- RfsHackBeacon.lua — thin interactable shell.
--- OWNER: class + connections + hijack convert. Spend / caps / save / range / Orders live in extra files.
+-- OWNER: class + connections. Apply/convert is RfsHackApply (not this file). Spend / caps / save / range / Orders live in extra files.
 -- FROZEN spend is RfsHackPower (idle = no drain; 40*56 / 40*36 / 40*22). Do not retune here.
 -- SHOW RANGE is Game-hosted RfsRangeViz via RfsHackRange. Never parent FX onto this interactable.
 
@@ -41,9 +41,12 @@ rfsDofile( "Scripts/game/RfsHackCaps.lua" )
 rfsDofile( "Scripts/game/RfsHackSave.lua" )
 rfsDofile( "Scripts/game/RfsHackRange.lua" )
 rfsDofile( "Scripts/game/RfsBotHijack.lua" )
+rfsDofile( "Scripts/game/RfsBotInventory.lua" )
+rfsDofile( "Scripts/game/RfsHackApply.lua" )
 rfsDofile( "Scripts/game/RfsHackTether.lua" )
 rfsDofile( "Scripts/game/RfsFeatures.lua" )
 rfsDofile( "Scripts/game/RfsBeaconOrdersGui.lua" )
+rfsDofile( "Scripts/game/RfsHackOrdersList.lua" )
 rfsDofile( "Scripts/game/RfsHackOrdersGui.lua" )
 
 -- uuid → tier. Infect ticks = game ticks in an Infection Beacon field to go permanent.
@@ -195,17 +198,21 @@ function RfsHackBeacon.server_onCreate( self )
 end
 
 function RfsHackBeacon.server_onDestroy( self )
-	if type( RfsBotHijack ) == "table" and self.sv and self.sv.key then
-		local key = tostring( self.sv.key )
+	local key = self.sv and self.sv.key and tostring( self.sv.key ) or nil
+	if type( RfsHackRange ) == "table" then
+		if key and RfsHackRange.notifyGameOff then
+			RfsHackRange.notifyGameOff( key )
+		elseif RfsHackRange.push then
+			RfsHackRange.push( self, false, { tier = self.sv and self.sv.tier } )
+		end
+	end
+	if type( RfsBotHijack ) == "table" and key then
 		RfsBotHijack.unregisterBeacon( key )
 		if RfsBotHijack.beaconScripts and RfsBotHijack.beaconScripts[key] == self then
 			RfsBotHijack.beaconScripts[key] = nil
 		end
 		if RfsBotHijack.setRangeVisible then
 			RfsBotHijack.setRangeVisible( key, false )
-		end
-		if type( RfsHackRange ) == "table" then
-			RfsHackRange.push( self, false, { tier = self.sv.tier } )
 		end
 	end
 end
@@ -410,6 +417,11 @@ function RfsHackBeacon.client_onCreate( self )
 	self.cl = self.cl or {}
 	self.cl.pd = self.cl.pd or {}
 	pcall( function()
+		if self.shape and self.shape.id then
+			self.cl.beaconKey = tostring( self.shape.id )
+		end
+	end )
+	pcall( function()
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
 			RfsBotHijack.ensureCharHooks()
 		end
@@ -420,8 +432,23 @@ function RfsHackBeacon.client_onCreate( self )
 end
 
 function RfsHackBeacon.client_onDestroy( self )
+	local key = nil
+	if self.cl and self.cl.beaconKey then
+		key = tostring( self.cl.beaconKey )
+	elseif self.cl and self.cl.pd and self.cl.pd.beaconKey then
+		key = tostring( self.cl.pd.beaconKey )
+	else
+		pcall( function()
+			if self.shape and self.shape.id then
+				key = tostring( self.shape.id )
+			end
+		end )
+	end
 	if type( RfsHackRange ) == "table" then
 		RfsHackRange.tearDownBeacon( self )
+		if key and RfsHackRange.notifyGameOff then
+			RfsHackRange.notifyGameOff( key )
+		end
 	end
 end
 
@@ -442,6 +469,9 @@ end
 function RfsHackBeacon.client_onClientDataUpdate( self, data )
 	self.cl = self.cl or {}
 	self.cl.pd = data or {}
+	if data and data.beaconKey then
+		self.cl.beaconKey = tostring( data.beaconKey )
+	end
 	if type( RfsHackRange ) == "table" then
 		RfsHackRange.tearDownBeacon( self )
 	end
@@ -856,5 +886,45 @@ function RfsHackBeacon.cl_hijackResult( self, data )
 		sm.gui.chatMessage( "[RFS] " .. name .. ": permanently infected " .. tostring( n ) .. " robot(s) (−" .. tostring( spent ) .. " Battery)" )
 	else
 		sm.gui.chatMessage( "[RFS] " .. name .. ": linked " .. tostring( n ) .. " robot(s) (−" .. tostring( spent ) .. " Battery). Keep it powered or they revert." )
+	end
+end
+
+-- Deep Sleep solo skip: drain in-use beacons by skipped ticks. Existing spendOne.
+function RfsHackBeacon.sv_e_rfsSkipDrain( self, params )
+	local ticks = tonumber( params and params.ticks ) or 0
+	if ticks <= 0 or not self.sv then
+		return
+	end
+	local linked, converting = 0, 0
+	pcall( function()
+		if type( RfsBotHijack ) == "table" then
+			linked = RfsBotHijack.linkedCount( self.sv.key ) or 0
+			converting = RfsBotHijack.pendingCount( self.sv.key ) or 0
+		end
+	end )
+	local working = self.sv.powered and ( linked > 0 or converting > 0 )
+	if not working then
+		return
+	end
+	if type( RfsHackPower ) ~= "table" or type( RfsHackPower.spendOne ) ~= "function" then
+		return
+	end
+	local uuid = nil
+	pcall( function()
+		uuid = tostring( self.shape.uuid )
+	end )
+	local every = 40 * 56
+	pcall( function()
+		every = RfsHackPower.drainEvery( uuid )
+	end )
+	if type( every ) ~= "number" or every < ( 40 * 22 ) then
+		every = 40 * 56
+	end
+	local n = math.floor( ticks / every )
+	for _ = 1, n do
+		if not RfsHackPower.spendOne( self, true ) then
+			self.sv.powered = false
+			break
+		end
 	end
 end

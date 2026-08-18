@@ -54,6 +54,16 @@ local RFS_BEACON_UI = {
 		desc = "Hideout schematic (1 Farmer). Craft at Craftbot Tools: 1 Metal, 1 Circuit, 1 Component, 1 Glass.",
 		icon = "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76",
 	},
+	["8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e"] = {
+		title = "Rechargeable Battery (Empty)",
+		desc = "Hideout schematic (1 Farmer). Craft at Craftbot. Empty cell (0% charge). Put in the box for solar. Full cell = 20 vanilla batteries.",
+		icon = "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e",
+	},
+	["9c624f8e-b507-414a-cd93-f4081b5c7eaf"] = {
+		title = "Rechargeable Battery Box",
+		desc = "Hideout schematic (2 Farmers). Craft at Craftbot. Holds 5 cells (no stacking). Wire Solar in.",
+		icon = "9c624f8e-b507-414a-cd93-f4081b5c7eaf",
+	},
 }
 local function rfsItemPresentOnPeer( itemId )
 	local id = tostring( itemId or "" )
@@ -134,9 +144,7 @@ local function rfsIconForTrade( itemId )
 		if okIcon then
 			return true, resource, group, name
 		end
-		if id == "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76" then
-			return true, "ItemIconsSet0", "ItemIcons", id
-		end
+		return true, "ItemIconsSet0", "ItemIcons", id
 	end
 	return false
 end

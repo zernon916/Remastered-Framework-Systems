@@ -17,6 +17,7 @@ local ROWS = 8
 local SCROLL_STEP = 1 -- one ally row per wheel/button tick
 -- ~0.5s settle after Close before createGui (40Hz ≈ 20 ticks).
 local REOPEN_SETTLE_TICKS = 20
+local bindChrome
 local MODE_ITEMS_DEFAULT = { "Rest", "Defend", "Return", "Stay", "Recall" }
 local MODE_ITEMS_HAY = { "Rest", "Defend", "Return", "Stay", "Recall", "Farm" }
 local MODE_ITEMS_TOTE = { "Rest", "Defend", "Return", "Stay", "Recall", "Collect" }
@@ -24,6 +25,20 @@ local MODE_ITEMS_WATER = { "Rest", "Defend", "Return", "Stay", "Recall", "Collec
 -- Stable superset for all ModeDrop slots. Return stays walk-to-hack-device.
 -- Never recreateDropDown while scrolling — that wiped the painted list in 3.5d.
 local MODE_ITEMS_ALL = { "Rest", "Defend", "Return", "Stay", "Recall", "Sentry", "Farm", "Collect", "Collect Oil" }
+
+local function isWidgetIdText( s )
+	s = tostring( s or "" )
+	if s == "" then
+		return false
+	end
+	if s == "NameEdit" or s == "NameLabel" or s == "BtnRename" then
+		return true
+	end
+	if string.match( s, "^BotName%d+$" ) or string.match( s, "^ModeDrop%d+$" ) then
+		return true
+	end
+	return false
+end
 
 -- Full-body presets (RRGGBBAA). Ally Green / Infect Green match RfsBotHijack defaults.
 local COLOR_PRESETS = {
@@ -448,6 +463,9 @@ local function rowListLabel( row, selected, iconOk )
 	local kindLabel = kindDisplayName( row and row.kind )
 	local custom = row and row.customName and tostring( row.customName ) or ""
 	custom = custom:gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if isWidgetIdText( custom ) then
+		custom = ""
+	end
 	if custom == "" then
 		local ident = tostring( row and row.name or "" )
 		local parsed = ident:match( "^(.-)%s%s+[%a]+%s+%d+$" )
@@ -651,6 +669,10 @@ function RfsBeaconOrdersGui.refresh( host )
 	end
 	pcall( function()
 		local notice = host.cl.rfsOrdersNotice
+		if #rows > 0 then
+			notice = nil
+			host.cl.rfsOrdersNotice = nil
+		end
 		if type( notice ) == "string" and notice ~= "" then
 			gui:setText( "Status", notice )
 		else
@@ -707,6 +729,9 @@ function RfsBeaconOrdersGui.refresh( host )
 		paintSlot( gui, host, i, rows[abs] )
 	end
 	host.cl.rfsOrdersSuppressDrop = nil
+	-- setText on BtnMaster (CLEAR MASTER ↔ SET MASTER) drops SM button callbacks.
+	-- Always rebind Mode/Color/BotName after paint (setText drops them; after-load clicks).
+	bindChrome( host, gui )
 end
 
 -- Scroll offset + in-place refresh only. Never open/close/clear rows / applyList.
@@ -764,71 +789,131 @@ function RfsBeaconOrdersGui.onMouseWheel( host, scrollValue )
 	RfsBeaconOrdersGui.scrollDelta( host, ( v > 0 ) and -SCROLL_STEP or SCROLL_STEP )
 end
 
--- Callbacks only. Do not createDropDown / setVisible-hide rows here — that ran
--- before gui:open() and left cursor capture with no drawn window.
+-- Chrome only (Close / Master / Range / row select + drop callbacks). Safe after setText.
+-- SM setText drops button AND dropdown callbacks; Master/Slave used to "wake" binds
+-- only because applyRole → refresh → bindChrome. ModeDrop was never rebound here,
+-- so a single Independent beacon stuck after close/reopen. Rebind Mode/Seed/Color
+-- via setDropDownCallback. Do not createDropDown here (before-open cursor bug / 3.5d list wipe).
+local function rebindOrdersChrome( host )
+	local gui = host and host.cl and host.cl.rfsOrdersGui
+	if gui then
+		bindChrome( host, gui )
+	end
+end
+
+function bindChrome( host, gui )
+	if not gui then
+		return
+	end
+	pcall( function()
+		gui:setButtonCallback( "BtnScrollUp", "cl_rfs_ordersScrollUp" )
+	end )
+	pcall( function()
+		gui:setButtonCallback( "BtnScrollDown", "cl_rfs_ordersScrollDown" )
+	end )
+	pcall( function()
+		gui:setButtonCallback( "BtnMaster", "cl_rfs_ordersMaster" )
+	end )
+	pcall( function()
+		gui:setButtonCallback( "BtnRange", "cl_rfs_ordersRange" )
+	end )
+	pcall( function()
+		gui:setButtonCallback( "BtnRename", "cl_rfs_ordersRename" )
+	end )
+	-- ColorDrop is not a Button; setText on chrome still drops some GUI bindings.
+	-- Do not createDropDown here (that before open() left a cursor-only window).
+	pcall( function()
+		gui:setDropDownCallback( "ColorDrop", "cl_rfs_ordersColor" )
+	end )
+	pcall( function()
+		gui:setTextChangedCallback( "NameEdit", "cl_rfs_ordersNameEdit" )
+	end )
+	for i = 0, ROWS - 1 do
+		pcall( function()
+			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
+		end )
+		pcall( function()
+			gui:setDropDownCallback( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i )
+		end )
+		pcall( function()
+			gui:setDropDownCallback( "SeedDrop" .. i, "cl_rfs_ordersSeed" .. i )
+		end )
+	end
+	-- Close LAST: SM setText / setSelectedDropDownItem drops button callbacks.
+	-- First Mode/Color/Rename/list paint used to kill Close while ESC (OnClose) still worked.
+	pcall( function()
+		gui:setButtonCallback( "CloseButton", "cl_rfs_ordersClose" )
+	end )
+	pcall( function()
+		gui:setOnCloseCallback( "cl_rfs_ordersClose" )
+	end )
+end
+
 function RfsBeaconOrdersGui.bind( host, gui )
 	host.cl = host.cl or {}
 	host.cl.rfsOrdersGui = gui
 	host.cl.rfsOrdersScroll = host.cl.rfsOrdersScroll or 0
 	host.cl.rfsOrdersRows = host.cl.rfsOrdersRows or {}
+	-- New GUI instance must be allowed to createDropDown even if a prior
+	-- window left dropsBound true (zombie after close / reopen skip).
 	host.cl.rfsOrdersDropsBound = nil
+	host.cl.rfsOrdersDropsGui = nil
 
-	-- Game-hosted callbacks (GUI opened on RecipeFrameworkSurvival).
-	-- Separate OnClose so CloseButton → close() does not re-enter close.
-	gui:setButtonCallback( "CloseButton", "cl_rfs_ordersClose" )
-	gui:setButtonCallback( "BtnScrollUp", "cl_rfs_ordersScrollUp" )
-	gui:setButtonCallback( "BtnScrollDown", "cl_rfs_ordersScrollDown" )
-	gui:setButtonCallback( "BtnMaster", "cl_rfs_ordersMaster" )
-	gui:setButtonCallback( "BtnRange", "cl_rfs_ordersRange" )
-	gui:setButtonCallback( "BtnRename", "cl_rfs_ordersRename" )
+	bindChrome( host, gui )
 	pcall( function()
 		gui:setSliderCallback( "ScrollBar", "cl_rfs_ordersScrollChanged" )
 	end )
-	-- Best-effort mouse-wheel (safe if API unsupported).
 	pcall( function()
 		gui:setMouseWheelCallback( "MainPanel", "cl_rfs_ordersMouseWheel" )
 	end )
 	pcall( function()
 		gui:setMouseWheelCallback( "ScrollBar", "cl_rfs_ordersMouseWheel" )
 	end )
-	gui:setOnCloseCallback( "cl_rfs_ordersOnClosed" )
-
-	for i = 0, ROWS - 1 do
-		pcall( function()
-			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
-		end )
-	end
 end
 
 -- First show only, AFTER gui:open(). Never call from refresh / scroll / paint.
+-- If dropsBound is leftover from a destroyed GUI, a new instance must still
+-- createDropDown (otherwise ModeDrop is dead until Master/Slave rebinds chrome).
 local function bindDropDowns( host, gui )
-	if not gui or host.cl.rfsOrdersDropsBound then
+	if not gui then
 		return
 	end
-	host.cl.rfsOrdersDropsBound = true
-	local seeds = seedLabels()
-	local colors = colorLabels()
-	-- Suppress before ColorDrop create/select — setSelectedDropDownItem fires
-	-- the callback, and applying Ally Green on every open looked like Color was dead.
-	host.cl.rfsOrdersSuppressDrop = true
-	pcall( function()
-		gui:createDropDown( "ColorDrop", "cl_rfs_ordersColor", colors )
-	end )
-	pcall( function()
-		gui:setSelectedDropDownItem( "ColorDrop", "Ally Green" )
-	end )
-	for i = 0, ROWS - 1 do
-		pcall( function()
-			gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_ALL )
-		end )
-		pcall( function()
-			gui:createDropDown( "SeedDrop" .. i, "cl_rfs_ordersSeed" .. i, seeds )
-		end )
-		pcall( function()
-			gui:setVisible( "SeedDrop" .. i, false )
-		end )
+	host.cl = host.cl or {}
+	local gen = tonumber( host.cl.rfsOrdersGuiGen ) or 0
+	-- New GUI instance (or load leftover userdata) must createDropDown once.
+	if host.cl.rfsOrdersDropsGui ~= gui or host.cl.rfsOrdersDropsGen ~= gen then
+		host.cl.rfsOrdersDropsBound = nil
 	end
-	host.cl.rfsOrdersSuppressDrop = nil
+	if not host.cl.rfsOrdersDropsBound then
+		host.cl.rfsOrdersDropsBound = true
+		host.cl.rfsOrdersDropsGui = gui
+		host.cl.rfsOrdersDropsGen = gen
+		local seeds = seedLabels()
+		local colors = colorLabels()
+		-- Suppress before ColorDrop create/select — setSelectedDropDownItem fires
+		-- the callback, and applying Ally Green on every open looked like Color was dead.
+		host.cl.rfsOrdersSuppressDrop = true
+		pcall( function()
+			gui:createDropDown( "ColorDrop", "cl_rfs_ordersColor", colors )
+		end )
+		pcall( function()
+			gui:setSelectedDropDownItem( "ColorDrop", "Ally Green" )
+		end )
+		for i = 0, ROWS - 1 do
+			pcall( function()
+				gui:createDropDown( "ModeDrop" .. i, "cl_rfs_ordersDrop" .. i, MODE_ITEMS_ALL )
+			end )
+			pcall( function()
+				gui:createDropDown( "SeedDrop" .. i, "cl_rfs_ordersSeed" .. i, seeds )
+			end )
+			pcall( function()
+				gui:setVisible( "SeedDrop" .. i, false )
+			end )
+		end
+		host.cl.rfsOrdersSuppressDrop = nil
+	end
+	-- Always rebind Mode/Color/BotName. setText in refresh drops callbacks.
+	bindChrome( host, gui )
 end
 
 local function applyOpenMeta( host, opts )
@@ -950,6 +1035,8 @@ function RfsBeaconOrdersGui.open( host, opts )
 	host.cl.rfsPendingOrdersGui = nil
 	host.cl.rfsOrdersReopenAfterTick = nil
 	host.cl.rfsOrdersDropsBound = nil
+	host.cl.rfsOrdersDropsGui = nil
+	host.cl.rfsOrdersGuiGen = ( tonumber( host.cl.rfsOrdersGuiGen ) or 0 ) + 1
 
 	RfsBeaconOrdersGui.bind( host, gui )
 	gui:open()
@@ -968,31 +1055,43 @@ function RfsBeaconOrdersGui.open( host, opts )
 			masterKey = opts.masterKey,
 		} )
 	elseif #( host.cl.rfsOrdersRows or {} ) == 0 and host.network and host.network.sendToServer then
+		local pos = host.cl.rfsOrdersBeaconPos
 		host.network:sendToServer( "sv_rfs_ordersList", {
 			beaconKey = host.cl.rfsOrdersBeaconKey,
+			range = tonumber( host.cl.rfsOrdersRange ) or 16,
+			pos = ( type( pos ) == "table" and pos.x ~= nil ) and {
+				x = pos.x, y = pos.y, z = pos.z,
+			} or nil,
 		} )
 	end
 end
 
--- Close: nil ref first (OnClose no-op), engine close, then ~0.5s reopen settle.
+-- Close button and ESC/OnClose. Guard so gui:close() → OnClose does not re-enter.
 function RfsBeaconOrdersGui.close( host )
 	host.cl = host.cl or {}
+	if host.cl.rfsOrdersClosing then
+		host.cl.rfsOrdersGui = nil
+		host.cl.rfsOrdersDropsBound = nil
+		host.cl.rfsOrdersDropsGui = nil
+		return
+	end
+	host.cl.rfsOrdersClosing = true
 	destroyHostRangeRing( host )
 	local gui = host.cl.rfsOrdersGui
 	host.cl.rfsOrdersGui = nil
 	host.cl.rfsPendingOrdersGui = nil
 	host.cl.rfsOrdersDropsBound = nil
+	host.cl.rfsOrdersDropsGui = nil
 	host.cl.rfsOrdersReopenAfterTick = currentTick() + REOPEN_SETTLE_TICKS
 	if gui then
 		pcall( function() gui:close() end )
 	end
+	host.cl.rfsOrdersClosing = nil
 end
 
--- Engine OnClose only — do not re-enter close or clear a queued reopen.
+-- Legacy OnClose name (Game.lua). Same as Close so ESC cannot leave a zombie window.
 function RfsBeaconOrdersGui.onClosed( host )
-	host.cl = host.cl or {}
-	host.cl.rfsOrdersGui = nil
-	host.cl.rfsOrdersDropsBound = nil
+	RfsBeaconOrdersGui.close( host )
 end
 
 function RfsBeaconOrdersGui.applyRole( host, data )
@@ -1052,6 +1151,7 @@ function RfsBeaconOrdersGui.toggleRange( host )
 		pcall( function()
 			gui:setText( "BtnRange", on and "HIDE RANGE" or "SHOW RANGE" )
 		end )
+		bindChrome( host, gui )
 	end
 end
 
@@ -1082,7 +1182,7 @@ function RfsBeaconOrdersGui.applyList( host, data )
 				if mode == "farm" and kind ~= "hay" then
 					mode = "rest"
 				end
-				if mode == "collect" and kind ~= "tote" then
+				if mode == "collect" and kind ~= "tote" and kind ~= "seed" then
 					mode = "rest"
 				end
 				if mode == "oil" and kind ~= "water" then
@@ -1098,6 +1198,9 @@ function RfsBeaconOrdersGui.applyList( host, data )
 				local typeName = kindDisplayName( kind )
 				local custom = row.customName and tostring( row.customName ) or ""
 				custom = custom:gsub( "^%s+", "" ):gsub( "%s+$", "" )
+				if isWidgetIdText( custom ) then
+					custom = ""
+				end
 				local name = tostring( row.name or "" )
 				if custom == "" then
 					local parsed = name:match( "^(.-)%s%s+[%a]+%s+%d+$" )
@@ -1106,6 +1209,16 @@ function RfsBeaconOrdersGui.applyList( host, data )
 					end
 				end
 				local nameLabel = string.match( name, "^([%a]+)%s+%d+$" )
+				if ( name == "" or nameLabel == "Bot" or string.match( name, "^%d+$" ) )
+					and type( RfsBotHijack ) == "table" and type( RfsBotHijack.shortTypeName ) == "function" then
+					local sn = nil
+					pcall( function()
+						sn = RfsBotHijack.shortTypeName( row.unitType or row.type )
+					end )
+					if sn and sn ~= "" and sn ~= "Bot" then
+						typeName = sn
+					end
+				end
 				if name == "" or nameLabel == "Bot" or string.match( name, "^%d+$" ) then
 					name = n and ( typeName .. " " .. tostring( n ) ) or typeName
 				end
@@ -1140,6 +1253,9 @@ function RfsBeaconOrdersGui.applyList( host, data )
 	end
 	if host.cl.rfsOrdersGui then
 		RfsBeaconOrdersGui.refresh( host )
+		-- List paint uses setText; rebind Mode/Color/Rename so Independent
+		-- beacons still apply Collect/Stay after close+E (no Master required).
+		bindChrome( host, host.cl.rfsOrdersGui )
 	end
 end
 
@@ -1168,11 +1284,17 @@ function RfsBeaconOrdersGui.onBotClick( host, rowIdx )
 	end
 	local gui = host.cl.rfsOrdersGui
 	if gui then
+		local shown = tostring( row.customName or "" )
+		if isWidgetIdText( shown ) then
+			shown = ""
+		end
 		pcall( function()
-			gui:setText( "NameEdit", tostring( row.customName or "" ) )
+			gui:setText( "NameEdit", shown )
 		end )
+		host.cl.rfsOrdersNameDraft = shown
 	end
 	RfsBeaconOrdersGui.refresh( host )
+	rebindOrdersChrome( host )
 end
 
 function RfsBeaconOrdersGui.onColorDrop( host, value )
@@ -1182,6 +1304,7 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 	end
 	local hex = colorHexForLabel( value )
 	if not hex then
+		sm.gui.chatMessage( "[RFS] Color: unknown '" .. tostring( value ) .. "'" )
 		return
 	end
 	local beaconKey = host.cl.rfsOrdersBeaconKey
@@ -1206,26 +1329,65 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 	local scope = ( nSel > 0 ) and ( tostring( nSel ) .. " selected" ) or "all listed allies"
 	local pretty = colorLabelForHex( hex ) or tostring( value )
 	sm.gui.chatMessage( "[RFS] Color " .. tostring( pretty ) .. " → " .. scope )
+	rebindOrdersChrome( host )
+end
+
+local function typedNameFromEdit( host, a, b )
+	local gui = host and host.cl and host.cl.rfsOrdersGui
+	local typed = nil
+	local function take( s )
+		s = tostring( s or "" )
+		if s ~= "" and not isWidgetIdText( s ) then
+			typed = s
+		end
+	end
+	-- SM TextChanged may pass widget name, (widget, text), or the typed string.
+	take( b )
+	take( a )
+	if gui then
+		local box = nil
+		pcall( function()
+			box = gui:getText( "NameEdit" )
+		end )
+		take( box )
+	end
+	if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+		return RfsHackOrdersIdentity.sanitizeName( typed )
+	end
+	typed = tostring( typed or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if isWidgetIdText( typed ) then
+		return ""
+	end
+	return typed
+end
+
+function RfsBeaconOrdersGui.onNameEdit( host, a, b )
+	host.cl = host.cl or {}
+	host.cl.rfsOrdersNameDraft = typedNameFromEdit( host, a, b )
 end
 
 function RfsBeaconOrdersGui.onRename( host )
 	host.cl = host.cl or {}
-	local gui = host.cl.rfsOrdersGui
-	local name = ""
-	pcall( function()
-		name = gui:getText( "NameEdit" )
-	end )
-	name = tostring( name or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	local name = typedNameFromEdit( host, host.cl.rfsOrdersNameDraft )
+	if isWidgetIdText( name ) then
+		name = ""
+	end
 	local keys = orderTargetKeys( host )
 	if #keys == 0 then
 		sm.gui.chatMessage( "[RFS] Select a bot (or leave none selected to rename all listed), then RENAME." )
 		return
 	end
+	if name == "" then
+		sm.gui.chatMessage( "[RFS] Type a name in the box, then RENAME." )
+		return
+	end
+	host.cl.rfsOrdersNameDraft = name
 	host.network:sendToServer( "sv_rfs_ordersRename", {
 		name = name,
 		unitKeys = keys,
 		beaconKey = host.cl.rfsOrdersBeaconKey,
 	} )
+	rebindOrdersChrome( host )
 end
 
 function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
@@ -1250,7 +1412,7 @@ function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
 		local row = rowByKey( host, k ) or clicked
 		if mode == "farm" and row.kind ~= "hay" then
 			-- keep Farm/Collect/Oil disable rules
-		elseif mode == "collect" and row.kind ~= "tote" then
+		elseif mode == "collect" and row.kind ~= "tote" and row.kind ~= "seed" then
 		elseif mode == "oil" and row.kind ~= "water" then
 		else
 			if mode == "farm" and not row.seedUuid then
@@ -1258,11 +1420,22 @@ function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
 				row.seedUuid = uuid and tostring( uuid ) or nil
 			end
 			row.mode = mode
+			local dest = host.cl.rfsOrdersBeaconPos
+			local range = tonumber( host.cl.rfsOrdersRange ) or 16
+			local leash = 3
+			if mode == "stay" or mode == "sentry" then
+				leash = math.max( 4, range * 0.35 )
+			elseif mode == "recall" then
+				leash = 6
+			end
 			host.network:sendToServer( "sv_rfs_ordersSet", {
 				unitKey = k,
 				mode = mode,
 				seedUuid = row.seedUuid,
 				beaconKey = beaconKey,
+				dest = dest,
+				range = range,
+				leash = leash,
 			} )
 			sent = sent + 1
 		end
@@ -1270,6 +1443,7 @@ function RfsBeaconOrdersGui.onModeDrop( host, rowIdx, value )
 	if sent > 0 then
 		RfsBeaconOrdersGui.refresh( host )
 	end
+	rebindOrdersChrome( host )
 end
 
 function RfsBeaconOrdersGui.onSeedDrop( host, rowIdx, value )
@@ -1299,6 +1473,7 @@ function RfsBeaconOrdersGui.onSeedDrop( host, rowIdx, value )
 		seedUuid = s,
 		beaconKey = host.cl.rfsOrdersBeaconKey,
 	} )
+	rebindOrdersChrome( host )
 end
 
 RfsBeaconOrdersGui.ROWS = ROWS

@@ -11,6 +11,13 @@
 RfsCrafterGrid = RfsCrafterGrid or {}
 
 local GPS_UUID = "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"
+-- Hideout schematic rows exist (Farmers priced). Keep off Craftbot until unlock.
+local SCHEMATIC_LOCKED = {
+	["6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7"] = true, -- Chemical Regeneration Station, 10 Farmers
+	["7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8"] = true, -- Solar Panel, 5 Farmers
+	["8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e"] = true, -- Rechargeable Battery, 1 Farmer
+	["9c624f8e-b507-414a-cd93-f4081b5c7eaf"] = true, -- Rechargeable Battery Box, 2 Farmers
+}
 local RFS_LID = "29c99287-1213-48c7-9471-19a4a5c12247"
 local CG_ROOT = "$CONTENT_" .. RFS_LID
 local CG_CRAFTBOT = CG_ROOT .. "/CraftingRecipes/craftbot.json"
@@ -138,7 +145,7 @@ function RfsCrafterGrid.installRecipeSet( scan )
 						end
 						recipes[recipe.itemId] = recipe
 						recipesByIndex[#recipesByIndex + 1] = recipe
-						if fromRfsOwn then
+						if fromRfsOwn and not SCHEMATIC_LOCKED[recipe.itemId] then
 							alwaysAvailable[recipe.itemId] = true
 						end
 					end
@@ -223,10 +230,25 @@ local function rfsClUpdateRecipeGrid( self )
 	if type( paths ) ~= "table" then
 		return
 	end
-	-- Omit unlockedRecipes so C++ does not hide GPS (this pack only).
+	-- Pass unlockedRecipes so Hideout schematics (pod/solar) stay hidden.
+	-- Always-available rows (GPS) are forced on. Hideout schematics stay hidden until unlock.
 	local extraOpts = {
 		speed = ( self.crafter and self.crafter.speed ) or 1,
 	}
+	local unlocked = {}
+	pcall( function()
+		if RecipeManager and RecipeManager.Cl_GetUnlockedRecipes then
+			unlocked = RecipeManager.Cl_GetUnlockedRecipes() or {}
+		end
+	end )
+	if type( unlocked ) ~= "table" then
+		unlocked = {}
+	end
+	for id, _ in pairs( _G.g_rfsCraftbotAlwaysAvailable or {} ) do
+		unlocked[id] = true
+	end
+	unlocked[GPS_UUID] = true
+	extraOpts.unlockedRecipes = unlocked
 	for _, path in ipairs( paths ) do
 		local ok, err = pcall( function()
 			self.cl.guiInterface:addGridItemsFromFile( "RecipeGrid", path, extraOpts )

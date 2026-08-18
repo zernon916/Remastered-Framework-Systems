@@ -19,6 +19,9 @@ RfsBotOrdersCollect = RfsBotOrdersCollect or {}
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsBotPath.lua" )
 end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsBotInventory.lua" )
+end )
 
 local CARRY_SLOTS = 8
 local CARRY_MAX_STACK = 40
@@ -416,8 +419,11 @@ end
 -- Pickup / deposit
 ---------------------------------------------------------------------------
 
-local function pickupOne( entry, carry )
-	if not entry or carryFull( carry ) then
+local function pickupOne( entry, container )
+	if not entry or not container then
+		return false
+	end
+	if type( RfsBotInventory ) == "table" and RfsBotInventory.isFull and RfsBotInventory.isFull( container ) then
 		return false
 	end
 	if entry.kind == "hvs" then
@@ -432,7 +438,11 @@ local function pickupOne( entry, carry )
 		if type( pub ) == "table" and pub.harvested then
 			return false
 		end
-		if not carryAdd( carry, entry.uuid, entry.qty ) then
+		local ok = false
+		if type( RfsBotInventory ) == "table" and RfsBotInventory.collect then
+			ok = RfsBotInventory.collect( container, entry.uuid, entry.qty )
+		end
+		if not ok then
 			return false
 		end
 		pcall( function()
@@ -450,7 +460,11 @@ local function pickupOne( entry, carry )
 		if not shape or not sm.exists( shape ) then
 			return false
 		end
-		if not carryAdd( carry, entry.uuid, 1 ) then
+		local ok = false
+		if type( RfsBotInventory ) == "table" and RfsBotInventory.collect then
+			ok = RfsBotInventory.collect( container, entry.uuid, 1 )
+		end
+		if not ok then
 			return false
 		end
 		pcall( function()
@@ -540,6 +554,26 @@ end
 -- Job tick for one tote ally
 ---------------------------------------------------------------------------
 
+local function migrateCarryIntoContainer( info, container )
+	local carry = type( info ) == "table" and info.rfsCarry
+	if type( carry ) ~= "table" or #carry < 1 or not container then
+		return
+	end
+	local i = 1
+	while i <= #carry do
+		local slot = carry[i]
+		local qty = tonumber( slot and slot.qty ) or 0
+		if qty < 1 or not slot.uuid then
+			table.remove( carry, i )
+		elseif type( RfsBotInventory ) == "table" and RfsBotInventory.collect
+			and RfsBotInventory.collect( container, slot.uuid, qty ) then
+			table.remove( carry, i )
+		else
+			i = i + 1
+		end
+	end
+end
+
 function RfsBotOrdersCollect.sv_tickAlly( unit, info, homeRec, radius )
 	if not unit or not sm.exists( unit ) or type( info ) ~= "table" or not homeRec or not homeRec.pos then
 		return
@@ -547,7 +581,14 @@ function RfsBotOrdersCollect.sv_tickAlly( unit, info, homeRec, radius )
 	if not allowSet then
 		rebuildSets()
 	end
-	local carry = carryOf( info )
+	local container = nil
+	if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_ensure then
+		container = RfsBotInventory.sv_ensure( unit )
+	end
+	if not container then
+		return
+	end
+	migrateCarryIntoContainer( info, container )
 	local botPos = nil
 	pcall( function()
 		if unit.character and sm.exists( unit.character ) then
@@ -556,52 +597,56 @@ function RfsBotOrdersCollect.sv_tickAlly( unit, info, homeRec, radius )
 	end )
 	local world = botWorld( unit )
 	local homePos = homeRec.pos
+	local full = type( RfsBotInventory ) == "table" and RfsBotInventory.isFull and RfsBotInventory.isFull( container )
+	local empty = type( RfsBotInventory ) == "table" and RfsBotInventory.isEmpty and RfsBotInventory.isEmpty( container )
 
-	-- Prefer deposit when buffer is getting full.
-	if carryFull( carry ) or ( #carry > 0 and carryCount( carry ) >= math.floor( CARRY_MAX_STACK * 0.75 ) ) then
-		local chests = findChests( homePos, radius, botPos or homePos, "drop", homeRec )
-		if type( RfsBotPath ) == "table" and RfsBotPath.ensureNear and not RfsBotPath.ensureNear( unit, info, chests[1] ) then
-			return
-		end
-		depositCarry( carry, chests )
-		if carryFull( carry ) then
-			return
+	-- Prefer dump when inventory is full (blue gathered / green seed / other overflow).
+	if full or not empty then
+		if full then
+			if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_dumpToChests then
+				RfsBotInventory.sv_dumpToChests( unit, info, homeRec, radius, botPos or homePos )
+			end
+			if type( RfsBotInventory ) == "table" and RfsBotInventory.isFull and RfsBotInventory.isFull( container ) then
+				return
+			end
 		end
 	end
 
-	-- Pickup pass: loot harvestables first, then loose shapes.
+	-- Pickup pass: walk to nearest loot/loose item in beacon range, then scoop.
 	local picked = 0
 	local loot = findLootHarvestables( world, homePos, radius, botPos or homePos )
+	local loose = findLooseShapes( homePos, radius, botPos or homePos )
+	local target = loot[1] or loose[1]
+	if target and type( RfsBotPath ) == "table" and RfsBotPath.ensureNear then
+		if not RfsBotPath.ensureNear( unit, info, target ) then
+			return
+		end
+	end
 	for _, entry in ipairs( loot ) do
-		if picked >= PICKUPS_PER_TICK or carryFull( carry ) then
+		if picked >= PICKUPS_PER_TICK or ( type( RfsBotInventory ) == "table" and RfsBotInventory.isFull( container ) ) then
 			break
 		end
-		if pickupOne( entry, carry ) then
+		if pickupOne( entry, container ) then
 			picked = picked + 1
 		end
 	end
-	if picked < PICKUPS_PER_TICK and not carryFull( carry ) then
-		local loose = findLooseShapes( homePos, radius, botPos or homePos )
+	if picked < PICKUPS_PER_TICK and not ( type( RfsBotInventory ) == "table" and RfsBotInventory.isFull( container ) ) then
 		for _, entry in ipairs( loose ) do
-			if picked >= PICKUPS_PER_TICK or carryFull( carry ) then
+			if picked >= PICKUPS_PER_TICK or ( type( RfsBotInventory ) == "table" and RfsBotInventory.isFull( container ) ) then
 				break
 			end
-			if pickupOne( entry, carry ) then
+			if pickupOne( entry, container ) then
 				picked = picked + 1
 			end
 		end
 	end
 
-	-- Idle deposit if carrying anything and no more nearby pickups this tick.
-	if #carry > 0 and picked == 0 then
-		local chests = findChests( homePos, radius, botPos or homePos, "drop", homeRec )
-		if type( RfsBotPath ) == "table" and RfsBotPath.ensureNear and not RfsBotPath.ensureNear( unit, info, chests[1] ) then
-			return
-		end
-		depositCarry( carry, chests )
+	-- Idle dump if carrying anything and no more nearby pickups this tick.
+	if picked == 0 and type( RfsBotInventory ) == "table" and not RfsBotInventory.isEmpty( container ) then
+		RfsBotInventory.sv_dumpToChests( unit, info, homeRec, radius, botPos or homePos )
 	elseif type( RfsBotPath ) == "table" and RfsBotPath.clearWalk then
 		RfsBotPath.clearWalk( info )
 	end
 end
 
-print( "[RFS] RfsBotOrdersCollect loaded (Tote Collect M3)" )
+print( "[RFS] RfsBotOrdersCollect loaded (Tote Collect M3 → unit inventory → colored chests)" )

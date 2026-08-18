@@ -2,13 +2,20 @@
 -- OWNER: beacon-side Orders open/list/payload. Widget GUI stays RfsBeaconOrdersGui.lua
 --        (Rfs_BeaconOrders.layout). Known-good path: E → cl_openOrders → Game cl_rfs_ordersOpen
 --        → RfsBeaconOrdersGui.open / createGui. Do not rewrite that open path — MOVE only.
--- VOLATILE: menus. Safe to edit without touching RfsHackPower spend.
+-- VOLATILE: menus. List/names live in RfsHackOrdersList.lua (publicData.rfsPlayerAlly).
+-- Safe to edit without touching RfsHackPower spend or the E/open path.
 
 RfsHackOrdersGui = RfsHackOrdersGui or {}
 rfsHackOrdersGui = RfsHackOrdersGui
 
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersList.lua" )
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersIdentity.lua" )
 end )
 
 local function cl_beaconKey( self )
@@ -128,54 +135,38 @@ function RfsHackOrdersGui.buildListPayload( self, player )
 	if not key then
 		return { rows = {} }
 	end
-	local ownerFilter = nil
-	local allowHost = false
+	local pos, range = nil, nil
 	pcall( function()
-		local all = sm.player.getAllPlayers()
-		if type( all ) == "table" and all[1] and player then
-			local host = all[1]
-			local hid, pid = nil, nil
-			pcall( function() hid = host.id end )
-			pcall( function() pid = player.id end )
-			if hid ~= nil and pid ~= nil then
-				allowHost = ( hid == pid )
-			else
-				allowHost = ( host == player )
-			end
+		local p = self.shape and self.shape.worldPosition
+		if p then
+			pos = { x = p.x, y = p.y, z = p.z }
 		end
 	end )
-	if not allowHost and player then
-		pcall( function()
-			ownerFilter = player.id
-		end )
-	end
+	pcall( function()
+		range = self.sv and self.sv.tier and self.sv.tier.range
+	end )
 	local rows = {}
-	if type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
+	if type( RfsHackOrdersList ) == "table" and type( RfsHackOrdersList.collect ) == "function" then
 		pcall( function()
-			rows = RfsBotHijack.listHomeAllies( key, ownerFilter ) or {}
+			rows = RfsHackOrdersList.collect( key, player, { pos = pos, range = range } ) or {}
 		end )
-	end
-	if ( not rows or #rows == 0 ) and type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
-		local unfiltered = {}
+	elseif type( RfsBotHijack ) == "table" and RfsBotHijack.listHomeAllies then
 		pcall( function()
-			unfiltered = RfsBotHijack.listHomeAllies( key, nil ) or {}
+			rows = RfsBotHijack.listHomeAllies( key, nil ) or {}
 		end )
-		if #unfiltered > 0 then
-			rows = unfiltered
-		end
 	end
 	pcall( function()
 		local snap = {}
 		for _, row in ipairs( rows ) do
-			if row and row.key and RfsBotHijack.allies then
-				local info = RfsBotHijack.allies[tostring( row.key )]
+			if row and row.key then
+				local info = RfsBotHijack.allies and RfsBotHijack.allies[tostring( row.key )]
 				if info then
 					snap[tostring( row.key )] = {
 						type = info.type and tostring( info.type ) or nil,
 						unitType = info.unitType and tostring( info.unitType ) or nil,
 						owner = info.owner,
 						mode = info.mode and tostring( info.mode ) or nil,
-						beaconKey = info.beaconKey and tostring( info.beaconKey ) or nil,
+						beaconKey = info.beaconKey and tostring( info.beaconKey ) or key,
 						workBeaconKey = info.workBeaconKey and tostring( info.workBeaconKey ) or nil,
 						controlled = true,
 						displayName = info.displayName and tostring( info.displayName ) or nil,
@@ -188,6 +179,19 @@ function RfsHackOrdersGui.buildListPayload( self, player )
 							beaconKey = info.rfsOrder.beaconKey and tostring( info.rfsOrder.beaconKey ) or nil,
 							owner = info.rfsOrder.owner,
 						} or nil,
+					}
+				else
+					-- Listed from publicData without a beacon allies[] row.
+					snap[tostring( row.key )] = {
+						type = row.unitType or row.type,
+						unitType = row.unitType or row.type,
+						owner = row.owner,
+						controlled = true,
+						displayName = row.name,
+						displayIndex = row.displayIndex,
+						customName = row.customName or false,
+						beaconKey = key,
+						hackBeaconKey = row.hackBeaconKey,
 					}
 				end
 			end

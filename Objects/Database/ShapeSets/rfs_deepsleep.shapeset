@@ -1,0 +1,65 @@
+{
+	"partList": [
+		{
+			"uuid": "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7",
+			"name": "obj_rfs_deepsleeppod",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_deepsleep.rend",
+			"color": "4aa3c7",
+			"hull": {
+				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_deepsleep_col.obj",
+				"x": 17,
+				"y": 17,
+				"z": 17
+			},
+			"rotationSet": "PropY",
+			"physicsMaterial": "Metal",
+			"flammable": false,
+			"density": 6.0,
+			"stackSize": 5,
+			"sticky": "-Y",
+			"ratings": {
+				"buoyancy": 3,
+				"density": 4,
+				"durability": 4,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsDeepSleepPod",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsDeepSleepPod.lua",
+				"seat": {
+					"bones": [
+						{
+							"name": "root_jnt",
+							"offset": { "x": 0.0, "y": -1.225, "z": 0.0 },
+							"rotation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }
+						}
+					],
+					"enterAudio": "Seat seated",
+					"exitAudio": "Seat unseated"
+				}
+			}
+		},
+		{
+			"uuid": "a7e3c91f-6b24-4d80-8e15-2c9f4a0b7d63",
+			"name": "obj_rfs_chemfill",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_chemfill.rend",
+			"color": "7a28c8",
+			"box": { "x": 6, "y": 10, "z": 6 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Plastic",
+			"flammable": false,
+			"density": 1.0,
+			"stackSize": 1,
+			"showInInventory": false,
+			"ratings": {
+				"buoyancy": 7,
+				"density": 1,
+				"durability": 1,
+				"friction": 2
+			}
+		}
+	]
+}

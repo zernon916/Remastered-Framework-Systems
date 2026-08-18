@@ -1,0 +1,34 @@
+{
+  "stem": "rfs_deepsleep_v9",
+  "hull_blocks": [
+    17,
+    17,
+    17
+  ],
+  "glass_height_m": 2.75,
+  "mesh_height_m": 4.1645426750183105,
+  "mesh_width_m": [
+    4.14950704574585,
+    4.123770236968994
+  ],
+  "scale": 0.7183298116435167,
+  "fill_radius_m": 0.6498730015754699,
+  "fill_height_m": 2.255,
+  "fill_bottom_y_sm": -1.1973251251220702,
+  "stand_local_sm": [
+    0.0,
+    -1.225,
+    0.0
+  ],
+  "root_jnt": {
+    "x": 0.0,
+    "y": -1.225,
+    "z": 0.0
+  },
+  "exit_forward_m": 1.624,
+  "exit_lift_m": 0.4,
+  "half_y_m": 2.125,
+  "inner_r_m": 0.7736583352088928,
+  "verts": 16447,
+  "polys": 17168
+}

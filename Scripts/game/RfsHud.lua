@@ -5,6 +5,10 @@
 -- and hides the engine weapon ammo number, so we draw remaining ammo ourselves.
 -- Phase 6 Map (Nutt): MiniMap uses the upper-left corner (off chat); ammo stays lower-right.
 
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsRecharge.lua" )
+end )
+
 RfsHud = RfsHud or {}
 
 local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_Hud.layout"
@@ -66,6 +70,50 @@ local function updateAmmo( gui )
 	pcall( function()
 		gui:setVisible( "RfsAmmoPanel", true )
 		gui:setText( "RfsAmmoText", tostring( count ) )
+	end )
+end
+
+local function updateChargeBar( gui )
+	local frac = nil
+	pcall( function()
+		if type( RfsRecharge ) == "table" and RfsRecharge.heldChargeFrac then
+			frac = RfsRecharge.heldChargeFrac()
+		end
+	end )
+	if frac == nil then
+		local item = nil
+		pcall( function()
+			item = sm.localPlayer.getActiveItem()
+		end )
+		local s = string.lower( tostring( item or "" ) )
+		if string.find( s, "a0d8469f-c618-425b-de14-06203d7e90c1", 1, true ) then
+			frac = 1
+		elseif string.find( s, "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e", 1, true ) then
+			frac = 0
+		end
+	end
+	if frac == nil then
+		pcall( function()
+			gui:setVisible( "RfsChargePanel", false )
+		end )
+		return
+	end
+	local pct = 0
+	pcall( function()
+		gui:setVisible( "RfsChargePanel", true )
+	end )
+	if type( RfsRecharge ) == "table" and RfsRecharge.applyChargePips then
+		pct = RfsRecharge.applyChargePips( gui, "RfsChargePip", frac )
+	else
+		pct = math.floor( ( tonumber( frac ) or 0 ) * 100 + 0.5 )
+		for i = 0, 9 do
+			pcall( function()
+				gui:setVisible( "RfsChargePip" .. tostring( i ), i < math.floor( ( tonumber( frac ) or 0 ) * 10 ) )
+			end )
+		end
+	end
+	pcall( function()
+		gui:setText( "RfsChargeLabel", string.format( "Charge %d%%", pct ) )
 	end )
 end
 
@@ -144,4 +192,5 @@ function RfsHud.update( host )
 	pcall( function() gui:setText( "RfsCompassText", compass ) end )
 	updateAmmo( gui )
 	updateBlockOverlay( gui, host )
+	updateChargeBar( gui )
 end

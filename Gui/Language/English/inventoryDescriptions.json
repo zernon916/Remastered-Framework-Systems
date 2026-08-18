@@ -70,5 +70,35 @@
 		"upperCaseTitle": "INVENTORY LCD EXTRA LARGE",
 		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
 		"description": "Wide chest inventory list (item + count). Weld to a chest or connect LCD → chest. Scrolls extra stacks. Optional logic switch hides the face."
+	},
+	"6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7": {
+		"title": "Chemical Regeneration Station",
+		"upperCaseTitle": "CHEMICAL REGENERATION STATION",
+		"keywords": [ "heal", "pod", "sleep", "medical", "chemical", "cryo", "rfs" ],
+		"description": "Chemical Regeneration Station. Hideout 10 Farmers (schematic). E to stand in the tube. Fill costs 10 Chemicals (~1.5 s purple tank). Heal (~10 s 1→full) drips 10 more Chemicals and 5 batteries (or 1/4 rechargeable cell). Wire a Battery box or Rechargeable box for heal ticks. Mesh: The science fiction Colba by Helley (CC BY), concept CryoCapsules / capitanraketa / Igor Bulygin."
+	},
+	"7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8": {
+		"title": "Solar Panel",
+		"upperCaseTitle": "SOLAR PANEL",
+		"keywords": [ "solar", "power", "recharge", "rfs" ],
+		"description": "Solar Panel. Hideout 5 Farmers (schematic). Wire electricity to a Rechargeable Battery Box. Charges: sun+clear 100%, sun+cloudy 50%, night 25%, rain+night 5%. About one in-game day to fill one cell. Mesh: Solar Panel by EdwinCGStudio (CC BY)."
+	},
+	"8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e": {
+		"title": "Rechargeable Battery (Empty)",
+		"upperCaseTitle": "RECHARGEABLE BATTERY (EMPTY)",
+		"keywords": [ "battery", "recharge", "solar", "rfs", "empty" ],
+		"description": "Empty rechargeable cell (0% charge). Hideout 1 Farmer (schematic). Put in a Rechargeable Battery Box — the box only charges cells already inserted. A full cell equals 20 vanilla batteries."
+	},
+	"a0d8469f-c618-425b-de14-06203d7e90c1": {
+		"title": "Rechargeable Battery (Full)",
+		"upperCaseTitle": "RECHARGEABLE BATTERY (FULL)",
+		"keywords": [ "battery", "recharge", "solar", "rfs", "full" ],
+		"description": "Fully charged rechargeable cell. Equals 20 vanilla batteries. Put in a Rechargeable Battery Box to power devices. Solar recharges empty cells in the box."
+	},
+	"9c624f8e-b507-414a-cd93-f4081b5c7eaf": {
+		"title": "Rechargeable Battery Box",
+		"upperCaseTitle": "RECHARGEABLE BATTERY BOX",
+		"keywords": [ "battery", "container", "recharge", "solar", "rfs" ],
+		"description": "Holds 5 Rechargeable Batteries (one per slot, no stacking). Hideout 2 Farmers (schematic). Wire Solar in and devices out (electricity cables, not welds). Each cell = 20 vanilla batteries of energy."
 	}
 }

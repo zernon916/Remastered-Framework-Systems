@@ -28,6 +28,7 @@ function Player.server_onCreate( self )
 	SurvivalPlayer.server_onCreate( self )
 	self.sv = self.sv or {}
 	self.sv.rfsFly = false
+	self.sv.rfsInRegen = false
 	self.sv.rfsMapOpen = false
 	self.sv.rfsMapShape = nil
 	self.sv.rfsMapOpenTick = 0
@@ -650,5 +651,90 @@ function Player.client_onUpdate( self, dt )
 	local speed = rfs_applyFlySpeed( character )
 	if character.clientPublicData then
 		character.clientPublicData.waterMovementSpeedFraction = speed
+	end
+end
+
+-- Chemical Regeneration Station: 0.25 HP per tick while locked in the tube.
+-- Do not pass Interactable userdata through sm.event (it drops the whole heal).
+-- Warp/snap must not run every tick: shock damage from the velocity buffer
+-- cancels the heal. Collision while flagged in-tube is ignored.
+
+local RFS_REGEN_UUID = "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7"
+
+local function rfsInRegenStation( self )
+	if self.sv and self.sv.rfsInRegen then
+		return true
+	end
+	local char = self.player and self.player:getCharacter()
+	if not char or not sm.exists( char ) then
+		return false
+	end
+	local ok = false
+	pcall( function()
+		local ia = char:getLockingInteractable()
+		if ia and sm.exists( ia ) and ia.shape then
+			ok = string.lower( tostring( ia.shape.uuid ) ) == RFS_REGEN_UUID
+		end
+	end )
+	return ok
+end
+
+function Player.sv_e_rfsRegenLock( self, params )
+	self.sv = self.sv or {}
+	self.sv.rfsInRegen = params and params.on and true or false
+end
+
+function Player.server_onCollision( self, other, collisionPosition, selfPointVelocity, otherPointVelocity, collisionNormal )
+	if rfsInRegenStation( self ) then
+		return
+	end
+	BasePlayer.server_onCollision( self, other, collisionPosition, selfPointVelocity, otherPointVelocity, collisionNormal )
+end
+
+function Player.sv_takeDamage( self, damage, source, typeUuid )
+	if rfsInRegenStation( self ) and ( source == "shock" or source == "impact" ) then
+		return
+	end
+	SurvivalPlayer.sv_takeDamage( self, damage, source, typeUuid )
+end
+
+function Player.sv_e_rfsDeepSleepHeal( self, params )
+	if not self.sv or not self.sv.saved or type( self.sv.saved.stats ) ~= "table" then
+		return
+	end
+	if self.sv.saved.isConscious == false then
+		return
+	end
+	local amount = tonumber( params and params.amount ) or 0.25
+	if amount <= 0 then
+		return
+	end
+	local stats = self.sv.saved.stats
+	local hp = tonumber( stats.hp ) or 0
+	local maxhp = tonumber( stats.maxhp ) or 100
+	local applied = hp > 0 and hp < maxhp
+	if applied then
+		stats.hp = math.min( maxhp, hp + amount )
+		pcall( function()
+			self.network:setClientData( self.sv.saved )
+		end )
+		local tick = 0
+		pcall( function()
+			tick = sm.game.getCurrentTick() or 0
+		end )
+		if ( tick % 8 ) == 0 or stats.hp >= maxhp then
+			pcall( function()
+				self.storage:save( self.sv.saved )
+			end )
+		end
+	end
+	local shapeId = tonumber( params and params.shapeId )
+	if shapeId and shapeId ~= 0 then
+		local pod = _G.g_rfsHealPods and _G.g_rfsHealPods[shapeId]
+		if pod and type( pod.sv_e_rfsHealApplied ) == "function" then
+			pcall( function()
+				pod:sv_e_rfsHealApplied( { applied = applied } )
+			end )
+		end
 	end
 end

@@ -1,0 +1,42 @@
+{
+  "stem": "rfs_deepsleep_v8",
+  "hull_blocks": [
+    4,
+    6,
+    4
+  ],
+  "target_height_m": 1.5,
+  "scale": 0.25873061018164195,
+  "size_blender": [
+    1.494584560394287,
+    1.4853146076202393,
+    1.5000001192092896
+  ],
+  "size_sm": [
+    1.494584560394287,
+    1.5000001192092896,
+    -1.4853146076202393
+  ],
+  "fill_radius_m": 0.2117808747291565,
+  "fill_height_m": 0.7725938844680786,
+  "fill_bottom_z_blender": -0.40398076281547546,
+  "stand_local_sm": [
+    0.0,
+    0.1,
+    0.0
+  ],
+  "exit_forward_m": 1.15,
+  "exit_lift_m": 0.4,
+  "materials": [
+    "down",
+    "up",
+    "glass",
+    "decals"
+  ],
+  "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v8.fbx",
+  "fill_fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_chemfill_v8.fbx",
+  "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_deepsleep.rend",
+  "fill_rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_chemfill.rend",
+  "verts": 16447,
+  "polys": 17168
+}

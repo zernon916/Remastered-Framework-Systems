@@ -72,5 +72,65 @@
 				<Property key="NeedMouse" value="false"/>
 			</Widget>
 		</Widget>
+		<!-- Held rechargeable cell charge (above hotbar). Pips, not hash meters. -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.38 0.825 0.24 0.045" name="RfsChargePanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 0.42" name="RfsChargeLabel">
+				<Property key="Caption" value="Charge 0%"/>
+				<Property key="TextAlign" value="Center"/>
+				<Property key="TextColour" value="1 0.9 0.35"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="16"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.05 0.48 0.90 0.48" name="RfsChargeTrack">
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip0" position_real="0.01 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip1" position_real="0.11 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip2" position_real="0.21 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip3" position_real="0.31 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip4" position_real="0.41 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip5" position_real="0.51 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip6" position_real="0.61 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip7" position_real="0.71 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip8" position_real="0.81 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip9" position_real="0.91 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+		</Widget>
 	</Widget>
 </MyGUI>

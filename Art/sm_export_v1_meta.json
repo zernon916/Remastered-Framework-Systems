@@ -1,0 +1,60 @@
+[
+  {
+    "name": "deepsleep",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v2.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v2.dae",
+    "object": "rfs_deepsleep_v2",
+    "materials": [
+      "body"
+    ],
+    "meta": {
+      "scale": 4.73679015567935,
+      "size": [
+        5.598219871520996,
+        9.0,
+        6.766549587249756
+      ],
+      "min": [
+        -2.799109697341919,
+        -4.5,
+        -3.383274793624878
+      ],
+      "max": [
+        2.799109935760498,
+        4.500000476837158,
+        3.383274793624878
+      ]
+    },
+    "verts": 11528,
+    "polys": 16517
+  },
+  {
+    "name": "solar",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v2.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v2.dae",
+    "object": "rfs_solar_v2",
+    "materials": [
+      "body"
+    ],
+    "meta": {
+      "scale": 0.5621033933681646,
+      "size": [
+        3.9601902961730957,
+        5.0,
+        4.249575614929199
+      ],
+      "min": [
+        -1.9800951480865479,
+        -2.5,
+        -2.1247880458831787
+      ],
+      "max": [
+        1.9800951480865479,
+        2.5,
+        2.1247878074645996
+      ]
+    },
+    "verts": 17433,
+    "polys": 19230
+  }
+]

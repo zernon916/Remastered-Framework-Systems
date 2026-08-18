@@ -634,7 +634,7 @@ function RfsBotOrdersOil.sv_tickAlly( unit, info, homeRec, searchRadius, deposit
 
 	-- Prefer deposit when buffer is getting full (chests only in base beacon range).
 	if carryFull( carry ) or ( #carry > 0 and carryCount( carry ) >= math.floor( CARRY_MAX_STACK * 0.75 ) ) then
-		local chests = findChests( homePos, depositRadius, prefer, "drop", homeRec )
+		local chests = findChests( homePos, depositRadius, prefer, "produce", homeRec )
 		if type( RfsBotPath ) == "table" and RfsBotPath.ensureNear and not RfsBotPath.ensureNear( unit, info, chests[1] ) then
 			return
 		end
@@ -679,7 +679,7 @@ function RfsBotOrdersOil.sv_tickAlly( unit, info, homeRec, searchRadius, deposit
 	end
 
 	if #carry > 0 and picked == 0 then
-		local chests = findChests( homePos, depositRadius, prefer, "drop", homeRec )
+		local chests = findChests( homePos, depositRadius, prefer, "produce", homeRec )
 		if type( RfsBotPath ) == "table" and RfsBotPath.ensureNear and not RfsBotPath.ensureNear( unit, info, chests[1] ) then
 			return
 		end

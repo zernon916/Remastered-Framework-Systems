@@ -1,0 +1,76 @@
+{
+  "stem": "rfs_deepsleep_v10",
+  "fill_stem": "rfs_chemfill_v10",
+  "scale_from_v9": 4.0,
+  "hull_blocks": [
+    17,
+    17,
+    17
+  ],
+  "note": "v9 was meters in a block-space hull; x4 puts circular base at y=-8.5",
+  "body": {
+    "stem": "rfs_deepsleep_v10",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v10.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v10.dae",
+    "scale": 4.0,
+    "world_min": [
+      -8.2990140914917,
+      -8.247541427612305,
+      -8.5
+    ],
+    "world_max": [
+      8.2990140914917,
+      8.247539520263672,
+      8.158170700073242
+    ],
+    "world_size": [
+      16.5980281829834,
+      16.495080947875977,
+      16.658170700073242
+    ],
+    "verts": 16447,
+    "materials": [
+      "down",
+      "up",
+      "glass",
+      "decals"
+    ]
+  },
+  "fill": {
+    "stem": "rfs_chemfill_v10",
+    "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_chemfill_v10.fbx",
+    "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_chemfill_v10.dae",
+    "scale": 4.0,
+    "world_min": [
+      -2.599492073059082,
+      -2.5994927883148193,
+      -4.789300918579102
+    ],
+    "world_max": [
+      2.599492073059082,
+      2.599492073059082,
+      4.23069953918457
+    ],
+    "world_size": [
+      5.198984146118164,
+      5.1989850997924805,
+      9.020000457763672
+    ],
+    "verts": 40,
+    "materials": [
+      "chemfill"
+    ]
+  },
+  "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_deepsleep.rend",
+  "fill_rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_chemfill.rend",
+  "stand_local_sm_m": [
+    0.0,
+    -1.225,
+    0.0
+  ],
+  "fill_lua_m": {
+    "radius": 0.65,
+    "height": 2.255,
+    "bottom_y": -1.197
+  }
+}

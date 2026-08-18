@@ -595,6 +595,19 @@ function RfsFarming.sv_forEachHarvestable( game, fn )
 	end
 end
 
+function RfsFarming.advanceGrowthTicks( game, ticks )
+	ticks = tonumber( ticks ) or 0
+	if ticks <= 0 then
+		return
+	end
+	RfsFarming.ensureGrowHooks()
+	RfsFarming.sv_forEachHarvestable( game, function( hvs )
+		pcall( function()
+			sm.event.sendToHarvestable( hvs, "sv_e_rfsAdvanceGrowth", { ticks = ticks } )
+		end )
+	end )
+end
+
 -- Instant Farm: force every loaded GrowingHarvestable to mature (world-wide across
 -- known Survival worlds). Only harvestables in currently loaded cells are returned
 -- by getAllHarvestables — unload plants mature when their cell loads if you press again.
@@ -992,6 +1005,23 @@ function RfsFarming.ensureGrowHooks()
 		return false
 	end
 	if GrowingHarvestable._rfsFarmHooked and GrowingHarvestable.client_onUpdate == RfsFarming._ghClientUpdate then
+		if type( GrowingHarvestable.sv_e_rfsAdvanceGrowth ) ~= "function" then
+			GrowingHarvestable.sv_e_rfsAdvanceGrowth = function( self, params )
+				local ticks = tonumber( params and params.ticks ) or 0
+				if ticks <= 0 or not self.sv or not self.sv.saved then
+					return
+				end
+				if self.sv.saved.growStartTick then
+					self.sv.saved.growStartTick = self.sv.saved.growStartTick - ticks
+				end
+				if self.sv.saved.waterTick then
+					self.sv.saved.waterTick = self.sv.saved.waterTick - ticks
+				end
+				pcall( function()
+					self:sv_saveAndSync()
+				end )
+			end
+		end
 		return true
 	end
 
@@ -1015,6 +1045,26 @@ function RfsFarming.ensureGrowHooks()
 		end
 	end
 	GrowingHarvestable._rfsFarmHooked = true
+	function GrowingHarvestable.sv_e_rfsAdvanceGrowth( self, params )
+		local ticks = tonumber( params and params.ticks ) or 0
+		if ticks <= 0 or not self.sv or not self.sv.saved then
+			return
+		end
+		if self.sv.saved.growStartTick then
+			self.sv.saved.growStartTick = self.sv.saved.growStartTick - ticks
+		end
+		if self.sv.saved.waterTick then
+			self.sv.saved.waterTick = self.sv.saved.waterTick - ticks
+		end
+		pcall( function()
+			self:sv_saveAndSync()
+		end )
+		pcall( function()
+			if self.server_onReceiveUpdate then
+				self:server_onReceiveUpdate()
+			end
+		end )
+	end
 	print( "[RFS] Farming overlay hooked GrowingHarvestable" )
 	return true
 end
