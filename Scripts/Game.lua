@@ -59,8 +59,9 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 -- Engine reads this class field when creating player inventories (vanilla Survival = 40).
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
--- Bump this string on every Workshop/Roaming copy so chat proves the running pack.
-RFS_PACK_STAMP = "[RFS] pack 0822-a workshop release soil chem credits"
+-- Dev/build id (print/log only — not shown in player chat; see RFS_JOIN_CHAT).
+RFS_PACK_STAMP = "[RFS] pack 0822-b setup chat + farming hints"
+RFS_JOIN_CHAT = "[RFS] Use /gensettings, /setup, and /menu — check /setup for recent changes, especially Farming settings."
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 -- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
@@ -496,7 +497,7 @@ function RecipeFrameworkSurvival.server_onPlayerJoined( self, player, newPlayer 
 		RfsInventory.applyToPlayer( player, id )
 	end )
 	pcall( function()
-		self.network:sendToClient( player, "client_showMessage", RFS_PACK_STAMP )
+		self.network:sendToClient( player, "client_showMessage", RFS_JOIN_CHAT )
 		self.network:sendToClient( player, "client_showMessage", RFS_SPEND_CHAT )
 	end )
 end
@@ -1111,7 +1112,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	if not self.cl.rfsCmdsReadyMsg then
 		self.cl.rfsCmdsReadyMsg = true
 		pcall( function()
-			sm.gui.chatMessage( RFS_PACK_STAMP )
+			sm.gui.chatMessage( RFS_JOIN_CHAT )
 			sm.gui.chatMessage( RFS_SPEND_CHAT )
 			if RfsSettings.frameworkOnly() then
 				sm.gui.chatMessage( "RFS framework-only: /rfsmenu /menu /setup /gensettings /mods /help (cheats + quest UI OFF; hooks stay on)" )

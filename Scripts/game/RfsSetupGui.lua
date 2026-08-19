@@ -175,7 +175,7 @@ function RfsSetupGui.refreshFarming( host )
 	end )
 
 	gui:setText( "BtnAlwaysWatered", "Always watered: " .. ( watered and "ON" or "OFF" ) )
-	gui:setText( "BtnDirtOnBlocks", "Dirt on blocks: " .. ( dirt and "True" or "False" ) )
+	gui:setText( "BtnDirtOnBlocks", "Dirt on blocks: " .. ( dirt and "ON" or "OFF" ) )
 	gui:setText( "BtnFastPlace", "Fast place: " .. ( fastPlace and "ON" or "OFF" ) )
 	gui:setText( "BtnFastPickup", "Fast pickup: " .. ( fastPickup and "ON" or "OFF" ) )
 	pcall( function()
@@ -201,7 +201,7 @@ function RfsSetupGui.refreshFarming( host )
 	gui:setText( "Status", string.format(
 		"Farming | watered=%s | dirtBlocks=%s | fastPlace=%s | fastPickup=%s | cheats=%s",
 		watered and "ON" or "OFF",
-		dirt and "True" or "False",
+		dirt and "ON" or "OFF",
 		fastPlace and "ON" or "OFF",
 		fastPickup and "ON" or "OFF",
 		cheats and "ON" or "OFF"
