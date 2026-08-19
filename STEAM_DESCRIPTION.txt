@@ -62,6 +62,8 @@ From that clone: configure [b].env[/b], then [b]npm install[/b] and [b]npm run w
 [h2]Credits[/h2]
 MiniMap and atlas terrain by [b]Nutt[/b] (Steam Workshop [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map 3780282057[/url]). Do [b]not[/b] enable World Map as a world mod if you already have it (double HUD).
 
+MiniMap/GPS HUD performance and dev telemetry: [b]KomiSanN[/b] (MinimapHud.zip community contribution).
+
 Chemical Regeneration Station mesh: [b]The science fiction Colba[/b] by [b]Helley[/b] ([url=https://sketchfab.com/3d-models/the-science-fiction-colba-76151618d40043d280cd3b354812742b]Sketchfab[/url], CC BY 4.0); concept CryoCapsules by capitanraketa / Igor Bulygin.
 
 Solar Panel mesh: [b]Solar Panel (HEXARAY NODE A7)[/b] by [b]EdwinCGStudio[/b] ([url=https://sketchfab.com/3d-models/solar-panel-0f444052d1e64ccfb065fb8d00405f19]Sketchfab[/url], CC BY 4.0).

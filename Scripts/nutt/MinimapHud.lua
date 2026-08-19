@@ -1,6 +1,7 @@
 -- World Map: always-on minimap HUD (autoTool client script).
 -- Vendored into Remastered Framework Survival with permission. Credit: Nutt
--- (Steam Workshop 3780282057).
+-- (Steam Workshop 3780282057). Performance and dev-telemetry ideas: KomiSanN
+-- (MinimapHud.zip community contribution).
 -- North-up scrolling cell grid from the packed atlas sheets, rotating player
 -- arrow, water/biome/road fallbacks for unknown tiles. Works on any seed:
 -- reads the world's cell grid client-side via sm.storage.loadTerrainData.
