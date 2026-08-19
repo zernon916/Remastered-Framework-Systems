@@ -70,6 +70,8 @@ Aim Core mesh: [b]Yberpunk robot head sketch[/b] by [b]3DWorkbench[/b] ([url=htt
 
 Hack beacon station pieces and handheld hack tool: [b]R&S Military radio[/b] by [b]DTry[/b] ([url=https://sketchfab.com/3d-models/rs-military-radio-e47a8919a7ae432eb91cc744a287e9f8]Sketchfab[/url], CC BY 4.0).
 
+
+Deep Sleep Pod mesh: [b]Sci fi incubator[/b] by [b]A9908244[/b] ([url=https://sketchfab.com/3d-models/sci-fi-incubator-63f6bee67df14292b8c9a952b568cc96]Sketchfab[/url], CC BY 4.0).
 [b]Author:[/b] Zernon916
 
 If you enjoy this project, please consider leaving a Thumbs Up and Favorite on the Steam Workshop! Feedback and bug reports are always welcome in the comments.
