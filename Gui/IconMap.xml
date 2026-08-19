@@ -554,7 +554,7 @@
                 <Frame point="1248 768"/>
             </Index>
 			<Index name="b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7">
-				<Frame point="0 864"/>
+				<Frame point="1920 864"/>
 			</Index>
 			<Index name="c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8">
 				<Frame point="96 864"/>
@@ -598,11 +598,23 @@
 			<Index name="8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e">
 				<Frame point="1344 864"/>
 			</Index>
-			<Index name="a0d8469f-c618-425b-de14-06203d7e90c1">
-				<Frame point="1344 864"/>
-			</Index>
 			<Index name="9c624f8e-b507-414a-cd93-f4081b5c7eaf">
 				<Frame point="1440 864"/>
+			</Index>
+			<Index name="c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247">
+				<Frame point="1536 864"/>
+			</Index>
+			<Index name="e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c">
+				<Frame point="1632 864"/>
+			</Index>
+			<Index name="d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b">
+				<Frame point="1728 864"/>
+			</Index>
+			<Index name="ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e">
+				<Frame point="1824 864"/>
+			</Index>
+			<Index name="bb1c098e-094a-4b6c-7d08-ea293a4b5c6d">
+				<Frame point="1920 864"/>
 			</Index>
 		</Group>
 	</Resource>

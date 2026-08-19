@@ -1,8 +1,8 @@
 -- RfsRecharge.lua
 -- VOLATILE: rechargeable battery item/box + solar charge curve.
 -- One rechargeable item = 20 vanilla batteries of energy (FULL_MILLI = 20 * 1000).
--- Empty uuid = 0 charge; Full uuid = FULL_MILLI. Box: 5 slots, stackSize 1.
--- Charge lives per inserted cell (empty slots stay empty). Solar fills 1 cell / day at 100%.
+-- Single uuid (Rechargeable Battery). Charge lives in the box slots, not a second item.
+-- Box: 5 slots, stackSize 1. Side bars = total milli / (5 * FULL_MILLI).
 -- Does not touch RfsHackPower / Hack beacon spend.
 
 RfsRecharge = RfsRecharge or {}
@@ -15,7 +15,7 @@ pcall( function()
 end )
 
 RfsRecharge.ITEM_UUID = "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e"
--- Full cell is a second shape so /unlimited can spawn Empty vs Full. Same mesh.
+-- Legacy full-cell uuid (0819-af split). Still accepted in-box then converted to ITEM_UUID.
 RfsRecharge.ITEM_FULL_UUID = "a0d8469f-c618-425b-de14-06203d7e90c1"
 RfsRecharge.BOX_UUID = "9c624f8e-b507-414a-cd93-f4081b5c7eaf"
 RfsRecharge.SOLAR_UUID = "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8"
@@ -25,6 +25,7 @@ RfsRecharge.BATTERIES_PER_CELL = 20
 RfsRecharge.MILLI_PER_BATTERY = 1000
 RfsRecharge.FULL_MILLI = RfsRecharge.BATTERIES_PER_CELL * RfsRecharge.MILLI_PER_BATTERY
 RfsRecharge.BOX_SLOTS = 5
+RfsRecharge.BOX_UV_SLOTS = 5
 RfsRecharge.BOX_STACK = 1
 
 local TICKS_PER_DAY = 1440 * 40
@@ -72,7 +73,10 @@ function RfsRecharge.itemFullUuid()
 end
 
 function RfsRecharge.cellFilterUuids()
-	return { RfsRecharge.itemUuid(), RfsRecharge.itemFullUuid() }
+	-- Container filters drive what appears in "unlimited/add items" lists.
+	-- Recharge charge lives in the box; only advertise the base Rechargeable Battery.
+	-- Legacy full-cell uuid can still exist in already-saved boxes and will be migrated.
+	return { RfsRecharge.itemUuid() }
 end
 
 function RfsRecharge.isCellId( id )
@@ -374,6 +378,52 @@ function RfsRecharge.connectedBoxes( self )
 	return list
 end
 
+-- obj_containers_battery screen UV matches vanilla ConsumableContainer:
+-- setUvFrameIndex( slots - litBars ). Frame 0 = all 5 cyan bars on; frame 5 = off.
+-- Aggregate vs 5-slot box cap (1 full cell in an empty box = 20% = 1 bar).
+function RfsRecharge.sideBarFrame( frac, hasCell )
+	local slots = RfsRecharge.BOX_UV_SLOTS or 5
+	frac = tonumber( frac ) or 0
+	if frac < 0 then
+		frac = 0
+	end
+	if frac > 1 then
+		frac = 1
+	end
+	if ( not hasCell ) and frac <= 0 then
+		return slots
+	end
+	local lit = math.ceil( frac * slots )
+	if frac > 0 and lit < 1 then
+		lit = 1
+	end
+	if frac >= 1 then
+		lit = slots
+	end
+	return slots - lit
+end
+
+function RfsRecharge.boxChargeFracFromData( pd )
+	if type( pd ) ~= "table" then
+		return 0
+	end
+	local milli = tonumber( pd.chargeMilli ) or 0
+	if milli < 1 and type( pd.slotMilli ) == "table" then
+		for i = 1, ( RfsRecharge.BOX_SLOTS or 5 ) do
+			milli = milli + ( tonumber( pd.slotMilli[i] ) or 0 )
+		end
+	end
+	local cap = ( RfsRecharge.BOX_SLOTS or 5 ) * RfsRecharge.FULL_MILLI
+	if cap < 1 then
+		return 0
+	end
+	return math.max( 0, math.min( 1, milli / cap ) )
+end
+
+function RfsRecharge.boxChargePctFromData( pd )
+	return math.floor( RfsRecharge.boxChargeFracFromData( pd ) * 100 + 0.5 )
+end
+
 function RfsRecharge.chargePips( frac )
 	frac = tonumber( frac ) or 0
 	if frac < 0 then
@@ -399,19 +449,80 @@ function RfsRecharge.applyChargePips( gui, prefix, frac )
 	local filled, pct = RfsRecharge.chargePips( frac )
 	prefix = tostring( prefix or "ChargePip" )
 	for i = 0, 9 do
+		local name = prefix .. tostring( i )
+		local on = i < filled
 		pcall( function()
-			gui:setVisible( prefix .. tostring( i ), i < filled )
+			gui:setVisible( name, on )
 		end )
+		if on then
+			pcall( function()
+				gui:setButtonState( name, true )
+			end )
+		else
+			pcall( function()
+				gui:setButtonState( name, false )
+			end )
+		end
 	end
 	return pct
 end
 
-function RfsRecharge.heldChargeFrac()
-	local item = nil
+-- ProgressBar / Dressbot-style setData. Pips remain the reliable meter if this no-ops.
+function RfsRecharge.applyChargeBar( gui, widgetName, frac )
+	if not gui then
+		return 0
+	end
+	frac = tonumber( frac ) or 0
+	if frac < 0 then
+		frac = 0
+	end
+	if frac > 1 then
+		frac = 1
+	end
+	local pct = math.floor( frac * 100 + 0.5 )
+	widgetName = tostring( widgetName or "ChargeBar" )
 	pcall( function()
-		item = sm.localPlayer.getActiveItem()
+		gui:setVisible( widgetName, true )
 	end )
-	local id = RfsRecharge.uuidStr( item )
+	-- Dressbot Progress: craftTime / elapsedTime
+	pcall( function()
+		gui:setData( widgetName, { craftTime = 100, elapsedTime = pct } )
+	end )
+	pcall( function()
+		gui:setData( widgetName, { value = pct, max = 100 } )
+	end )
+	pcall( function()
+		gui:setSliderData( widgetName, 100, pct )
+	end )
+	return pct
+end
+
+-- Box slot frac from client publish data (1-based slot index).
+function RfsRecharge.slotChargeFracFromData( pd, slotIndex1 )
+	if type( pd ) ~= "table" then
+		return 0
+	end
+	slotIndex1 = tonumber( slotIndex1 ) or 1
+	local cells = tonumber( pd.cellCount ) or 0
+	if not pd.hasCell or cells < 1 then
+		return 0
+	end
+	local one = RfsRecharge.FULL_MILLI
+	local milli = 0
+	if type( pd.slotMilli ) == "table" then
+		milli = tonumber( pd.slotMilli[slotIndex1] ) or 0
+	else
+		milli = tonumber( pd.chargeMilli ) or 0
+	end
+	if one < 1 then
+		return 0
+	end
+	return math.max( 0, math.min( 1, milli / one ) )
+end
+
+-- Backpack / hotbar: one item, no per-instance charge. Charge lives in the box.
+function RfsRecharge.uuidChargeFrac( id )
+	id = RfsRecharge.uuidStr( id )
 	if id == RfsRecharge.ITEM_FULL_UUID then
 		return 1
 	end
@@ -421,4 +532,8 @@ function RfsRecharge.heldChargeFrac()
 	return nil
 end
 
-print( "[RFS] RfsRecharge loaded (20-bat cell; empty/full; 1 day @ 100%)" )
+function RfsRecharge.heldChargeFrac()
+	return nil
+end
+
+print( "[RFS] RfsRecharge loaded (one Rechargeable Battery; box 5-slot aggregate bars)" )

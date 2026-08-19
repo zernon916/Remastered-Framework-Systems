@@ -1,27 +1,55 @@
 {
-	"_comment": "RFS Hideout trades. Farmers currency. schematic=true = unlock Craftbot recipe (same uuid as craftbot.json itemId). schematic=false = buy the item.",
+	"_comment": "RFS Hideout + miner trades. Farmers = 8d601982. Miner tokens = efb2837c (Survival mininghubTrader.json). schematic=true unlocks Craftbot row via Sv_UnlockRecipe.",
 	"currencyItemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7",
 	"trades": [
 		{
 			"itemId": "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76",
 			"quantity": 1,
 			"craftTime": 0,
-			"ingredientList": [
-				{
-					"quantity": 1,
-					"itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7"
-				}
-			],
 			"schematic": true,
-			"_title": "GPS"
+			"_title": "GPS",
+			"ingredientList": [
+				{ "quantity": 1, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Handheld Radio",
+			"ingredientList": [
+				{ "quantity": 5, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
 		},
 		{
 			"itemId": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
 			"quantity": 1,
 			"craftTime": 0,
-			"schematic": false,
+			"schematic": true,
+			"_title": "Hack Beacon (station core)",
 			"ingredientList": [
-				{ "quantity": 20, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+				{ "quantity": 10, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Radio Antenna",
+			"ingredientList": [
+				{ "quantity": 15, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Radio Battery Brick",
+			"ingredientList": [
+				{ "quantity": 15, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
 			]
 		},
 		{
@@ -80,6 +108,16 @@
 			"_title": "Rechargeable Battery Box",
 			"ingredientList": [
 				{ "quantity": 2, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
+			]
+		},
+		{
+			"itemId": "c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Aim Core",
+			"ingredientList": [
+				{ "quantity": 20, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
 			]
 		}
 	]

@@ -17,7 +17,8 @@
 				"friction": 4
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"params": [
 				{ "name": "text", "type": "string" },
@@ -55,7 +56,8 @@
 				"friction": 4
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"params": [
 				{ "name": "text", "type": "string" },
@@ -93,7 +95,8 @@
 				"friction": 4
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"params": [
 				{ "name": "text", "type": "string" },

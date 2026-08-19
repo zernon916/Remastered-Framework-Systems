@@ -110,22 +110,15 @@ local WORLD_UP = sm.vec3.new( 0, 0, 1 )
 local OVERLAY_AABB_PAD = 0.32
 local OVERLAY_FX_VER = 2
 
--- Contact mask for soil-on-blocks: omit staticBody so the foundation itself is allowed.
-local BLOCK_SOIL_MASK = bit.bor(
-	sm.physics.filter.dynamicBody,
-	sm.physics.filter.waterArea,
-	sm.physics.filter.terrainAsset,
-	sm.physics.filter.harvestable,
-	sm.physics.filter.voxelTerrain
-)
-
 local defaults = {
 	alwaysWatered = false,
 	dirtOnBlocks = false,
+	fastPlace = false,
+	fastPickup = false,
 }
 
 ---------------------------------------------------------------------------
--- Persistence (world sm.storage) — alwaysWatered / dirtOnBlocks only.
+-- Persistence (world sm.storage) — alwaysWatered / dirtOnBlocks / fastPlace / fastPickup.
 -- Growth Time overlay is per-player (see getPlayerGrowthOverlay).
 ---------------------------------------------------------------------------
 
@@ -192,6 +185,8 @@ function RfsFarming.load()
 	local cfg = {
 		alwaysWatered = defaults.alwaysWatered,
 		dirtOnBlocks = defaults.dirtOnBlocks,
+		fastPlace = defaults.fastPlace,
+		fastPickup = defaults.fastPickup,
 	}
 	local ok, data = pcall( sm.storage.load, STORAGE_KEY )
 	if ok and type( data ) == "table" then
@@ -201,6 +196,12 @@ function RfsFarming.load()
 		-- Legacy world growthOverlay is ignored (moved to per-player /menu).
 		if data.dirtOnBlocks ~= nil then
 			cfg.dirtOnBlocks = data.dirtOnBlocks and true or false
+		end
+		if data.fastPlace ~= nil then
+			cfg.fastPlace = data.fastPlace and true or false
+		end
+		if data.fastPickup ~= nil then
+			cfg.fastPickup = data.fastPickup and true or false
 		end
 	end
 	RfsFarming.state = cfg
@@ -214,6 +215,8 @@ function RfsFarming.save()
 	pcall( sm.storage.save, STORAGE_KEY, {
 		alwaysWatered = cfg.alwaysWatered and true or false,
 		dirtOnBlocks = cfg.dirtOnBlocks and true or false,
+		fastPlace = cfg.fastPlace and true or false,
+		fastPickup = cfg.fastPickup and true or false,
 	} )
 	RfsFarming.cl_applyGlobals( cfg )
 	return cfg
@@ -228,6 +231,8 @@ function RfsFarming.snapshot()
 	return {
 		alwaysWatered = cfg.alwaysWatered and true or false,
 		dirtOnBlocks = cfg.dirtOnBlocks and true or false,
+		fastPlace = cfg.fastPlace and true or false,
+		fastPickup = cfg.fastPickup and true or false,
 	}
 end
 
@@ -235,11 +240,21 @@ function RfsFarming.cl_applyGlobals( cfg )
 	cfg = cfg or RfsFarming.get()
 	_G.g_rfsAlwaysWatered = cfg.alwaysWatered and true or false
 	_G.g_rfsDirtOnBlocks = cfg.dirtOnBlocks and true or false
+	_G.g_rfsFastPlace = cfg.fastPlace and true or false
+	_G.g_rfsFastPickup = cfg.fastPickup and true or false
 	-- g_rfsGrowthOverlay is per-player; set via RfsFarming.cl_setLocalGrowthOverlay.
 end
 
 function RfsFarming.dirtOnBlocksActive()
 	return ( _G.g_rfsDirtOnBlocks == true ) and RfsSettings.cheatsEnabled()
+end
+
+function RfsFarming.fastPlaceActive()
+	return ( _G.g_rfsFastPlace == true ) and RfsSettings.cheatsEnabled()
+end
+
+function RfsFarming.fastPickupActive()
+	return ( _G.g_rfsFastPickup == true ) and RfsSettings.cheatsEnabled()
 end
 
 ---------------------------------------------------------------------------
@@ -660,165 +675,11 @@ function RfsFarming.sv_tick( game )
 	RfsFarming.sv_waterAll( game )
 end
 
----------------------------------------------------------------------------
--- Dirt on blocks: extend SoilBag to accept body/lift raycasts (cheat-gated)
--- Vanilla SoilBag.constructionRayCast only accepts terrainSurface.
----------------------------------------------------------------------------
-
-local function snapWorldSoilPos( pointWorld, normalWorld )
-	local ratio = sm.construction.constants.subdivideRatio
-	-- Sit just above the hit face (soil is a flat harvestable, not a block).
-	local worldPos = pointWorld + normalWorld * ( ratio * 0.5 )
-	-- Snap XY to construction grid for tidy plots; keep Z from surface.
-	worldPos = sm.vec3.new(
-		math.floor( worldPos.x / ratio + 0.5 ) * ratio,
-		math.floor( worldPos.y / ratio + 0.5 ) * ratio,
-		worldPos.z
-	)
-	return worldPos
-end
-
-function RfsFarming._soilConstructionRayCast( self )
-	local orig = RfsFarming._soilOrigConstructionRayCast
-	if orig then
-		local valid, worldPos, worldNormal = orig( self )
-		if valid then
-			self._rfsSoilFromBody = false
-			return valid, worldPos, worldNormal
-		end
-	end
-
-	if not RfsFarming.dirtOnBlocksActive() then
-		return false
-	end
-
-	local world = sm.localPlayer.getWorld()
-	if world and ( world.clientPublicData and not world.clientPublicData.allowSoilPlacement ) or not world.clientPublicData then
-		return false
-	end
-
-	local valid, result = sm.localPlayer.getLatestRaycast()
-	if not valid or not result then
-		return false
-	end
-	if result.type ~= "body" and result.type ~= "lift" then
-		return false
-	end
-
-	local normal = result.normalWorld
-	if not normal then
-		return false
-	end
-	-- Same steepness gate as vanilla equipped update (cos ~15°).
-	if normal.z < 0.96592583 then
-		-- Still return position so UI can show TOO_STEEP; mark for contact path.
-		local worldPos = snapWorldSoilPos( result.pointWorld, normal )
-		self._rfsSoilFromBody = true
-		return true, worldPos, normal
-	end
-
-	local worldPos = snapWorldSoilPos( result.pointWorld, normal )
-	self._rfsSoilFromBody = true
-	return true, worldPos, normal
-end
-
-function RfsFarming._soilClientEquippedUpdate( self, primaryState, secondaryState, forceBuildActive )
-	if not self.tool:isLocal() then
-		return false, false
-	end
-
-	if forceBuildActive then
-		if self.effect and self.effect:isPlaying() then
-			self.effect:stop()
-		end
-		return false, false
-	end
-
-	local valid, worldPos, worldNormal = self:constructionRayCast()
-	if not valid then
-		if self.effect then
-			self.effect:stop()
-		end
-		return false, false
-	end
-
-	self.effect:setPosition( worldPos )
-	self.effect:setRotation( sm.quat.angleAxis( math.pi * 0.5, sm.vec3.new( 1, 0, 0 ) ) )
-
-	local fromBody = self._rfsSoilFromBody == true
-	local blocked = false
-	if worldNormal.z < 0.96592583 then
-		sm.gui.setInteractionText( "#{INFO_TOO_STEEP}" )
-		self.effect:setParameter( "visualizationColor", "Lift Invalid" )
-	else
-		-- On bodies, omit staticBody from the mask so the platform itself is not a hard reject.
-		if fromBody then
-			blocked = sm.physics.sphereHasContact( worldPos, 0.28, nil, nil, BLOCK_SOIL_MASK )
-		else
-			local mask = bit.bor(
-				sm.physics.filter.dynamicBody,
-				sm.physics.filter.waterArea,
-				sm.physics.filter.terrainAsset,
-				sm.physics.filter.harvestable,
-				sm.physics.filter.staticBody,
-				sm.physics.filter.voxelTerrain
-			)
-			blocked = sm.physics.sphereHasContact( worldPos, 0.375, nil, nil, mask )
-		end
-
-		if blocked then
-			self.effect:setParameter( "visualizationColor", "Lift Invalid" )
-		else
-			local keyBindingText = sm.gui.getKeyBinding( "Create", true )
-			sm.gui.setInteractionText( "", keyBindingText, "#{INTERACTION_PUT_SOIL}" )
-			self.effect:setParameter( "visualizationColor", "Lift Valid" )
-
-			if primaryState == sm.tool.interactState.start then
-				self.network:sendToServer( "sv_n_putSoil", {
-					pos = worldPos,
-					slot = sm.localPlayer.getSelectedHotbarSlot()
-				} )
-				self:putSoil()
-			end
-		end
-	end
-
-	local keyBindingText = sm.gui.getKeyBinding( "ForceBuild", true )
-	sm.gui.setInteractionText( "", keyBindingText, "#{INTERACTION_FORCE_BUILD}" )
-
-	if not self.effect:isPlaying() then
-		self.effect:start()
-	end
-	return true, false
-end
-
 function RfsFarming.ensureSoilBagHooks()
-	if type( SoilBag ) ~= "table" then
-		pcall( function()
-			dofile( "$SURVIVAL_DATA/Scripts/game/tools/SoilBag.lua" )
-		end )
+	if type( RfsSoilPlacement ) == "table" and type( RfsSoilPlacement.ensureHooks ) == "function" then
+		return RfsSoilPlacement.ensureHooks()
 	end
-	if type( SoilBag ) ~= "table" then
-		return false
-	end
-	if SoilBag._rfsFarmHooked
-		and SoilBag.constructionRayCast == RfsFarming._soilConstructionRayCast
-		and SoilBag.client_onEquippedUpdate == RfsFarming._soilClientEquippedUpdate then
-		return true
-	end
-
-	if not RfsFarming._soilOrigConstructionRayCast then
-		RfsFarming._soilOrigConstructionRayCast = SoilBag.constructionRayCast
-	end
-	if not RfsFarming._soilOrigEquippedUpdate then
-		RfsFarming._soilOrigEquippedUpdate = SoilBag.client_onEquippedUpdate
-	end
-
-	SoilBag.constructionRayCast = RfsFarming._soilConstructionRayCast
-	SoilBag.client_onEquippedUpdate = RfsFarming._soilClientEquippedUpdate
-	SoilBag._rfsFarmHooked = true
-	print( "[RFS] Farming SoilBag hooked (dirt on blocks)" )
-	return true
+	return false
 end
 
 ---------------------------------------------------------------------------
@@ -1341,6 +1202,12 @@ function RfsFarming.cl_applyState( data )
 		end
 		if data.dirtOnBlocks ~= nil then
 			cfg.dirtOnBlocks = data.dirtOnBlocks and true or false
+		end
+		if data.fastPlace ~= nil then
+			cfg.fastPlace = data.fastPlace and true or false
+		end
+		if data.fastPickup ~= nil then
+			cfg.fastPickup = data.fastPickup and true or false
 		end
 	end
 	RfsFarming.cl_applyGlobals( cfg )

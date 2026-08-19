@@ -1,0 +1,31 @@
+{
+	"partList": [
+		{
+			"uuid": "c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247",
+			"name": "obj_rfs_aimcore",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_aimcore.rend",
+			"color": "0d47a1",
+			"box": { "x": 2, "y": 2, "z": 2 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y",
+			"ratings": {
+				"buoyancy": 2,
+				"density": 3,
+				"durability": 4,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true,
+				"paintable": true
+			},
+			"scripted": {
+				"classname": "RfsHackBeacon",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsHackBeacon.lua"
+			}
+		}
+	]
+}

@@ -1,979 +1,1093 @@
 {
-	"female": {
-		"ragdoll": [
+	"female" : 
+	{
+		"ragdoll" : 
+		[
 			{
-				"bone": "root_jnt",
-				"joint": null,
-				"mass": 80.0,
-				"name": "root_jnt",
-				"offset": {
-					"x": 0.0,
-					"y": -0.65,
-					"z": 1.9
+				"bone" : "Hips",
+				"joint" : null,
+				"mass" : 80.0,
+				"name" : "Hips",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 2.0
 				},
-				"parent": null,
-				"rotation": {
-					"w": 1.0,
-					"x": 0.0,
-					"y": 0.0,
-					"z": 0.0
+				"parent" : null,
+				"rotation" : 
+				{
+					"w" : 1.0,
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 0.0
 				},
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "jnt_hips",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
+				"bone" : "Spine",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": -1.0,
-							"z": 0.3
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 0.0,
-						"swing2": 0.0,
-						"twist": 0.0
+						"swing1" : 15.0,
+						"swing2" : 10.0,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 10.0,
-				"name": "jnt_hips",
-				"offset": {
-					"x": 0.0,
-					"y": 0.0,
-					"z": 2.0
+				"mass" : 10.0,
+				"name" : "Spine",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 2.7
 				},
-				"parent": "root_jnt",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
-					}
-				}
-			},
-			{
-				"bone": "Spine",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.2,
-							"z": 1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 25.0,
-						"swing2": 25.0,
-						"twist": 0.3
-					}
-				},
-				"mass": 10.0,
-				"name": "Spine",
-				"offset": {
-					"x": 0.0,
-					"y": 0.0,
-					"z": 2.7
-				},
-				"parent": "jnt_hips",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "Hips",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "Spine2",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
+				"bone" : "Spine2",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.4,
-							"z": 1.0
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 35.0,
-						"swing2": 35.0,
-						"twist": 0.3
+						"swing1" : 10.0,
+						"swing2" : 10.0,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 5.0,
-				"name": "Shoulders",
-				"offset": {
-					"x": 0.0,
-					"y": -0.75,
-					"z": 2.65
+				"mass" : 5.0,
+				"name" : "Shoulders",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 3.65
 				},
-				"parent": "Spine",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
-					}
-				}
-			},
-			{
-				"bone": "Neck",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.2,
-							"z": 1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"softness": 0.25,
-						"swing1": 35.0,
-						"swing2": 35.0,
-						"twist": 0.3
-					}
-				},
-				"mass": 2.0,
-				"name": "Head",
-				"offset": {
-					"x": 0.0,
-					"y": -1.5,
-					"z": 3.25
-				},
-				"parent": "Shoulders",
-				"shape": {
-					"sphere": {
-						"radius": 0.5
+				"parent" : "Spine",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "LeftUpLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": -0.2,
-							"z": -1.0
+				"bone" : "Neck",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": -0.1
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 3.0,
-						"swing2": 3.0,
-						"twist": 5.0
+						"softness" : 0.25,
+						"swing1" : 20.0,
+						"swing2" : 20.0,
+						"twist" : 20.0
 					}
 				},
-				"mass": 10.0,
-				"name": "LeftUpLeg",
-				"offset": {
-					"x": -0.7,
-					"y": 0.0,
-					"z": 1.3
+				"mass" : 2.0,
+				"name" : "Head",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 4.9
 				},
-				"parent": "Hips",
-				"shape": {
-					"sphere": {
-						"radius": 0.4
-					}
-				}
-			},
-			{
-				"bone": "LeftLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 0.3,
-						"swing2": 0.3,
-						"twist": 0.3
-					}
-				},
-				"mass": 5.0,
-				"name": "LeftLeg",
-				"offset": {
-					"x": -0.8,
-					"y": 0.0,
-					"z": 0.3
-				},
-				"parent": "LeftUpLeg",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "Shoulders",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.5
 					}
 				}
 			},
 			{
-				"bone": "RightUpLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": -0.2,
-							"z": -1.0
+				"bone" : "LeftUpLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": -0.1
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : -0.2
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 3.0,
-						"swing2": 3.0,
-						"twist": 5.0
+						"swing1" : 7.5,
+						"swing2" : 7.5,
+						"twist" : 15.0
 					}
 				},
-				"mass": 10.0,
-				"name": "RightUpLeg",
-				"offset": {
-					"x": 0.7,
-					"y": 0.0,
-					"z": 1.3
+				"mass" : 10.0,
+				"name" : "LeftUpLeg",
+				"offset" : 
+				{
+					"x" : -0.7,
+					"y" : 0.0,
+					"z" : 1.3
 				},
-				"parent": "Hips",
-				"shape": {
-					"sphere": {
-						"radius": 0.4
-					}
-				}
-			},
-			{
-				"bone": "RightLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 0.3,
-						"swing2": 0.3,
-						"twist": 0.3
-					}
-				},
-				"mass": 5.0,
-				"name": "RightLeg",
-				"offset": {
-					"x": 0.8,
-					"y": 0.0,
-					"z": 0.3
-				},
-				"parent": "RightUpLeg",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "Hips",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
 					}
 				}
 			},
 			{
-				"bone": "LeftArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": -1.0,
-							"y": 0.0,
-							"z": 0.0
+				"bone" : "LeftLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": -0.5,
-							"y": 0.1,
-							"z": -1.0
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : -0.4,
+							"z" : -1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 45.0,
-						"swing2": 70.0,
-						"twist": 22.5
+						"swing1" : 15.0,
+						"swing2" : 0.57296,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 2.0,
-				"name": "LeftArm",
-				"offset": {
-					"x": -1.6,
-					"y": 0.0,
-					"z": 3.75
+				"mass" : 5.0,
+				"name" : "LeftLeg",
+				"offset" : 
+				{
+					"x" : -0.8,
+					"y" : 0.0,
+					"z" : 0.3
 				},
-				"parent": "Shoulders",
-				"rotation": {
-					"w": 1.0,
-					"x": 0.0,
-					"y": 0.0,
-					"z": 0.0
-				},
-				"shape": {
-					"sphere": {
-						"radius": 0.4
-					}
-				}
-			},
-			{
-				"bone": "LeftForeArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": -1.0,
-							"y": 0.0,
-							"z": 0.0
-						},
-						"centerDir": {
-							"x": -1.0,
-							"y": 2.0,
-							"z": 0.6
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 45.0,
-						"swing2": 45.0,
-						"twist": 0.0
-					}
-				},
-				"mass": 10.0,
-				"name": "LeftForeArm",
-				"offset": {
-					"x": -3.0,
-					"y": -0.15,
-					"z": 3.65
-				},
-				"parent": "LeftArm",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "LeftUpLeg",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "RightArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 1.0,
-							"y": 0.0,
-							"z": 0.0
+				"bone" : "RightUpLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": 0.5,
-							"y": 0.1,
-							"z": -1.0
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : -0.2
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 45.0,
-						"swing2": 70.0,
-						"twist": 22.5
+						"swing1" : 7.5,
+						"swing2" : 7.5,
+						"twist" : 15.0
 					}
 				},
-				"mass": 2.0,
-				"name": "RightArm",
-				"offset": {
-					"x": 1.6,
-					"y": 0.0,
-					"z": 3.75
+				"mass" : 10.0,
+				"name" : "RightUpLeg",
+				"offset" : 
+				{
+					"x" : 0.7,
+					"y" : 0.0,
+					"z" : 1.3
 				},
-				"parent": "Shoulders",
-				"shape": {
-					"sphere": {
-						"radius": 0.4
+				"parent" : "Hips",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
 					}
 				}
 			},
 			{
-				"bone": "RightForeArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 1.0,
-							"y": 0.0,
-							"z": 0.0
+				"bone" : "RightLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": 1.0,
-							"y": 2.0,
-							"z": 0.6
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : -0.4,
+							"z" : -1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 45.0,
-						"swing2": 45.0,
-						"twist": 0.0
+						"swing1" : 15.0,
+						"swing2" : 0.57296,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 10.0,
-				"name": "RightForeArm",
-				"offset": {
-					"x": 3.0,
-					"y": -0.15,
-					"z": 3.65
+				"mass" : 5.0,
+				"name" : "RightLeg",
+				"offset" : 
+				{
+					"x" : 0.8,
+					"y" : 0.0,
+					"z" : 0.3
 				},
-				"parent": "RightArm",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "RightUpLeg",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
+					}
+				}
+			},
+			{
+				"bone" : "LeftArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : -1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : -1.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 70.0,
+						"twist" : 22.5
+					}
+				},
+				"mass" : 2.0,
+				"name" : "LeftArm",
+				"offset" : 
+				{
+					"x" : -1.6,
+					"y" : 0.0,
+					"z" : 3.75
+				},
+				"parent" : "Shoulders",
+				"rotation" : 
+				{
+					"w" : 1.0,
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 0.0
+				},
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
+					}
+				}
+			},
+			{
+				"bone" : "LeftForeArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : -1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : -1.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 45.0,
+						"twist" : 90.0
+					}
+				},
+				"mass" : 10.0,
+				"name" : "LeftForeArm",
+				"offset" : 
+				{
+					"x" : -3.0,
+					"y" : -0.15,
+					"z" : 3.65
+				},
+				"parent" : "LeftArm",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
+					}
+				}
+			},
+			{
+				"bone" : "RightArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : 1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 70.0,
+						"twist" : 22.5
+					}
+				},
+				"mass" : 2.0,
+				"name" : "RightArm",
+				"offset" : 
+				{
+					"x" : 1.6,
+					"y" : 0.0,
+					"z" : 3.75
+				},
+				"parent" : "Shoulders",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
+					}
+				}
+			},
+			{
+				"bone" : "RightForeArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 45.0,
+						"twist" : 45.0
+					}
+				},
+				"mass" : 10.0,
+				"name" : "RightForeArm",
+				"offset" : 
+				{
+					"x" : 3.0,
+					"y" : -0.15,
+					"z" : 3.65
+				},
+				"parent" : "RightArm",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			}
 		]
 	},
-	"male": {
-		"ragdoll": [
+	"male" : 
+	{
+		"ragdoll" : 
+		[
 			{
-				"bone": "root_jnt",
-				"joint": null,
-				"mass": 80.0,
-				"name": "root_jnt",
-				"offset": {
-					"x": 0.0,
-					"y": -0.65,
-					"z": 1.9
+				"bone" : "Hips",
+				"joint" : null,
+				"mass" : 80.0,
+				"name" : "Hips",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 2.0
 				},
-				"parent": null,
-				"rotation": {
-					"w": 1.0,
-					"x": 0.0,
-					"y": 0.0,
-					"z": 0.0
+				"parent" : null,
+				"rotation" : 
+				{
+					"w" : 1.0,
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 0.0
 				},
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "jnt_hips",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
+				"bone" : "Spine",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": -1.0,
-							"z": 0.3
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 0.0,
-						"swing2": 0.0,
-						"twist": 0.0
+						"swing1" : 15.0,
+						"swing2" : 10.0,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 10.0,
-				"name": "jnt_hips",
-				"offset": {
-					"x": 0.0,
-					"y": 0.0,
-					"z": 2.0
+				"mass" : 10.0,
+				"name" : "Spine",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 2.7
 				},
-				"parent": "root_jnt",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
-					}
-				}
-			},
-			{
-				"bone": "Spine",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.2,
-							"z": 1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 25.0,
-						"swing2": 25.0,
-						"twist": 0.3
-					}
-				},
-				"mass": 10.0,
-				"name": "Spine",
-				"offset": {
-					"x": 0.0,
-					"y": 0.0,
-					"z": 2.7
-				},
-				"parent": "jnt_hips",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "Hips",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "Spine2",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
+				"bone" : "Spine2",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.4,
-							"z": 1.0
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 35.0,
-						"swing2": 35.0,
-						"twist": 0.3
+						"swing1" : 10.0,
+						"swing2" : 10.0,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 5.0,
-				"name": "Shoulders",
-				"offset": {
-					"x": 0.0,
-					"y": -0.75,
-					"z": 2.65
+				"mass" : 5.0,
+				"name" : "Shoulders",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 3.65
 				},
-				"parent": "Spine",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
-					}
-				}
-			},
-			{
-				"bone": "Neck",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.2,
-							"z": 1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"softness": 0.25,
-						"swing1": 35.0,
-						"swing2": 35.0,
-						"twist": 0.3
-					}
-				},
-				"mass": 2.0,
-				"name": "Head",
-				"offset": {
-					"x": 0.0,
-					"y": -1.5,
-					"z": 3.25
-				},
-				"parent": "Shoulders",
-				"shape": {
-					"sphere": {
-						"radius": 0.5
+				"parent" : "Spine",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "LeftUpLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": -0.2,
-							"z": -1.0
+				"bone" : "Neck",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": -0.1
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 3.0,
-						"swing2": 3.0,
-						"twist": 5.0
+						"softness" : 0.25,
+						"swing1" : 20.0,
+						"swing2" : 20.0,
+						"twist" : 20.0
 					}
 				},
-				"mass": 10.0,
-				"name": "LeftUpLeg",
-				"offset": {
-					"x": -0.7,
-					"y": 0.0,
-					"z": 1.3
+				"mass" : 2.0,
+				"name" : "Head",
+				"offset" : 
+				{
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 4.9
 				},
-				"parent": "Hips",
-				"shape": {
-					"sphere": {
-						"radius": 0.4
-					}
-				}
-			},
-			{
-				"bone": "LeftLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 0.3,
-						"swing2": 0.3,
-						"twist": 0.3
-					}
-				},
-				"mass": 5.0,
-				"name": "LeftLeg",
-				"offset": {
-					"x": -0.8,
-					"y": 0.0,
-					"z": 0.3
-				},
-				"parent": "LeftUpLeg",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "Shoulders",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.5
 					}
 				}
 			},
 			{
-				"bone": "RightUpLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": -0.2,
-							"z": -1.0
+				"bone" : "LeftUpLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": -0.1
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : -0.2
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 3.0,
-						"swing2": 3.0,
-						"twist": 5.0
+						"swing1" : 7.5,
+						"swing2" : 7.5,
+						"twist" : 15.0
 					}
 				},
-				"mass": 10.0,
-				"name": "RightUpLeg",
-				"offset": {
-					"x": 0.7,
-					"y": 0.0,
-					"z": 1.3
+				"mass" : 10.0,
+				"name" : "LeftUpLeg",
+				"offset" : 
+				{
+					"x" : -0.7,
+					"y" : 0.0,
+					"z" : 1.3
 				},
-				"parent": "Hips",
-				"shape": {
-					"sphere": {
-						"radius": 0.4
-					}
-				}
-			},
-			{
-				"bone": "RightLeg",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"centerDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 0.3,
-						"swing2": 0.3,
-						"twist": 0.3
-					}
-				},
-				"mass": 5.0,
-				"name": "RightLeg",
-				"offset": {
-					"x": 0.8,
-					"y": 0.0,
-					"z": 0.3
-				},
-				"parent": "RightUpLeg",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "Hips",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
 					}
 				}
 			},
 			{
-				"bone": "LeftArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": -1.0,
-							"y": 0.0,
-							"z": 0.0
+				"bone" : "LeftLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": -0.5,
-							"y": 0.1,
-							"z": -1.0
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : -0.4,
+							"z" : -1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": -1.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 45.0,
-						"swing2": 70.0,
-						"twist": 22.5
+						"swing1" : 15.0,
+						"swing2" : 0.57296,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 2.0,
-				"name": "LeftArm",
-				"offset": {
-					"x": -1.6,
-					"y": 0.0,
-					"z": 3.75
+				"mass" : 5.0,
+				"name" : "LeftLeg",
+				"offset" : 
+				{
+					"x" : -0.8,
+					"y" : 0.0,
+					"z" : 0.3
 				},
-				"parent": "Shoulders",
-				"rotation": {
-					"w": 1.0,
-					"x": 0.0,
-					"y": 0.0,
-					"z": 0.0
-				},
-				"shape": {
-					"sphere": {
-						"radius": 0.4
-					}
-				}
-			},
-			{
-				"bone": "LeftForeArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": -1.0,
-							"y": 0.0,
-							"z": 0.0
-						},
-						"centerDir": {
-							"x": -1.0,
-							"y": 2.0,
-							"z": 0.6
-						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
-						},
-						"swing1": 45.0,
-						"swing2": 45.0,
-						"twist": 0.0
-					}
-				},
-				"mass": 10.0,
-				"name": "LeftForeArm",
-				"offset": {
-					"x": -3.0,
-					"y": -0.15,
-					"z": 3.65
-				},
-				"parent": "LeftArm",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "LeftUpLeg",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			},
 			{
-				"bone": "RightArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 1.0,
-							"y": 0.0,
-							"z": 0.0
+				"bone" : "RightUpLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": 0.5,
-							"y": 0.1,
-							"z": -1.0
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : -0.2
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 0.0,
-							"z": 1.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 45.0,
-						"swing2": 70.0,
-						"twist": 22.5
+						"swing1" : 7.5,
+						"swing2" : 7.5,
+						"twist" : 15.0
 					}
 				},
-				"mass": 2.0,
-				"name": "RightArm",
-				"offset": {
-					"x": 1.6,
-					"y": 0.0,
-					"z": 3.75
+				"mass" : 10.0,
+				"name" : "RightUpLeg",
+				"offset" : 
+				{
+					"x" : 0.7,
+					"y" : 0.0,
+					"z" : 1.3
 				},
-				"parent": "Shoulders",
-				"shape": {
-					"sphere": {
-						"radius": 0.4
+				"parent" : "Hips",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
 					}
 				}
 			},
 			{
-				"bone": "RightForeArm",
-				"joint": {
-					"coneTwist": {
-						"boneDir": {
-							"x": 1.0,
-							"y": 0.0,
-							"z": 0.0
+				"bone" : "RightLeg",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
 						},
-						"centerDir": {
-							"x": 1.0,
-							"y": 2.0,
-							"z": 0.6
+						"centerDir" : 
+						{
+							"x" : 0.0,
+							"y" : -0.4,
+							"z" : -1.0
 						},
-						"frontDir": {
-							"x": 0.0,
-							"y": 1.0,
-							"z": 0.0
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
 						},
-						"swing1": 45.0,
-						"swing2": 45.0,
-						"twist": 0.0
+						"swing1" : 15.0,
+						"swing2" : 0.57296,
+						"twist" : 0.57296
 					}
 				},
-				"mass": 10.0,
-				"name": "RightForeArm",
-				"offset": {
-					"x": 3.0,
-					"y": -0.15,
-					"z": 3.65
+				"mass" : 5.0,
+				"name" : "RightLeg",
+				"offset" : 
+				{
+					"x" : 0.8,
+					"y" : 0.0,
+					"z" : 0.3
 				},
-				"parent": "RightArm",
-				"shape": {
-					"sphere": {
-						"radius": 0.3
+				"parent" : "RightUpLeg",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
+					}
+				}
+			},
+			{
+				"bone" : "LeftArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : -1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : -1.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : -1.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 70.0,
+						"twist" : 22.5
+					}
+				},
+				"mass" : 2.0,
+				"name" : "LeftArm",
+				"offset" : 
+				{
+					"x" : -1.6,
+					"y" : 0.0,
+					"z" : 3.75
+				},
+				"parent" : "Shoulders",
+				"rotation" : 
+				{
+					"w" : 1.0,
+					"x" : 0.0,
+					"y" : 0.0,
+					"z" : 0.0
+				},
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
+					}
+				}
+			},
+			{
+				"bone" : "LeftForeArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : -1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : -1.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : -1.0,
+							"z" : 0.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 45.0,
+						"twist" : 20.0
+					}
+				},
+				"mass" : 10.0,
+				"name" : "LeftForeArm",
+				"offset" : 
+				{
+					"x" : -3.0,
+					"y" : -0.15,
+					"z" : 3.65
+				},
+				"parent" : "LeftArm",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
+					}
+				}
+			},
+			{
+				"bone" : "RightArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : 1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 1.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 70.0,
+						"twist" : 22.5
+					}
+				},
+				"mass" : 2.0,
+				"name" : "RightArm",
+				"offset" : 
+				{
+					"x" : 1.6,
+					"y" : 0.0,
+					"z" : 3.75
+				},
+				"parent" : "Shoulders",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.4
+					}
+				}
+			},
+			{
+				"bone" : "RightForeArm",
+				"joint" : 
+				{
+					"coneTwist" : 
+					{
+						"boneDir" : 
+						{
+							"x" : 1.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"centerDir" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"frontDir" : 
+						{
+							"x" : 0.0,
+							"y" : 1.0,
+							"z" : 0.0
+						},
+						"swing1" : 45.0,
+						"swing2" : 45.0,
+						"twist" : 45.0
+					}
+				},
+				"mass" : 10.0,
+				"name" : "RightForeArm",
+				"offset" : 
+				{
+					"x" : 3.0,
+					"y" : -0.15,
+					"z" : 3.65
+				},
+				"parent" : "RightArm",
+				"shape" : 
+				{
+					"sphere" : 
+					{
+						"radius" : 0.3
 					}
 				}
 			}

@@ -317,13 +317,23 @@
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.26 0.80 0.10" name="BtnAlwaysWatered">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.22 0.80 0.08" name="BtnAlwaysWatered">
 					<Property key="Caption" value="Always watered: OFF"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.40 0.80 0.10" name="BtnDirtOnBlocks">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.32 0.80 0.08" name="BtnDirtOnBlocks">
 					<Property key="Caption" value="Dirt on blocks: False"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.42 0.80 0.08" name="BtnFastPlace">
+					<Property key="Caption" value="Fast place: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.52 0.80 0.08" name="BtnFastPickup">
+					<Property key="Caption" value="Fast pickup: OFF"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
@@ -335,7 +345,7 @@
 					<Property key="Visible" value="false"/>
 				</Widget>
 
-				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.56 0.96 0.42" name="FarmingStatus">
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.64 0.96 0.34" name="FarmingStatus">
 					<Property key="Caption" value=""/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>

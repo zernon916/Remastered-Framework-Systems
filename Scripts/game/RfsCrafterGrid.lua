@@ -13,10 +13,16 @@ RfsCrafterGrid = RfsCrafterGrid or {}
 local GPS_UUID = "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"
 -- Hideout schematic rows exist (Farmers priced). Keep off Craftbot until unlock.
 local SCHEMATIC_LOCKED = {
+	["e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c"] = true, -- Handheld Radio tool, 5 Farmers
+	["b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"] = true, -- Hack Beacon station core, 10 Farmers
+	["ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e"] = true, -- Radio Antenna, 15 Farmers
+	["d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b"] = true, -- Radio Battery Brick, 15 Farmers
+	["bb1c098e-094a-4b6c-7d08-ea293a4b5c6d"] = true, -- Radio Lock, 8000 miner tokens
 	["6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7"] = true, -- Chemical Regeneration Station, 10 Farmers
 	["7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8"] = true, -- Solar Panel, 5 Farmers
 	["8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e"] = true, -- Rechargeable Battery, 1 Farmer
 	["9c624f8e-b507-414a-cd93-f4081b5c7eaf"] = true, -- Rechargeable Battery Box, 2 Farmers
+	["c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247"] = true, -- Aim Core, schematic-locked
 }
 local RFS_LID = "29c99287-1213-48c7-9471-19a4a5c12247"
 local CG_ROOT = "$CONTENT_" .. RFS_LID

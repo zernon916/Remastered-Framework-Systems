@@ -20,8 +20,8 @@
 	"b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7": {
 		"title": "Hack Beacon",
 		"upperCaseTitle": "HACK BEACON",
-		"keywords": [ "logic", "hack", "beacon", "rfs" ],
-		"description": "Computer for hijacked robots. Connect a Battery container. Press E to hijack hostiles within 16 m (1 Battery each). Keep it powered and in range or they revert to hostile."
+		"keywords": [ "logic", "hack", "beacon", "station", "rfs" ],
+		"description": "Computer for hijacked robots. Hideout 10 Farmers (schematic). Connect a Battery container. Press E to hijack hostiles within 16 m (1 Battery each). Keep it powered and in converting-beacon range or tethered bots revert."
 	},
 	"c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8": {
 		"title": "Control Beacon",
@@ -81,7 +81,7 @@
 		"title": "Chemical Regeneration Station",
 		"upperCaseTitle": "CHEMICAL REGENERATION STATION",
 		"keywords": [ "heal", "pod", "sleep", "medical", "chemical", "cryo", "rfs" ],
-		"description": "Chemical Regeneration Station. Hideout 10 Farmers (schematic). E to stand in the tube. Fill costs 10 Chemicals (~1.5 s purple tank). Heal (~10 s 1→full) drips 10 more Chemicals and 5 batteries (or 1/4 rechargeable cell). Wire a Battery box or Rechargeable box for heal ticks. Mesh: The science fiction Colba by Helley (CC BY), concept CryoCapsules / capitanraketa / Igor Bulygin."
+		"description": "Chemical Regeneration Station. Hideout 10 Farmers (schematic). E to stand in the tube. Fill costs 10 Chemicals (~3.5 s tank). Heal (~10 s 1→full) drips 10 more Chemicals and 5 batteries (or 1/4 rechargeable cell). Wire a Battery box or Rechargeable box for heal ticks. Mesh: The science fiction Colba by Helley (CC BY), concept CryoCapsules / capitanraketa / Igor Bulygin."
 	},
 	"7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8": {
 		"title": "Solar Panel",
@@ -90,21 +90,45 @@
 		"description": "Solar Panel. Hideout 5 Farmers (schematic). Wire electricity to a Rechargeable Battery Box. Charges: sun+clear 100%, sun+cloudy 50%, night 25%, rain+night 5%. About one in-game day to fill one cell. Mesh: Solar Panel by EdwinCGStudio (CC BY)."
 	},
 	"8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e": {
-		"title": "Rechargeable Battery (Empty)",
-		"upperCaseTitle": "RECHARGEABLE BATTERY (EMPTY)",
-		"keywords": [ "battery", "recharge", "solar", "rfs", "empty" ],
-		"description": "Empty rechargeable cell (0% charge). Hideout 1 Farmer (schematic). Put in a Rechargeable Battery Box — the box only charges cells already inserted. A full cell equals 20 vanilla batteries."
-	},
-	"a0d8469f-c618-425b-de14-06203d7e90c1": {
-		"title": "Rechargeable Battery (Full)",
-		"upperCaseTitle": "RECHARGEABLE BATTERY (FULL)",
-		"keywords": [ "battery", "recharge", "solar", "rfs", "full" ],
-		"description": "Fully charged rechargeable cell. Equals 20 vanilla batteries. Put in a Rechargeable Battery Box to power devices. Solar recharges empty cells in the box."
+		"title": "Rechargeable Battery",
+		"upperCaseTitle": "RECHARGEABLE BATTERY",
+		"keywords": [ "battery", "recharge", "solar", "rfs" ],
+		"description": "Rechargeable cell. Hideout 1 Farmer (schematic). Put in a Rechargeable Battery Box — open the box and select a slot to see the charge meter. Charge is stored in the box (5 slots). A full cell equals 20 vanilla batteries."
 	},
 	"9c624f8e-b507-414a-cd93-f4081b5c7eaf": {
 		"title": "Rechargeable Battery Box",
 		"upperCaseTitle": "RECHARGEABLE BATTERY BOX",
 		"keywords": [ "battery", "container", "recharge", "solar", "rfs" ],
-		"description": "Holds 5 Rechargeable Batteries (one per slot, no stacking). Hideout 2 Farmers (schematic). Wire Solar in and devices out (electricity cables, not welds). Each cell = 20 vanilla batteries of energy."
+		"description": "Holds 5 Rechargeable Batteries (no stacking). Hideout 2 Farmers (schematic). Wire Solar in and devices out (electricity cables, not welds). Side bars show box fill across all 5 slots (one full cell = 20%). Each cell = 20 vanilla batteries of energy."
+	},
+	"c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247": {
+		"title": "Aim Core",
+		"upperCaseTitle": "AIM CORE",
+		"keywords": [ "aim", "turret", "logic", "head", "rfs" ],
+		"description": "Aim Core. Creation-mounted aiming brain. Wire logic in to switch commands later; logic out is reserved for on-target. Mesh: Yberpunk robot head sketch by 3DWorkbench (Sketchfab, CC BY 4.0)."
+	},
+	"e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c": {
+		"title": "Handheld Radio",
+		"upperCaseTitle": "HANDHELD RADIO",
+		"keywords": [ "radio", "hack", "handheld", "tool", "rfs" ],
+		"description": "Player handheld hack tool (NOT the station core). Hideout 5 Farmers (schematic). Craft: 1 Metal Block + 1 Circuit Board. Equip, E on a bot within 8 m: 40% chance to hack, then Follow or Defend. Out of range 10 s → bot reverts."
+	},
+	"d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b": {
+		"title": "Radio Battery Brick",
+		"upperCaseTitle": "RADIO BATTERY BRICK",
+		"keywords": [ "radio", "battery", "station", "rfs" ],
+		"description": "Station piece 5. Hideout 15 Farmers (schematic). Wire to Hack Beacon core with the long antenna for mid-tier range (stub)."
+	},
+	"ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e": {
+		"title": "Radio Antenna",
+		"upperCaseTitle": "RADIO ANTENNA",
+		"keywords": [ "radio", "antenna", "station", "rfs" ],
+		"description": "Station piece 9 (long pole). Hideout 15 Farmers (schematic). Wire to Hack Beacon core with the battery brick for mid-tier cap/range (stub)."
+	},
+	"bb1c098e-094a-4b6c-7d08-ea293a4b5c6d": {
+		"title": "Radio Lock",
+		"upperCaseTitle": "RADIO LOCK",
+		"keywords": [ "radio", "lock", "ampfilter", "station", "rfs" ],
+		"description": "Station lock tier 10. Miner shop schematic 8000 warehouse tokens. Persist conversion when leaving range (stub)."
 	}
 }

@@ -13,6 +13,13 @@
 			"previewRenderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/GpsDevice_preview.rend",
 			"previewRotation": [ 1, 0, 0, 0, 0, -1, 0, 1, 0 ],
 			"script": { "file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsGpsTool.lua", "class": "RfsGpsTool" }
+		},
+		{
+			"name": "HandheldRadio",
+			"uuid": "e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c",
+			"previewRenderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/radio_handheld_preview.rend",
+			"previewRotation": [ 1, 0, 0, 0, 0, -1, 0, 1, 0 ],
+			"script": { "file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsHandheldHackTool.lua", "class": "RfsHandheldHackTool" }
 		}
 	]
 }

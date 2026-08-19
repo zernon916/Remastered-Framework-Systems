@@ -1,4 +1,4 @@
--- RfsRechargeBox.lua — 5 slots, stackSize 1. Each cell = 20 vanilla batteries.
+-- RfsRechargeBox.lua — 5 slots, stackSize 1. One rechargeable cell per slot.
 -- Electricity in (solar) + electricity out (Deep Sleep Pod / devices).
 -- Charge lives per inserted cell. Empty slots stay empty.
 -- Always setActive(false). Do not gulp pipeGraph.
@@ -143,12 +143,7 @@ local function swapSlotUuid( container, slot, fromUuid, toUuid )
 end
 
 local function capMilli( self )
-	local n = cellCountOf( self )
-	local one = cellMilli()
-	if n < 1 then
-		return 0
-	end
-	return n * one
+	return boxSlots() * cellMilli()
 end
 
 local function sumSlots( self )
@@ -193,11 +188,8 @@ local function syncSlots( self )
 				m = one
 			end
 			self.sv.slotMilli[idx] = m
-			local wantFull = m >= one
-			local isFull = id == uuidStr( full )
-			if wantFull and not isFull then
-				swapSlotUuid( container, i, empty, full )
-			elseif ( not wantFull ) and isFull then
+			-- One craftable uuid. Convert leftover Full uuid in-place.
+			if id == uuidStr( full ) then
 				swapSlotUuid( container, i, full, empty )
 			end
 		else
@@ -218,14 +210,12 @@ local function publish( self )
 		has = false
 	end
 	local cap = capMilli( self )
-	if cap < 1 then
-		cap = cellMilli()
-	end
 	local data = {
 		chargeMilli = self.sv.chargeMilli or 0,
 		hasCell = has and true or false,
 		cellCount = cells,
 		full = cap,
+		boxCap = cap,
 		slotMilli = {},
 	}
 	local slots = boxSlots()
@@ -244,7 +234,7 @@ local function publish( self )
 	end )
 end
 
-local function ensureContainer( self )
+local function ensureContainer( self, setFiltersNow )
 	local slots = boxSlots()
 	local stack = boxStack()
 	local container = nil
@@ -274,14 +264,16 @@ local function ensureContainer( self )
 				container:resize( slots )
 			end )
 		end
-		local filters = nil
-		pcall( function()
-			filters = RfsRecharge.cellFilterUuids()
-		end )
-		if type( filters ) == "table" then
+		if setFiltersNow == true then
+			local filters = nil
 			pcall( function()
-				container:setFilters( filters )
+				filters = RfsRecharge.cellFilterUuids()
 			end )
+			if type( filters ) == "table" then
+				pcall( function()
+					container:setFilters( filters )
+				end )
+			end
 		end
 	end
 	return container
@@ -327,8 +319,20 @@ function RfsRechargeBox.server_onCreate( self )
 	pcall( function()
 		saved = self.storage:load()
 	end )
-	ensureContainer( self )
+	-- Convert legacy full-cell contents before we apply filters that
+	-- only advertise the base Rechargeable Battery uuid.
+	ensureContainer( self, false )
 	migratePool( self, saved )
+	-- After syncSlots/migration, lock filters down to base-only uuids.
+	pcall( function()
+		local container = getBoxContainer( self )
+		if container and container.setFilters then
+			local filters = RfsRecharge.cellFilterUuids()
+			if type( filters ) == "table" then
+				container:setFilters( filters )
+			end
+		end
+	end )
 	self.sv.key = shapeKey( self.shape )
 	RfsRecharge.boxScripts = RfsRecharge.boxScripts or {}
 	RfsRecharge.boxScripts[self.sv.key] = self
@@ -443,90 +447,328 @@ function RfsRechargeBox.server_onFixedUpdate( self )
 	end
 end
 
+-- Defined as a local upvalue so client_onCreate / client_onClientDataUpdate
+-- can call it (those functions are declared before the implementation below).
+-- (Some log runs call the client entrypoints before the implementation
+-- below executes, so keep a harmless stub available up-front.)
+refreshSideBars = refreshSideBars or function( self ) end
+
 function RfsRechargeBox.client_onCreate( self )
-	self.cl = { chargeMilli = 0, hasCell = false, cellCount = 0, full = 20000, slotMilli = {} }
+	self.cl = { chargeMilli = 0, hasCell = false, cellCount = 0, full = 0, slotMilli = {} }
+	refreshSideBars( self )
 end
 
 function RfsRechargeBox.client_onClientDataUpdate( self, data )
 	if type( data ) == "table" then
 		self.cl = data
 		self:cl_refreshChargeGui()
+		refreshSideBars( self )
 	end
 end
 
+local function closeChargeOverlay( self )
+	if self.guiCharge then
+		pcall( function()
+			self.guiCharge:close()
+			self.guiCharge:destroy()
+		end )
+		self.guiCharge = nil
+	end
+end
+
+-- C++ createBatteryContainerGui binds ItemBox slots. createGuiFromLayout does not —
+-- that was the blank panel (Charge 0% painted, UpperGrid never became a container).
 local function openChargeGui( self, container )
 	local gui = nil
+	pcall( function()
+		gui = sm.gui.createBatteryContainerGui( true )
+	end )
+	if not gui then
+		gui = sm.gui.createContainerGui( true )
+	end
+	gui:setText( "UpperName", "Rechargeable Battery" )
+	gui:setContainer( "UpperGrid", container )
+	pcall( function()
+		gui:setText( "LowerName", "#{INVENTORY_TITLE}" )
+	end )
+	gui:setContainer( "LowerGrid", sm.localPlayer.getInventory() )
+	pcall( function()
+		gui:setOnCloseCallback( "cl_e_onClose" )
+	end )
+	-- Selection → refresh inspect info panel (box slot or backpack cell while GUI open).
+	pcall( function()
+		gui:setGridItemClickedCallback( "UpperGrid", "cl_e_onUpperClicked" )
+	end )
+	pcall( function()
+		gui:setGridItemClickedCallback( "LowerGrid", "cl_e_onLowerClicked" )
+	end )
+	pcall( function()
+		gui:setGridMouseFocusCallback( "UpperGrid", "cl_e_onUpperFocus" )
+	end )
+	pcall( function()
+		gui:setGridMouseFocusCallback( "LowerGrid", "cl_e_onLowerFocus" )
+	end )
+	pcall( function()
+		gui:setGridItemChangedCallback( "UpperGrid", "cl_e_onUpperChanged" )
+	end )
+	gui:open()
+	return gui
+end
+
+local function openChargeOverlay()
+	local overlay = nil
 	local function tryLayout( path, opts )
-		if gui then
+		if overlay then
 			return
 		end
 		local ok, created = pcall( sm.gui.createGuiFromLayout, path, false, opts )
 		if ok and created then
-			gui = created
+			overlay = created
 		end
 	end
-	tryLayout( LAYOUT, { needsCursor = true } )
-	tryLayout( LAYOUT_CG, { needsCursor = true } )
-	tryLayout( LAYOUT, false )
-	tryLayout( LAYOUT_CG, false )
-	if not gui then
+	-- Non-interactive HUD so it sits beside the battery GUI without stealing clicks.
+	local hudOpts = { isHud = true, isInteractive = false, needsCursor = false }
+	tryLayout( LAYOUT, hudOpts )
+	tryLayout( LAYOUT_CG, hudOpts )
+	if overlay then
 		pcall( function()
-			gui = sm.gui.createBatteryContainerGui( true )
+			overlay:open()
 		end )
 	end
-	if not gui then
-		gui = sm.gui.createContainerGui( true )
-	end
-	pcall( function()
-		gui:setText( "UpperName", "Rechargeable Battery" )
-	end )
-	pcall( function()
-		gui:setText( "ChargeLabel", "Charge 0%" )
-	end )
-	pcall( function()
-		gui:setContainer( "UpperGrid", container )
-	end )
-	pcall( function()
-		gui:setText( "LowerName", "Backpack" )
-	end )
-	pcall( function()
-		gui:setContainer( "LowerGrid", sm.localPlayer.getInventory() )
-	end )
-	pcall( function()
-		gui:setOnCloseCallback( "cl_e_onClose" )
-	end )
-	pcall( function()
-		gui:open()
-	end )
-	return gui
+	return overlay
 end
 
-function RfsRechargeBox.cl_refreshChargeGui( self )
-	if not self.gui then
-		return
-	end
+local function inspectFrac( self )
 	local pd = self.cl or {}
+	local src = self.clInspectSource or "box"
+	if src == "inv" then
+		local f = tonumber( self.clInspectFrac )
+		if f ~= nil then
+			return f, "inv"
+		end
+	end
+	local slot = tonumber( self.clInspectSlot )
+	if slot and slot >= 1 then
+		if type( RfsRecharge ) == "table" and RfsRecharge.slotChargeFracFromData then
+			return RfsRecharge.slotChargeFracFromData( pd, slot ), "box"
+		end
+	end
+	if type( RfsRecharge ) == "table" and RfsRecharge.boxChargeFracFromData then
+		return RfsRecharge.boxChargeFracFromData( pd ), "box"
+	end
+	local milli = tonumber( pd.chargeMilli ) or 0
+	local cap = tonumber( pd.full ) or cellMilli()
+	if cap < 1 or ( tonumber( pd.cellCount ) or 0 ) < 1 or not pd.hasCell then
+		return 0, "box"
+	end
+	return milli / cap, "box"
+end
+
+local function setInspectBox( self, slotIndex1 )
+	self.clInspectSource = "box"
+	self.clInspectFrac = nil
+	if slotIndex1 ~= nil then
+		self.clInspectSlot = tonumber( slotIndex1 )
+	else
+		self.clInspectSlot = nil
+	end
+end
+
+local function setInspectInv( self, frac )
+	self.clInspectSource = "inv"
+	self.clInspectFrac = tonumber( frac ) or 0
+end
+
+local function sideBarFrame( self )
+	-- World UV bars: total stored / (5 * cell max). One full cell = 1 bar.
+	local pd = self.cl or {}
+	local cells = tonumber( pd.cellCount ) or 0
+	local has = pd.hasCell and cells >= 1
+	local frac = 0
+	if type( RfsRecharge ) == "table" and RfsRecharge.boxChargeFracFromData then
+		frac = RfsRecharge.boxChargeFracFromData( pd )
+	else
+		frac = boxChargeFrac( self )
+	end
+	if ( tonumber( pd.chargeMilli ) or 0 ) > 0 then
+		has = true
+	end
+	if type( RfsRecharge ) == "table" and RfsRecharge.sideBarFrame then
+		return RfsRecharge.sideBarFrame( frac, has )
+	end
+	local slots = 5
+	if not has then
+		return slots
+	end
+	local lit = math.ceil( frac * slots )
+	if frac > 0 and lit < 1 then
+		lit = 1
+	end
+	if frac >= 1 then
+		lit = slots
+	end
+	return slots - lit
+end
+
+refreshSideBars = function( self )
+	local frame = sideBarFrame( self )
+	pcall( function()
+		self.interactable:setUvFrameIndex( frame )
+	end )
+end
+
+local function boxChargeFrac( self )
+	local pd = self.cl or {}
+	if type( RfsRecharge ) == "table" and RfsRecharge.boxChargeFracFromData then
+		return RfsRecharge.boxChargeFracFromData( pd )
+	end
 	local milli = tonumber( pd.chargeMilli ) or 0
 	local cap = tonumber( pd.full ) or cellMilli()
 	if cap < 1 then
-		cap = cellMilli()
+		return 0
 	end
-	local frac = 0
-	if ( tonumber( pd.cellCount ) or 0 ) >= 1 then
-		frac = milli / cap
+	if ( tonumber( pd.cellCount ) or 0 ) >= 1 and pd.hasCell then
+		return milli / cap
+	end
+	return 0
+end
+
+local function hideVanillaBatteryMeter( gui )
+	if not gui then
+		return
+	end
+	for _, name in ipairs( {
+		"ChargeMeter",
+		"BatteryMeter",
+		"UpperCharge",
+		"ChargeText",
+		"BatteryText",
+	} ) do
+		pcall( function()
+			gui:setVisible( name, false )
+		end )
+	end
+end
+
+function RfsRechargeBox.cl_refreshChargeGui( self )
+	if not self.gui and not self.guiCharge then
+		return
+	end
+	local pd = self.cl or {}
+	local cells = tonumber( pd.cellCount ) or 0
+	local hasBoxCell = pd.hasCell and cells >= 1
+	local frac, src = inspectFrac( self )
+	-- Empty box / no selection → 0% bars off.
+	if src == "box" and not hasBoxCell then
+		frac = 0
 	end
 	local pct = 0
-	if type( RfsRecharge ) == "table" and RfsRecharge.applyChargePips then
-		pct = RfsRecharge.applyChargePips( self.gui, "ChargePip", frac )
+	if type( RfsRecharge ) == "table" and RfsRecharge.chargePips then
+		_, pct = RfsRecharge.chargePips( frac )
 	else
 		pct = math.floor( frac * 100 + 0.5 )
 	end
+	-- Keep box title stable (no floating "Charge 100%" title).
+	if self.gui then
+		hideVanillaBatteryMeter( self.gui )
+		pcall( function()
+			self.gui:setText( "UpperName", "Rechargeable Battery" )
+		end )
+	end
+	local info = self.guiCharge
+	if not info then
+		return
+	end
 	pcall( function()
-		self.gui:setText( "ChargeLabel", string.format( "Charge %d%%", pct ) )
+		info:setVisible( "BoxChargeRoot", true )
 	end )
 	pcall( function()
-		self.gui:setVisible( "ChargeTrack", true )
+		info:setVisible( "ChargeTrack", true )
 	end )
+	local nameCaption = "Empty"
+	local desc = "No cell in the box. Insert a Rechargeable Battery to store charge."
+	if src == "inv" then
+		nameCaption = "Rechargeable Battery"
+		desc = "Charge is stored in the Rechargeable Battery Box, not on the backpack item."
+	elseif hasBoxCell then
+		nameCaption = "Rechargeable Battery"
+		local slot = tonumber( self.clInspectSlot )
+		if slot and slot >= 1 then
+			desc = string.format( "Slot %d charge. Solar fills cells in the box; devices drain them.", slot )
+		else
+			desc = string.format(
+				"Box total %d%% (%d cell%s). Click a slot to inspect one cell.",
+				pct,
+				cells,
+				cells == 1 and "" or "s"
+			)
+		end
+	end
+	pcall( function()
+		info:setText( "InfoItemName", nameCaption )
+	end )
+	pcall( function()
+		info:setText( "InfoDesc", desc )
+	end )
+	-- Tiny pct under the bar (secondary). Primary meter = pips / ProgressBar.
+	pcall( function()
+		info:setText( "ChargePctLabel", string.format( "%d%%", pct ) )
+	end )
+	if type( RfsRecharge ) == "table" then
+		if RfsRecharge.applyChargePips then
+			pct = RfsRecharge.applyChargePips( info, "ChargePip", frac )
+		end
+		if RfsRecharge.applyChargeBar then
+			RfsRecharge.applyChargeBar( info, "ChargeBar", frac )
+		end
+	end
+end
+
+local function uuidFromClickData( data )
+	if type( data ) ~= "table" then
+		return nil
+	end
+	local u = data.uuid or data.itemId or data.id
+	if u == nil and type( data.item ) == "table" then
+		u = data.item.uuid
+	end
+	return u
+end
+
+function RfsRechargeBox.cl_e_onUpperClicked( self, gridName, index, data )
+	setInspectBox( self, ( tonumber( index ) or 0 ) + 1 )
+	self:cl_refreshChargeGui()
+end
+
+function RfsRechargeBox.cl_e_onUpperFocus( self, gridName, index, data )
+	setInspectBox( self, ( tonumber( index ) or 0 ) + 1 )
+	self:cl_refreshChargeGui()
+end
+
+function RfsRechargeBox.cl_e_onUpperChanged( self, gridName, index, data )
+	setInspectBox( self )
+	self:cl_refreshChargeGui()
+	refreshSideBars( self )
+end
+
+function RfsRechargeBox.cl_e_onLowerClicked( self, gridName, index, data )
+	local id = uuidStr( uuidFromClickData( data ) )
+	local frac = nil
+	if type( RfsRecharge ) == "table" and RfsRecharge.uuidChargeFrac then
+		frac = RfsRecharge.uuidChargeFrac( id )
+	elseif isCellId( id ) then
+		frac = ( id == uuidStr( fullUuid() ) ) and 1 or 0
+	end
+	if frac ~= nil then
+		setInspectInv( self, frac )
+	else
+		setInspectBox( self )
+	end
+	self:cl_refreshChargeGui()
+end
+
+function RfsRechargeBox.cl_e_onLowerFocus( self, gridName, index, data )
+	self:cl_e_onLowerClicked( gridName, index, data )
 end
 
 function RfsRechargeBox.client_onInteract( self, character, state )
@@ -537,12 +779,20 @@ function RfsRechargeBox.client_onInteract( self, character, state )
 	if not container then
 		return
 	end
+	closeChargeOverlay( self )
+	setInspectBox( self )
 	self.gui = openChargeGui( self, container )
+	self.guiCharge = openChargeOverlay()
 	self:cl_refreshChargeGui()
+	refreshSideBars( self )
 end
 
 function RfsRechargeBox.cl_e_onClose( self )
 	self.gui = nil
+	self.clInspectSource = nil
+	self.clInspectFrac = nil
+	self.clInspectSlot = nil
+	closeChargeOverlay( self )
 end
 
 function RfsRechargeBox.client_onDestroy( self )
@@ -553,32 +803,56 @@ function RfsRechargeBox.client_onDestroy( self )
 		end )
 		self.gui = nil
 	end
+	closeChargeOverlay( self )
 end
 
 function RfsRechargeBox.client_onUpdate( self, dt )
-	if self.gui then
+	if self.gui or self.guiCharge then
 		self:cl_refreshChargeGui()
 	end
+	refreshSideBars( self )
 end
 
 function RfsRechargeBox.client_canInteract( self )
 	local pd = self.cl or {}
 	local cells = tonumber( pd.cellCount ) or 0
-	local full = tonumber( pd.full ) or cellMilli()
-	local milli = tonumber( pd.chargeMilli ) or 0
 	if not pd.hasCell or cells < 1 then
-		sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), "Rechargeable Battery Box (no cells)" )
+		sm.gui.setInteractionText( "", sm.gui.getKeyBinding( "Use", true ), "Rechargeable Battery Box (empty)" )
 		return true
 	end
-	if full < 1 then
-		full = cellMilli()
+	local pct = 0
+	if type( RfsRecharge ) == "table" and RfsRecharge.boxChargePctFromData then
+		pct = RfsRecharge.boxChargePctFromData( pd )
+	else
+		local full = tonumber( pd.full ) or cellMilli()
+		local milli = tonumber( pd.chargeMilli ) or 0
+		if full > 0 then
+			pct = math.floor( ( milli / full ) * 100 + 0.5 )
+		end
 	end
-	local pct = math.floor( ( milli / full ) * 100 + 0.5 )
 	sm.gui.setInteractionText(
 		"",
 		sm.gui.getKeyBinding( "Use", true ),
-		string.format( "Rechargeable %d%%  (%d / %d cells)", pct, cells, boxSlots() )
+		string.format( "Rechargeable Battery Box %d%%", pct )
 	)
+	return true
+end
+
+function RfsRechargeBox.client_canTinker( self, character )
+	local pd = self.cl or {}
+	local cells = tonumber( pd.cellCount ) or 0
+	local key = sm.gui.getKeyBinding( "Tinker", true )
+	if not pd.hasCell or cells < 1 then
+		sm.gui.setInteractionText( "", key, "Rechargeable Battery Box — empty (0% charge)" )
+		return true
+	end
+	local pct = 0
+	if type( RfsRecharge ) == "table" and RfsRecharge.boxChargePctFromData then
+		pct = RfsRecharge.boxChargePctFromData( pd )
+	else
+		pct = math.floor( boxChargeFrac( self ) * 100 + 0.5 )
+	end
+	sm.gui.setInteractionText( "", key, string.format( "Rechargeable Battery Box — %d%% charge", pct ) )
 	return true
 end
 
@@ -618,4 +892,4 @@ function RfsRechargeBox.client_getAvailableChildConnectionCount( self, connectio
 	return 0
 end
 
-print( "[RFS] RfsRechargeBox loaded (per-cell charge; empty slots stay empty)" )
+print( "[RFS] RfsRechargeBox loaded (5 slots; inspect per-slot + aggregate side bars)" )

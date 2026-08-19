@@ -9,10 +9,16 @@ pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsHackApply.lua" )
 end )
 pcall( function()
-	dofile( "$CONTENT_DATA/Scripts/game/RfsDeepSleepTime.lua" )
+	dofile( "$CONTENT_DATA/Scripts/game/RfsChemStation.lua" )
 end )
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersIdentity.lua" )
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackReload.lua" )
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackUnitSandbox.lua" )
 end )
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsBotOrders.lua" )
@@ -25,6 +31,11 @@ RfsHijackHost = class( nil )
 
 function RfsHijackHost.server_onCreate( self )
 	_G.g_rfsHijackHost = self
+	pcall( function()
+		if type( RfsHackReload ) == "table" and RfsHackReload.resetLoadWindow then
+			RfsHackReload.resetLoadWindow()
+		end
+	end )
 	pcall( function()
 		if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
 			RfsHackTether.ensureHooks()
@@ -71,6 +82,11 @@ function RfsHijackHost.server_onFixedUpdate( self, dt )
 	pcall( function()
 		if type( RfsBotOrders ) == "table" and RfsBotOrders.sv_think then
 			RfsBotOrders.sv_think( dt, self )
+		end
+	end )
+	pcall( function()
+		if type( RfsHackReload ) == "table" and RfsHackReload.tick then
+			RfsHackReload.tick( self.world )
 		end
 	end )
 end

@@ -103,8 +103,14 @@ local function publicBlob( unit )
 			end
 			if type( pd.rfsAllyInfo ) == "table" then
 				blob = pd.rfsAllyInfo
-			elseif type( pd.rfsHackApply ) == "table" then
+			elseif not blob and type( pd.rfsHackApply ) == "table" then
 				blob = pd.rfsHackApply
+			end
+			if type( blob ) == "table" and not blob.rfsOrder and type( pd.rfsOrder ) == "table" then
+				blob = blob
+				blob.rfsOrder = pd.rfsOrder
+			elseif flagged and not blob and type( pd.rfsOrder ) == "table" then
+				blob = { playerAlly = true, rfsOrder = pd.rfsOrder }
 			end
 		end
 	end )
@@ -118,6 +124,11 @@ local function publicBlob( unit )
 				blob = pd.rfsAllyInfo
 			elseif not blob and type( pd.rfsHackApply ) == "table" then
 				blob = pd.rfsHackApply
+			end
+			if type( blob ) == "table" and not blob.rfsOrder and type( pd.rfsOrder ) == "table" then
+				blob.rfsOrder = pd.rfsOrder
+			elseif flagged and not blob and type( pd.rfsOrder ) == "table" then
+				blob = { playerAlly = true, rfsOrder = pd.rfsOrder }
 			end
 		end
 	end )
@@ -162,12 +173,17 @@ local function inRangeOf( unit, pos, range )
 	return ok
 end
 
-local function rowFromInfo( key, info )
+local function orderModeFromInfo( info )
 	local ord = info and ( info.rfsOrder or info.order ) or nil
-	local orderMode = "defend"
-	if type( ord ) == "table" and ord.mode then
-		orderMode = tostring( ord.mode )
+	if type( ord ) == "table" and ord.mode and tostring( ord.mode ) ~= "" then
+		return string.lower( tostring( ord.mode ) )
 	end
+	return nil
+end
+
+local function rowFromInfo( key, info )
+	local orderMode = orderModeFromInfo( info ) or "defend"
+	local ord = info and ( info.rfsOrder or info.order ) or nil
 	local seedUuid = nil
 	if type( ord ) == "table" and ord.seedUuid ~= nil then
 		seedUuid = tostring( ord.seedUuid )
@@ -342,7 +358,9 @@ local function collectFromPublic( beaconKey, player, opts )
 					displayIndex = n,
 					unitType = blob.unitType and tostring( blob.unitType ) or nil,
 					type = blob.unitType and tostring( blob.unitType ) or nil,
-					mode = ( type( blob.rfsOrder ) == "table" and blob.rfsOrder.mode ) or "defend",
+					mode = ( type( blob.rfsOrder ) == "table" and blob.rfsOrder.mode )
+						or ( type( blob.order ) == "table" and blob.order.mode )
+						or "defend",
 					seedUuid = type( blob.rfsOrder ) == "table" and blob.rfsOrder.seedUuid or nil,
 					owner = blob.owner or blob.ownerId,
 					allyColor = blob.allyColor and tostring( blob.allyColor ) or nil,
@@ -414,14 +432,37 @@ function RfsHackOrdersList.collect( beaconKey, player, opts )
 		end
 		local prev = byKey[k]
 		local prevName = tostring( prev.name or "" )
+		local prevCustom = prev.customName and tostring( prev.customName ) or ""
+		local rowCustom = row.customName and tostring( row.customName ) or ""
 		if ( prevName == "" or prevName == "Bot" or prevName:match( "^Bot%s+%d+$" ) ) and name ~= "" then
 			prev.name = row.name
 			prev.customName = prev.customName or row.customName
 			prev.displayIndex = prev.displayIndex or row.displayIndex
 			prev.unitType = prev.unitType or row.unitType
 			prev.type = prev.type or row.type
-		elseif row.customName and not prev.customName then
+		end
+		-- Prefer explicit customName from either source; newer rename must win over stale listHomeAllies.
+		if rowCustom ~= "" and ( prevCustom == "" or prevCustom ~= rowCustom ) then
 			prev.customName = row.customName
+			if row.name and tostring( row.name ) ~= "" then
+				prev.name = row.name
+			elseif rowCustom ~= "" then
+				prev.name = rowCustom
+			end
+		elseif rowCustom == "" and prevCustom ~= "" then
+			-- keep prev customName
+		end
+		local rowMode = row.mode and string.lower( tostring( row.mode ) ) or ""
+		local prevMode = prev.mode and string.lower( tostring( prev.mode ) ) or ""
+		if rowMode ~= "" and rowMode ~= "defend" and ( prevMode == "" or prevMode == "defend" ) then
+			prev.mode = row.mode
+			prev.seedUuid = row.seedUuid or prev.seedUuid
+		elseif rowMode ~= "" and prevMode == "" then
+			prev.mode = row.mode
+		elseif rowMode ~= "" and rowMode ~= prevMode then
+			-- publicData / later source wins so close/reopen shows the live command
+			prev.mode = row.mode
+			prev.seedUuid = row.seedUuid or prev.seedUuid
 		end
 	end
 	if type( rows ) == "table" then

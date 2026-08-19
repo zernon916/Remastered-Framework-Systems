@@ -4,7 +4,7 @@
 			"uuid": "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8",
 			"name": "obj_rfs_solarpanel",
 			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_solar.rend",
-			"color": "1a6db5",
+			"color": "ffffff",
 			"box": { "x": 5, "y": 5, "z": 5 },
 			"rotationSet": "PropY",
 			"physicsMaterial": "Metal",
@@ -19,7 +19,8 @@
 				"friction": 4
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"scripted": {
 				"classname": "RfsSolarPanel",
@@ -29,29 +30,6 @@
 		{
 			"uuid": "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e",
 			"name": "obj_rfs_rechargeable",
-			"renderable": "$SURVIVAL_DATA/Objects/Renderable/Consumable/obj_consumable_battery.rend",
-			"color": "f1a400",
-			"box": { "x": 2, "y": 2, "z": 2 },
-			"rotationSet": "PropY",
-			"physicsMaterial": "Plastic",
-			"flammable": false,
-			"consumable": true,
-			"itemStack": {},
-			"stackSize": 1,
-			"sticky": "-Y+Y",
-			"ratings": {
-				"buoyancy": 7,
-				"density": 2,
-				"durability": 2,
-				"friction": 4
-			},
-			"restrictions": {
-				"erasable": true
-			}
-		},
-		{
-			"uuid": "a0d8469f-c618-425b-de14-06203d7e90c1",
-			"name": "obj_rfs_rechargeable_full",
 			"renderable": "$SURVIVAL_DATA/Objects/Renderable/Consumable/obj_consumable_battery.rend",
 			"color": "f1a400",
 			"box": { "x": 2, "y": 2, "z": 2 },
@@ -90,7 +68,8 @@
 				"friction": 4
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"scripted": {
 				"classname": "RfsRechargeBox",

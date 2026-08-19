@@ -24,7 +24,7 @@ local function cl_destroyRangeFxList( list )
 	end
 	for _, fx in ipairs( list ) do
 		pcall( function()
-			if fx then
+			if fx and sm.exists( fx ) then
 				fx:stop()
 				fx:destroy()
 			end

@@ -1,13 +1,13 @@
 {
-		"_comment": "Named materials. _v5: Blender Z-up = SM Y (flat base at -Y, panel skyward).",
+	"_comment": "v6: 4x6 cells locked. Base/frame paintable. Wings/arms locked.",
 	"lodList": [
 		{
-			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_solar_v5.fbx",
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_solar_v6.fbx",
 			"subMeshMap": {
 				"main_material": {
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/main_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"
@@ -15,7 +15,7 @@
 				"base_material": {
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/base_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"
@@ -23,7 +23,7 @@
 				"arm_material": {
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/arm_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_lock.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"
@@ -31,7 +31,7 @@
 				"hinge_material": {
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/hinge_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_lock.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"
@@ -39,7 +39,7 @@
 				"support_material": {
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/support_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_lock.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"
@@ -47,15 +47,15 @@
 				"panel_base_material": {
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/panel_base_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"
 				},
-				"solar_mirror_material": {
+				"solar_cells": {
 					"textureList": [
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/solar_mirror_material_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/solar_cells_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/solar/solar_cells_asg.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					],
 					"material": "DifAsgNor"

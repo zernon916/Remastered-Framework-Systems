@@ -3,9 +3,9 @@
 		{
 			"uuid": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
 			"name": "obj_rfs_hackbeacon",
-			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_logicgate.rend",
-			"color": "d02525",
-			"box": { "x": 1, "y": 1, "z": 1 },
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_radio_lock.rend",
+			"color": "4a4f44",
+			"box": { "x": 2, "y": 2, "z": 1 },
 			"rotationSet": "PropYZ",
 			"physicsMaterial": "Electronics",
 			"flammable": false,
@@ -19,7 +19,8 @@
 				"friction": 5
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"scripted": {
 				"classname": "RfsHackBeacon",
@@ -45,7 +46,8 @@
 				"friction": 5
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"scripted": {
 				"classname": "RfsHackBeacon",
@@ -71,7 +73,8 @@
 				"friction": 5
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"scripted": {
 				"classname": "RfsHackBeacon",

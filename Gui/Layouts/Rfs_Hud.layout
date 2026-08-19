@@ -5,8 +5,8 @@
 		<Property key="NeedKey" value="false"/>
 		<Property key="NeedMouse" value="false"/>
 
-		<!-- Top-center clock -->
-		<Widget type="Widget" skin="ToggleButton" position_real="0.44 0.008 0.12 0.032" name="RfsClockPanel">
+		<!-- Clock: just above top-left minimap (posIdx 4, sizeIdx 2: MARGIN+8 fy0, 22% vh ring). -->
+		<Widget type="Widget" skin="ToggleButton" position_real="0.019 0.002 0.12 0.030" name="RfsClockPanel">
 			<Property key="NeedKey" value="false"/>
 			<Property key="NeedMouse" value="false"/>
 			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsClockText">
@@ -21,8 +21,8 @@
 			</Widget>
 		</Widget>
 
-		<!-- Compass just under the clock -->
-		<Widget type="Widget" skin="ToggleButton" position_real="0.455 0.042 0.09 0.028" name="RfsCompassPanel">
+		<!-- Heading readout: above the vanilla compass bar (top-center). -->
+		<Widget type="Widget" skin="ToggleButton" position_real="0.455 0.006 0.09 0.026" name="RfsCompassPanel">
 			<Property key="NeedKey" value="false"/>
 			<Property key="NeedMouse" value="false"/>
 			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsCompassText">

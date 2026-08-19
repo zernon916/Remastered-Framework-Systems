@@ -1,8 +1,8 @@
 -- RfsBotInventory.lua
 -- VOLATILE: ally unit containers + U/tinker-open. Hooked after hijack convert.
 -- Does not change hijack HP / damage / spend / Orders E-open on the beacon.
--- Survival units support unit:addContainer (see BabyWocUnit). Tinker on the bot
--- opens the same chest GUI as a vanilla container. E on the bot is rename.
+-- Survival units support unit:addContainer (see BabyWocUnit). Tinker/U on the bot
+-- opens the same chest GUI as a vanilla container. E on the bot opens Commands/Storage.
 
 RfsBotInventory = RfsBotInventory or {}
 
@@ -423,6 +423,10 @@ function RfsBotInventory.cl_openFromCharacter( charScript )
 	pcall( function()
 		unit = charScript.character and charScript.character:getUnit()
 	end )
+	return RfsBotInventory.cl_openFromUnit( unit, charScript )
+end
+
+function RfsBotInventory.cl_openFromUnit( unit, hostScript )
 	local c = RfsBotInventory.get( unit )
 	if not c then
 		return false
@@ -434,14 +438,18 @@ function RfsBotInventory.cl_openFromCharacter( charScript )
 		gui:setContainer( "UpperGrid", c )
 		gui:setText( "LowerName", "#{INVENTORY_TITLE}" )
 		gui:setContainer( "LowerGrid", sm.localPlayer.getInventory() )
-		pcall( function()
-			gui:setOnCloseCallback( "cl_e_rfsInvClose" )
-		end )
+		if hostScript then
+			pcall( function()
+				gui:setOnCloseCallback( "cl_e_rfsInvClose" )
+			end )
+		end
 		gui:open()
 	end )
 	if gui then
-		charScript.cl = charScript.cl or {}
-		charScript.cl.rfsInvGui = gui
+		if hostScript then
+			hostScript.cl = hostScript.cl or {}
+			hostScript.cl.rfsInvGui = gui
+		end
 		return true
 	end
 	return false

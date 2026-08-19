@@ -20,7 +20,6 @@ local OPEN_BACKOFF_MAX = 30
 
 -- Prefer writable USER_DATA (Workshop content is often read-only). CONTENT paths work for local C:\sm\RFS.
 local VOTE_PATHS = {
-	"$USER_DATA/rfs_discord_bridge/vote.json",
 	"$TEMP_DATA/rfs_discord_bridge/vote.json",
 	"$CONTENT_DATA/discord-bridge/inbox/vote.json",
 	"$CONTENT_" .. RFS_LOCAL_ID .. "/discord-bridge/inbox/vote.json",
@@ -28,7 +27,6 @@ local VOTE_PATHS = {
 
 -- Phase C: resolve feedback for the Node bot (same bridge roots as votes).
 local RESULT_PATHS = {
-	"$USER_DATA/rfs_discord_bridge/vote_result.json",
 	"$TEMP_DATA/rfs_discord_bridge/vote_result.json",
 	"$CONTENT_DATA/discord-bridge/inbox/vote_result.json",
 	"$CONTENT_" .. RFS_LOCAL_ID .. "/discord-bridge/inbox/vote_result.json",
@@ -36,7 +34,6 @@ local RESULT_PATHS = {
 
 -- World override first, then pack config.
 local ALLOWLIST_PATHS = {
-	"$USER_DATA/rfs_discord_bridge/allowlist.json",
 	"$TEMP_DATA/rfs_discord_bridge/allowlist.json",
 	"$CONTENT_DATA/discord-bridge/config/allowlist.json",
 	"$CONTENT_" .. RFS_LOCAL_ID .. "/discord-bridge/config/allowlist.json",
@@ -396,33 +393,18 @@ local function openVote()
 		if pathInBackoff( path ) then
 			-- Silent skip until backoff expires.
 		else
-			local skipOpen = false
-			if sm.json.fileExists then
-				local okExists, exists = pcall( sm.json.fileExists, path )
-				if okExists and exists == false then
-					-- Missing: do not open (engine logs Unable to replace key).
-					markPathBackoff( path )
-					skipOpen = true
-				elseif not okExists then
-					-- fileExists path resolve failed — same as missing/unreadable.
-					markPathBackoff( path )
-					skipOpen = true
-				end
-			end
-			if not skipOpen then
-				local ok, data = pcall( sm.json.open, path )
-				if not ok then
-					-- Unreadable / missing without fileExists — back off, no print.
-					markPathBackoff( path )
-				elseif type( data ) == "table" and data.consumed ~= true
-					and ( data.action or data.unit or data.uuid or data.item ) then
-					-- Accept new schema (item/createdAt/voter) and legacy (uuid/ts/quantity).
-					clearPathBackoff( path )
-					return data, path
-				else
-					-- File readable but empty/consumed — keep polling at normal interval.
-					clearPathBackoff( path )
-				end
+			local ok, data = pcall( sm.json.open, path )
+			if not ok then
+				-- Missing/unreadable: back off; do not print spam.
+				markPathBackoff( path )
+			elseif type( data ) == "table" and data.consumed ~= true
+				and ( data.action or data.unit or data.uuid or data.item ) then
+				-- Accept new schema (item/createdAt/voter) and legacy (uuid/ts/quantity).
+				clearPathBackoff( path )
+				return data, path
+			else
+				-- File readable but empty/consumed/unknown schema — keep polling.
+				clearPathBackoff( path )
 			end
 		end
 	end

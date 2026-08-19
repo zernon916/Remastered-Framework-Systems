@@ -76,6 +76,15 @@ local TIERS = {
 		infectTicks = 40 * 8,
 		ringColor = sm.color.new( 0.55, 0.95, 0.25, 1.0 ),
 	},
+	-- Station Core visual swap uuid: keep identical hack behavior/menu binding.
+	["c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247"] = {
+		name = "Hack Beacon",
+		range = 16,
+		canInfect = false,
+		hijackTicks = 40 * 8,
+		infectTicks = 0,
+		ringColor = sm.color.new( 0.95, 0.35, 0.12, 1.0 ),
+	},
 }
 
 local function tierOf( shape )
@@ -199,6 +208,13 @@ end
 
 function RfsHackBeacon.server_onDestroy( self )
 	local key = self.sv and self.sv.key and tostring( self.sv.key ) or nil
+	if not key then
+		pcall( function()
+			if self.shape then
+				key = beaconKey( self.shape )
+			end
+		end )
+	end
 	if type( RfsHackRange ) == "table" then
 		if key and RfsHackRange.notifyGameOff then
 			RfsHackRange.notifyGameOff( key )
@@ -444,11 +460,27 @@ function RfsHackBeacon.client_onDestroy( self )
 			end
 		end )
 	end
+	if not key then
+		pcall( function()
+			if self.shape then
+				key = beaconKey( self.shape )
+			end
+		end )
+	end
 	if type( RfsHackRange ) == "table" then
 		RfsHackRange.tearDownBeacon( self )
 		if key and RfsHackRange.notifyGameOff then
 			RfsHackRange.notifyGameOff( key )
 		end
+	end
+	-- Orders GUI is Game-hosted; close if this beacon's menu is still up.
+	local game = _G.g_rfsGame
+	if game and game.cl and game.cl.rfsOrdersGui and game.cl.rfsOrdersBeaconKey
+		and key and tostring( game.cl.rfsOrdersBeaconKey ) == key
+		and type( RfsBeaconOrdersGui ) == "table" and type( RfsBeaconOrdersGui.close ) == "function" then
+		pcall( function()
+			RfsBeaconOrdersGui.close( game )
+		end )
 	end
 end
 

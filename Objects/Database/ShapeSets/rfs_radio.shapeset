@@ -1,0 +1,76 @@
+{
+	"partList": [
+		{
+			"uuid": "d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b",
+			"name": "obj_rfs_radiobrick",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_radio_brick.rend",
+			"color": "6b705c",
+			"hull": {
+				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_radio_brick_col.obj",
+				"x": 2,
+				"y": 1,
+				"z": 1
+			},
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 10,
+			"sticky": "-Y+X-X-Z+Z",
+			"ratings": { "buoyancy": 2, "density": 3, "durability": 4, "friction": 4 },
+			"restrictions": { "usable": true, "paintable": true },
+			"scripted": {
+				"classname": "RfsRadioBrick",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsRadioBrick.lua"
+			}
+		},
+		{
+			"uuid": "ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e",
+			"name": "obj_rfs_radioantenna",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_radio_antenna.rend",
+			"color": "6b705c",
+			"hull": {
+				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_radio_antenna_col.obj",
+				"x": 1,
+				"y": 1,
+				"z": 7
+			},
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Metal",
+			"flammable": false,
+			"density": 3.0,
+			"stackSize": 10,
+			"sticky": "-Y",
+			"ratings": { "buoyancy": 2, "density": 2, "durability": 3, "friction": 3 },
+			"restrictions": { "usable": true, "paintable": true },
+			"scripted": {
+				"classname": "RfsRadioAntenna",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsRadioAntenna.lua"
+			}
+		},
+		{
+			"uuid": "bb1c098e-094a-4b6c-7d08-ea293a4b5c6d",
+			"name": "obj_rfs_radiolock",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_radio_lock.rend",
+			"color": "4a4f44",
+			"hull": {
+				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_radio_lock_col.obj",
+				"x": 2,
+				"y": 2,
+				"z": 1
+			},
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"density": 6.0,
+			"stackSize": 5,
+			"sticky": "-Y",
+			"ratings": { "buoyancy": 2, "density": 4, "durability": 5, "friction": 4 },
+			"restrictions": { "usable": true, "paintable": true },
+			"scripted": {
+				"classname": "RfsRadioLock",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsRadioLock.lua"
+			}
+		}
+	]
+}

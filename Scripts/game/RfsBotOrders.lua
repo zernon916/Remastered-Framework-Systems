@@ -507,6 +507,9 @@ function RfsBotOrders.setOrder( unit, order )
 	end
 	RfsBotHijack.allies[key] = info
 	pushOrderToUnit( unit, packed )
+	if unit and type( RfsHackApply ) == "table" and type( RfsHackApply.writePublicOrder ) == "function" then
+		pcall( RfsHackApply.writePublicOrder, unit, packed )
+	end
 	return true, packed
 end
 
@@ -724,8 +727,8 @@ function RfsBotOrders.applySelect( self )
 	else
 		clearCombatTarget( self )
 		if mode == RfsBotOrders.MODE_SENTRY and type( RfsBotHijack ) == "table"
-			and type( RfsBotHijack.driveStayAtHome ) == "function" then
-			pcall( RfsBotHijack.driveStayAtHome, self )
+			and type( RfsBotHijack.driveSentryPatrol ) == "function" then
+			pcall( RfsBotHijack.driveSentryPatrol, self, radius )
 		end
 	end
 	return true

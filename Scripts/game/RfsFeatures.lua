@@ -56,6 +56,7 @@ local function defaultsFromPack()
 		streamerAnnounce = true,
 		streamerChatRelay = false,
 		rfsQuests = true,
+		autoSetupPrompted = false,
 	}
 end
 
@@ -93,6 +94,9 @@ local function applyLoadedTable( cfg, data )
 	end
 	if data.rfsQuests ~= nil then
 		cfg.rfsQuests = data.rfsQuests and true or false
+	end
+	if data.autoSetupPrompted ~= nil then
+		cfg.autoSetupPrompted = data.autoSetupPrompted and true or false
 	end
 	return cfg
 end
@@ -148,6 +152,7 @@ function RfsFeatures.save()
 		streamerAnnounce = cfg.streamerAnnounce ~= false,
 		streamerChatRelay = cfg.streamerChatRelay == true,
 		rfsQuests = cfg.rfsQuests ~= false,
+		autoSetupPrompted = cfg.autoSetupPrompted == true,
 	}
 	if cfg.cheatsOverride and cfg.cheats ~= nil then
 		payload.cheats = cfg.cheats and true or false
@@ -174,6 +179,7 @@ function RfsFeatures.snapshot()
 		streamerAnnounce = RfsFeatures.streamerAnnounceEnabled(),
 		streamerChatRelay = RfsFeatures.streamerChatRelayEnabled(),
 		rfsQuests = RfsFeatures.rfsQuestsEnabled(),
+		autoSetupPrompted = RfsFeatures.autoSetupPrompted(),
 	}
 end
 
@@ -217,6 +223,9 @@ function RfsFeatures.applySnapshot( data )
 	end
 	if data.rfsQuests ~= nil then
 		cfg.rfsQuests = data.rfsQuests and true or false
+	end
+	if data.autoSetupPrompted ~= nil then
+		cfg.autoSetupPrompted = data.autoSetupPrompted and true or false
 	end
 	RfsFeatures.state = cfg
 	publishGlobals()
@@ -363,6 +372,17 @@ function RfsFeatures.rfsQuestsEnabled()
 		return false
 	end
 	return RfsFeatures.get().rfsQuests ~= false
+end
+
+function RfsFeatures.autoSetupPrompted()
+	return RfsFeatures.get().autoSetupPrompted == true
+end
+
+function RfsFeatures.markAutoSetupPrompted()
+	local cfg = RfsFeatures.get()
+	cfg.autoSetupPrompted = true
+	RfsFeatures.save()
+	return true
 end
 
 function RfsFeatures.setRfsQuestsEnabled( enabled )

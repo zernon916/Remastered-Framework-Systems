@@ -321,6 +321,10 @@ function RfsHackOrdersIdentity.applyOrder( params )
 		if ok then
 			n = n + 1
 			last = result
+			if unit and type( RfsHackApply ) == "table" and type( RfsHackApply.writePublicOrder ) == "function" then
+				local ord = type( result ) == "table" and result or packed
+				pcall( RfsHackApply.writePublicOrder, unit, ord )
+			end
 		end
 	end
 	if n == 0 then

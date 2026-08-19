@@ -30,6 +30,15 @@ local function isPlayerAttacker( attacker )
 	return false
 end
 
+-- Player hammer (Shape), potato gun (Character), and direct Player hits must all
+-- apply sv_takeDamage — vanilla orig ignores named allies for every player type.
+local function isPlayerSideAttacker( attacker )
+	if type( attacker ) == "Player" or type( attacker ) == "Shape" then
+		return true
+	end
+	return isPlayerAttacker( attacker )
+end
+
 local function unitFromAttacker( attacker )
 	if not attacker then
 		return nil
@@ -117,12 +126,7 @@ function RfsHackTether.ensureHooks()
 		if type( cls ) == "table" then
 			wrapFn( cls, "server_onMelee", function( orig )
 				return function( self, hitPos, attacker, damage, power, hitDirection )
-					-- Player / Shape / player Character: Survival orig (rush-base vulnerability).
-					-- Named-bot invuln: Survival orig ignores Character even when isPlayer().
-					if type( attacker ) == "Player" or type( attacker ) == "Shape" then
-						return orig( self, hitPos, attacker, damage, power, hitDirection )
-					end
-					if isPlayerAttacker( attacker ) then
+					if isPlayerSideAttacker( attacker ) then
 						pcall( orig, self, hitPos, attacker, damage, power, hitDirection )
 						local impact = hitDirection
 						if impact then
@@ -151,10 +155,7 @@ function RfsHackTether.ensureHooks()
 
 			wrapFn( cls, "server_onProjectile", function( orig )
 				return function( self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
-					if type( attacker ) == "Player" or type( attacker ) == "Shape" then
-						return orig( self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
-					end
-					if isPlayerAttacker( attacker ) then
+					if isPlayerSideAttacker( attacker ) then
 						pcall( orig, self, hitPos, hitTime, hitVelocity, extra, attacker, damage, userData, hitNormal, projectileUuid )
 						local impact = nil
 						if hitVelocity then

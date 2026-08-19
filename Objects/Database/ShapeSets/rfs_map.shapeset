@@ -18,6 +18,10 @@
 				"friction": 10,
 				"buoyancy": 10
 			},
+			"restrictions": {
+				"paintable": true,
+				"usable": true
+			},
 			"scripted": {
 				"classname": "RfsMapLock",
 				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsMapLock.lua"

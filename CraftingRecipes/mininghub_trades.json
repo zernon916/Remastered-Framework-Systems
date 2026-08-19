@@ -1,0 +1,15 @@
+{
+	"_comment": "RFS Mining Hub trades. Currency = Survival warehouse tokens efb2837c (same as mininghubTrader.json). Lock tier endgame: 8000 tokens vs 1000 multicomponent buy / 15 Farmers mid pieces.",
+	"trades": [
+		{
+			"itemId": "bb1c098e-094a-4b6c-7d08-ea293a4b5c6d",
+			"quantity": 1,
+			"craftTime": 0,
+			"schematic": true,
+			"_title": "Radio Lock (Ampfilter)",
+			"ingredientList": [
+				{ "quantity": 8000, "itemId": "efb2837c-f1d2-412b-bff1-a210b3426fd9" }
+			]
+		}
+	]
+}

@@ -161,37 +161,49 @@ function RfsSetupGui.refreshFarming( host )
 	local cheats = RfsSettings.cheatsEnabled()
 	local watered = ( host.cl and host.cl.rfsAlwaysWatered ) or ( _G.g_rfsAlwaysWatered == true )
 	local dirt = ( host.cl and host.cl.rfsDirtOnBlocks ) or ( _G.g_rfsDirtOnBlocks == true )
+	local fastPlace = ( host.cl and host.cl.rfsFastPlace ) or ( _G.g_rfsFastPlace == true )
+	local fastPickup = ( host.cl and host.cl.rfsFastPickup ) or ( _G.g_rfsFastPickup == true )
 
 	pcall( function()
 		gui:setVisible( "BtnInstantFarm", cheats )
 		gui:setVisible( "BtnAlwaysWatered", cheats )
 		gui:setVisible( "BtnDirtOnBlocks", cheats )
+		gui:setVisible( "BtnFastPlace", cheats )
+		gui:setVisible( "BtnFastPickup", cheats )
 		-- Growth overlay moved to player /menu — never show here.
 		gui:setVisible( "BtnGrowthOverlay", false )
 	end )
 
 	gui:setText( "BtnAlwaysWatered", "Always watered: " .. ( watered and "ON" or "OFF" ) )
 	gui:setText( "BtnDirtOnBlocks", "Dirt on blocks: " .. ( dirt and "True" or "False" ) )
+	gui:setText( "BtnFastPlace", "Fast place: " .. ( fastPlace and "ON" or "OFF" ) )
+	gui:setText( "BtnFastPickup", "Fast pickup: " .. ( fastPickup and "ON" or "OFF" ) )
 	pcall( function()
 		gui:setButtonState( "BtnAlwaysWatered", watered )
 		gui:setButtonState( "BtnDirtOnBlocks", dirt )
+		gui:setButtonState( "BtnFastPlace", fastPlace )
+		gui:setButtonState( "BtnFastPickup", fastPickup )
 	end )
 
 	local lines = {
 		"Instant Farm: matures all loaded outdoor GrowingHarvestable crops (loaded cells, world-wide).",
 		"Always watered: ticks Survival sv_e_waterSoil on soil + growing plants.",
 		"Dirt on blocks: Soil Bag may place on body/lift tops (not only terrain). Harvestable stays world-fixed.",
+		"Fast place: LMB drag rectangle batch soil placement (terrain follow or flat block/lift tops; release to place).",
+		"Fast pickup: RMB drag rectangle batch soil pickup (red rect; soil bag, empty hand, or block).",
 		"Growth Time overlay is a personal preference — use /menu (not /setup).",
 		"Growbeds / wild farmables unchanged. Toggles save with the world (sm.storage).",
 	}
 	if not cheats then
-		table.insert( lines, 1, "Cheats OFF — Instant Farm / Always watered / Dirt on blocks hidden." )
+		table.insert( lines, 1, "Cheats OFF — farming cheat toggles hidden." )
 	end
 	gui:setText( "FarmingStatus", table.concat( lines, "\n" ) )
 	gui:setText( "Status", string.format(
-		"Farming | watered=%s | dirtBlocks=%s | cheats=%s",
+		"Farming | watered=%s | dirtBlocks=%s | fastPlace=%s | fastPickup=%s | cheats=%s",
 		watered and "ON" or "OFF",
 		dirt and "True" or "False",
+		fastPlace and "ON" or "OFF",
+		fastPickup and "ON" or "OFF",
 		cheats and "ON" or "OFF"
 	) )
 end
@@ -274,6 +286,8 @@ function RfsSetupGui.bind( host, gui )
 	gui:setButtonCallback( "BtnInstantFarm", "cl_rfs_setupInstantFarm" )
 	gui:setButtonCallback( "BtnAlwaysWatered", "cl_rfs_setupToggleAlwaysWatered" )
 	gui:setButtonCallback( "BtnDirtOnBlocks", "cl_rfs_setupToggleDirtOnBlocks" )
+	gui:setButtonCallback( "BtnFastPlace", "cl_rfs_setupToggleFastPlace" )
+	gui:setButtonCallback( "BtnFastPickup", "cl_rfs_setupToggleFastPickup" )
 	-- BtnGrowthOverlay left unbound — personal overlay lives in /menu
 	gui:setOnCloseCallback( "cl_rfs_setupClose" )
 end

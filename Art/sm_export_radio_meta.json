@@ -1,0 +1,61 @@
+{
+  "glb": "C:\\Users\\benko\\Downloads\\rs_military_radio.glb",
+  "parts": [
+    {
+      "key": "handheld",
+      "stem": "rfs_radio_handheld",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Tools\\rfs_radio_handheld.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_handheld.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_handheld_col.obj",
+      "materials": 2,
+      "tris": 1802,
+      "box": {
+        "x": 1,
+        "y": 2,
+        "z": 1
+      }
+    },
+    {
+      "key": "brick",
+      "stem": "rfs_radio_brick",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_radio_brick.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_brick.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_brick_col.obj",
+      "materials": 1,
+      "tris": 142,
+      "box": {
+        "x": 2,
+        "y": 1,
+        "z": 1
+      }
+    },
+    {
+      "key": "antenna",
+      "stem": "rfs_radio_antenna",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_radio_antenna.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_antenna.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_antenna_col.obj",
+      "materials": 3,
+      "tris": 1976,
+      "box": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      }
+    },
+    {
+      "key": "lock",
+      "stem": "rfs_radio_lock",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_radio_lock.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_lock.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_lock_col.obj",
+      "materials": 46,
+      "tris": 23504,
+      "box": {
+        "x": 2,
+        "y": 1,
+        "z": 2
+      }
+    }
+  ]
+}

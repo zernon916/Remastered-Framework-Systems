@@ -4,7 +4,7 @@
 			"uuid": "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7",
 			"name": "obj_rfs_deepsleeppod",
 			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_deepsleep.rend",
-			"color": "4aa3c7",
+			"color": "4a4a4a",
 			"hull": {
 				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_deepsleep_col.obj",
 				"x": 17,
@@ -24,7 +24,8 @@
 				"friction": 4
 			},
 			"restrictions": {
-				"usable": true
+				"usable": true,
+				"paintable": true
 			},
 			"scripted": {
 				"classname": "RfsDeepSleepPod",
@@ -32,13 +33,24 @@
 				"seat": {
 					"bones": [
 						{
-							"name": "root_jnt",
-							"offset": { "x": 0.0, "y": -1.225, "z": 0.0 },
+							"name": "Hips",
+							"offset": { "x": 0.0, "y": 0.35, "z": 0.0 },
 							"rotation": { "w": 1.0, "x": 0.0, "y": 0.0, "z": 0.0 }
+						},
+						{
+							"freeRotation": true,
+							"name": "LeftForeArm",
+							"offset": { "x": 0.45, "y": 0.0, "z": 1.15 }
+						},
+						{
+							"freeRotation": true,
+							"name": "RightForeArm",
+							"offset": { "x": -0.45, "y": 0.0, "z": 1.15 }
 						}
 					],
 					"enterAudio": "Seat seated",
-					"exitAudio": "Seat unseated"
+					"exitAudio": "Seat unseated",
+					"ragdollFile": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Character/rfs_deepsleep_ragdoll.json"
 				}
 			}
 		},
@@ -59,6 +71,10 @@
 				"density": 1,
 				"durability": 1,
 				"friction": 2
+			},
+			"restrictions": {
+				"usable": true,
+				"paintable": true
 			}
 		}
 	]

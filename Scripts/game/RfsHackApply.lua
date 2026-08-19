@@ -115,6 +115,42 @@ end
 
 -- Engine-shared across Lua sandboxes (same channel as rfsHackable). Beacon
 -- writes this at countdown 0; unit think / HijackHost consume it.
+function RfsHackApply.writePublicOrder( unit, order )
+	if not unit or type( order ) ~= "table" then
+		return
+	end
+	local packed = {
+		mode = order.mode,
+		seedUuid = order.seedUuid,
+		beaconKey = order.beaconKey,
+		owner = order.owner,
+		dest = type( order.dest ) == "table" and order.dest or nil,
+		leash = tonumber( order.leash ),
+	}
+	local function merge( pd )
+		if type( pd ) ~= "table" then
+			pd = {}
+		end
+		pd.rfsPlayerAlly = true
+		if type( pd.rfsAllyInfo ) ~= "table" then
+			pd.rfsAllyInfo = {}
+		end
+		pd.rfsAllyInfo.rfsOrder = packed
+		pd.rfsAllyInfo.order = packed
+		pd.rfsOrder = packed
+		return pd
+	end
+	pcall( function()
+		local char = unit.character
+		if char and sm.exists( char ) then
+			char.publicData = merge( char.publicData )
+		end
+	end )
+	pcall( function()
+		unit.publicData = merge( unit.publicData )
+	end )
+end
+
 function RfsHackApply.writePublicApply( unit, ownerId, opts )
 	if not unit then
 		return
@@ -221,9 +257,9 @@ local function clearPublicApplyTable( pd, keepAlly )
 		pd.rfsPlayerAlly = true
 	else
 		pd.rfsPlayerAlly = nil
-		if type( pd.rfsAllyInfo ) == "table" and not RfsHackApply.payloadHasDevice( pd.rfsAllyInfo ) then
-			pd.rfsAllyInfo = nil
-		end
+		pd.rfsAllyInfo = nil
+		pd.rfsOrder = nil
+		pd.rfsHackApply = nil
 	end
 end
 
@@ -257,6 +293,7 @@ function RfsHackApply.wipeFalseAlly( self )
 	self.saved.playerAllyBeacon = nil
 	self.saved.playerAllyWorkBeacon = nil
 	self.saved.rfsHackBeacon = nil
+	self.saved.rfsOrder = nil
 	self.saved.friendly = nil
 	self.isDirty = true
 	pcall( RfsHackApply.clearPublicApply, self.unit, false )
@@ -824,6 +861,7 @@ function RfsHackApply.restoreFromSaved( self )
 		return false
 	end
 	if self.saved.playerAlly then
+		self.saved.friendly = false
 		local adopt = {
 			playerAlly = true,
 			owner = self.saved.playerAllyOwner,

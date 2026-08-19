@@ -18,6 +18,10 @@
 				"durability": 3,
 				"friction": 5
 			},
+			"restrictions": {
+				"paintable": true,
+				"usable": true
+			},
 			"scripted": {
 				"classname": "RfsAreaLoader",
 				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsAreaLoader.lua"

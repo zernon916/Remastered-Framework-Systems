@@ -1,0 +1,35 @@
+{
+	"_comment": "Aim Core _v1. cone = silver paintable; guyujg = black locked. Shared paint ASG multiply.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_aimcore_v1.fbx",
+			"subMeshMap": {
+				"cone": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/aimcore/cone_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"Cone": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/aimcore/cone_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"guyujg": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/aimcore/guyujg_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/aimcore/aimcore_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				}
+			},
+			"maxViewDistance": 1000.0
+		}
+	]
+}

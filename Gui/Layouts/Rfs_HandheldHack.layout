@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<MyGUI type="Layout" version="3.2.0">
+
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+
+		<Property key="NeedKey" value="false"/>
+
+		<Property key="NeedMouse" value="true"/>
+
+		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.38 0.38 0.24 0.28" name="MainPanel">
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.08 0.88 0.18" name="Title">
+
+				<Property key="Caption" value="HANDHELD"/>
+
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+
+			</Widget>
+
+			<Widget type="Button" skin="PrimaryButton" position_real="0.72 0.08 0.22 0.14" name="CloseButton">
+
+				<Property key="Caption" value="X"/>
+
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.28 0.88 0.14" name="Status">
+
+				<Property key="Caption" value="40% hack chance. 8 m range. 10 s OOR revert."/>
+
+				<Property key="FontName" value="SM_Text"/>
+
+			</Widget>
+
+			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.48 0.84 0.18" name="BtnFollow">
+
+				<Property key="Caption" value="FOLLOW"/>
+
+			</Widget>
+
+			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.72 0.84 0.18" name="BtnDefend">
+
+				<Property key="Caption" value="DEFEND"/>
+
+			</Widget>
+
+		</Widget>
+
+	</Widget>
+
+</MyGUI>
+

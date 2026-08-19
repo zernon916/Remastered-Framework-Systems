@@ -1,3 +1,13 @@
 {
-   "harvestableSetList" : []
+	"harvestableSetList" : 
+	[
+		{
+			"categories" : 
+			[
+				"HVS/Resources/All",
+				"Environment/Survival/Farming"
+			],
+			"name" : "$CONTENT_DATA/Harvestables/Database/HarvestableSets/rfs_soil.harvestableset"
+		}
+	]
 }

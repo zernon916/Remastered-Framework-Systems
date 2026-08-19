@@ -57,6 +57,54 @@ function Player.server_onCreate( self )
 		RfsCarry.resetPlaceLock()
 		RfsCarry.ensureHooks()
 	end )
+	pcall( function()
+		local id = self.player.id
+		if id == nil then
+			id = self.player:getId()
+		end
+		if id ~= nil and _G.g_rfsRegenByPlayer then
+			_G.g_rfsRegenByPlayer[tostring( id )] = nil
+		end
+		self.sv.rfsInRegen = false
+		local char = self.player:getCharacter()
+		if char and sm.exists( char ) then
+			local ia = char:getLockingInteractable()
+			if ia and sm.exists( ia ) and ia.shape then
+				local uuid = string.lower( tostring( ia.shape.uuid ) )
+				if uuid == "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7" then
+					local pos = nil
+					pcall( function()
+						if type( RfsChemStation ) == "table" and RfsChemStation.exitPosForShape then
+							pos = RfsChemStation.exitPosForShape( ia.shape )
+						end
+					end )
+					if pos then
+						pcall( function()
+							char:setWorldPosition( pos )
+						end )
+					end
+					pcall( function()
+						char:setVelocity( sm.vec3.zero() )
+					end )
+					pcall( function()
+						char:setLinearVelocity( sm.vec3.zero() )
+					end )
+					pcall( function()
+						if ia:getSeatCharacter() == char then
+							ia:setSeatCharacter( char )
+						end
+					end )
+					char:setLockingInteractable( nil )
+					char:setImmovable( false )
+					self.network:sendToClient( self.player, "cl_rfs_releaseFromPod", {
+						x = pos and pos.x,
+						y = pos and pos.y,
+						z = pos and pos.z,
+					} )
+				end
+			end
+		end
+	end )
 end
 
 function Player.client_onCreate( self )
@@ -78,6 +126,61 @@ function Player.client_onCreate( self )
 	pcall( function()
 		RfsCarry.resetPlaceLock()
 		RfsCarry.ensureHooks()
+	end )
+	if self.player == sm.localPlayer.getPlayer() then
+		pcall( function()
+			local char = self.player:getCharacter()
+			if char and sm.exists( char ) then
+				local ia = char:getLockingInteractable()
+				if ia and sm.exists( ia ) and ia.shape then
+					local uuid = string.lower( tostring( ia.shape.uuid ) )
+					if uuid == "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7" then
+						local pos = nil
+						pcall( function()
+							if type( RfsChemStation ) == "table" and RfsChemStation.exitPosForShape then
+								pos = RfsChemStation.exitPosForShape( ia.shape )
+							end
+						end )
+						if type( RfsChemStation ) == "table" and RfsChemStation.cl_releasePlayerLocal then
+							RfsChemStation.cl_releasePlayerLocal( ia, ia.shape, pos )
+						else
+							char:setLockingInteractable( nil )
+							char:setImmovable( false )
+							if sm.camera.getCameraState() ~= sm.camera.state.default then
+								sm.camera.setCameraState( sm.camera.state.default )
+							end
+						end
+					end
+				end
+			end
+		end )
+	end
+end
+
+function Player.cl_rfs_releaseFromPod( self, params )
+	if self.player ~= sm.localPlayer.getPlayer() then
+		return
+	end
+	local pos = nil
+	if type( params ) == "table" and type( params.x ) == "number" then
+		pos = sm.vec3.new( params.x, params.y, params.z )
+	end
+	pcall( function()
+		local char = self.player:getCharacter()
+		if not char or not sm.exists( char ) then
+			return
+		end
+		local ia = char:getLockingInteractable()
+		if ia and sm.exists( ia ) and ia.shape then
+			local uuid = string.lower( tostring( ia.shape.uuid ) )
+			if uuid == "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7" then
+				if type( RfsChemStation ) == "table" and RfsChemStation.cl_releasePlayerLocal then
+					RfsChemStation.cl_releasePlayerLocal( ia, ia.shape, pos )
+				end
+			end
+		elseif pos and type( RfsChemStation ) == "table" and RfsChemStation.cl_releasePlayerLocal then
+			RfsChemStation.cl_releasePlayerLocal( nil, nil, pos )
+		end
 	end )
 end
 
@@ -548,6 +651,33 @@ function Player.server_onFixedUpdate( self, dt )
 	SurvivalPlayer.server_onFixedUpdate( self, dt )
 
 	do
+		local id = nil
+		pcall( function()
+			id = self.player.id
+		end )
+		if id == nil then
+			pcall( function()
+				id = self.player:getId()
+			end )
+		end
+		local st = id ~= nil and _G.g_rfsRegenByPlayer and _G.g_rfsRegenByPlayer[tostring( id )]
+		if st and st.locked then
+			self.sv = self.sv or {}
+			self.sv.rfsInRegen = true
+			if type( self.sv.velocityBuffer ) == "table" then
+				local zero = sm.vec3.zero()
+				for i = 1, 8 do
+					self.sv.velocityBuffer[i] = zero
+				end
+			end
+			-- HP comes from sv_e_rfsDeepSleepHeal (pod sendToPlayer). Do not also
+			-- apply from g_rfsRegenByPlayer — interactable _G is not this VM.
+		elseif st and st.locked == false and self.sv then
+			self.sv.rfsInRegen = false
+		end
+	end
+
+	do
 		local tick = sm.game.getCurrentTick()
 		local carrying = type( RfsCarry ) == "table" and RfsCarry.playerIsCarrying( self.player )
 		if carrying or ( tick % 40 ) == 0 then
@@ -609,6 +739,11 @@ function Player.client_onUpdate( self, dt )
 			end )
 		end
 		pcall( function()
+			if type( RfsSoilPlacement ) == "table" and RfsSoilPlacement.client_tickHandPickup then
+				RfsSoilPlacement.client_tickHandPickup()
+			end
+		end )
+		pcall( function()
 			if type( RfsBlockOverlay ) == "table" and RfsBlockOverlay.update then
 				RfsBlockOverlay.update( self )
 			end
@@ -663,6 +798,19 @@ local RFS_REGEN_UUID = "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7"
 
 local function rfsInRegenStation( self )
 	if self.sv and self.sv.rfsInRegen then
+		return true
+	end
+	local id = nil
+	pcall( function()
+		id = self.player.id
+	end )
+	if id == nil then
+		pcall( function()
+			id = self.player:getId()
+		end )
+	end
+	local st = id ~= nil and _G.g_rfsRegenByPlayer and _G.g_rfsRegenByPlayer[tostring( id )]
+	if st and st.locked then
 		return true
 	end
 	local char = self.player and self.player:getCharacter()
@@ -728,6 +876,18 @@ function Player.sv_e_rfsDeepSleepHeal( self, params )
 			end )
 		end
 	end
+	pcall( function()
+		if self.player.publicData then
+			self.player.publicData.rfsNeedHeal = applied and true or false
+		end
+	end )
+	pcall( function()
+		local char = self.player and self.player:getCharacter()
+		local ia = char and sm.exists( char ) and char:getLockingInteractable()
+		if ia and sm.exists( ia ) then
+			sm.event.sendToInteractable( ia, "sv_e_rfsHealApplied", { applied = applied } )
+		end
+	end )
 	local shapeId = tonumber( params and params.shapeId )
 	if shapeId and shapeId ~= 0 then
 		local pod = _G.g_rfsHealPods and _G.g_rfsHealPods[shapeId]

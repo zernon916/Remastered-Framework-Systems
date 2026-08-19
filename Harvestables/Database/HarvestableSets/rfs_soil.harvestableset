@@ -1,0 +1,61 @@
+{
+	"harvestableList" : 
+	[
+		{
+			"col" : "$SURVIVAL_DATA/Harvestables/Collision/Plantables/hvs_plantables_soil.obj",
+			"collides" : 
+			{
+				"body" : false,
+				"character" : false,
+				"melee" : false,
+				"projectile" : true
+			},
+			"color" : "ee9e28",
+			"destroyTime" : 1.0,
+			"disableClutter" : true,
+			"mass" : 10000.0,
+			"material" : "Dirt",
+			"name" : "harvestable_farming_soil",
+			"removable" : true,
+			"renderable" : 
+			{
+				"decalReciever" : false,
+				"lodList" : 
+				[
+					{
+						"mesh" : "$SURVIVAL_DATA/Harvestables/Mesh/Farming/hvs_farming_soil.fbx",
+						"subMeshMap" : 
+						{
+							"Soil" : 
+							{
+								"custom" : 
+								{
+									"uv0" : 
+									{
+										"u" : 1,
+										"v" : 0.1
+									}
+								},
+								"material" : "UVAnimDifAsgNor",
+								"textureList" : 
+								[
+									"$SURVIVAL_DATA/Harvestables/Textures/Farming/hvs_farming_soil_dif.tga",
+									"$SURVIVAL_DATA/Harvestables/Textures/Farming/hvs_farming_soil_asg.tga",
+									"$SURVIVAL_DATA/Harvestables/Textures/Farming/hvs_farming_soil_nor.tga"
+								]
+							}
+						}
+					}
+				]
+			},
+			"script" : 
+			{
+				"class" : "HarvestableSoil",
+				"data" : {},
+				"file" : "$CONTENT_DATA/Scripts/game/harvestable/RfsHarvestableSoil.lua"
+			},
+			"type" : "farm",
+			"uuid" : "b39349ae-9b7e-48e2-8e9d-6f9dc6472fd6"
+		}
+	]
+}

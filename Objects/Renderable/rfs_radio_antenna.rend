@@ -1,0 +1,27 @@
+{
+	"_comment": "R&S Military radio / antenna (DTry CC-BY-4.0). Paintable olive/grey via shape color.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_radio_antenna.fbx",
+			"subMeshMap": {
+				"handheltradio": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/radio/antenna/handheltradio_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"handheltradio_2": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/radio/antenna/handheltradio_2_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				}
+			},
+			"maxViewDistance": 1000.0
+		}
+	]
+}

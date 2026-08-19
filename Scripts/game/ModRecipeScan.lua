@@ -34,6 +34,12 @@ local function fileExistsSafe( path )
 	if missingPath[path] then
 		return false
 	end
+	-- Guard: $CONTENT_<uuid>/description.json probing triggers noisy DirectoryManager
+	-- collisions in some log runs; treat it as missing to avoid crashes.
+	if type( path ) == "string" and string.find( path, "description%.json", 1 ) then
+		missingPath[path] = true
+		return false
+	end
 	if not sm.json.fileExists then
 		return nil
 	end
@@ -180,7 +186,10 @@ local function collectLoadedLocalIds( shapesets, toolsets )
 
 	local loaded = {}
 	for lid in pairs( candidates ) do
-		if lid ~= NUTT_MAP_LOCAL and isContentMounted( lid ) then
+		-- candidates[] was built from shape/tool UUID evidence, so we can safely
+		-- skip the description.json probe (it triggers noisy DirectoryManager
+		-- collisions in some log runs even when pcall-caught).
+		if lid ~= NUTT_MAP_LOCAL then
 			loaded[#loaded + 1] = lid
 		end
 	end

@@ -29,12 +29,14 @@ RfsHackPower.ELEC = ELEC
 local UUID_HACK = "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"
 local UUID_CTRL = "c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8"
 local UUID_INFE = "d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709"
+local UUID_CORE = "c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247"
 
 -- Bit-identical to rush-base RfsHackBeacon TIERS.drainEvery.
 RfsHackPower.DRAIN_EVERY = {
 	[UUID_HACK] = 40 * 56, -- ~56 s/bat while working (~PlasmaDrill)
 	[UUID_CTRL] = 40 * 36, -- ~36 s/bat while working
 	[UUID_INFE] = 40 * 22, -- ~22 s/bat while working
+	[UUID_CORE] = 40 * 56, -- Station Core visual swap follows Hack Beacon timing
 }
 
 function RfsHackPower.band( a, b )
@@ -52,6 +54,32 @@ local function batteryCount( container )
 	if not container or not sm.exists( container ) then
 		return 0
 	end
+
+	-- Rechargeable Battery Box: stored energy lives in interactable publicData
+	-- (chargeMilli) and is not a vanilla battery UUID inside the box slots.
+	-- Treat 1 vanilla battery as MILLI_PER_BATTERY milli.
+	if type( RfsRecharge ) == "table"
+		and type( RfsRecharge.isBoxInteractable ) == "function"
+		and RfsRecharge.isBoxInteractable( container ) then
+		local pd = nil
+		pcall( function()
+			pd = container:getPublicData()
+		end )
+		local milli = tonumber( pd and pd.chargeMilli ) or 0
+		if milli < 1 and type( pd and pd.slotMilli ) == "table" then
+			-- Fallback for older saves: aggregate slot milli.
+			local slots = tonumber( RfsRecharge.BOX_SLOTS ) or 5
+			for i = 1, slots do
+				milli = milli + ( tonumber( ( pd.slotMilli or {} )[i] ) or 0 )
+			end
+		end
+		local mpb = tonumber( RfsRecharge.MILLI_PER_BATTERY ) or 1000
+		if mpb < 1 then
+			return 0
+		end
+		return math.floor( milli / mpb + 0.0001 )
+	end
+
 	local ok, qty = pcall( sm.container.totalQuantity, container, BATTERY_UUID )
 	if ok and type( qty ) == "number" then
 		return qty
@@ -132,6 +160,15 @@ function RfsHackPower.elecContainers( self )
 		end
 		seenIa[id] = true
 		if isElectricityNode( ia ) then
+			-- Add rechargeable battery *box interactables* as "power sources".
+			-- Their energy is in publicData (chargeMilli), not as vanilla batteries in the box slots.
+			pcall( function()
+				if type( RfsRecharge ) == "table"
+					and type( RfsRecharge.isBoxInteractable ) == "function"
+					and RfsRecharge.isBoxInteractable( ia ) then
+					addContainer( list, seen, ia )
+				end
+			end )
 			containersFromInteractable( ia, list, seen )
 		end
 	end
@@ -167,33 +204,66 @@ function RfsHackPower.totalBatteries( containers )
 end
 
 function RfsHackPower.spendBatteries( containers, count )
-	-- Hard rule: never spend a stack. Callers must ask for exactly 1.
-	if tonumber( count ) ~= 1 then
-		return false
+	-- Hard rule: never spend a stack (we spend exactly 1 battery worth per event),
+	-- but allow callers to ask for N batteries by repeating N single-battery spends.
+	count = tonumber( count ) or 0
+	if count <= 0 then
+		return true
 	end
-	for _, container in ipairs( containers or {} ) do
-		if batteryCount( container ) >= 1 then
-			local spent = false
-			local okTx = pcall( function()
-				if sm.container.beginTransaction() then
-					local n = sm.container.spend( container, BATTERY_UUID, 1, false )
-					if n == 1 and sm.container.endTransaction() then
-						spent = true
-					else
-						sm.container.abortTransaction()
-					end
-				end
+	local milliPerBattery = tonumber( RfsRecharge and RfsRecharge.MILLI_PER_BATTERY ) or 1000
+	if milliPerBattery < 1 then
+		milliPerBattery = 1000
+	end
+
+	local function spendOne( src )
+		-- Rechargeable Battery Box spend: drain chargeMilli by 1 battery worth.
+		if type( RfsRecharge ) == "table"
+			and type( RfsRecharge.isBoxInteractable ) == "function"
+			and RfsRecharge.isBoxInteractable( src )
+			and type( RfsRecharge.spendMilliOn ) == "function" then
+			local ok, sent = pcall( function()
+				return RfsRecharge.spendMilliOn( src, milliPerBattery )
 			end )
-			if not ( okTx and spent ) then
-				local ok, n = pcall( sm.container.spend, container, BATTERY_UUID, 1, true )
-				spent = ok and ( n == 1 or n == true ) and true or false
+			return ok and sent and true or false
+		end
+
+		-- Vanilla battery container spend.
+		if batteryCount( src ) < 1 then
+			return false
+		end
+		local spent = false
+		local okTx = pcall( function()
+			if sm.container.beginTransaction() then
+				local n = sm.container.spend( src, BATTERY_UUID, 1, false )
+				if n == 1 and sm.container.endTransaction() then
+					spent = true
+				else
+					sm.container.abortTransaction()
+				end
 			end
-			if spent then
-				return true
+		end )
+		if not ( okTx and spent ) then
+			local ok, n = pcall( sm.container.spend, src, BATTERY_UUID, 1, true )
+			spent = ok and ( n == 1 or n == true ) and true or false
+		end
+		return spent and true or false
+	end
+
+	for _ = 1, count do
+		local spent = false
+		for _, src in ipairs( containers or {} ) do
+			if batteryCount( src ) >= 1 then
+				if spendOne( src ) then
+					spent = true
+					break
+				end
 			end
 		end
+		if not spent then
+			return false
+		end
 	end
-	return false
+	return true
 end
 
 function RfsHackPower.logicAllows( self )

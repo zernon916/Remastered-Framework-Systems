@@ -7,16 +7,23 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsFeatures.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsQuest.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsSoilPlacement.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHackPower.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsRecharge.lua" )
-dofile( "$CONTENT_DATA/Scripts/game/RfsHealPower.lua" )
-dofile( "$CONTENT_DATA/Scripts/game/RfsDeepSleepTime.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsChemStation.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHackCaps.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHackSave.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHackRange.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBotHijack.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBotInventory.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsBotActionGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsBotInteract.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsHandheldHack.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsHandheldHackGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsRadioStation.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHackTether.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsHackReload.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsHackUnitSandbox.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBotPath.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBotOrders.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsBeaconOrdersGui.lua" )
@@ -30,6 +37,7 @@ dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsInventoryLcd.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsDeepSleepPod.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsSolarPanel.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsRechargeBox.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsAimCore.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/ModRecipeScan.lua" )
 -- Survival Craftbot uses this file. Load it here so RfsCrafterGrid can patch Craftbot
 -- (class(Crafter) copies methods; wrapping Crafter alone does not change Craftbot).
@@ -52,7 +60,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Bump this string on every Workshop/Roaming copy so chat proves the running pack.
-RFS_PACK_STAMP = "[RFS] pack 0819-g heal"
+RFS_PACK_STAMP = "[RFS] pack 0822-a workshop release soil fast place + credits"
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 -- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
@@ -172,6 +180,14 @@ local function rfsOpenPlayerMenu( game )
 	end
 	sm.gui.chatMessage( "[RFS] /rfsmenu - player menu not ready yet (RfsMenuGui)." )
 	return false
+end
+
+local function rfsClQuestActive( questName )
+	if not questName or type( QuestManager ) ~= "table" or type( QuestManager.Cl_IsQuestActive ) ~= "function" then
+		return false
+	end
+	local ok, active = pcall( QuestManager.Cl_IsQuestActive, questName )
+	return ok and active == true
 end
 
 -- Never persist hideout.json (Survival or CG). Extra trades merge in memory only.
@@ -496,6 +512,11 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	SurvivalGame.server_onCreate( self )
 	_G.g_rfsGame = self
 	pcall( function() RfsFarming.ensureHooks() end )
+	pcall( function()
+		if type( RfsSoilPlacement ) == "table" and RfsSoilPlacement.ensureHarvestableSoilHooks then
+			RfsSoilPlacement.ensureHarvestableSoilHooks()
+		end
+	end )
 	pcall( function() RfsBotHijack.ensureHooks() end )
 	pcall( function()
 		if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
@@ -506,6 +527,11 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	if type( RfsQuest ) == "table" then
 		_G.RfsQuest = RfsQuest
 	end
+	pcall( function()
+		if type( RfsHackReload ) == "table" and RfsHackReload.resetLoadWindow then
+			RfsHackReload.resetLoadWindow()
+		end
+	end )
 	print( RFS_PACK_STAMP .. " server_onCreate (g_survivalDev left for normal quest flow; RfsQuest=" .. tostring( type( _G.RfsQuest ) ) .. ")" )
 end
 
@@ -556,6 +582,11 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 			RfsBotOrders.sv_think( timeStep, self )
 		end
 	end )
+	pcall( function()
+		if type( RfsHandheldHack ) == "table" and RfsHandheldHack.serverTick then
+			RfsHandheldHack.serverTick()
+		end
+	end )
 	local tick = sm.game.getCurrentTick()
 	-- Single pending Orders open: fire once after interact (next Game ticks).
 	do
@@ -583,6 +614,11 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 	end
 	if ( tick % 80 ) == 0 then
 		pcall( function() RfsFarming.ensureHooks() end )
+		pcall( function()
+			if type( RfsSoilPlacement ) == "table" and RfsSoilPlacement.ensureHarvestableSoilHooks then
+				RfsSoilPlacement.ensureHarvestableSoilHooks()
+			end
+		end )
 		pcall( function() RfsBotHijack.ensureHooks() end )
 		pcall( function()
 			if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
@@ -643,9 +679,26 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 	self.cl.rfsOrdersDropsGen = nil
 	self.cl.rfsOrdersGui = nil
 	self.cl.rfsPendingOrdersGui = nil
+	self.cl.rfsAutoSetupTriggered = false
+	self.cl.rfsAutoSetupSent = false
 	_G.g_rfsGame = self
 	RfsFarming.ensureHooks()
+	pcall( function()
+		if type( RfsSoilPlacement ) == "table" and RfsSoilPlacement.ensureHarvestableSoilHooks then
+			RfsSoilPlacement.ensureHarvestableSoilHooks()
+		end
+	end )
 	pcall( function() RfsBotHijack.ensureHooks() end )
+	pcall( function()
+		if type( RfsBotInteract ) == "table" and RfsBotInteract.ensurePlayerHook then
+			RfsBotInteract.ensurePlayerHook()
+		end
+	end )
+	pcall( function()
+		if type( RfsSoilPlacement ) == "table" and RfsSoilPlacement.ensurePlayerHandPickupHooks then
+			RfsSoilPlacement.ensurePlayerHandPickupHooks()
+		end
+	end )
 	pcall( function()
 		if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
 	end )
@@ -713,11 +766,38 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 				end
 			end
 		end
+		local rebindAt = self.cl and self.cl.rfsOrdersRebindAtTick
+		if rebindAt then
+			local tick = sm.game.getCurrentTick()
+			if tick >= rebindAt and self.cl.rfsOrdersGui
+				and type( RfsBeaconOrdersGui ) == "table"
+				and type( RfsBeaconOrdersGui.rebindChrome ) == "function" then
+				self.cl.rfsOrdersRebindAtTick = nil
+				-- Force Color recreate: setText after open can drop ColorDrop while Mode survives.
+				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true } )
+			end
+		end
+		local rebindAgain = self.cl and self.cl.rfsOrdersRebindAgainAtTick
+		if rebindAgain then
+			local tick = sm.game.getCurrentTick()
+			if tick >= rebindAgain and self.cl.rfsOrdersGui
+				and type( RfsBeaconOrdersGui ) == "table"
+				and type( RfsBeaconOrdersGui.rebindChrome ) == "function" then
+				self.cl.rfsOrdersRebindAgainAtTick = nil
+				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true } )
+			end
+		end
 	end
 	-- Character countdown hooks must run on the client (unit globals are server-only).
 	pcall( function()
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
 			RfsBotHijack.ensureCharHooks()
+		end
+		if type( RfsBotInteract ) == "table" and RfsBotInteract.ensurePlayerHook then
+			RfsBotInteract.ensurePlayerHook()
+		end
+		if type( RfsBotInteract ) == "table" and RfsBotInteract.clientTick then
+			RfsBotInteract.clientTick( self )
 		end
 		if type( RfsHealthBars ) == "table" and RfsHealthBars.ensureHooks then
 			RfsHealthBars.ensureHooks()
@@ -847,6 +927,26 @@ function RecipeFrameworkSurvival.loadCraftingRecipes( self )
 	if type( RfsCrafterGrid ) == "table" then
 		RfsCrafterGrid.installRecipeSet( scan )
 		RfsCrafterGrid.installHook()
+	end
+	-- New-world one-shot: after intro handoff when first main quest becomes active,
+	-- auto-open host setup UI using the same path as manual /setup.
+	if self.cl and not self.cl.rfsAutoSetupTriggered and rfsClientIsHost() then
+		local firstQuestReady = rfsClQuestActive( "quest_tutorial" ) or rfsClQuestActive( "quest_mechanicstation" )
+		if firstQuestReady then
+			self.cl.rfsAutoSetupTriggered = true
+			local alreadyPrompted = false
+			pcall( function()
+				alreadyPrompted = type( RfsFeatures ) == "table" and RfsFeatures.autoSetupPrompted and RfsFeatures.autoSetupPrompted()
+			end )
+			if not alreadyPrompted and type( RfsSetupGui ) == "table" and type( RfsSetupGui.open ) == "function" then
+				RfsSetupGui.open( self )
+				sm.gui.chatMessage( "[RFS] Opened /setup automatically for new-world setup." )
+				if not self.cl.rfsAutoSetupSent then
+					self.cl.rfsAutoSetupSent = true
+					self.network:sendToServer( "sv_rfs_markAutoSetupPrompted" )
+				end
+			end
+		end
 	end
 end
 
@@ -1401,6 +1501,48 @@ function RecipeFrameworkSurvival.sv_e_rfsDeepSleepSkip( self, params )
 	end
 end
 
+-- Legacy sendToGame path (client VM must not run server pickup). Tool uses sv_n_pickupSoilBatch.
+function RecipeFrameworkSurvival.sv_e_rfsPickupSoilBatch( self, params )
+	local okServer, serverMode = pcall( sm.isServerMode )
+	if not okServer or not serverMode then
+		return
+	end
+	if type( RfsSoilPlacement ) ~= "table"
+		or type( RfsSoilPlacement.sv_pickupSoilBatchForPlayer ) ~= "function" then
+		return
+	end
+	local player = params and params.player
+	if not player then
+		return
+	end
+	RfsSoilPlacement.sv_pickupSoilBatchForPlayer( player, params )
+end
+
+-- Legacy sendToGame path. Tool uses sv_n_soilPickupBlock.
+function RecipeFrameworkSurvival.sv_e_rfsSoilPickupBlock( self, params )
+	local okServer, serverMode = pcall( sm.isServerMode )
+	if not okServer or not serverMode then
+		return
+	end
+	if type( RfsSoilPlacement ) ~= "table"
+		or type( RfsSoilPlacement.setServerPickupBlock ) ~= "function" then
+		return
+	end
+	local player = params and params.player
+	if not player then
+		return
+	end
+	RfsSoilPlacement.setServerPickupBlock( player, params.block == true )
+end
+
+function RecipeFrameworkSurvival.cl_n_rfsPickupInventoryFull( self )
+	pcall( function()
+		if type( NotificationManager ) == "table" and NotificationManager.Cl_AddGenericNotification then
+			NotificationManager.Cl_AddGenericNotification( "#{INFO_INVENTORY_FULL}", 4 )
+		end
+	end )
+end
+
 function RecipeFrameworkSurvival.sv_setTimeProgress( self, timeProgress, player )
 	if not rfsServerAllowCheat( self, player ) then
 		return
@@ -1847,6 +1989,270 @@ function RecipeFrameworkSurvival.cl_rfs_botRenameApply( self )
 		player = sm.localPlayer.getPlayer(),
 	} )
 	self:cl_rfs_botRenameClose()
+end
+
+-- Ally bot E: small Commands / Storage menu (Game-hosted).
+function RecipeFrameworkSurvival.sv_rfs_botActionOpen( self, params )
+	params = params or {}
+	local player = params.player
+	if not player then
+		local players = sm.player.getAllPlayers()
+		if type( players ) == "table" and #players == 1 then
+			player = players[1]
+		end
+	end
+	if not player then
+		return
+	end
+	local unitKey = params.unitKey and tostring( params.unitKey ) or nil
+	local title = params.title and tostring( params.title ) or "BOT"
+	self.network:sendToClient( player, "cl_rfs_botActionOpen", {
+		unitKey = unitKey,
+		title = title,
+	} )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botActionOpen( self, data )
+	data = data or {}
+	if type( RfsBotActionGui ) == "table" and RfsBotActionGui.open then
+		RfsBotActionGui.open( self, data )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botActionClosed( self )
+	if type( RfsBotActionGui ) == "table" and RfsBotActionGui.close then
+		RfsBotActionGui.close( self )
+	elseif self.cl then
+		self.cl.rfsBotActionGui = nil
+		self.cl.rfsBotActionChar = nil
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botActionClose( self )
+	if type( RfsBotActionGui ) == "table" and RfsBotActionGui.close then
+		RfsBotActionGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botActionCommands( self )
+	if type( RfsBotActionGui ) == "table" and RfsBotActionGui.onCommands then
+		RfsBotActionGui.onCommands( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botActionStorage( self )
+	if type( RfsBotActionGui ) == "table" and RfsBotActionGui.onStorage then
+		RfsBotActionGui.onStorage( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_handheldOpen( self, data )
+	data = data or {}
+	if type( RfsHandheldHackGui ) == "table" and RfsHandheldHackGui.open then
+		RfsHandheldHackGui.open( self, data )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_handheldClosed( self )
+	if type( RfsHandheldHackGui ) == "table" and RfsHandheldHackGui.close then
+		RfsHandheldHackGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_handheldClose( self )
+	if type( RfsHandheldHackGui ) == "table" and RfsHandheldHackGui.close then
+		RfsHandheldHackGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_handheldFollow( self )
+	if type( RfsHandheldHackGui ) == "table" and RfsHandheldHackGui.sendOrder then
+		RfsHandheldHackGui.sendOrder( self, "follow" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_handheldDefend( self )
+	if type( RfsHandheldHackGui ) == "table" and RfsHandheldHackGui.sendOrder then
+		RfsHandheldHackGui.sendOrder( self, "defend" )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_handheldOrder( self, params, player )
+	params = params or {}
+	player = player or params.player
+	if not player or not params.unitKey then
+		return
+	end
+	local unit = nil
+	if type( RfsBotHijack ) == "table" and RfsBotHijack.unitByKey then
+		unit = RfsBotHijack.unitByKey( tostring( params.unitKey ) )
+	end
+	if not unit or not sm.exists( unit ) then
+		return
+	end
+	local mode = string.lower( tostring( params.mode or "follow" ) )
+	if type( RfsHandheldHack ) == "table" then
+		if RfsBotHijack.isAlly and RfsBotHijack.isAlly( unit ) then
+			if type( RfsBotHijack.setOrder ) == "function" then
+				pcall( RfsBotHijack.setOrder, unit, { mode = mode, owner = player.id }, player, true )
+			end
+		else
+			local ok, msg = RfsHandheldHack.tryHack( unit, player, mode )
+			pcall( function()
+				self.network:sendToClient( player, "client_showMessage", ok and ( "[RFS] Handheld: " .. tostring( msg ) )
+					or ( "[RFS] Handheld failed: " .. tostring( msg ) ) )
+			end )
+		end
+	end
+end
+
+-- Commands from bot E: open beacon Orders focused on this ally (does not touch beacon E path).
+function RecipeFrameworkSurvival.sv_rfs_botOpenOrders( self, params, player )
+	params = params or {}
+	player = player or params.player
+	if not player then
+		return
+	end
+	local unitKey = params.unitKey and tostring( params.unitKey ) or nil
+	if not unitKey or unitKey == "" then
+		return
+	end
+	if type( RfsBotHijack ) ~= "table" or type( RfsBotHijack.allies ) ~= "table" then
+		return
+	end
+	local info = RfsBotHijack.allies[unitKey]
+	if not info or not info.controlled or info.mode == "infected" then
+		pcall( function()
+			self.network:sendToClient( player, "client_showMessage", "[RFS] Commands: not an allied bot" )
+		end )
+		return
+	end
+	local allowHost = rfsServerPlayerIsHost( player )
+	local ownerId = nil
+	pcall( function() ownerId = player.id end )
+	if not allowHost and ownerId ~= nil and info.owner ~= nil and tostring( info.owner ) ~= tostring( ownerId ) then
+		pcall( function()
+			self.network:sendToClient( player, "client_showMessage", "[RFS] Commands: not your bot" )
+		end )
+		return
+	end
+	local beaconKey = info.workBeaconKey or info.beaconKey or info.hackBeaconKey
+	beaconKey = beaconKey and tostring( beaconKey ) or nil
+	if not beaconKey or beaconKey == "" then
+		pcall( function()
+			self.network:sendToClient( player, "client_showMessage", "[RFS] Commands: no home beacon" )
+		end )
+		return
+	end
+	local rec = RfsBotHijack.beacons and RfsBotHijack.beacons[beaconKey]
+	local range = ( rec and tonumber( rec.range ) ) or 16
+	local pos = nil
+	if rec and type( rec.pos ) == "table" and rec.pos.x ~= nil then
+		pos = { x = tonumber( rec.pos.x ) or 0, y = tonumber( rec.pos.y ) or 0, z = tonumber( rec.pos.z ) or 0 }
+	end
+	local rows = {}
+	if type( RfsHackOrdersList ) == "table" and type( RfsHackOrdersList.collect ) == "function" then
+		pcall( function()
+			rows = RfsHackOrdersList.collect( beaconKey, player, { pos = pos, range = range } ) or {}
+		end )
+	elseif type( RfsBotHijack.listHomeAllies ) == "function" then
+		pcall( function()
+			rows = RfsBotHijack.listHomeAllies( beaconKey, allowHost and nil or ownerId ) or {}
+		end )
+	end
+	-- Mirror allies into Game so Color/orders RPCs resolve the focused unit.
+	pcall( function()
+		local snap = {}
+		for _, row in ipairs( rows ) do
+			if row and row.key then
+				local a = RfsBotHijack.allies[tostring( row.key )]
+				if a then
+					snap[tostring( row.key )] = {
+						type = a.type and tostring( a.type ) or nil,
+						unitType = a.unitType and tostring( a.unitType ) or nil,
+						owner = a.owner,
+						mode = a.mode and tostring( a.mode ) or nil,
+						beaconKey = a.beaconKey and tostring( a.beaconKey ) or beaconKey,
+						workBeaconKey = a.workBeaconKey and tostring( a.workBeaconKey ) or nil,
+						controlled = true,
+						displayName = a.displayName and tostring( a.displayName ) or nil,
+						displayIndex = a.displayIndex ~= nil and tonumber( a.displayIndex ) or nil,
+						customName = a.customName and tostring( a.customName ) or false,
+						allyColor = a.allyColor and tostring( a.allyColor ) or nil,
+					}
+				end
+			end
+		end
+		if next( snap ) then
+			self:sv_rfs_mirrorAllies( { allies = snap } )
+		end
+	end )
+	local role, masterKey = "independent", nil
+	if type( RfsBotHijack.effectiveBeaconRole ) == "function" then
+		pcall( function()
+			role, masterKey = RfsBotHijack.effectiveBeaconRole( beaconKey )
+		end )
+	end
+	local beaconName = ( rec and rec.name ) or "Hack Beacon"
+	local data = {
+		beaconKey = beaconKey,
+		beaconName = tostring( beaconName ),
+		role = role and tostring( role ) or "independent",
+		masterKey = masterKey ~= nil and tostring( masterKey ) or nil,
+		range = range,
+		rows = rows,
+		pos = pos,
+		focusUnitKey = unitKey,
+	}
+	self.network:sendToClient( player, "cl_rfs_ordersOpen", data )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_botOpenStorage( self, params, player )
+	params = params or {}
+	player = player or params.player
+	if not player then
+		return
+	end
+	local unitKey = params.unitKey and tostring( params.unitKey ) or nil
+	if not unitKey or unitKey == "" or type( RfsBotHijack ) ~= "table" then
+		return
+	end
+	local unit = nil
+	pcall( function()
+		if RfsBotHijack.unitByKey then
+			unit = RfsBotHijack.unitByKey( unitKey )
+		end
+	end )
+	if not unit then
+		return
+	end
+	pcall( function()
+		if type( RfsBotInventory ) == "table" and RfsBotInventory.sv_ensure then
+			RfsBotInventory.sv_ensure( unit )
+		end
+	end )
+	self.network:sendToClient( player, "cl_rfs_botOpenStorage", {
+		unitKey = unitKey,
+	} )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_botOpenStorage( self, data )
+	data = data or {}
+	local unitKey = data.unitKey and tostring( data.unitKey ) or nil
+	if not unitKey or unitKey == "" then
+		return
+	end
+	local unit = nil
+	pcall( function()
+		if type( RfsBotHijack ) == "table" and RfsBotHijack.unitByKey then
+			unit = RfsBotHijack.unitByKey( unitKey )
+		end
+	end )
+	if unit and type( RfsBotInventory ) == "table" and RfsBotInventory.cl_openFromUnit then
+		pcall( function()
+			RfsBotInventory.cl_openFromUnit( unit, nil )
+		end )
+	end
 end
 
 function RecipeFrameworkSurvival.sv_rfs_botRename( self, params, player )
@@ -2400,6 +2806,22 @@ function RecipeFrameworkSurvival.cl_rfs_setupToggleDirtOnBlocks( self )
 	self.network:sendToServer( "sv_rfs_farmingSet", { toggle = "dirtOnBlocks" } )
 end
 
+function RecipeFrameworkSurvival.cl_rfs_setupToggleFastPlace( self )
+	if not RfsSettings.cheatsEnabled() then
+		sm.gui.chatMessage( "[RFS] Fast place requires cheats ON" )
+		return
+	end
+	self.network:sendToServer( "sv_rfs_farmingSet", { toggle = "fastPlace" } )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_setupToggleFastPickup( self )
+	if not RfsSettings.cheatsEnabled() then
+		sm.gui.chatMessage( "[RFS] Fast pickup requires cheats ON" )
+		return
+	end
+	self.network:sendToServer( "sv_rfs_farmingSet", { toggle = "fastPickup" } )
+end
+
 -- ========== /menu GUI client callbacks ==========
 
 function RecipeFrameworkSurvival.cl_rfs_menuClose( self )
@@ -2485,6 +2907,8 @@ function RecipeFrameworkSurvival.cl_rfs_farmingSync( self, data )
 	local snap = RfsFarming.snapshot()
 	self.cl.rfsAlwaysWatered = snap.alwaysWatered
 	self.cl.rfsDirtOnBlocks = snap.dirtOnBlocks
+	self.cl.rfsFastPlace = snap.fastPlace
+	self.cl.rfsFastPickup = snap.fastPickup
 	-- Growth overlay is per-player; do not overwrite from world farming sync.
 	if self.cl.rfsSetupGui and self.cl.rfsSetupTab == "farming" then
 		RfsSetupGui.refreshFarming( self )
@@ -2518,7 +2942,8 @@ function RecipeFrameworkSurvival.sv_rfs_farmingSet( self, params, player )
 	local cfg = RfsFarming.get()
 	local msg = nil
 
-	if toggle == "alwaysWatered" or toggle == "dirtOnBlocks" then
+	if toggle == "alwaysWatered" or toggle == "dirtOnBlocks"
+		or toggle == "fastPlace" or toggle == "fastPickup" then
 		if not RfsSettings.cheatsEnabled() then
 			if player then
 				self.network:sendToClient( player, "cl_rfs_farmingSync", RfsFarming.snapshot() )
@@ -2536,6 +2961,12 @@ function RecipeFrameworkSurvival.sv_rfs_farmingSet( self, params, player )
 	elseif toggle == "dirtOnBlocks" then
 		cfg.dirtOnBlocks = not cfg.dirtOnBlocks
 		msg = "Dirt on blocks: " .. ( cfg.dirtOnBlocks and "True" or "False" )
+	elseif toggle == "fastPlace" then
+		cfg.fastPlace = not cfg.fastPlace
+		msg = "Fast place: " .. ( cfg.fastPlace and "ON" or "OFF" )
+	elseif toggle == "fastPickup" then
+		cfg.fastPickup = not cfg.fastPickup
+		msg = "Fast pickup: " .. ( cfg.fastPickup and "ON" or "OFF" )
 	elseif toggle == "growthOverlay" then
 		-- Legacy: growth overlay moved to per-player /menu.
 		if player then
@@ -3126,9 +3557,29 @@ function RecipeFrameworkSurvival.cl_rfs_discordBotRequestResult( self, data )
 	end
 end
 
+function RecipeFrameworkSurvival.sv_rfs_markAutoSetupPrompted( self, _, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player or not rfsServerPlayerIsHost( player ) then
+		return
+	end
+	if type( RfsFeatures ) == "table" and type( RfsFeatures.markAutoSetupPrompted ) == "function" then
+		RfsFeatures.markAutoSetupPrompted()
+	end
+end
+
 -- ========== Beacon Orders GUI (M1 Rest/Defend + M2 Hay Farm + M3 Tote Collect) ==========
 
+function RecipeFrameworkSurvival.cl_rfs_ordersCloseStale( self )
+	-- Detached OnClose from a destroyed Orders GUI ? ignore.
+end
+
 function RecipeFrameworkSurvival.cl_rfs_ordersClose( self )
+	if self.cl and self.cl.rfsOrdersClosing then
+		return
+	end
+	if not ( self.cl and self.cl.rfsOrdersGui ) then
+		return
+	end
 	if type( RfsBeaconOrdersGui ) == "table" then
 		RfsBeaconOrdersGui.close( self )
 	elseif self.cl then
@@ -3206,6 +3657,10 @@ function RecipeFrameworkSurvival.cl_rfs_rangeViz( self, data )
 	-- is the stuck-on ring (Game-hosted FX, not the beacon interactable).
 	if data.show ~= true then
 		self.cl.rfsRangeWant[key] = nil
+		pcall( function()
+			_G.g_rfsBeaconRangeVisible = _G.g_rfsBeaconRangeVisible or {}
+			_G.g_rfsBeaconRangeVisible[key] = nil
+		end )
 		if type( RfsRangeViz ) == "table" and RfsRangeViz.hideKey then
 			RfsRangeViz.hideKey( self, key )
 		elseif type( RfsRangeViz ) == "table" and RfsRangeViz.destroyKey then
@@ -3317,6 +3772,7 @@ function RecipeFrameworkSurvival.sv_rfs_ordersScheduleOpen( self, params )
 			rows = rows,
 			pos = pos,
 			notice = params.notice ~= nil and tostring( params.notice ) or nil,
+			focusUnitKey = params.focusUnitKey ~= nil and tostring( params.focusUnitKey ) or nil,
 		},
 	}
 end
@@ -3380,9 +3836,19 @@ function RecipeFrameworkSurvival.sv_rfs_mirrorAllies( self, params )
 				lastTagTick = prev.lastTagTick,
 			}
 			if info.customName == false or info.customName == "" then
-				RfsBotHijack.allies[k].customName = nil
+				if prev.customName then
+					RfsBotHijack.allies[k].customName = prev.customName
+				else
+					RfsBotHijack.allies[k].customName = nil
+				end
 			elseif info.customName ~= nil then
-				RfsBotHijack.allies[k].customName = tostring( info.customName )
+				local snapCustom = tostring( info.customName )
+				-- Game rename lands here first; beacon mirror must not clobber with stale snap.
+				if prev.customName and tostring( prev.customName ) ~= snapCustom then
+					RfsBotHijack.allies[k].customName = prev.customName
+				else
+					RfsBotHijack.allies[k].customName = snapCustom
+				end
 			end
 		end
 	end
@@ -3413,6 +3879,18 @@ function RecipeFrameworkSurvival.cl_rfs_ordersSetResult( self, data )
 	elseif data and data.ok and data.colorHex then
 		local n = tonumber( data.colorCount ) or 0
 		sm.gui.chatMessage( "[RFS] Color applied to " .. tostring( n ) .. " bot(s)" )
+	end
+	if data and data.ok and data.unitKey and data.mode and self.cl and type( self.cl.rfsOrdersRows ) == "table" then
+		local uk = tostring( data.unitKey )
+		local mode = string.lower( tostring( data.mode ) )
+		for _, row in ipairs( self.cl.rfsOrdersRows ) do
+			if row and tostring( row.key ) == uk then
+				row.mode = mode
+			end
+		end
+		if self.cl.rfsOrdersGui and type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.refresh then
+			RfsBeaconOrdersGui.refresh( self )
+		end
 	end
 	if self.cl and self.cl.rfsOrdersBeaconKey then
 		self.network:sendToServer( "sv_rfs_ordersList", {
@@ -3449,16 +3927,8 @@ function RecipeFrameworkSurvival.sv_rfs_ordersList( self, params, player )
 		self.network:sendToClient( player, "cl_rfs_ordersList", { rows = {} } )
 		return
 	end
-	-- Prefer the live Hack Beacon interactable (authoritative allies table).
-	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.beaconScripts ) == "table" then
-		local beacon = RfsBotHijack.beaconScripts[beaconKey]
-		if beacon and type( beacon.sv_ordersList ) == "function" then
-			pcall( function()
-				beacon:sv_ordersList( params, player )
-			end )
-			return
-		end
-	end
+	-- Game-authoritative list. Delegating to beacon used to mirror stale customName
+	-- back into Game allies[] right after rename (menu stuck until beacon switch).
 	local rows = {}
 	local pos = nil
 	if type( params.pos ) == "table" and params.pos.x ~= nil then

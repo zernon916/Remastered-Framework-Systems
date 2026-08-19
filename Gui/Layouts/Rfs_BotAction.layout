@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+	<!-- Recipe Framework Survival — ally bot E menu (Commands / Storage). Author: DemonsDen126 -->
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+		<Property key="NeedKey" value="false"/>
+		<Property key="NeedMouse" value="true"/>
+
+		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.36 0.34 0.28 0.30" name="MainPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="true"/>
+			<Property key="InheritsAlpha" value="false"/>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.06 0.70 0.16" name="Title">
+				<Property key="Caption" value="BOT"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.76 0.06 0.20 0.16" name="CloseButton">
+				<Property key="Caption" value="CLOSE"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.24 0.92 0.14" name="Status">
+				<Property key="Caption" value="Commands opens Orders. Storage opens this bot inventory."/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+
+			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.44 0.84 0.20" name="BtnCommands">
+				<Property key="Caption" value="COMMANDS"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.70 0.84 0.20" name="BtnStorage">
+				<Property key="Caption" value="STORAGE"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+		</Widget>
+	</Widget>
+</MyGUI>

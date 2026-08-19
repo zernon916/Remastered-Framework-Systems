@@ -23,5 +23,19 @@ Solar Panel mesh
   License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
   Source: Art/sketchfab_solar/source/HexaRay Node - For texturing.glb (original glb)
 
+R&S Military radio (handheld hack tool + beacon station pieces)
+  Title:  R&S Military radio
+  Author: DTry (~D-Try~) (https://sketchfab.com/DTry)
+  URL:    https://sketchfab.com/3d-models/rs-military-radio-e47a8919a7ae432eb91cc744a287e9f8
+  License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Source: rs_military_radio.glb (Sketchfab download)
+
+Aim Core mesh
+  Title:  Yberpunk robot head sketch
+  Author: 3DWorkbench
+  URL:    https://sketchfab.com/3d-models/yberpunk-robot-head-sketch-ef52dd23dc5a48de84d92fc0aed9b915
+  License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Source: Art/sketchfab_aimcore/source/yberpunk_robot_head_sketch.glb
+
 Converted to Scrap Mechanic FBX in Objects/Mesh/ via Blender 4.4.
 Do not ship USDZ. Do not strip this credit.

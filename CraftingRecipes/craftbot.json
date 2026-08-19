@@ -4,22 +4,64 @@
 		"quantity": 1,
 		"craftTime": 10,
 		"ingredientList": [
-			{
-				"quantity": 1,
-				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
-			},
-			{
-				"quantity": 1,
-				"itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3"
-			},
-			{
-				"quantity": 1,
-				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
-			},
-			{
-				"quantity": 1,
-				"itemId": "5f41af56-df4c-4837-9b3c-10781335757f"
-			}
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 1, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 1, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" },
+			{ "quantity": 1, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
+		]
+	},
+	{
+		"_comment": "Handheld military radio TOOL (player hack). Hideout schematic 5 Farmers. 1× Metal Block 1 (8aedf6c2), 1× Circuit Board (f152e4df).",
+		"itemId": "e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 1, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" }
+		]
+	},
+	{
+		"_comment": "Hack Beacon station CORE (convert box, NOT handheld). Hideout schematic 10 Farmers. 4× Metal1, 3× Circuit, 1× Glass, 10× Component Kit.",
+		"itemId": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{ "quantity": 4, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 3, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 1, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" },
+			{ "quantity": 10, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" }
+		]
+	},
+	{
+		"_comment": "Radio antenna piece 9. Hideout schematic 15 Farmers. 3× Metal Block 1.",
+		"itemId": "ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{ "quantity": 3, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
+	},
+	{
+		"_comment": "Radio battery brick piece 5. Hideout schematic 15 Farmers. 2× Rechargeable Battery recipe (90 Metal1, 18 Glow, 90 Chemicals each).",
+		"itemId": "d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{ "quantity": 180, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 36, "itemId": "388adeab-67e5-4901-afe8-c56217754510" },
+			{ "quantity": 180, "itemId": "f74c2891-79a9-45e0-982e-4896651c2e25" }
+		]
+	},
+	{
+		"_comment": "Radio lock ampfilter piece 10. Miner schematic (8000 tokens). 5× Advanced Component Kit (mine multicomponent b41de15e), 20× Circuit, 10× Metal3 (c0dfdea5), 3× Glass.",
+		"itemId": "bb1c098e-094a-4b6c-7d08-ea293a4b5c6d",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{ "quantity": 5, "itemId": "b41de15e-a136-425a-a730-889b58cf4466" },
+			{ "quantity": 20, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 10, "itemId": "c0dfdea5-a39d-433a-b94a-299345a5df46" },
+			{ "quantity": 3, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
 		]
 	},
 	{
@@ -28,18 +70,9 @@
 		"quantity": 1,
 		"craftTime": 10,
 		"ingredientList": [
-			{
-				"quantity": 90,
-				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
-			},
-			{
-				"quantity": 18,
-				"itemId": "388adeab-67e5-4901-afe8-c56217754510"
-			},
-			{
-				"quantity": 90,
-				"itemId": "f74c2891-79a9-45e0-982e-4896651c2e25"
-			}
+			{ "quantity": 90, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 18, "itemId": "388adeab-67e5-4901-afe8-c56217754510" },
+			{ "quantity": 90, "itemId": "f74c2891-79a9-45e0-982e-4896651c2e25" }
 		]
 	},
 	{
@@ -48,10 +81,7 @@
 		"quantity": 1,
 		"craftTime": 10,
 		"ingredientList": [
-			{
-				"quantity": 2,
-				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
-			}
+			{ "quantity": 2, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" }
 		]
 	},
 	{
@@ -60,22 +90,10 @@
 		"quantity": 1,
 		"craftTime": 10,
 		"ingredientList": [
-			{
-				"quantity": 10,
-				"itemId": "5f41af56-df4c-4837-9b3c-10781335757f"
-			},
-			{
-				"quantity": 3,
-				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
-			},
-			{
-				"quantity": 10,
-				"itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3"
-			},
-			{
-				"quantity": 3,
-				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
-			}
+			{ "quantity": 10, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" },
+			{ "quantity": 3, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 10, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 3, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" }
 		]
 	},
 	{
@@ -84,22 +102,22 @@
 		"quantity": 1,
 		"craftTime": 10,
 		"ingredientList": [
-			{
-				"quantity": 5,
-				"itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3"
-			},
-			{
-				"quantity": 5,
-				"itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e"
-			},
-			{
-				"quantity": 3,
-				"itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf"
-			},
-			{
-				"quantity": 5,
-				"itemId": "5f41af56-df4c-4837-9b3c-10781335757f"
-			}
+			{ "quantity": 5, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 5, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 3, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" },
+			{ "quantity": 5, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
+		]
+	},
+	{
+		"_comment": "Aim Core. Hideout schematic 20 Farmers.",
+		"itemId": "c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247",
+		"quantity": 1,
+		"craftTime": 10,
+		"ingredientList": [
+			{ "quantity": 8, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 6, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 4, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" },
+			{ "quantity": 2, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
 		]
 	}
 ]

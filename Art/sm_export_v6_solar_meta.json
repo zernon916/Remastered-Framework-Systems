@@ -1,0 +1,86 @@
+{
+  "name": "solar",
+  "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v6.fbx",
+  "dae": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_solar_v6.dae",
+  "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_solar.rend",
+  "object": "rfs_solar_v6",
+  "materials": [
+    "main_material",
+    "base_material",
+    "arm_material",
+    "hinge_material",
+    "support_material",
+    "panel_base_material",
+    "solar_cells"
+  ],
+  "mat_map": [
+    {
+      "material": "main_material",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\main_material_dif.png",
+      "from": "Main Material",
+      "kept": true
+    },
+    {
+      "material": "base_material",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\base_material_dif.png",
+      "from": "Base Material",
+      "kept": true
+    },
+    {
+      "material": "arm_material",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\arm_material_dif.png",
+      "from": "Arm Material",
+      "kept": true
+    },
+    {
+      "material": "hinge_material",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\hinge_material_dif.png",
+      "from": "Hinge Material",
+      "kept": true
+    },
+    {
+      "material": "support_material",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\support_material_dif.png",
+      "from": "Support Material",
+      "kept": true
+    },
+    {
+      "material": "panel_base_material",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\panel_base_material_dif.png",
+      "from": "Panel Base Material",
+      "kept": true
+    },
+    {
+      "material": "solar_cells",
+      "png": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Textures\\solar\\solar_cells_dif.png",
+      "from": "solar_cells",
+      "kept": true
+    }
+  ],
+  "meta": {
+    "scale": 0.5621033933681646,
+    "size_blender": [
+      3.9601902961730957,
+      5.0,
+      4.249575614929199
+    ],
+    "size_sm": [
+      3.9601902961730957,
+      4.249575614929199,
+      5.0
+    ],
+    "min": [
+      -1.9800951480865479,
+      -2.5,
+      -2.1247880458831787
+    ],
+    "max": [
+      1.9800951480865479,
+      2.5,
+      2.1247878074645996
+    ]
+  },
+  "verts": 17433,
+  "polys": 19230,
+  "overlay_faces": 36
+}

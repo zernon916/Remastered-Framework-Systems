@@ -1,90 +1,109 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <MyGUI type="Layout" version="3.2.0">
-	<Widget type="Widget" skin="PanelEmpty" name="BackPanel" position_real="0 0 0.615625 0.827778">
+	<!--
+		Inspect info panel for Recharge box (right of createBatteryContainerGui).
+		Slots stay on C++ Battery GUI. This overlay is GUI pips / ProgressBar — not world text.
+	-->
+	<Widget type="Widget" skin="BackgroundInventoryToolTip" name="BoxChargeRoot" position_real="0.625 0.144444 0.18 0.55">
 		<Property key="NeedKey" value="false" />
-		<Property key="InheritsPick" value="true" />
 		<Property key="NeedMouse" value="false" />
-		<Widget type="Widget" skin="BackgroundContainerBattery" position_real="0 0.161074 0.507614 0.323826">
-			<Widget type="TextBox" skin="TextBox" name="UpperName" position_real="0 0.04 1 0.22">
-				<Property key="FontName" value="SM_HeaderLarge_Wide" />
-				<Property key="Caption" value="Rechargeable Battery" />
-				<Property key="TextAlign" value="Center" />
-			</Widget>
-			<Widget type="TextBox" skin="TextBox" name="ChargeLabel" position_real="0.04 0.26 0.92 0.12">
-				<Property key="FontName" value="SM_Text" />
-				<Property key="Caption" value="Charge 0%" />
-				<Property key="TextAlign" value="Center" />
-			</Widget>
-			<Widget type="Widget" skin="PanelEmpty" name="ChargeTrack" position_real="0.08 0.38 0.84 0.10">
-				<Property key="NeedKey" value="false" />
+		<Property key="InheritsPick" value="false" />
+		<Widget type="EditBox" skin="EditBoxEmpty" name="InfoItemName" position_real="0.06 0.04 0.88 0.12">
+			<Property key="Caption" value="Rechargeable Battery" />
+			<Property key="FontName" value="SM_ItemTitle" />
+			<Property key="WordWrap" value="true" />
+			<Property key="ReadOnly" value="true" />
+			<Property key="Static" value="true" />
+			<Property key="TextAlign" value="Left Bottom" />
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+		</Widget>
+		<Widget type="Widget" skin="ItemColorLine" name="InfoColorLine" position_real="0 0.18 1 0.006">
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+		</Widget>
+		<Widget type="TextBox" skin="TextBox" name="ChargePropLabel" position_real="0.07 0.22 0.4 0.05">
+			<Property key="Caption" value="CHARGE" />
+			<Property key="FontName" value="SM_LabelTiny" />
+			<Property key="Alpha" value="0.5" />
+			<Property key="TextAlign" value="Left VCenter" />
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+		</Widget>
+		<!-- Visual charge meter (PropertyIndicator pips — same widget family as Weight/Durability) -->
+		<Widget type="Widget" skin="PanelEmpty" name="ChargeTrack" position_real="0.48 0.215 0.46 0.06">
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip0" position_real="0.00 0.10 0.09 0.80">
 				<Property key="NeedMouse" value="false" />
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip0" position_real="0.01 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip1" position_real="0.11 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip2" position_real="0.21 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip3" position_real="0.31 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip4" position_real="0.41 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip5" position_real="0.51 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip6" position_real="0.61 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip7" position_real="0.71 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip8" position_real="0.81 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-				<Widget type="Button" skin="PropertyIndicator" name="ChargePip9" position_real="0.91 0.15 0.08 0.70">
-					<Property key="NeedMouse" value="false" />
-					<Property key="NeedKey" value="false" />
-				</Widget>
-			</Widget>
-			<Widget type="ItemBox" skin="InventoryItemBox2" name="UpperGrid" position_real="0.04 0.52 0.925 0.42">
 				<Property key="NeedKey" value="false" />
 			</Widget>
-			<Widget type="ScrollBar" skin="InventoryVSlider" name="UpperScroll" position_real="1.8975 0.259067 0.045 1.14508">
-				<Property key="Range" value="101" />
-				<Property key="RangePosition" value="0" />
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip1" position_real="0.10 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip2" position_real="0.20 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip3" position_real="0.30 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip4" position_real="0.40 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip5" position_real="0.50 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip6" position_real="0.60 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip7" position_real="0.70 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip8" position_real="0.80 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
+			</Widget>
+			<Widget type="Button" skin="PropertyIndicator" name="ChargePip9" position_real="0.90 0.10 0.09 0.80">
+				<Property key="NeedMouse" value="false" />
+				<Property key="NeedKey" value="false" />
 			</Widget>
 		</Widget>
-		<Widget type="Widget" skin="BackgroundLightRoundedLowerLeft" position_real="0 0.505034 1 0.493289">
-			<Widget type="TextBox" skin="TextBox" name="LowerName" position_real="0.0659898 0.0578231 0.422589 0.0680272">
-				<Property key="FontName" value="SM_HeaderLarge_Wide" />
-				<Property key="Caption" value="Backpack" />
-				<Property key="TextAlign" value="Left VCenter" />
-			</Widget>
-			<Widget type="ItemBox" skin="InventoryItemBox2" name="LowerGrid" position_real="0.0203046 0.163265 0.939086 0.755102">
-				<Property key="NeedKey" value="false" />
-			</Widget>
-			<Widget type="ScrollBar" skin="InventoryVSlider" name="LowerScroll" position_real="0.963198 0.170068 0.0228426 0.751701">
-				<Property key="Range" value="101" />
-				<Property key="RangePosition" value="0" />
-			</Widget>
-			<Widget type="ImageBox" skin="ImageBox" position_real="0.0253807 0.0578231 0.0279188 0.0680272">
-				<Property key="ImageTexture" value="gui_inventory_icon_backpack.png" />
-			</Widget>
+		<!-- Continuous bar (Dressbot-style Progress + setData); pips remain the reliable meter -->
+		<Widget type="ProgressBar" skin="HUDProgressBarYellow" name="ChargeBar" position_real="0.07 0.32 0.86 0.045">
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+		</Widget>
+		<Widget type="TextBox" skin="TextBox" name="ChargePctLabel" position_real="0.07 0.38 0.86 0.05">
+			<Property key="Caption" value="" />
+			<Property key="FontName" value="SM_HeaderTiny" />
+			<Property key="TextAlign" value="Left VCenter" />
+			<Property key="TextColour" value="1 0.780392 0.227451" />
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+		</Widget>
+		<Widget type="Widget" skin="WhiteSkin" name="InfoDescSep" position_real="0.06 0.46 0.88 0.002">
+			<Property key="Colour" value="1 1 1" />
+			<Property key="Alpha" value="0.2" />
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
+		</Widget>
+		<Widget type="EditBox" skin="EditBoxEmpty" name="InfoDesc" position_real="0.06 0.48 0.88 0.46">
+			<Property key="Caption" value="Select the cell in the box slot to see charge." />
+			<Property key="FontName" value="SM_TextTiny" />
+			<Property key="TextColour" value="0.564706 0.572549 0.572549" />
+			<Property key="WordWrap" value="true" />
+			<Property key="ReadOnly" value="true" />
+			<Property key="Static" value="true" />
+			<Property key="NeedKey" value="false" />
+			<Property key="NeedMouse" value="false" />
 		</Widget>
 	</Widget>
-	<Widget type="Widget" skin="PanelEmpty" name="HotbarPanel" position_real="0 0.880556 0.59375 0.119444" />
 	<CodeGeneratorSettings />
 </MyGUI>
