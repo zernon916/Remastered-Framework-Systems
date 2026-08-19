@@ -60,10 +60,8 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Dev/build id (log + join chat prefix via RFS_JOIN_CHAT).
--- SHIPPED (git/steam/deploy): 0851-g production join chat — see commit e1e38ca.
--- LOCAL ONLY below: dev stamp + testing hints; do not commit/push without reverting to ship chat.
-RFS_PACK_STAMP = "[RFS] pack 0851-g-dev minimap pool idle warm"
-RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — [dev] Use /gensettings, /setup, and /menu - check /setup for recent changes, especially Farming settings. minimap_stats/api_dump DEV-gated; 0851-f idle/warm render loop."
+RFS_PACK_STAMP = "[RFS] pack 0851-h KomiSanN minimap credit"
+RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — Use /gensettings, /setup, and /menu. MiniMap always on; craft Nutt's GPS for the atlas. Wire a Battery to Hack Beacons."
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 -- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
