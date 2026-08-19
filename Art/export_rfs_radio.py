@@ -4,6 +4,7 @@
 import bpy
 import os
 import json
+import math
 import mathutils
 
 ROOT = r"C:\Users\benko\Desktop\RecipeFrameworkSurvival"
@@ -49,7 +50,9 @@ PARTS = [
         "rend": "rfs_radio_antenna.rend",
         "roots": ["HandheltRadio.026_low.001", "HandheltRadio.031_low"],
         "exclude": ["HandheltRadio.028_low"],
-        "target": (0.8, 0.8, 3.0),
+        "target": (1.0, 1.0, 6.5),
+        "uniform_scale": False,
+        "align_long_axis_y": True,
         "paintable": True,
     },
     {
@@ -261,15 +264,36 @@ def join_meshes(objs, name):
     return body
 
 
-def scale_and_sit(body, target):
+def align_long_axis_y(body):
+    apply_tr([body])
+    mins, maxs = world_bounds([body])
+    size = maxs - mins
+    dims = [(size.x, "X"), (size.y, "Y"), (size.z, "Z")]
+    dims.sort(key=lambda t: t[0], reverse=True)
+    longest = dims[0][1]
+    if longest == "X":
+        body.rotation_euler = (0.0, math.radians(90.0), 0.0)
+    elif longest == "Z":
+        body.rotation_euler = (math.radians(-90.0), 0.0, 0.0)
+    apply_tr([body])
+
+
+def scale_and_sit(body, target, uniform=True):
     apply_tr([body])
     mins, maxs = world_bounds([body])
     size = maxs - mins
     tx, ty, tz = target
-    s = min(tx / max(size.x, 1e-6), ty / max(size.z, 1e-6), tz / max(size.y, 1e-6))
-    center = (mins + maxs) * 0.5
-    body.scale = (s, s, s)
-    body.location = body.location - center * s
+    if uniform:
+        s = min(tx / max(size.x, 1e-6), ty / max(size.z, 1e-6), tz / max(size.y, 1e-6))
+        center = (mins + maxs) * 0.5
+        body.scale = (s, s, s)
+        body.location = body.location - center * s
+    else:
+        body.scale = (
+            tx / max(size.x, 1e-6),
+            tz / max(size.y, 1e-6),
+            ty / max(size.z, 1e-6),
+        )
     apply_tr([body])
     mins, maxs = world_bounds([body])
     size = maxs - mins
@@ -399,7 +423,9 @@ def export_part(part):
     mat_map = prepare_materials(objs, part["key"])
     objs = collect_part_meshes(part)
     body = join_meshes(objs, part["stem"])
-    meta = scale_and_sit(body, tuple(part["target"]))
+    if part.get("align_long_axis_y"):
+        align_long_axis_y(body)
+    meta = scale_and_sit(body, tuple(part["target"]), uniform=part.get("uniform_scale", True))
     fbx = os.path.join(OUT_MESH if not part.get("tool_fbx") else OUT_TOOLS, part["stem"] + ".fbx")
     select_meshes([body])
     export_fbx(fbx)

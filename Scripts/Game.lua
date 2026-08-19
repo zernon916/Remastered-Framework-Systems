@@ -60,7 +60,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Dev/build id (print/log only — not shown in player chat; see RFS_JOIN_CHAT).
-RFS_PACK_STAMP = "[RFS] pack 0822-b setup chat + farming hints"
+RFS_PACK_STAMP = "[RFS] pack 0850-a antenna scale + station grid align"
 RFS_JOIN_CHAT = "[RFS] Use /gensettings, /setup, and /menu — check /setup for recent changes, especially Farming settings."
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 

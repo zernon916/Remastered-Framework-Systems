@@ -11,12 +11,12 @@
 				"y": 1,
 				"z": 1
 			},
-			"rotationSet": "PropYZ",
+			"rotationSet": "PropY",
 			"physicsMaterial": "Electronics",
 			"flammable": false,
 			"density": 5.0,
 			"stackSize": 10,
-			"sticky": "-Y+X-X-Z+Z",
+			"sticky": "-Y",
 			"ratings": { "buoyancy": 2, "density": 3, "durability": 4, "friction": 4 },
 			"restrictions": { "usable": true, "paintable": true },
 			"scripted": {
@@ -35,7 +35,7 @@
 				"y": 1,
 				"z": 7
 			},
-			"rotationSet": "PropYZ",
+			"rotationSet": "PropY",
 			"physicsMaterial": "Metal",
 			"flammable": false,
 			"density": 3.0,
@@ -56,10 +56,10 @@
 			"hull": {
 				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_radio_lock_col.obj",
 				"x": 2,
-				"y": 2,
-				"z": 1
+				"y": 1,
+				"z": 2
 			},
-			"rotationSet": "PropYZ",
+			"rotationSet": "PropY",
 			"physicsMaterial": "Electronics",
 			"flammable": false,
 			"density": 6.0,
