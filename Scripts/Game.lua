@@ -59,9 +59,9 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 -- Engine reads this class field when creating player inventories (vanilla Survival = 40).
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
--- Dev/build id (print/log only — not shown in player chat; see RFS_JOIN_CHAT).
+-- Dev/build id (log + join chat prefix via RFS_JOIN_CHAT).
 RFS_PACK_STAMP = "[RFS] pack 0850-a antenna scale + station grid align"
-RFS_JOIN_CHAT = "[RFS] Use /gensettings, /setup, and /menu — check /setup for recent changes, especially Farming settings."
+RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — Use /gensettings, /setup, and /menu — check /setup for recent changes, especially Farming settings."
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 -- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
