@@ -1,18 +1,33 @@
 {
-	"_comment": "Purple chem tank fill _v10. Unparented ShapeRenderable. Block-space mesh. Liquid shader (vanilla bucket/chemical) — not Glass (refraction overdraw when camera inside).",
+	"_comment": "Purple chem tank fill _v10. Unparented ShapeRenderable. Block-space mesh.",
 	"lodList": [
 		{
 			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_chemfill_v10.fbx",
 			"subMeshMap": {
 				"chemfill": {
-					"material": "Liquid",
+					"material": "Glass",
 					"custom": {
-						"shadow": false
+						"glass": {
+							"ROI": 1.33,
+							"blurriness": 0.15,
+							"depthBlurDistance": 1,
+							"depthBlurMin": 0,
+							"magnification": 1.0,
+							"magnificationDirection": [
+								1.0,
+								1.0
+							],
+							"refraction": 0.08,
+							"responsiveGlow": 0.4,
+							"transmission": 0.55,
+							"transparencyBack": 0.35,
+							"transparencyFront": 0.45
+						}
 					},
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/chemfill_dif.png",
-						"$GAME_DATA/Objects/Textures/Blocks/blk_glass_asg.tga",
-						"$GAME_DATA/Textures/Materialtextures/normal_nor.tga"
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					]
 				}
 			},

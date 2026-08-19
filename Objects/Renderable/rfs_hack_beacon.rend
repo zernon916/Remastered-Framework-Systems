@@ -1,0 +1,19 @@
+{
+	"_comment": "CGTrader fbx_kit / beacon (Military communication kit). Antenna stays DTry.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_hack_beacon.fbx",
+			"subMeshMap": {
+				"military_comm_set": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/radio/fbx_kit/Military_communication_D.dds",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/radio/fbx_kit/Military_communication_N.dds"
+					]
+				}
+			},
+			"maxViewDistance": 1000.0
+		}
+	]
+}

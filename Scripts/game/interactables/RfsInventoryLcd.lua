@@ -53,7 +53,7 @@ end
 local function rebuildChestSet()
 	chestSet = {}
 	for name, fallback in pairs( CHEST_FALLBACK ) do
-		local g = rawget( _G, name )
+		local g = _G[name]
 		if g ~= nil then
 			chestSet[uuidStr( g )] = true
 		end

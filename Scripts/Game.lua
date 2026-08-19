@@ -60,8 +60,8 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Dev/build id (log + join chat prefix via RFS_JOIN_CHAT).
-RFS_PACK_STAMP = "[RFS] pack 0850-a antenna scale + station grid align"
-RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — Use /gensettings, /setup, and /menu — check /setup for recent changes, especially Farming settings."
+RFS_PACK_STAMP = "[RFS] pack 0851-g ship minimap perf"
+RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — Use /gensettings, /setup, and /menu. MiniMap always on; craft Nutt's GPS for the atlas. Wire a Battery to Hack Beacons."
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 -- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
@@ -530,7 +530,8 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	end
 	pcall( function()
 		if type( RfsHackReload ) == "table" and RfsHackReload.resetLoadWindow then
-			RfsHackReload.resetLoadWindow()
+			local world = self.sv and self.sv.saved and self.sv.saved.overworld
+			RfsHackReload.resetLoadWindow( world )
 		end
 	end )
 	print( RFS_PACK_STAMP .. " server_onCreate (g_survivalDev left for normal quest flow; RfsQuest=" .. tostring( type( _G.RfsQuest ) ) .. ")" )
@@ -774,8 +775,8 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 				and type( RfsBeaconOrdersGui ) == "table"
 				and type( RfsBeaconOrdersGui.rebindChrome ) == "function" then
 				self.cl.rfsOrdersRebindAtTick = nil
-				-- Force Color recreate: setText after open can drop ColorDrop while Mode survives.
-				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true } )
+				-- Force Color + NameEdit recreate: setText after open drops both widgets.
+				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true, forceName = true } )
 			end
 		end
 		local rebindAgain = self.cl and self.cl.rfsOrdersRebindAgainAtTick
@@ -785,7 +786,7 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 				and type( RfsBeaconOrdersGui ) == "table"
 				and type( RfsBeaconOrdersGui.rebindChrome ) == "function" then
 				self.cl.rfsOrdersRebindAgainAtTick = nil
-				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true } )
+				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true, forceName = true } )
 			end
 		end
 	end
@@ -2825,6 +2826,10 @@ end
 
 -- ========== /menu GUI client callbacks ==========
 
+function RecipeFrameworkSurvival.cl_rfs_menuCloseStale( self )
+	-- Detached OnClose from a destroyed /menu GUI — ignore.
+end
+
 function RecipeFrameworkSurvival.cl_rfs_menuClose( self )
 	if type( RfsMenuGui ) == "table" then
 		RfsMenuGui.close( self )
@@ -3693,9 +3698,9 @@ function RecipeFrameworkSurvival.cl_rfs_ordersColor( self, value )
 	end
 end
 
-function RecipeFrameworkSurvival.cl_rfs_ordersNameEdit( self, a, b )
+function RecipeFrameworkSurvival.cl_rfs_ordersNameEdit( self, ... )
 	if type( RfsBeaconOrdersGui ) == "table" and RfsBeaconOrdersGui.onNameEdit then
-		RfsBeaconOrdersGui.onNameEdit( self, a, b )
+		RfsBeaconOrdersGui.onNameEdit( self, ... )
 	end
 end
 

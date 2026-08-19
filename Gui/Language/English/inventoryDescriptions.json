@@ -105,13 +105,13 @@
 		"title": "Handheld Radio",
 		"upperCaseTitle": "HANDHELD RADIO",
 		"keywords": [ "radio", "hack", "handheld", "tool", "rfs" ],
-		"description": "Player handheld hack tool (NOT the station core). Hideout 5 Farmers (schematic). Craft: 1 Metal Block + 1 Circuit Board. Equip, E on a bot within 8 m: 40% chance to hack, then Follow or Defend. Out of range 10 s → bot reverts. Mesh: R&S Military radio by DTry (CC BY 4.0)."
+		"description": "Player handheld hack tool (NOT the station core). Hideout 5 Farmers (schematic). Craft: 1 Metal Block + 1 Circuit Board. Equip, E on a bot within 8 m: 40% chance to hack, then Follow or Defend. Out of range 10 s → bot reverts. Mesh: Apocalyptic-Asset-Arsenal Military communication kit (CGTrader; credit required)."
 	},
 	"d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b": {
 		"title": "Radio Battery Brick",
 		"upperCaseTitle": "RADIO BATTERY BRICK",
 		"keywords": [ "radio", "battery", "station", "rfs" ],
-		"description": "Station piece 5. Hideout 15 Farmers (schematic). Wire to Hack Beacon core with the long antenna for mid-tier range (stub). Paintable olive/grey. Mesh: R&S Military radio by DTry (CC BY 4.0)."
+		"description": "Station piece 5. Hideout 15 Farmers (schematic). Wire to Hack Beacon core with the long antenna for mid-tier range (stub). Paintable olive/grey. Mesh: Apocalyptic-Asset-Arsenal Military communication kit (CGTrader; credit required)."
 	},
 	"ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e": {
 		"title": "Radio Antenna",
@@ -123,6 +123,6 @@
 		"title": "Radio Lock",
 		"upperCaseTitle": "RADIO LOCK",
 		"keywords": [ "radio", "lock", "ampfilter", "station", "rfs" ],
-		"description": "Station lock tier 10 (ampfilter chassis). Miner shop schematic 8000 warehouse tokens. Craft: 5 Advanced Component Kits, 20 Circuit Boards, 10 Metal Block 3, 3 Glass. Persist conversion when leaving range (stub). Mesh: R&S Military radio by DTry (CC BY 4.0)."
+		"description": "Station lock tier 10 (ampfilter chassis). Miner shop schematic 8000 warehouse tokens. Craft: 5 Advanced Component Kits, 20 Circuit Boards, 10 Metal Block 3, 3 Glass. Persist conversion when leaving range (stub). Mesh: Apocalyptic-Asset-Arsenal Military communication kit (CGTrader; credit required)."
 	}
 }

@@ -3,7 +3,7 @@
 		{
 			"uuid": "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7",
 			"name": "obj_rfs_hackbeacon",
-			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_radio_lock.rend",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_hack_beacon.rend",
 			"color": "4a4f44",
 			"box": { "x": 2, "y": 1, "z": 2 },
 			"rotationSet": "PropY",
@@ -30,10 +30,10 @@
 		{
 			"uuid": "c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8",
 			"name": "obj_rfs_controlbeacon",
-			"renderable": "$GAME_DATA/Objects/Renderable/Interactive/obj_interactive_timer.rend",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_station_timer.rend",
 			"color": "e07a12",
 			"box": { "x": 1, "y": 2, "z": 1 },
-			"rotationSet": "PropY",
+			"rotationSet": "PropYmmNegYmmZ",
 			"physicsMaterial": "Electronics",
 			"flammable": false,
 			"density": 5.0,
@@ -57,7 +57,7 @@
 		{
 			"uuid": "d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709",
 			"name": "obj_rfs_infectbeacon",
-			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive_upgradeable/obj_interactiveupgradeable_sensor01.rend",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_station_sensor.rend",
 			"color": "7b1fa2",
 			"box": { "x": 1, "y": 1, "z": 1 },
 			"rotationSet": "PropY",

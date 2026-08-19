@@ -1,0 +1,47 @@
+{
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_station_batterybox.fbx",
+			"minViewSize": 60,
+			"subMeshMap": {
+				"connectionpoint": {
+					"custom": {
+						"metalProfile": "DifAsgNor_LowReflection"
+					},
+					"material": "DifAsgNor_Metal",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_interactive_container_connectorpoint_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_interactive_container_connectorpoint_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_interactive_container_connectorpoint_nor.tga"
+					]
+				},
+				"containerbattery": {
+					"custom": {
+						"metalProfile": "DifAsgNor_Painted"
+					},
+					"material": "DifAsgNor_Metal",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_containers_battery_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_containers_battery_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_containers_battery_nor.tga"
+					]
+				},
+				"screen": {
+					"custom": {
+						"uv0": {
+							"u": 1.0,
+							"v": 0.166999996
+						}
+					},
+					"material": "UVAnimDifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_containers_screen_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_containers_screen_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/containers/obj_containers_screen_nor.tga"
+					]
+				}
+			}
+		}
+	],
+	"_comment": "Vanilla batterybox mesh re-export for PropY (0850-q). sit_on_bottom skipped — mesh stays at vanilla origin. Textures from obj_containers_battery.rend."
+}

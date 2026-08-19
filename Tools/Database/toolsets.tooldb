@@ -1,6 +1,5 @@
 {
 	"toolSetList": [
-		"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/Database/ToolSets/rfs_minimap.toolset",
-		"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Database/ToolSets/rfs_minimap.toolset"
+		"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/Database/ToolSets/rfs_minimap.toolset"
 	]
 }

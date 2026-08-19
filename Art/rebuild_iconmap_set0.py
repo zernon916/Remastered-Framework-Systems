@@ -19,7 +19,7 @@ ROW_Y = 864  # vanilla Data IconMap last used row is y=768
 
 # Unique unused cells (do not use vanilla (0,96) Thruster / (96,96) Controller).
 RFS_TILES = [
-    ("b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7", 1920, "radiolock"),
+    ("b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7", 0, "hack"),
     ("c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8", 96, "control"),
     ("d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709", 192, "infect"),
     ("9a1528a6-acd2-44db-8050-b2f493362191", 288, "maplock"),
@@ -148,7 +148,11 @@ def main():
         "hack": crop96(old, 0, 0),
         "control": crop96(old, 96, 0),
         "infect": crop96(old, 192, 0),
-        "gps": crop96(old, 384, 0),
+        # Nutt World Map gps_icon_b4.png (256²); shrink to 96² like hack beacon Art icons.
+        "gps": icon_from_file(
+            os.path.join(ROOT, "Gui", "gps_icon_b4.png"),
+            fallback=crop96(old, 384, 0),
+        ),
         # Chemical Regeneration Station / DeepSleep UUID ("pod" row) should use
         # the explicit deep sleep icon (not the old gray-crop fallback).
         "pod": icon_from_file(

@@ -17,8 +17,8 @@ local UNIT_CLASSES = {
 	"BaseTotebotUnit", "TrashbotUnit",
 }
 
-local SCAN_TICKS = 160
-local SCAN_INTERVAL = 8
+local SCAN_TICKS = 200
+local SCAN_INTERVAL = 4
 local RESTORE_RPC = "sv_e_rfsRestoreAfterLoad"
 
 local function eachUnit( world, fn )
@@ -134,6 +134,33 @@ local function adoptInHostEnv( unit, world )
 	end )
 end
 
+local function loadWindowStartTick()
+	local start = _G.rfsHackLoadTickAt
+	if start == nil then
+		start = RfsHackReload._loadTick
+	end
+	return tonumber( start ) or 0
+end
+
+function RfsHackReload.inLoadWindow()
+	local tick = 0
+	pcall( function()
+		tick = sm.game.getCurrentTick() or 0
+	end )
+	return ( tick - loadWindowStartTick() ) <= SCAN_TICKS
+end
+
+local function robotUnit( unit )
+	if type( RfsBotHijack ) ~= "table" or type( RfsBotHijack.isRobotCharacter ) ~= "function" then
+		return false
+	end
+	local ok, yes = pcall( function()
+		local char = unit and unit.character
+		return char and sm.exists( char ) and RfsBotHijack.isRobotCharacter( char )
+	end )
+	return ok and yes and true or false
+end
+
 function RfsHackReload.scanWorld( world )
 	RfsHackReload.ensureRestoreHook()
 	RfsHackReload._restored = RfsHackReload._restored or {}
@@ -141,6 +168,7 @@ function RfsHackReload.scanWorld( world )
 	pcall( function()
 		tick = sm.game.getCurrentTick() or 0
 	end )
+	local inLoad = RfsHackReload.inLoadWindow()
 	eachUnit( world, function( unit )
 		local key = nil
 		pcall( function()
@@ -159,6 +187,11 @@ function RfsHackReload.scanWorld( world )
 				want = RfsBotHijack.isAlly( unit ) and true or false
 			end )
 		end
+		-- Post-load: beacon tickAuto can re-HACK before unit think restores saved.playerAlly.
+		-- Poke every robot once so unit.saved + publicData.rfsAllyInfo exist before auto-hijack.
+		if not want and inLoad and robotUnit( unit ) then
+			want = true
+		end
 		if not want then
 			return
 		end
@@ -171,12 +204,11 @@ function RfsHackReload.scanWorld( world )
 end
 
 function RfsHackReload.tick( world )
-	RfsHackReload._loadTick = RfsHackReload._loadTick or sm.game.getCurrentTick() or 0
 	local tick = 0
 	pcall( function()
 		tick = sm.game.getCurrentTick() or 0
 	end )
-	if tick - RfsHackReload._loadTick > SCAN_TICKS then
+	if tick - loadWindowStartTick() > SCAN_TICKS then
 		return
 	end
 	if ( tick % SCAN_INTERVAL ) ~= 0 then
@@ -185,9 +217,21 @@ function RfsHackReload.tick( world )
 	RfsHackReload.scanWorld( world )
 end
 
-function RfsHackReload.resetLoadWindow()
-	RfsHackReload._loadTick = sm.game.getCurrentTick() or 0
+function RfsHackReload.resetLoadWindow( world )
+	local tick = 0
+	pcall( function()
+		tick = sm.game.getCurrentTick() or 0
+	end )
+	_G.rfsHackLoadTickAt = tick
+	RfsHackReload._loadTick = tick
 	RfsHackReload._restored = {}
+	if not world then
+		local host = _G.g_rfsHijackHost
+		if type( host ) == "table" then
+			world = host.world
+		end
+	end
+	RfsHackReload.scanWorld( world )
 end
 
 print( "[RFS] RfsHackReload loaded (VOLATILE post-load ally restore)" )

@@ -33,7 +33,7 @@ function RfsHijackHost.server_onCreate( self )
 	_G.g_rfsHijackHost = self
 	pcall( function()
 		if type( RfsHackReload ) == "table" and RfsHackReload.resetLoadWindow then
-			RfsHackReload.resetLoadWindow()
+			RfsHackReload.resetLoadWindow( self.world )
 		end
 	end )
 	pcall( function()

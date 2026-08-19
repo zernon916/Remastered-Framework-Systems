@@ -8,7 +8,7 @@
 					"material": "DifAsgNor",
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/down_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					]
 				},
@@ -16,7 +16,7 @@
 					"material": "DifAsgNor",
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/up_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					]
 				},
@@ -73,7 +73,7 @@
 					},
 					"textureList": [
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/deepsleep/decals_dif.png",
-						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg.tga",
 						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
 					]
 				}

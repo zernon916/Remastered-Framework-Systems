@@ -210,6 +210,18 @@ function RfsHackApply.savedHasDevice( saved )
 	} )
 end
 
+-- Beacon tickAuto: skip re-HACK when publicData or allies[] still show a real device ally.
+function RfsHackApply.unitLooksSavedAlly( unit )
+	if not unit then
+		return false
+	end
+	if type( RfsBotHijack ) == "table" and type( RfsBotHijack.isAlly ) == "function" and RfsBotHijack.isAlly( unit ) then
+		return true
+	end
+	local payload = RfsHackApply.readPublicApply( unit )
+	return type( payload ) == "table" and RfsHackApply.payloadHasDevice( payload )
+end
+
 -- Beacon one-shot blob or sticky rfsAllyInfo with a device/infected identity.
 -- Do NOT treat leftover rfsPlayerAlly as a convert payload (instant global ally).
 function RfsHackApply.readPublicApply( unit )
@@ -547,6 +559,13 @@ function RfsHackApply.pullPublicOntoUnit( self )
 		}
 	end
 	if type( params ) ~= "table" or not RfsHackApply.payloadHasDevice( params ) then
+		if self.saved.playerAlly and type( RfsHackReload ) == "table"
+			and type( RfsHackReload.inLoadWindow ) == "function" and RfsHackReload.inLoadWindow() then
+			if type( RfsHackApply.restoreFromSaved ) == "function" then
+				return RfsHackApply.restoreFromSaved( self )
+			end
+			return false
+		end
 		local leftover = self.saved.playerAlly and true or false
 		pcall( function()
 			local char = self.unit.character

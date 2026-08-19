@@ -1,0 +1,69 @@
+{
+  "kit_dir": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Art\\cgtrader\\source\\fbx_kit",
+  "parts": [
+    {
+      "key": "lock",
+      "stem": "rfs_radio_lock",
+      "source_fbx": "LaptopRadio.FBX",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_radio_lock.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_lock.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_lock_col.obj",
+      "materials": 1,
+      "tris": 482,
+      "box": {
+        "x": 2,
+        "y": 1,
+        "z": 1
+      },
+      "grid_yaw_deg": 1.4
+    },
+    {
+      "key": "brick",
+      "stem": "rfs_radio_brick",
+      "source_fbx": "WalkieTalkieRadio.FBX",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_radio_brick.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_brick.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_brick_col.obj",
+      "materials": 1,
+      "tris": 521,
+      "box": {
+        "x": 2,
+        "y": 1,
+        "z": 1
+      },
+      "grid_yaw_deg": -1.8
+    },
+    {
+      "key": "beacon",
+      "stem": "rfs_hack_beacon",
+      "source_fbx": "ArVrRadio.FBX",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_hack_beacon.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_hack_beacon.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_hack_beacon_col.obj",
+      "materials": 1,
+      "tris": 1512,
+      "box": {
+        "x": 2,
+        "y": 1,
+        "z": 2
+      },
+      "grid_yaw_deg": -4.0
+    },
+    {
+      "key": "handheld",
+      "stem": "rfs_radio_handheld",
+      "source_fbx": "WalkieTalkieRadio.FBX",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Tools\\rfs_radio_handheld.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_radio_handheld.rend",
+      "col": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Collision\\rfs_radio_handheld_col.obj",
+      "materials": 1,
+      "tris": 521,
+      "box": {
+        "x": 2,
+        "y": 1,
+        "z": 1
+      },
+      "grid_yaw_deg": -1.8
+    }
+  ]
+}

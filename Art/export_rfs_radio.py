@@ -1,6 +1,7 @@
-# Blender 4.4: R&S Military radio (DTry, CC-BY-4.0) -> RFS radio parts + handheld tool mesh.
-# Subtrees per GLB inspector (do NOT merge handheld into station core).
+# Blender 4.4: R&S Military radio (DTry, CC-BY-4.0) -> antenna only.
+# Lock/brick/beacon/handheld: Art/export_rfs_fbx_kit.py (Apocalyptic fbx_kit).
 # Run: blender --background --python Art/export_rfs_radio.py
+#      RFS_EXPORT_KEYS=antenna blender --background --python Art/export_rfs_radio.py
 import bpy
 import os
 import json
@@ -24,46 +25,17 @@ SHARED_NOR = PREFIX + "/Objects/Textures/shared/rfs_nor.tga"
 # Node name fragments (merge all mesh children under matching roots).
 PARTS = [
     {
-        "key": "handheld",
-        "stem": "rfs_radio_handheld",
-        "rend": "rfs_radio_handheld.rend",
-        "tool_fbx": True,
-        "roots": ["HandheltRadio.001_low.004", "HandheltRadio.028_low.004"],
-        "exact_roots": True,
-        "exclude": [],
-        "target": (1.4, 1.4, 1.4),
-        "paintable": True,
-    },
-    {
-        "key": "brick",
-        "stem": "rfs_radio_brick",
-        "rend": "rfs_radio_brick.rend",
-        "roots": ["RadioMR300.197"],
-        "exact_roots": True,
-        "exclude": [],
-        "target": (1.5, 0.6, 1.0),
-        "paintable": True,
-    },
-    {
         "key": "antenna",
         "stem": "rfs_radio_antenna",
         "rend": "rfs_radio_antenna.rend",
         "roots": ["HandheltRadio.026_low.001", "HandheltRadio.031_low"],
         "exclude": ["HandheltRadio.028_low"],
-        "target": (1.0, 1.0, 6.5),
+        "target": (1.0, 7.0, 1.0),
         "uniform_scale": False,
-        "align_long_axis_y": True,
+        "align_long_axis_z": True,
+        "sit_visual_bottom": True,
+        "grid_yaw_deg": 0.0,
         "paintable": True,
-    },
-    {
-        "key": "lock",
-        "stem": "rfs_radio_lock",
-        "rend": "rfs_radio_lock.rend",
-        "roots": ["Ampfilter", "ampfilter"],
-        "exclude": ["RadioMR300", "HandRadio", "HandheltRadio", "Table", "Telephone", "Headset"],
-        "target": (2.0, 1.5, 1.5),
-        "paintable": True,
-        "glass_mats": ["Ampfilter_Second", "ampfilter_second"],
     },
 ]
 
@@ -200,8 +172,7 @@ def obj_matches_part(o, part):
     for root in part["roots"]:
         rl = root.lower()
         if part.get("exact_roots"):
-            # GLB mesh names look like HandheltRadio.001_low.004_HandheltRadio_0
-            if rl in low and (low.startswith(rl) or ("_" + rl) in low or low.split("_")[0] == rl):
+            if low == rl or low.startswith(rl + "_"):
                 return True
         elif rl in low:
             return True
@@ -264,7 +235,8 @@ def join_meshes(objs, name):
     return body
 
 
-def align_long_axis_y(body):
+def align_long_axis_z(body):
+    # glTF import -> Blender Z-up. FBX axis_up=Y bakes Blender Z -> SM Y (height).
     apply_tr([body])
     mins, maxs = world_bounds([body])
     size = maxs - mins
@@ -272,13 +244,92 @@ def align_long_axis_y(body):
     dims.sort(key=lambda t: t[0], reverse=True)
     longest = dims[0][1]
     if longest == "X":
-        body.rotation_euler = (0.0, math.radians(90.0), 0.0)
-    elif longest == "Z":
         body.rotation_euler = (math.radians(-90.0), 0.0, 0.0)
+    elif longest == "Y":
+        body.rotation_euler = (math.radians(90.0), 0.0, 0.0)
     apply_tr([body])
 
 
+def snap_yaw_to_grid(body):
+    apply_tr([body])
+    body.rotation_mode = "XYZ"
+    z = body.rotation_euler.z
+    snapped = round(z / (math.pi * 0.5)) * (math.pi * 0.5)
+    if abs(z - snapped) > 0.01:
+        body.rotation_euler.z = snapped
+        apply_tr([body])
+
+
+def apply_grid_yaw(body, deg):
+    apply_tr([body])
+    if deg:
+        # glTF import leaves QUATERNION mode; rotation_euler.z is ignored until XYZ.
+        body.rotation_mode = "XYZ"
+        body.rotation_euler.z += math.radians(float(deg))
+        apply_tr([body])
+    else:
+        snap_yaw_to_grid(body)
+
+
+def dense_bottom_z(body, percentile=0.05):
+    apply_tr([body])
+    zs = []
+    for v in body.data.vertices:
+        zs.append((body.matrix_world @ v.co).z)
+    if not zs:
+        return None
+    zs.sort()
+    idx = min(len(zs) - 1, max(0, int(len(zs) * percentile)))
+    return zs[idx]
+
+
+def trim_below_dense_bottom(body, percentile=0.05, margin=0.02):
+    """Drop thin mount/wire verts below the bulk visual base (antenna float fix)."""
+    z_cut = dense_bottom_z(body, percentile=percentile)
+    if z_cut is None:
+        return 0.0
+    z_cut -= margin
+    bpy.ops.object.select_all(action="DESELECT")
+    body.select_set(True)
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.mode_set(mode="EDIT")
+    bm = __import__("bmesh").from_edit_mesh(body.data)
+    for v in bm.verts:
+        w = body.matrix_world @ v.co
+        v.select = w.z < z_cut
+    __import__("bmesh").update_edit_mesh(body.data)
+    bpy.ops.mesh.delete(type="VERT")
+    bpy.ops.object.mode_set(mode="OBJECT")
+    apply_tr([body])
+    return z_cut
+
+
+def sit_visual_bottom(body, box_y, percentile=0.05):
+    """Shift mesh so bulk geometry base sits at hull bottom (-box_y/2)."""
+    apply_tr([body])
+    z_dense = dense_bottom_z(body, percentile=percentile)
+    if z_dense is None:
+        return
+    base_z = -box_y * 0.5
+    dz = base_z - z_dense
+    if abs(dz) > 0.001:
+        body.matrix_world.translation += mathutils.Vector((0.0, 0.0, dz))
+        apply_tr([body])
+
+
+def flush_bottom(body, box_y):
+    apply_tr([body])
+    mins, maxs = world_bounds([body])
+    if mins is None:
+        return
+    dz = (-box_y * 0.5) - mins.z
+    if abs(dz) > 0.001:
+        body.matrix_world.translation += mathutils.Vector((0.0, 0.0, dz))
+        apply_tr([body])
+
+
 def scale_and_sit(body, target, uniform=True):
+    # target = (SM x width, SM y height, SM z depth). Blender: x, y=depth, z=height.
     apply_tr([body])
     mins, maxs = world_bounds([body])
     size = maxs - mins
@@ -298,8 +349,8 @@ def scale_and_sit(body, target, uniform=True):
     mins, maxs = world_bounds([body])
     size = maxs - mins
     box_x = max(1, min(6, int(round(size.x + 0.45))))
-    box_y = max(1, min(6, int(round(size.z + 0.45))))
-    box_z = max(1, min(10, int(round(size.y + 0.45))))
+    box_y = max(1, min(10, int(round(size.z + 0.45))))
+    box_z = max(1, min(6, int(round(size.y + 0.45))))
     cx = 0.5 * (mins.x + maxs.x)
     cy = 0.5 * (mins.y + maxs.y)
     dz = (-box_y * 0.5) - mins.z
@@ -423,14 +474,38 @@ def export_part(part):
     mat_map = prepare_materials(objs, part["key"])
     objs = collect_part_meshes(part)
     body = join_meshes(objs, part["stem"])
-    if part.get("align_long_axis_y"):
-        align_long_axis_y(body)
+    if part.get("align_long_axis_z"):
+        align_long_axis_z(body)
     meta = scale_and_sit(body, tuple(part["target"]), uniform=part.get("uniform_scale", True))
+    if part.get("sit_visual_bottom"):
+        sit_visual_bottom(body, meta["box"]["y"])
+    else:
+        flush_bottom(body, meta["box"]["y"])
+    apply_grid_yaw(body, part.get("grid_yaw_deg", 0.0))
+    if not part.get("sit_visual_bottom"):
+        flush_bottom(body, meta["box"]["y"])
+    mins, maxs = world_bounds([body])
+    size = maxs - mins
+    if part.get("sit_visual_bottom"):
+        # Keep declared hull height (1x7x1) — mesh may extend below hull for thin pole wire.
+        meta["box"] = {
+            "x": part["target"][0],
+            "y": part["target"][1],
+            "z": part["target"][2],
+        }
+    else:
+        meta["box"] = {
+            "x": max(1, min(6, int(round(size.x + 0.45)))),
+            "y": max(1, min(10, int(round(size.z + 0.45)))),
+            "z": max(1, min(6, int(round(size.y + 0.45)))),
+        }
+    meta["grid_yaw_deg"] = part.get("grid_yaw_deg", 0.0)
     fbx = os.path.join(OUT_MESH if not part.get("tool_fbx") else OUT_TOOLS, part["stem"] + ".fbx")
     select_meshes([body])
     export_fbx(fbx)
     rend = write_rend(part, part["stem"], mat_map, fbx)
-    col = write_collision(part["stem"], meta["box"])
+    col_box = part.get("collision_box") or meta["box"]
+    col = write_collision(part["stem"], col_box)
     tri_count = len(body.data.polygons) if body.data else 0
     return {
         "key": part["key"],
@@ -440,15 +515,24 @@ def export_part(part):
         "col": col,
         "materials": len(mat_map),
         "tris": tri_count,
-        "box": meta["box"],
+        "box": col_box,
     }
 
 
 def main():
     if not os.path.isfile(GLB):
         raise SystemExit("missing GLB: " + GLB)
+    only = os.environ.get("RFS_EXPORT_KEYS", "").strip()
+    keys = [k.strip() for k in only.split(",") if k.strip()] if only else None
+    # Default: antenna only (fbx_kit handles lock/brick/beacon/handheld).
+    default_keys = [p["key"] for p in PARTS]
     results = []
     for part in PARTS:
+        if keys:
+            if part["key"] not in keys:
+                continue
+        elif part["key"] not in default_keys:
+            continue
         results.append(export_part(part))
     meta_path = os.path.join(OUT_ART, "sm_export_radio_meta.json")
     with open(meta_path, "w", encoding="utf-8") as f:

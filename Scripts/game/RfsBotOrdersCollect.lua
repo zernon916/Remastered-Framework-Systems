@@ -109,7 +109,7 @@ local function uuidStr( u )
 end
 
 local function resolveNamed( name )
-	local g = rawget( _G, name )
+	local g = _G[name]
 	if g ~= nil then
 		return g
 	end
@@ -144,7 +144,7 @@ local function rebuildSets()
 		end
 	end
 	lootHvsSet = {}
-	local hvs = rawget( _G, "hvs_loot" )
+	local hvs = _G.hvs_loot
 	if hvs then
 		lootHvsSet[uuidStr( hvs )] = true
 	end

@@ -239,7 +239,7 @@ local function botKind( typeStr, displayName )
 			return "water"
 		end
 	end
-	local blue = rawget( _G, "unit_totebot_blue" )
+	local blue = _G.unit_totebot_blue
 	if ( blue and sameUuid( typeRaw, blue ) ) or sameUuid( typeRaw, UUID_TOTEBOT_BLUE ) then
 		return "water"
 	end
@@ -250,7 +250,7 @@ local function botKind( typeStr, displayName )
 	end
 	-- Seed UUID before generic "farm" — crate-tray farmer is Seed, not Farm.
 	-- unit_seedbot is often nil in this sandbox; hardcoded UUID strings still match.
-	local seedG = rawget( _G, "unit_seedbot" )
+	local seedG = _G.unit_seedbot
 	local isSeed = ( seedG and sameUuid( typeRaw, seedG ) ) or false
 	for i = 1, #UUID_SEEDBOT_STRS do
 		if sameUuid( typeRaw, UUID_SEEDBOT_STRS[i] ) then
@@ -729,9 +729,16 @@ function RfsBeaconOrdersGui.refresh( host )
 		paintSlot( gui, host, i, rows[abs] )
 	end
 	host.cl.rfsOrdersSuppressDrop = nil
-	-- setText on BtnMaster (CLEAR MASTER ↔ SET MASTER) drops SM button callbacks.
-	-- Always rebind Mode/Color/BotName after paint (setText drops them; after-load clicks).
-	bindChrome( host, gui )
+	-- setText drops button AND ColorDrop callbacks; ModeDrop survives setDropDownCallback
+	-- alone but ColorDrop needs recreate (ensureColorDrop). Cached gen/gui skips recreate
+	-- without force — second menu open looked alive but never sent sv_rfs_ordersSetColor.
+	host.cl.rfsOrdersColorDropGui = nil
+	host.cl.rfsOrdersColorDropGen = nil
+	-- NameEdit: poke only when selection changed; callbacks rebind last in bindChrome.
+	rebindOrdersChrome( host, {
+		forceColor = true,
+		forceName = host.cl.rfsOrdersNameUserEdited ~= true,
+	} )
 end
 
 -- Scroll offset + in-place refresh only. Never open/close/clear rows / applyList.
@@ -838,11 +845,202 @@ local function ensureColorDrop( host, gui, force )
 	end )
 end
 
+-- NameEdit is special: after leave+re-enter, setText list paint leaves the box
+-- looking editable but TextChanged / getText stop working (widget id "NameEdit").
+-- Poke setText + setTextChangedCallback once per open (and forced post-open rebinds)
+-- AFTER chrome setText — same slot as ensureColorDrop, never from scroll-only paths.
+local function sanitizeTypedName( typed )
+	if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
+		return RfsHackOrdersIdentity.sanitizeName( typed )
+	end
+	typed = tostring( typed or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
+	if isWidgetIdText( typed ) then
+		return ""
+	end
+	return typed
+end
+
+-- Fresh widget ref — stale handles miss Caption after setText / reopen.
+local function nameEditWidgetRef( host, gui )
+	gui = gui or ( host and host.cl and host.cl.rfsOrdersGui )
+	if not gui then
+		return nil
+	end
+	local widget = nil
+	pcall( function()
+		widget = gui:getWidget( "NameEdit" )
+	end )
+	if widget and host and host.cl then
+		host.cl.rfsOrdersNameEditWidget = widget
+	end
+	return widget
+end
+
+local function readWidgetFieldText( widget )
+	if not widget then
+		return nil
+	end
+	local got = nil
+	pcall( function()
+		if type( widget.getText ) == "function" then
+			got = widget:getText()
+		end
+	end )
+	if got and tostring( got ) ~= "" and not isWidgetIdText( got ) then
+		return tostring( got )
+	end
+	for _, prop in ipairs( { "Caption", "Text", "Value", "caption", "text" } ) do
+		local v = nil
+		pcall( function()
+			v = widget[prop]
+		end )
+		if v and tostring( v ) ~= "" and not isWidgetIdText( v ) then
+			return tostring( v )
+		end
+	end
+	return nil
+end
+
+-- Live EditBox read: gui:getText often returns widget id "NameEdit" while
+-- widget.Caption still holds visible typed text (BigMap BMKeys / BotRename).
+local function readNameEditLive( host, gui )
+	gui = gui or ( host and host.cl and host.cl.rfsOrdersGui )
+	local fromWidget = readWidgetFieldText( nameEditWidgetRef( host, gui ) )
+	if fromWidget and fromWidget ~= "" then
+		return fromWidget
+	end
+	if gui then
+		local box = nil
+		pcall( function()
+			box = gui:getText( "NameEdit" )
+		end )
+		if box and tostring( box ) ~= "" and not isWidgetIdText( box ) then
+			return tostring( box )
+		end
+	end
+	return nil
+end
+
+-- BotRename apply path: read at click time (no TextChanged required).
+local function readNameEditForRename( host, gui )
+	gui = gui or ( host and host.cl and host.cl.rfsOrdersGui )
+	local live = readNameEditLive( host, gui )
+	if live and live ~= "" then
+		return sanitizeTypedName( live )
+	end
+	if gui then
+		local box = nil
+		pcall( function()
+			box = gui:getText( "NameEdit" )
+		end )
+		if box and tostring( box ) ~= "" and not isWidgetIdText( box ) then
+			return sanitizeTypedName( box )
+		end
+	end
+	return ""
+end
+
+-- TextChanged args: widget name first, full field text in a later string (BMKeys).
+local function textFromNameEditArgs( ... )
+	local text = nil
+	for i = 1, select( "#", ... ) do
+		local v = select( i, ... )
+		if type( v ) == "string" and #v > 0 and v ~= "NameEdit" and not isWidgetIdText( v ) then
+			text = v
+		end
+	end
+	return text
+end
+
+local function nameEditShownText( host, gui )
+	host.cl = host.cl or {}
+	local draft = host.cl.rfsOrdersNameDraft
+	if draft and tostring( draft ) ~= "" and not isWidgetIdText( draft ) then
+		return tostring( draft )
+	end
+	local live = readNameEditLive( host, gui )
+	if live and live ~= "" then
+		return live
+	end
+	local selKey = host.cl.rfsOrdersSelectedKey
+	if selKey then
+		local row = rowByKey( host, selKey )
+		if row and row.customName then
+			local cn = tostring( row.customName )
+			if cn ~= "" and not isWidgetIdText( cn ) then
+				return cn
+			end
+		end
+	end
+	return ""
+end
+
+local function ensureNameEdit( host, gui, force )
+	if not gui then
+		return
+	end
+	host.cl = host.cl or {}
+	local gen = tonumber( host.cl.rfsOrdersGuiGen ) or 0
+	if not force
+		and host.cl.rfsOrdersNameEditGui == gui
+		and host.cl.rfsOrdersNameEditGen == gen then
+		if not host.cl.rfsOrdersNameEditWidget then
+			pcall( function()
+				host.cl.rfsOrdersNameEditWidget = gui:getWidget( "NameEdit" )
+			end )
+		end
+		return
+	end
+	host.cl.rfsOrdersNameEditGui = gui
+	host.cl.rfsOrdersNameEditGen = gen
+	local widget = nil
+	pcall( function()
+		widget = gui:getWidget( "NameEdit" )
+	end )
+	host.cl.rfsOrdersNameEditWidget = widget
+	local draft = host.cl.rfsOrdersNameDraft
+	local hasDraft = draft and tostring( draft ) ~= "" and not isWidgetIdText( draft )
+	local shown = hasDraft and tostring( draft ) or nameEditShownText( host, gui )
+	if not hasDraft then
+		host.cl.rfsOrdersNameDraft = shown
+	end
+	-- setText poke revives getText after reopen; skip when user draft is already in the box.
+	local needPoke = true
+	if hasDraft and host.cl.rfsOrdersNameUserEdited then
+		needPoke = false
+	elseif hasDraft then
+		local live = readNameEditLive( host, gui )
+		if live and tostring( live ) == tostring( draft ) then
+			needPoke = false
+		end
+	end
+	if needPoke then
+		pcall( function()
+			gui:setText( "NameEdit", shown )
+		end )
+	end
+end
+
+-- bindChrome setButtonCallback drops TextChanged/TextAccepted (0819-q class).
+-- Rebind NameEdit LAST — same slot as CloseButton.
+local function bindNameEditCallbacks( gui )
+	if not gui then
+		return
+	end
+	pcall( function()
+		gui:setTextChangedCallback( "NameEdit", "cl_rfs_ordersNameEdit" )
+	end )
+	pcall( function()
+		gui:setTextAcceptedCallback( "NameEdit", "cl_rfs_ordersNameEdit" )
+	end )
+end
+
 -- Chrome only (Close / Master / Range / row select + drop callbacks). Safe after setText.
 -- SM setText drops button AND dropdown callbacks; Master/Slave used to "wake" binds
 -- only because applyRole → refresh → bindChrome. ModeDrop was never rebound here,
 -- so a single Independent beacon stuck after close/reopen. Rebind Mode/Seed via
 -- setDropDownCallback. Color: ensureColorDrop (recreate once / force) then bind.
+-- Name: ensureNameEdit (setText poke + TextChanged) then bind BtnRename.
 -- Do not createDropDown Mode/Seed here (before-open cursor bug / 3.5d list wipe).
 local function rebindOrdersChrome( host, opts )
 	local gui = host and host.cl and host.cl.rfsOrdersGui
@@ -850,7 +1048,9 @@ local function rebindOrdersChrome( host, opts )
 		return
 	end
 	opts = opts or {}
-	ensureColorDrop( host, gui, opts.forceColor == true )
+	local force = opts.forceColor == true or opts.forceName == true
+	ensureColorDrop( host, gui, force )
+	ensureNameEdit( host, gui, force )
 	bindChrome( host, gui )
 	pcall( function()
 		gui:setSliderCallback( "ScrollBar", "cl_rfs_ordersScrollChanged" )
@@ -887,9 +1087,7 @@ function bindChrome( host, gui )
 	pcall( function()
 		gui:setDropDownCallback( "ColorDrop", "cl_rfs_ordersColor" )
 	end )
-	pcall( function()
-		gui:setTextChangedCallback( "NameEdit", "cl_rfs_ordersNameEdit" )
-	end )
+	-- NameEdit TextChanged lives in ensureNameEdit (open/force) — setText drops it.
 	for i = 0, ROWS - 1 do
 		pcall( function()
 			gui:setButtonCallback( "BotName" .. i, "cl_rfs_ordersBot" .. i )
@@ -909,6 +1107,7 @@ function bindChrome( host, gui )
 	pcall( function()
 		gui:setOnCloseCallback( "cl_rfs_ordersClose" )
 	end )
+	bindNameEditCallbacks( gui )
 end
 
 function RfsBeaconOrdersGui.bind( host, gui )
@@ -922,6 +1121,9 @@ function RfsBeaconOrdersGui.bind( host, gui )
 	host.cl.rfsOrdersDropsGui = nil
 	host.cl.rfsOrdersColorDropGui = nil
 	host.cl.rfsOrdersColorDropGen = nil
+	host.cl.rfsOrdersNameEditGui = nil
+	host.cl.rfsOrdersNameEditGen = nil
+	host.cl.rfsOrdersNameEditWidget = nil
 
 	bindChrome( host, gui )
 	pcall( function()
@@ -1055,19 +1257,19 @@ function RfsBeaconOrdersGui.open( host, opts )
 		local old = host.cl.rfsOrdersGui
 		host.cl.rfsOrdersGui = nil
 		detachGuiOnClose( old )
-		pcall( function() old:close() end )
+		pcall( function() old:destroy() end )
 	end
 
-	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false, {
+	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true, {
 		isHud = false,
 		isInteractive = true,
 		needsCursor = true,
 	} )
 	if not ok or not gui then
-		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false )
+		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true )
 	end
 	if not ok or not gui then
-		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
+		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true )
 	end
 	if not ok or not gui then
 		sm.gui.chatMessage( "[RFS] Failed to open Beacon Orders GUI" )
@@ -1124,14 +1326,19 @@ function RfsBeaconOrdersGui.open( host, opts )
 	host.cl.rfsOrdersDropsGui = nil
 	host.cl.rfsOrdersColorDropGui = nil
 	host.cl.rfsOrdersColorDropGen = nil
+	host.cl.rfsOrdersNameEditGui = nil
+	host.cl.rfsOrdersNameEditGen = nil
+	host.cl.rfsOrdersNameEditWidget = nil
+	host.cl.rfsOrdersNameDraft = nil
+	host.cl.rfsOrdersNameUserEdited = nil
 	host.cl.rfsOrdersGuiGen = ( tonumber( host.cl.rfsOrdersGuiGen ) or 0 ) + 1
 
 	RfsBeaconOrdersGui.bind( host, gui )
 	gui:open()
 	bindDropDowns( host, gui )
 	RfsBeaconOrdersGui.refresh( host )
-	-- Recreate Color AFTER setText paint (SM drops ColorDrop on reopen; Mode rebind alone is enough).
-	rebindOrdersChrome( host, { forceColor = true } )
+	-- Recreate Color + NameEdit AFTER setText paint (SM drops both on reopen).
+	rebindOrdersChrome( host, { forceColor = true, forceName = true } )
 	host.cl.rfsOrdersRebindAtTick = currentTick() + 1
 	host.cl.rfsOrdersRebindAgainAtTick = currentTick() + 4
 	pcall( function()
@@ -1177,6 +1384,7 @@ function RfsBeaconOrdersGui.close( host )
 	host.cl.rfsOrdersRebindAgainAtTick = nil
 	detachGuiOnClose( gui )
 	pcall( function() gui:close() end )
+	pcall( function() gui:destroy() end )
 	host.cl.rfsOrdersClosing = nil
 	-- Stale OnClose from an older gui instance must not clear a newer open().
 	if closingGen ~= ( tonumber( host.cl.rfsOrdersGuiGen ) or 0 ) then
@@ -1186,6 +1394,9 @@ function RfsBeaconOrdersGui.close( host )
 	host.cl.rfsOrdersDropsGui = nil
 	host.cl.rfsOrdersColorDropGui = nil
 	host.cl.rfsOrdersColorDropGen = nil
+	host.cl.rfsOrdersNameEditGui = nil
+	host.cl.rfsOrdersNameEditGen = nil
+	host.cl.rfsOrdersNameEditWidget = nil
 	host.cl.rfsOrdersReopenAfterTick = currentTick() + REOPEN_SETTLE_TICKS
 end
 
@@ -1370,8 +1581,10 @@ function RfsBeaconOrdersGui.applyList( host, data )
 		RfsBeaconOrdersGui.refresh( host )
 		-- List paint uses setText; rebind Mode/Color/Rename so Independent
 		-- beacons still apply Collect/Stay after close+E (no Master required).
-		-- Force Color recreate once if this is still the open-gen list fill.
-		rebindOrdersChrome( host, { forceColor = true } )
+		rebindOrdersChrome( host, {
+			forceColor = true,
+			forceName = host.cl.rfsOrdersNameUserEdited ~= true,
+		} )
 	end
 end
 
@@ -1399,18 +1612,15 @@ function RfsBeaconOrdersGui.onBotClick( host, rowIdx )
 		end
 	end
 	local gui = host.cl.rfsOrdersGui
-	if gui then
+	if gui and not host.cl.rfsOrdersNameUserEdited then
 		local shown = tostring( row.customName or "" )
 		if isWidgetIdText( shown ) then
 			shown = ""
 		end
-		pcall( function()
-			gui:setText( "NameEdit", shown )
-		end )
 		host.cl.rfsOrdersNameDraft = shown
 	end
 	RfsBeaconOrdersGui.refresh( host )
-	rebindOrdersChrome( host )
+	rebindOrdersChrome( host, { forceName = true } )
 end
 
 function RfsBeaconOrdersGui.onColorDrop( host, value )
@@ -1448,43 +1658,49 @@ function RfsBeaconOrdersGui.onColorDrop( host, value )
 	rebindOrdersChrome( host )
 end
 
-local function typedNameFromEdit( host, a, b )
-	local gui = host and host.cl and host.cl.rfsOrdersGui
-	local typed = nil
-	local function take( s )
-		s = tostring( s or "" )
-		if s ~= "" and not isWidgetIdText( s ) then
-			typed = s
-		end
+local function typedNameFromEdit( host, ... )
+	host.cl = host.cl or {}
+	local typed = textFromNameEditArgs( ... )
+	if typed and typed ~= "" then
+		return sanitizeTypedName( typed )
 	end
-	-- SM TextChanged may pass widget name, (widget, text), or the typed string.
-	take( b )
-	take( a )
-	if gui then
-		local box = nil
-		pcall( function()
-			box = gui:getText( "NameEdit" )
-		end )
-		take( box )
+	local live = readNameEditLive( host )
+	if live and live ~= "" then
+		return sanitizeTypedName( live )
 	end
-	if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.sanitizeName ) == "function" then
-		return RfsHackOrdersIdentity.sanitizeName( typed )
+	local draft = host.cl.rfsOrdersNameDraft
+	if draft and tostring( draft ) ~= "" and not isWidgetIdText( draft ) then
+		return sanitizeTypedName( draft )
 	end
-	typed = tostring( typed or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
-	if isWidgetIdText( typed ) then
-		return ""
-	end
-	return typed
+	return ""
 end
 
-function RfsBeaconOrdersGui.onNameEdit( host, a, b )
+-- RENAME: live read at click (BotRename), then TextChanged draft fallback.
+local function typedNameForRename( host )
 	host.cl = host.cl or {}
-	host.cl.rfsOrdersNameDraft = typedNameFromEdit( host, a, b )
+	local live = readNameEditForRename( host )
+	if live ~= "" then
+		return live
+	end
+	local draft = host.cl.rfsOrdersNameDraft
+	if draft and tostring( draft ) ~= "" and not isWidgetIdText( draft ) then
+		return sanitizeTypedName( draft )
+	end
+	return ""
+end
+
+function RfsBeaconOrdersGui.onNameEdit( host, ... )
+	host.cl = host.cl or {}
+	local name = typedNameFromEdit( host, ... )
+	if name ~= "" then
+		host.cl.rfsOrdersNameDraft = name
+		host.cl.rfsOrdersNameUserEdited = true
+	end
 end
 
 function RfsBeaconOrdersGui.onRename( host )
 	host.cl = host.cl or {}
-	local name = typedNameFromEdit( host, host.cl.rfsOrdersNameDraft )
+	local name = typedNameForRename( host )
 	if isWidgetIdText( name ) then
 		name = ""
 	end
@@ -1494,7 +1710,19 @@ function RfsBeaconOrdersGui.onRename( host )
 		return
 	end
 	if name == "" then
-		sm.gui.chatMessage( "[RFS] Type a name in the box, then RENAME." )
+		local draft = tostring( host.cl.rfsOrdersNameDraft or "" )
+		local live = tostring( readNameEditLive( host ) or "" )
+		local getT = ""
+		pcall( function()
+			local gui = host.cl.rfsOrdersGui
+			if gui then
+				getT = tostring( gui:getText( "NameEdit" ) or "" )
+			end
+		end )
+		sm.gui.chatMessage( string.format(
+			"[RFS] Type a name in the box, then RENAME. (draft='%s' live='%s' getText='%s')",
+			draft, live, getT
+		) )
 		return
 	end
 	host.cl.rfsOrdersNameDraft = name

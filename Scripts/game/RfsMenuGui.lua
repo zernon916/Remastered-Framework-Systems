@@ -112,7 +112,9 @@ function RfsMenuGui.open( host )
 	if host.cl.rfsMenuGui then
 		local old = host.cl.rfsMenuGui
 		host.cl.rfsMenuGui = nil
+		pcall( function() old:setOnCloseCallback( "cl_rfs_menuCloseStale" ) end )
 		pcall( function() old:close() end )
+		pcall( function() old:destroy() end )
 	end
 
 	local gui, err = createMenuGui()
@@ -134,7 +136,9 @@ end
 function RfsMenuGui.close( host )
 	local gui = host.cl and host.cl.rfsMenuGui
 	if gui then
+		pcall( function() gui:setOnCloseCallback( "cl_rfs_menuCloseStale" ) end )
 		pcall( function() gui:close() end )
+		pcall( function() gui:destroy() end )
 	end
 	if host.cl then
 		host.cl.rfsMenuGui = nil

@@ -56,7 +56,7 @@
 			"renderable": "$SURVIVAL_DATA/Objects/Renderable/Containers/obj_containers_battery.rend",
 			"color": "f1a400",
 			"box": { "x": 4, "y": 3, "z": 3 },
-			"rotationSet": "PropY",
+			"rotationSet": "PropYZ",
 			"physicsMaterial": "Mechanical",
 			"flammable": false,
 			"density": 5.0,

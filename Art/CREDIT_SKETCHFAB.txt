@@ -23,12 +23,16 @@ Solar Panel mesh
   License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
   Source: Art/sketchfab_solar/source/HexaRay Node - For texturing.glb (original glb)
 
-R&S Military radio (handheld hack tool + beacon station pieces)
+R&S Military radio (handheld hack tool, Hack Beacon device, antenna)
   Title:  R&S Military radio
   Author: DTry (~D-Try~) (https://sketchfab.com/DTry)
   URL:    https://sketchfab.com/3d-models/rs-military-radio-e47a8919a7ae432eb91cc744a287e9f8
   License: CC Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/)
   Source: rs_military_radio.glb (Sketchfab download)
+  In-game:
+    rfs_hack_beacon.fbx — stacked MR300 camo station (Hack Device)
+    rfs_radio_antenna.fbx — long pole antenna
+    Tools/rfs_radio_handheld.fbx — player hack tool
 
 Aim Core mesh
   Title:  Yberpunk robot head sketch

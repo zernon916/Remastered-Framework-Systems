@@ -36,7 +36,7 @@ local function uuidStr( u )
 end
 
 local function resolveNamed( name )
-	local g = rawget( _G, name )
+	local g = _G[name]
 	if g ~= nil then
 		return g
 	end

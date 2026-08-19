@@ -1,0 +1,29 @@
+Remastered Framework Survival - CGTrader mesh credits
+Author must be credited per CGTrader license.
+
+Apocalyptic Military communication radio kit (fbx_kit)
+  Title:  Military communication radio kit
+  Author: Apocalyptic-Asset-Arsenal (CGTrader)
+  URL:    https://www.cgtrader.com/apocalyptic-asset-arsenal
+  License: CGTrader - give credit to Apocalyptic-Asset-Arsenal
+  Source: Art/cgtrader/source/fbx_kit/
+    WalkieTalkieRadio.FBX, LaptopRadio.FBX, ArVrRadio.FBX
+    Military_communication_D.dds, Military_communication_N.dds, Military_communication_S.dds
+  In-game:
+    rfs_hack_beacon.fbx (obj_rfs_hackbeacon) — ArVrRadio.FBX
+    rfs_radio_lock.fbx (obj_rfs_radiolock) — LaptopRadio.FBX
+    rfs_radio_brick.fbx (obj_rfs_radiobrick) — WalkieTalkieRadio.FBX
+    rfs_radio_handheld.fbx + Tools/radio_handheld_preview.rend — WalkieTalkieRadio.FBX
+  Note:   Readable LCD on lock screen is NOT implemented yet (mesh only; screen glass parked).
+  Skipped: TransmitterRadio.FBX (~28° off-axis; reserved for Control Beacon later).
+
+Antenna (unchanged)
+  DTry R&S Military radio - see CREDIT_SKETCHFAB.txt / export_rfs_radio.py
+  In-game: rfs_radio_antenna.fbx (obj_rfs_radioantenna)
+
+Cancelled / replaced (do not ship)
+  yakoubimedali8 military radio (beacon)
+  Radio1.obj (booster)
+  DTry handheld/beacon/lock/brick from export_rfs_radio.py (except antenna)
+
+Do not strip this credit.

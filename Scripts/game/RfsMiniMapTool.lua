@@ -60,23 +60,22 @@ local function pinUpperLeft( self )
 	c.lastPos = MINIMAP_TL
 end
 
--- Embedding blit: jsonGui ImageBox can V-flip each ResourceImageSet frame.
--- ImageCoord height < 0 undoes that in frame space (64px mini atlas cells).
--- Keep Flip=V + negative-height UV together (they are one sample, not two
--- rotations). Atlas is now $CONTENT_DATA; do not also apply RotatingSkin on
--- mini baked rN frames — remapRotName picks the matching atlas_index key.
+-- Embedding blit: negative ImageCoord height V-flips ResourceImageSet frames
+-- (64px mini atlas cells). ImageBox has no Flip property — setting Flip=V
+-- spams Gui WARNING every render (622KB dev log). UV alone is the flip.
+-- Atlas is now $CONTENT_DATA; do not also apply RotatingSkin on mini baked
+-- rN frames — remapRotName picks the matching atlas_index key.
 local TILE_PX = 64
 local TILE_UV = "0 " .. tostring( TILE_PX ) .. " " .. tostring( TILE_PX ) .. " -" .. tostring( TILE_PX )
 local function flipTileBlit( w )
 	if type( w ) ~= "table" then
 		return
 	end
-	-- Same UV every refill so neighbors share one sample rect (no mixed Flip).
-	if w.ImageCoord == TILE_UV and w.Flip == "V" then
+	if w.ImageCoord == TILE_UV and w.Flip == nil then
 		return
 	end
 	w.ImageCoord = TILE_UV
-	w.Flip = "V"
+	w.Flip = nil
 end
 
 local function flipHudTiles( hud )
@@ -201,6 +200,11 @@ if g_rfsNuttMap and MinimapHud then
 		local origBmRefill = BigMap.refill
 		function BigMap.refill( hud )
 			origBmRefill( hud )
+			flipHudTiles( hud )
+		end
+		local origPrebuild = BigMap.prebuildStep
+		function BigMap.prebuildStep( hud )
+			origPrebuild( hud )
 			flipHudTiles( hud )
 		end
 	end

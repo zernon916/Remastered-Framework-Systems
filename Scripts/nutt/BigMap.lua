@@ -40,6 +40,9 @@ local TIERS = {
 local POOLCAP = {
 	{ per = 1100, roads = 220 },
 }
+-- 0851-d: spread ~1320 pool widgets across frames during background prebuild
+-- (GPS open burst was ~1554 widgets in one frame).
+local POOL_BUILD_STEP = 72
 local MARKER = 22
 local POILABELS = 24
 -- seconds without a new drag sample that count as "the button was released".
@@ -122,9 +125,111 @@ function BigMap.resolve(hud, wx, wy, tierName)
 	end
 end
 
--- --------------------------------------------------------------- build -----
-function BigMap.build(hud)
+-- ------------------------------------------------------- pool build queue --
+local function firstOfAtlas(atlas)
+	local firstOf = { mini = {}, big = {}, roads = {} }
+	for tier, tbl in pairs({ mini = atlas.mini, big = atlas.big, roads = atlas.roads }) do
+		for name, v in pairs(tbl) do
+			if not firstOf[tier][v.res] or name < firstOf[tier][v.res] then
+				firstOf[tier][v.res] = name
+			end
+		end
+	end
+	return firstOf
+end
+
+function BigMap.queuePoolBuild(hud, firstOf)
+	local bm = hud.cl.bm
+	if bm.poolReady or bm.poolQueue then return end
+	bm.poolQueue = {}
+	bm.poolBuildIdx = 1
+	bm.pools = {}
+	bm.widgetByName = bm.widgetByName or {}
+	for ti, T in ipairs(TIERS) do
+		local pool = { byRes = {}, roads = {}, used = {}, roadsUsed = 0 }
+		bm.pools[ti] = pool
+		for res, first in pairs(firstOf[T.tier]) do
+			for i = 1, POOLCAP[ti].per do
+				bm.poolQueue[#bm.poolQueue + 1] = {
+					kind = "cell", ti = ti, T = T, res = res, first = first, i = i }
+			end
+		end
+		for i = 1, POOLCAP[ti].roads do
+			bm.poolQueue[#bm.poolQueue + 1] = { kind = "road", ti = ti, T = T, i = i }
+		end
+	end
+end
+
+function BigMap.flushPoolBuild(hud, budget)
+	local bm = hud.cl.bm
+	if not bm or not bm.poolQueue or not bm.view then return bm and bm.poolReady end
+	budget = budget or POOL_BUILD_STEP
+	local n = 0
+	while bm.poolBuildIdx <= #bm.poolQueue and n < budget do
+		local q = bm.poolQueue[bm.poolBuildIdx]
+		bm.poolBuildIdx = bm.poolBuildIdx + 1
+		n = n + 1
+		local ti, T = q.ti, q.T
+		local pool = bm.pools[ti]
+		if q.kind == "cell" then
+			local lst = pool.byRes[q.res]
+			if not lst then lst = {}; pool.byRes[q.res] = lst end
+			local extra = { ImageResource = q.res, ImageGroup = q.res,
+				ImageName = q.first, Visible = false, NeedToolTip = true,
+				onClick = "cl_bm_cell", onDrag = "cl_bm_curs", onToolTip = "cl_bm_hover" }
+			local skin = "ImageBox"
+			if T.rotskin then
+				skin = "RotatingSkin"
+				extra.RotatingSkinAngle = 0.0
+				extra.RotatingSkinCenterX = math.floor(T.px / 2)
+				extra.RotatingSkinCenterY = math.floor(T.px / 2)
+			end
+			local cw = W("bmc" .. ti .. "_" .. q.res .. "_" .. q.i, "ImageBox", skin,
+				0, 0, T.px, T.px, extra)
+			bm.view.Childs[#bm.view.Childs + 1] = cw
+			lst[q.i] = cw
+			bm.widgetByName[cw.Name] = cw
+		else
+			local ov = W("bmo" .. ti .. "_" .. q.i, "ImageBox", "ImageBox",
+				0, 0, T.px, T.px,
+				{ ImageResource = "MMap_roads_0_0", ImageGroup = "MMap_roads_0_0",
+				  ImageName = "road_1", Visible = false, NeedMouse = false })
+			bm.view.Childs[#bm.view.Childs + 1] = ov
+			pool.roads[q.i] = ov
+		end
+	end
+	if bm.poolBuildIdx > #bm.poolQueue then
+		bm.poolQueue = nil
+		bm.poolReady = true
+		return true
+	end
+	return false
+end
+
+function BigMap.prebuildStep(hud)
 	local c = hud.cl
+	if not (c and c.ready and c.atlas) then return end
+	if c.bm and (c.bm.open or c.bm.poolReady) then return end
+	if not c.vw then
+		local okv, a, b2 = pcall(sm.jsonGui.getViewSize)
+		if okv and type(a) == "number" then
+			c.vw, c.vh = a, b2 or 720
+		else
+			c.vw, c.vh = 1280, 720
+		end
+	end
+	BigMap.build(hud, POOL_BUILD_STEP)
+end
+
+-- --------------------------------------------------------------- build -----
+function BigMap.build(hud, poolBudget)
+	local c = hud.cl
+	local bm = c.bm or {}
+	c.bm = bm
+	if bm.poolReady and bm.gui and bm.root then
+		BigMap.syncWpUi(hud)
+		return true
+	end
 	-- EXACT T10-proven recipe (SpikeAuto.lua:215/327 - clicks dispatched to
 	-- a tool script): these options + gui:open() after the tree is built +
 	-- per-frame render. WITHOUT open() the engine draws widgets and hover
@@ -132,16 +237,16 @@ function BigMap.build(hud)
 	-- zero callbacks (v19-v23 saga).
 	-- hidesHotbar: the waypoint row lives in the strip below the map (Eric
 	-- v66) which the vanilla hotbar occupies - hide it while the map is open
-	local ok, gui = pcall(sm.jsonGui.createGui,
-		{ isHud = false, isInteractive = true, needsCursor = true,
-		  hidesHotbar = true })
-	if not ok then
-		sm.gui.chatMessage("[minimap] big map createGui failed: " .. tostring(gui))
-		return false
+	if not bm.gui then
+		local ok, gui = pcall(sm.jsonGui.createGui,
+			{ isHud = false, isInteractive = true, needsCursor = true,
+			  hidesHotbar = true })
+		if not ok then
+			sm.gui.chatMessage("[minimap] big map createGui failed: " .. tostring(gui))
+			return false
+		end
+		bm.gui = gui
 	end
-	local bm = c.bm or {}
-	c.bm = bm
-	bm.gui = gui
 	-- BUG-4 (Eric 8/11): after CLEAR, reopening the map showed a pin with no
 	-- waypoint set and CLEAR greyed out - and it only went away after a full
 	-- set-then-clear cycle. That is the v34 signature exactly: engine widget
@@ -151,96 +256,36 @@ function BigMap.build(hud)
 	-- ghosts kept fixed names, so they kept the bug. One generation per map
 	-- session makes every session's pin a brand-new widget. Flagged: it is a
 	-- diagnosis-led guess until the wpui events confirm it (see BUGS.md).
-	local gen = ((c.wpGen or 0) + 1) % 8
-	c.wpGen = gen
-	bm.gsfx = (g_wmFlags and g_wmFlags.WP_FRESH_NAMES) and ("_g" .. gen) or ""
 	local vw, vh = c.vw or 1280, c.vh or 720
 	bm.tierIdx = bm.tierIdx or 1
 
-	-- viewport (clips its children = the map cells)
-	local VW, VH = vw - 160, vh - 110
-	local vx, vy = 80, 64
-	bm.VW, bm.VH = VW, VH
+	if not bm.root then
+		local gen = ((c.wpGen or 0) + 1) % 8
+		c.wpGen = gen
+		bm.gsfx = (g_wmFlags and g_wmFlags.WP_FRESH_NAMES) and ("_g" .. gen) or ""
 
-	-- NeedMouse=true ONLY on clickables + their ancestor chain (root/view/
-	-- cells/buttons): any other pick-enabled widget SWALLOWS the picks -
-	-- v19's fullscreen backdrop ate every click (buttons dead, map stuck)
-	local root = W("BMRoot", "Widget", "PanelEmpty", 0, 0, vw, vh)
-	local back = W("BMBack", "Widget", "WhiteSkin", 0, 0, vw, vh,
-		{ Colour = "0 0 0", Alpha = 0.8, NeedMouse = false })
-	-- SESSION-DECODED event contract (v29 log): onMouseWheel(name, ±120)
-	-- BUBBLES to every ancestor carrying the prop (double-fired with cell +
-	-- view) -> the prop lives ONLY on the view now. onDrag(name, x, y, btn)
-	-- has FROZEN press-point coords - live cursor position comes from WHICH
-	-- cell widget fires, so cells keep onDrag (view's copy catches ocean and
-	-- is ignored for tracking). onPressed/onReleased never fired - dropped.
-	local view = W("BMView", "Widget", "PanelEmpty", vx, vy, VW, VH, {
-		onMouseWheel = "cl_bm_wheel" })
-	root.Childs = { back, view }
-	bm.view = view
+		-- viewport (clips its children = the map cells)
+		local VW, VH = vw - 160, vh - 110
+		local vx, vy = 80, 64
+		bm.VW, bm.VH = VW, VH
 
-	-- water backdrop (stretched water frame; water cells are never drawn)
-	local waterRes = c.atlas.mini["water_r0"].res
-	bm.water = W("BMWater", "ImageBox", "ImageBox",
-		0, 0, VW, VH, { ImageResource = waterRes, ImageGroup = waterRes,
-		  ImageName = "water_r0", NeedMouse = false })
-	view.Childs[#view.Childs + 1] = bm.water
+		-- NeedMouse=true ONLY on clickables + their ancestor chain (root/view/
+		-- cells/buttons): any other pick-enabled widget SWALLOWS the picks -
+		-- v19's fullscreen backdrop ate every click (buttons dead, map stuck)
+		local root = W("BMRoot", "Widget", "PanelEmpty", 0, 0, vw, vh)
+		local back = W("BMBack", "Widget", "WhiteSkin", 0, 0, vw, vh,
+			{ Colour = "0 0 0", Alpha = 0.8, NeedMouse = false })
+		local view = W("BMView", "Widget", "PanelEmpty", vx, vy, VW, VH, {
+			onMouseWheel = "cl_bm_wheel" })
+		root.Childs = { back, view }
+		bm.view = view
 
-	-- pooled cell widgets per tier per atlas resource
-	local firstOf = { mini = {}, big = {}, roads = {} }
-	for tier, tbl in pairs({ mini = c.atlas.mini, big = c.atlas.big, roads = c.atlas.roads }) do
-		for name, v in pairs(tbl) do
-			if not firstOf[tier][v.res] or name < firstOf[tier][v.res] then
-				firstOf[tier][v.res] = name
-			end
-		end
-	end
-	bm.pools = {}
-	bm.widgetByName = {}
-	for ti, T in ipairs(TIERS) do
-		local pool = { byRes = {}, roads = {}, used = {}, roadsUsed = 0 }
-		bm.pools[ti] = pool
-		for res, first in pairs(firstOf[T.tier]) do
-			local lst = {}
-			pool.byRes[res] = lst
-			for i = 1, POOLCAP[ti].per do
-				-- onDrag/onToolTip here are ONLY cursor-position samplers for
-				-- precise waypoint placement - drag-PANNING stays dead (Eric
-				-- v36). Drag coords need button-held MOTION (a clean click
-				-- fires nothing -> v64 always tile-center). v65's hover probe
-				-- was silent WITHOUT NeedToolTip - the engine has the flag
-				-- (exe strings, next to NeedMouse/NeedKey) and MyGUI tooltip
-				-- events carry the cursor point; v66 sets it.
-				local extra = { ImageResource = res, ImageGroup = res,
-					ImageName = first, Visible = false, NeedToolTip = true,
-					onClick = "cl_bm_cell", onDrag = "cl_bm_curs",
-					onToolTip = "cl_bm_hover" }
-				local skin = "ImageBox"
-				if T.rotskin then
-					skin = "RotatingSkin"
-					extra.RotatingSkinAngle = 0.0
-					extra.RotatingSkinCenterX = math.floor(T.px / 2)
-					extra.RotatingSkinCenterY = math.floor(T.px / 2)
-				end
-				local cw = W("bmc" .. ti .. "_" .. res .. "_" .. i, "ImageBox", skin,
-					0, 0, T.px, T.px, extra)
-				view.Childs[#view.Childs + 1] = cw
-				lst[i] = cw
-				bm.widgetByName[cw.Name] = cw
-			end
-		end
-		local roadsRes = next(firstOf.roads) and select(2, next(firstOf.roads)) or nil
-		for i = 1, POOLCAP[ti].roads do
-			local ov = W("bmo" .. ti .. "_" .. i, "ImageBox", "ImageBox",
-				0, 0, T.px, T.px,
-				{ ImageResource = "MMap_roads_0_0", ImageGroup = "MMap_roads_0_0",
-				  ImageName = "road_1", Visible = false, NeedMouse = false })
-			view.Childs[#view.Childs + 1] = ov
-			pool.roads[i] = ov
-		end
-	end
-
-	-- POI labels
+		-- water backdrop (stretched water frame; water cells are never drawn)
+		local waterRes = c.atlas.mini["water_r0"].res
+		bm.water = W("BMWater", "ImageBox", "ImageBox",
+			0, 0, VW, VH, { ImageResource = waterRes, ImageGroup = waterRes,
+			  ImageName = "water_r0", NeedMouse = false })
+		view.Childs[#view.Childs + 1] = bm.water
 	bm.poiLabels = {}
 	for i = 1, POILABELS do
 		local tb = W("bmpoi" .. i, "TextBox", "TextBox", 0, 0, 140, 18,
@@ -359,7 +404,6 @@ function BigMap.build(hud)
 
 	bm.root = root
 	bm.clickMap = {}
-	BigMap.syncWpUi(hud)
 
 	-- OVERLAY GUI (gui2): within-gui z-order against the tile pools is a
 	-- texture-batching lottery (Eric v71: drag ghost behind some tiles) -
@@ -395,6 +439,17 @@ function BigMap.build(hud)
 		end
 		bm.root2 = root2
 	end
+	end -- not bm.root
+
+	if not bm.poolReady then
+		if not bm.poolQueue then
+			BigMap.queuePoolBuild(hud, firstOfAtlas(c.atlas))
+		end
+		local budget = poolBudget or 99999
+		if not BigMap.flushPoolBuild(hud, budget) then
+			return false
+		end
+	end
 
 	-- POI anchors: any-seed - scan the CURRENT world's terrain for tiles
 	-- whose uuid is in poi_names.json, anchored at subcell (0,0)
@@ -424,6 +479,7 @@ function BigMap.build(hud)
 		end
 		bm.anchors = anchors
 	end
+	BigMap.syncWpUi(hud)
 	return true
 end
 
@@ -597,7 +653,7 @@ function BigMap.open(hud)
 	local c = hud.cl
 	if not (c.ready and c.atlas and c.vw) then return end
 	if c.bm and c.bm.open then return end
-	if not BigMap.build(hud) then return end
+	if not BigMap.build(hud, 99999) then return end
 	local bm = c.bm
 	local okc, char = pcall(function() return sm.localPlayer.getPlayer():getCharacter() end)
 	if okc and char then
@@ -643,7 +699,7 @@ function BigMap.close(hud)
 	hud.cl.wantUnlock = true
 	pcall(function() if bm.gui then bm.gui:close() end end)
 	pcall(function() if bm.gui2 then bm.gui2:close() end end)
-	bm.gui, bm.gui2 = nil, nil     -- rebuilt fresh on next open
+	-- 0851-d: keep cached widget pools between opens (close session only)
 	-- the minimap unhides via the normal hide check next frame
 end
 
@@ -652,8 +708,8 @@ function BigMap.onClosed(hud)
 	local bm = hud.cl.bm
 	if bm and bm.open then
 		bm.open = false
+		pcall(function() if bm.gui then bm.gui:close() end end)
 		pcall(function() if bm.gui2 then bm.gui2:close() end end)
-		bm.gui, bm.gui2 = nil, nil
 	end
 end
 
@@ -666,6 +722,11 @@ function BigMap.update(hud, dt, char)
 	local bm = hud.cl.bm
 	if not (bm and bm.open and bm.gui) then return end
 	bm.age = (bm.age or 0) + (dt or 0)
+	-- 0851-d: cap jsonGui render (1100+ pool widgets) — full-rate pan/input,
+	-- ~20 Hz paint so GPS open is not a sustained log/render flood.
+	bm.rfsRenderT = (bm.rfsRenderT or 0) + (dt or 0)
+	local doRender = bm.rfsRenderT >= 0.05
+	if doRender then bm.rfsRenderT = 0 end
 	-- engine-side close detection (Esc): the session going away flips
 	-- hasActiveGui false; rendering after that would re-open the gui
 	if bm.age > 0.5 then
@@ -764,7 +825,9 @@ function BigMap.update(hud, dt, char)
 		bm.oMarker.RotatingSkinAngle = bm.marker.RotatingSkinAngle
 		for col, p in pairs(bm.wpPins) do mirror(bm.oPins[col], p, 20, 28) end
 		for col, g in pairs(bm.wpGhost) do mirror(bm.oGhosts[col], g, 20, 28) end
-		pcall(function() bm.gui2:render(bm.root2) end)
+		if doRender then
+			pcall(function() bm.gui2:render(bm.root2) end)
+		end
 	end
 	-- BUG-4 diagnosis channel. Logged on CHANGE only (a handful of entries per
 	-- session, no per-frame cost) so a phantom pin can be attributed: if these
@@ -799,9 +862,11 @@ function BigMap.update(hud, dt, char)
 			BigMap.refill(hud)
 		end
 	end
-	local okr = pcall(function() bm.gui:render(bm.root) end)
-	if not okr then
-		BigMap.onClosed(hud)
+	if doRender then
+		local okr = pcall(function() bm.gui:render(bm.root) end)
+		if not okr then
+			BigMap.onClosed(hud)
+		end
 	end
 end
 

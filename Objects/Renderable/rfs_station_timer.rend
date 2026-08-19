@@ -1,0 +1,36 @@
+{
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_station_timer.fbx",
+			"minViewSize": 30,
+			"subMeshList": [
+				{
+					"custom": {
+						"metalProfile": "DifAsgNor_Painted"
+					},
+					"material": "DifAsgNor_Metal",
+					"textureList": [
+						"$GAME_DATA/Objects/Textures/interactive/obj_interactive_timer_dif.tga",
+						"$GAME_DATA/Objects/Textures/interactive/obj_interactive_timer_asg.tga",
+						"$GAME_DATA/Objects/Textures/interactive/obj_interactive_timer_nor.tga"
+					]
+				},
+				{
+					"custom": {
+						"uv0": {
+							"u": 0.00390625,
+							"v": 0.189453125
+						}
+					},
+					"material": "UVAnimDifAsgNor",
+					"textureList": [
+						"$GAME_DATA/Objects/Textures/interactive/obj_interactive_timer_dif.tga",
+						"$GAME_DATA/Objects/Textures/interactive/obj_interactive_timer_asg.tga",
+						"$GAME_DATA/Objects/Textures/interactive/obj_interactive_timer_nor.tga"
+					]
+				}
+			]
+		}
+	],
+	"_comment": "Vanilla timer mesh re-export for PropY grid snap (0850-d). Textures unchanged from $GAME_DATA/Objects/Renderable/Interactive/obj_interactive_timer.rend."
+}

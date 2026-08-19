@@ -54,7 +54,7 @@ local function uuidStr( u )
 end
 
 local function resolveNamed( name )
-	local g = rawget( _G, name )
+	local g = _G[name]
 	if g ~= nil then
 		return g
 	end
@@ -89,7 +89,7 @@ local function rebuildSets()
 	end
 
 	lootHvsSet = {}
-	local hvs = rawget( _G, "hvs_loot" )
+	local hvs = _G.hvs_loot
 	if hvs then
 		lootHvsSet[uuidStr( hvs )] = true
 	end
@@ -98,7 +98,7 @@ local function rebuildSets()
 	end
 
 	geyserSet = {}
-	local geyser = rawget( _G, "hvs_farmables_oilgeyser" )
+	local geyser = _G.hvs_farmables_oilgeyser
 	if not geyser then
 		local ok, u = pcall( sm.uuid.new, OIL_GEYSER_FALLBACK )
 		if ok then
@@ -109,7 +109,7 @@ local function rebuildSets()
 		geyserSet[uuidStr( geyser )] = true
 	end
 
-	growingGeyserUuid = rawget( _G, "hvs_farmables_growing_oilgeyser" )
+	growingGeyserUuid = _G.hvs_farmables_growing_oilgeyser
 	if not growingGeyserUuid then
 		local ok, u = pcall( sm.uuid.new, GROWING_GEYSER_FALLBACK )
 		if ok then

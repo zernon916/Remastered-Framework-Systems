@@ -1,18 +1,17 @@
 # Blender 4.4: Render object-specific 96x96 icons for RFS radio station parts.
 #
 # Outputs:
-#   Art/icon_hackbeacon_96.png
-#   Art/icon_radio_handheld_96.png
-#   Art/icon_radio_brick_96.png
-#   Art/icon_radio_antenna_96.png
-#   Art/icon_radio_lock_96.png
+#   Art/icon_hackbeacon_96.png   (DTry GLB desk -> rfs_hack_beacon.fbx)
+#   Art/icon_radio_handheld_96.png (DTry handheld)
+#   Art/icon_radio_brick_96.png  (Radio1.obj -> rfs_radio_brick.fbx)
+#   Art/icon_radio_antenna_96.png (DTry antenna)
+#   Art/icon_radio_lock_96.png   (fbx_kit Laptop -> rfs_radio_lock.fbx)
 #
 # Run (from repo root):
 #   "<BlenderPath>/blender.exe" --background --python Art/render_rfs_radio_icons.py
 #
-# Why: IconMap.xml must map uuid->cell, but our previous radio icons were cropped
-# from UV diff sheets (1024px atlases) which show "random station map tiles".
-# Blender renders the actual mesh with UVs, producing distinct thumbnails.
+# Why: IconMap.xml must map uuid->cell. Render the in-game mesh + albedo so
+# inventory/unlimited icons match the 0850-p Apocalyptic fbx_kit art swap.
 
 import bpy
 import os
@@ -22,15 +21,7 @@ import mathutils
 ROOT = r"C:\Users\benko\Desktop\RecipeFrameworkSurvival"
 OUT_DIR = os.path.join(ROOT, "Art")
 
-SM_DATA = r"C:\Steam\steamapps\common\Scrap Mechanic\Data"
-HACK_GATE_OFF_FBX = os.path.join(
-    SM_DATA,
-    "Objects",
-    "Mesh",
-    "interactive",
-    "obj_interactive_logicgate_off.fbx",
-)
-
+HACK_BEACON_FBX = os.path.join(ROOT, "Objects", "Mesh", "rfs_hack_beacon.fbx")
 RADIO_BRICK_FBX = os.path.join(ROOT, "Objects", "Mesh", "rfs_radio_brick.fbx")
 RADIO_ANTENNA_FBX = os.path.join(ROOT, "Objects", "Mesh", "rfs_radio_antenna.fbx")
 RADIO_LOCK_FBX = os.path.join(ROOT, "Objects", "Mesh", "rfs_radio_lock.fbx")
@@ -38,22 +29,23 @@ RADIO_HANDHELD_FBX = os.path.join(ROOT, "Tools", "rfs_radio_handheld.fbx")
 
 TILE_BG = (20.0 / 255.0, 24.0 / 255.0, 28.0 / 255.0, 1.0)
 
-SM_TEX = os.path.join(SM_DATA, "Objects", "Textures")
-
-RADIO_BRICK_DIF = os.path.join(ROOT, "Objects", "Textures", "radio", "brick", "radio_2_dif.png")
+FBX_KIT_DIF = os.path.join(
+    ROOT,
+    "Objects",
+    "Textures",
+    "radio",
+    "fbx_kit",
+    "Military_communication_D.dds",
+)
 RADIO_ANTENNA_DIF = os.path.join(ROOT, "Objects", "Textures", "radio", "antenna", "handheltradio_dif.png")
-RADIO_LOCK_DIF = os.path.join(ROOT, "Objects", "Textures", "radio", "lock", "ampfilter_first_dif.png")
-RADIO_HANDHELD_DIF = os.path.join(ROOT, "Objects", "Textures", "radio", "handheld", "handheltradio_dif.png")
-
-HACK_GATE_DIF = os.path.join(SM_TEX, "interactive", "obj_interactive_logicgate_dif.tga")
 
 PARTS = [
     # (out_name, fbx, base_color_dif, target_size, rotate_deg_xyz)
-    ("icon_hackbeacon_96.png", HACK_GATE_OFF_FBX, HACK_GATE_DIF, 4.6, (0.0, 0.0, 0.0)),
-    ("icon_radio_handheld_96.png", RADIO_HANDHELD_FBX, RADIO_HANDHELD_DIF, 5.2, (90.0, 0.0, 0.0)),
-    ("icon_radio_brick_96.png", RADIO_BRICK_FBX, RADIO_BRICK_DIF, 4.6, (0.0, 0.0, 0.0)),
+    ("icon_hackbeacon_96.png", HACK_BEACON_FBX, FBX_KIT_DIF, 4.8, (0.0, 0.0, 0.0)),
+    ("icon_radio_handheld_96.png", RADIO_HANDHELD_FBX, FBX_KIT_DIF, 5.2, (90.0, 0.0, 0.0)),
+    ("icon_radio_brick_96.png", RADIO_BRICK_FBX, FBX_KIT_DIF, 4.8, (90.0, 0.0, 0.0)),
     ("icon_radio_antenna_96.png", RADIO_ANTENNA_FBX, RADIO_ANTENNA_DIF, 8.0, (90.0, 90.0, 0.0)),
-    ("icon_radio_lock_96.png", RADIO_LOCK_FBX, RADIO_LOCK_DIF, 4.6, (0.0, 0.0, 0.0)),
+    ("icon_radio_lock_96.png", RADIO_LOCK_FBX, FBX_KIT_DIF, 4.8, (0.0, 0.0, 0.0)),
 ]
 
 

@@ -322,7 +322,7 @@ function RfsBotHijack.isKillbotCharacter( char )
 		or string.find( lower, "cablebot", 1, true ) then
 		return true
 	end
-	local woc = rawget( _G, "unit_woc" )
+	local woc = _G.unit_woc
 	if woc and ( t == tostring( woc ) or lower == string.lower( tostring( woc ) ) ) then
 		return true
 	end
@@ -404,7 +404,7 @@ local function shortTypeName( typeStr )
 	for i = 1, #SEEDBOT_UUID_STRS do
 		seed[#seed + 1] = SEEDBOT_UUID_STRS[i]
 	end
-	local seedGlobal = rawget( _G, "unit_seedbot" )
+	local seedGlobal = _G.unit_seedbot
 	if seedGlobal then
 		seed[#seed + 1] = seedGlobal
 	end
@@ -751,6 +751,7 @@ function RfsBotHijack.setCustomName( unitOrKey, name, player, allowHost )
 			} )
 		end )
 		if info then
+			syncPublicIdentity( unit, info )
 			RfsBotHijack.pushTag( unit, identityTagText( info ), "name" )
 		elseif type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.pushName ) == "function" then
 			pcall( RfsHackOrdersIdentity.pushName, unit )
@@ -878,6 +879,31 @@ local function pushIdentityToUnit( unit, identity )
 	end
 	pcall( function()
 		sm.event.sendToUnit( unit, "sv_e_rfsIdentity", identity )
+	end )
+end
+
+-- Color used pushIdentity + adoptOnUnit + writePublicApply; rename only hit saved.rfsCustomName.
+local function syncPublicIdentity( unit, info )
+	if not unit or not sm.exists( unit ) or type( info ) ~= "table" then
+		return
+	end
+	if type( RfsHackApply ) ~= "table" or type( RfsHackApply.writePublicApply ) ~= "function" then
+		return
+	end
+	pcall( function()
+		RfsHackApply.writePublicApply( unit, info.owner or 0, {
+			mode = info.mode,
+			beaconKey = info.beaconKey,
+			workBeaconKey = info.workBeaconKey,
+			hackBeaconKey = info.hackBeaconKey,
+			customName = info.customName,
+			displayName = info.displayName,
+			displayIndex = info.displayIndex,
+			allyColor = info.allyColor,
+			unitType = info.unitType or info.type,
+			firstSeenTick = info.firstSeenTick,
+			rfsOrder = info.rfsOrder or info.order,
+		} )
 	end )
 end
 
@@ -3068,6 +3094,16 @@ local function beaconHijackNeed( rec )
 	return n
 end
 
+local function unitLooksSavedAlly( unit )
+	if type( RfsHackApply ) == "table" and type( RfsHackApply.unitLooksSavedAlly ) == "function" then
+		return RfsHackApply.unitLooksSavedAlly( unit )
+	end
+	if not unit then
+		return false
+	end
+	return RfsBotHijack.isAlly( unit )
+end
+
 function RfsBotHijack.tickAuto( world )
 	local now = 0
 	pcall( function()
@@ -3078,6 +3114,8 @@ function RfsBotHijack.tickAuto( world )
 	end
 	RfsBotHijack._autoTick = now
 	RfsBotHijack.pending = RfsBotHijack.pending or {}
+	local loadGrace = type( RfsHackReload ) == "table" and type( RfsHackReload.inLoadWindow ) == "function"
+		and RfsHackReload.inLoadWindow() or false
 
 	local live = {}
 	for _, u in ipairs( allUnits( world ) ) do
@@ -3107,10 +3145,30 @@ function RfsBotHijack.tickAuto( world )
 		return
 	end
 
+	-- Post-load: beacon env lacked RfsHackReload before 0850-y; skip ALL auto-hack until restore.
+	if loadGrace then
+		for key, pend in pairs( RfsBotHijack.pending ) do
+			local unit = live[key]
+			if unit then
+				setUnitTag( unit, "" )
+			end
+		end
+		RfsBotHijack.pending = {}
+		RfsBotHijack._tickChainConvert( live, now )
+		RfsBotHijack._tickSignalLoss( live, now )
+		for key, info in pairs( RfsBotHijack.allies or {} ) do
+			local unit = live[key]
+			if unit and sm.exists( unit ) then
+				RfsBotHijack._tickRaidJam( unit, key, info, now )
+			end
+		end
+		return
+	end
+
 	local nextPending = {}
 	for key, pend in pairs( RfsBotHijack.pending ) do
 		local unit = live[key]
-		if unit and sm.exists( unit ) and not RfsBotHijack.isAlly( unit ) and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
+		if unit and sm.exists( unit ) and not unitLooksSavedAlly( unit ) and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
 			local rec, bkey = RfsBotHijack.coveringBeacon( unit )
 			local need = rec and beaconHijackNeed( rec ) or 0
 			if rec and rec.powered and need > 0 then
@@ -3226,7 +3284,7 @@ function RfsBotHijack.tickAuto( world )
 				alreadyDone = false
 			end
 		end
-		if not nextPending[key] and not RfsBotHijack.isAlly( unit ) and not alreadyDone and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
+		if not nextPending[key] and not loadGrace and not unitLooksSavedAlly( unit ) and not alreadyDone and not RfsBotHijack.isLockedOut( unit ) and RfsBotHijack.isHackable( unit ) then
 			if unit.character and sm.exists( unit.character ) and RfsBotHijack.isRobotCharacter( unit.character ) then
 				if not ( RfsBotHijack.isUndergroundBotCharacter( unit.character ) and not undergroundBotsOn() ) then
 					local rec, bkey = RfsBotHijack.coveringBeacon( unit )
@@ -4854,6 +4912,23 @@ function RfsBotHijack.ensureUnitHooks()
 						self.saved.rfsOrder = params.rfsOrder
 					end
 					self.isDirty = true
+					if self.unit and ( params.customName ~= nil or params.allyColor ~= nil ) then
+						local key = unitKey( self.unit )
+						local rec = key and RfsBotHijack.allies and RfsBotHijack.allies[key]
+						syncPublicIdentity( self.unit, rec or {
+							owner = self.saved.playerAllyOwner,
+							mode = self.saved.playerAllyMode,
+							beaconKey = self.saved.playerAllyBeacon,
+							workBeaconKey = self.saved.playerAllyWorkBeacon,
+							hackBeaconKey = self.saved.rfsHackBeacon,
+							customName = self.saved.rfsCustomName,
+							displayName = self.saved.rfsDisplayName,
+							displayIndex = self.saved.rfsDisplayIndex,
+							allyColor = self.saved.rfsAllyColor,
+							unitType = self.saved.rfsUnitType,
+							rfsOrder = self.saved.rfsOrder,
+						} )
+					end
 					-- Cross-sandbox apply: beacon convert sent identity; register in THIS env.
 					if params.playerAlly and type( RfsHackApply ) == "table" and RfsHackApply.adoptOnUnit then
 						pcall( RfsHackApply.adoptOnUnit, self, params )
@@ -4911,6 +4986,24 @@ function RfsBotHijack.ensureUnitHooks()
 							unitType = self.saved.rfsUnitType,
 							type = self.saved.rfsUnitType,
 						} ), "name" )
+					end
+					if self.unit and type( RfsHackApply ) == "table" and type( RfsHackApply.writePublicApply ) == "function" then
+						pcall( function()
+							RfsHackApply.writePublicApply( self.unit, self.saved.playerAllyOwner or 0, {
+								playerAlly = true,
+								mode = self.saved.playerAllyMode,
+								beaconKey = self.saved.playerAllyBeacon,
+								workBeaconKey = self.saved.playerAllyWorkBeacon,
+								hackBeaconKey = self.saved.rfsHackBeacon,
+								customName = self.saved.rfsCustomName,
+								displayName = self.saved.rfsDisplayName,
+								displayIndex = self.saved.rfsDisplayIndex,
+								allyColor = self.saved.rfsAllyColor,
+								unitType = self.saved.rfsUnitType,
+								firstSeenTick = self.saved.rfsFirstSeenTick,
+								rfsOrder = self.saved.rfsOrder,
+							} )
+						end )
 					end
 				end
 				function cls.sv_e_rfsLeaveRaid( self, params )
@@ -5055,6 +5148,24 @@ function RfsBotHijack.ensureUnitHooks()
 							unitType = self.saved.rfsUnitType,
 							type = self.saved.rfsUnitType,
 						} ), "name" )
+						if type( RfsHackApply ) == "table" and type( RfsHackApply.writePublicApply ) == "function" then
+							pcall( function()
+								RfsHackApply.writePublicApply( self.unit, self.saved.playerAllyOwner or 0, {
+									playerAlly = true,
+									mode = self.saved.playerAllyMode,
+									beaconKey = self.saved.playerAllyBeacon,
+									workBeaconKey = self.saved.playerAllyWorkBeacon,
+									hackBeaconKey = self.saved.rfsHackBeacon,
+									customName = self.saved.rfsCustomName,
+									displayName = self.saved.rfsDisplayName,
+									displayIndex = self.saved.rfsDisplayIndex,
+									allyColor = self.saved.rfsAllyColor,
+									unitType = self.saved.rfsUnitType,
+									firstSeenTick = self.saved.rfsFirstSeenTick,
+									rfsOrder = self.saved.rfsOrder,
+								} )
+							end )
+						end
 					end
 				end
 			end

@@ -1,0 +1,32 @@
+{
+  "parts": [
+    {
+      "key": "timer",
+      "stem": "rfs_station_timer",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_station_timer.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_station_timer.rend",
+      "grid_yaw_deg": 0.0,
+      "pre_rot_deg": null
+    },
+    {
+      "key": "sensor",
+      "stem": "rfs_station_sensor",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_station_sensor.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_station_sensor.rend",
+      "grid_yaw_deg": 0.0,
+      "pre_rot_deg": [
+        -90.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "key": "batterybox",
+      "stem": "rfs_station_batterybox",
+      "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_station_batterybox.fbx",
+      "rend": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Renderable\\rfs_station_batterybox.rend",
+      "grid_yaw_deg": 0.0,
+      "pre_rot_deg": null
+    }
+  ]
+}

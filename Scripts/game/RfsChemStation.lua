@@ -700,7 +700,7 @@ end
 
 local BOX_Y_BLOCKS = 17
 local BLOCK_M = 0.25
-local STAND_Y_M = 0.0 -- shapeset seat Hips offset (tube center; was -1.225 root_jnt floor snap)
+local STAND_Y_M = 0.0 -- shapeset seat Hips offset (tube center; 0850-e mesh -1.0 block)
 local EXIT_FORWARD = 1.624
 local EXIT_LIFT = 0.4
 
@@ -831,7 +831,7 @@ local FILL_MESH_HEIGHT = 9.020000
 local FILL_MESH_Y_MIN = -4.789301
 local FILL_RADIUS_M = 0.56 -- diam 1.12 m / 4.5 blocks; inside 0.774 m glass with wall margin
 local FILL_HEIGHT_M = 2.00 -- below glass top ~1.51 m and claws; above metal floor
-local FILL_BOTTOM_Y_M = -1.18 -- just above hull floor -1.25 m / glass min ~-1.24 m; not the base
+local FILL_BOTTOM_Y_M = -1.43 -- 0850-e body mesh -1.0 block; keep fill inside glass
 local FILL_XZ_SCALE = FILL_RADIUS_M / FILL_MESH_RADIUS
 local FILL_Y_SCALE = FILL_HEIGHT_M / FILL_MESH_HEIGHT
 local FILL_UUID = sm.uuid.new( "a7e3c91f-6b24-4d80-8e15-2c9f4a0b7d63" )

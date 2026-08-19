@@ -74,7 +74,7 @@ local function rebuildSeedIndex()
 		if type( ITEMS ) == "table" and ITEMS[def.key] then
 			uuid = ITEMS[def.key]
 		else
-			local g = rawget( _G, def.key )
+			local g = _G[def.key]
 			if g ~= nil then
 				uuid = g
 			else

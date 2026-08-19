@@ -318,13 +318,13 @@ local function resolveUnitUuid( name )
 	local key = string.lower( tostring( name ) )
 	local gname = UNIT_ALIAS[key]
 	if gname then
-		local u = rawget( _G, gname )
+		local u = _G[gname]
 		if u then
 			return u
 		end
 	end
 	if key == "farmbot" or key == "f" then
-		return rawget( _G, "unit_farmbot" ) or FARMBOT_FALLBACK
+		return _G.unit_farmbot or FARMBOT_FALLBACK
 	end
 	local ok, uuid = pcall( sm.uuid.new, tostring( name ) )
 	if ok and uuid and not uuid:isNil() then

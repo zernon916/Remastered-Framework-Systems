@@ -7,7 +7,8 @@
     17,
     17
   ],
-  "note": "v9 was meters in a block-space hull; x4 puts circular base at y=-8.5",
+  "note": "v9 meters x4; body Y nudge -1.0 blocks for ground flush",
+  "body_y_nudge_blocks": -1.0,
   "body": {
     "stem": "rfs_deepsleep_v10",
     "fbx": "C:\\Users\\benko\\Desktop\\RecipeFrameworkSurvival\\Objects\\Mesh\\rfs_deepsleep_v10.fbx",
@@ -15,12 +16,12 @@
     "scale": 4.0,
     "world_min": [
       -8.2990140914917,
-      -8.247541427612305,
+      -9.247541427612305,
       -8.5
     ],
     "world_max": [
       8.2990140914917,
-      8.247539520263672,
+      7.247539520263672,
       8.158170700073242
     ],
     "world_size": [

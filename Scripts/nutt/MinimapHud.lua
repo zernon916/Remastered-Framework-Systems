@@ -305,7 +305,9 @@ function MinimapHud.cl_init( self )
 		table.sort(keys)
 		dump[t[1]] = keys
 	end
-	pcall(sm.json.save, dump, C .. "/api_dump.json")
+	if g_wmFlags and g_wmFlags.DEV then
+		pcall(sm.json.save, dump, C .. "/api_dump.json")
+	end
 	-- recipe-merge probe: does the engine merge our CraftingRecipes/
 	-- craftbot.json into the survival recipe set files the craftbot grid is
 	-- populated from? Read each set from OUR context and search for the GPS
@@ -365,6 +367,10 @@ function MinimapHud.cl_tryLoadTerrain( self )
 		self.cl.td = td
 		self.cl.worldId = wid
 		self.cl.ready = true
+		-- 0851-d: defer HUD widget burst until move or ~2.5s after terrain ready
+		self.cl.deferActive = true
+		self.cl.deferT = 0
+		self.cl.deferPos = nil
 		-- no chat output in normal operation (Eric 8/8) - build/seed go to
 		-- the stats file instead; chat is reserved for errors only
 	end
@@ -690,7 +696,8 @@ function MinimapHud.cl_rebuildGui( self )
 	c.cells, c.overlays, c.active, c.ovActive = nil, nil, nil, nil
 	c.rim, c.activeName, c.ovName = nil, nil, nil
 	c.bezelSet, c.bezelOrder, c.wpmSet = nil, nil, nil
-	c.frameW, c.lastSig, c.lastSig3, c.buildAge = nil, nil, nil, nil
+	c.frameW, c.lastSig, c.lastTileSig, c.lastScrollSig, c.lastSig3, c.buildAge = nil, nil, nil, nil, nil, nil
+	c.rfsRenderT = nil
 	c.baseX, c.baseY = nil, nil
 	c.hidden = false
 	c.renderErr = false
@@ -896,8 +903,10 @@ function MinimapHud.cl_probeUpdate( self, dt, char )
 				around[#around + 1] = (cx + dx) .. "," .. (cy + dy) .. "=" .. tostring(f.name)
 			end
 		end
-		pcall(sm.json.save, { probe = true, x = pos.x, y = pos.y,
-			cell = cx .. "," .. cy, around = around }, C .. "/minimap_stats.json")
+		if g_wmFlags and g_wmFlags.DEV then
+			pcall(sm.json.save, { probe = true, x = pos.x, y = pos.y,
+				cell = cx .. "," .. cy, around = around }, C .. "/minimap_stats.json")
+		end
 	end
 end
 
@@ -983,6 +992,29 @@ function MinimapHud.client_onUpdate( self, dt )
 	end
 
 	if c.gui == nil then
+		-- 0851-d: lazy-init upper-left HUD — spread widget build; prebuild atlas
+		-- pool during the wait (zoom/pos rebuild skips defer — deferActive false).
+		if c.deferActive and c.posIdx ~= 5 then
+			c.deferT = (c.deferT or 0) + dt
+			BigMap.prebuildStep(self)
+			local okd, ch = pcall(function()
+				return sm.localPlayer.getPlayer():getCharacter()
+			end)
+			if okd and ch then
+				local p = ch.worldPosition
+				if not c.deferPos then
+					c.deferPos = { x = p.x, y = p.y }
+				end
+				local dx = p.x - c.deferPos.x
+				local dy = p.y - c.deferPos.y
+				if dx * dx + dy * dy < 32 * 32 and c.deferT < 2.5 then
+					return
+				end
+			elseif c.deferT < 2.5 then
+				return
+			end
+			c.deferActive = false
+		end
 		if PROBE and not c.probeGrid then
 			self:cl_buildProbeGrid()
 		end
@@ -1027,6 +1059,11 @@ function MinimapHud.client_onUpdate( self, dt )
 	end
 	if hideAll then return end
 
+	-- background atlas pool prebuild while minimap is up (spread ~1320 widgets)
+	if not (c.bm and c.bm.poolReady) then
+		BigMap.prebuildStep(self)
+	end
+
 	-- triple-crouch within ~2 s cycles ZOOM (debug views moved to the GPS
 	-- hand tool: LMB/RMB = zoom in/out, Q = debug cycle)
 	local okcr, crouch = pcall(function() return char:isCrouching() end)
@@ -1048,6 +1085,23 @@ function MinimapHud.client_onUpdate( self, dt )
 	local pos = char.worldPosition
 	local cellX = math.floor(pos.x / 64)
 	local cellY = math.floor(pos.y / 64)
+	local fx = pos.x / 64 - cellX
+	local fy = pos.y / 64 - cellY
+	-- 0851-d: when standing still, run map paint at ~6 Hz instead of every frame
+	c.buildAge = (c.buildAge or 0) + dt
+	local warm = c.buildAge < 2
+	local moving = cellX ~= c.prevCellX or cellY ~= c.prevCellY
+		or math.abs(fx - (c.prevFx or fx)) > 0.02
+		or math.abs(fy - (c.prevFy or fy)) > 0.02
+	c.prevCellX, c.prevCellY = cellX, cellY
+	c.prevFx, c.prevFy = fx, fy
+	if not moving and not warm then
+		c.idleT = (c.idleT or 0) + dt
+		if c.idleT < 0.15 then return end
+		c.idleT = 0
+	else
+		c.idleT = 0
+	end
 	if cellX ~= c.baseX or cellY ~= c.baseY then
 		self:cl_refill(cellX, cellY)
 	end
@@ -1056,8 +1110,6 @@ function MinimapHud.client_onUpdate( self, dt )
 	local n = c.poolN
 	local h = math.floor(n / 2)
 	local RING, CELLPX = c.RING, c.CELLPX
-	local fx = pos.x / 64 - cellX
-	local fy = pos.y / 64 - cellY
 	-- base cell occupies slot row (n-1-h); the player's pixel inside the inner
 	-- container is ((h+fx), (n-h-fy)) cells from its top-left. n-h == h+1 only
 	-- for ODD n -- the old h+1 constant made even-n zoom levels scroll the map
@@ -1105,14 +1157,22 @@ function MinimapHud.client_onUpdate( self, dt )
 	-- (~7us/widget regardless of visibility, T3-T5). Two fixes: skip the
 	-- entire pass + render when nothing moved (signature), and hand the
 	-- engine a PRUNED tree containing only the widgets visible this frame.
-	local sig = c.inner.x .. ";" .. c.inner.y .. ";" .. tostring(c.baseX)
-		.. ";" .. tostring(c.baseY) .. ";" .. c.debugMode
+	-- 0851-d: tile sig (base cell) vs scroll sig (inner offset) — sub-cell
+	-- smooth scroll must not rerun the O(n^2) rim-clip pass every frame.
+	-- Warmup retries scroll paint only (~20 Hz); must not force tileDirty.
+	local scrollSig = c.inner.x .. ";" .. c.inner.y
+	local tileSig = tostring(c.baseX) .. ";" .. tostring(c.baseY)
+		.. ";" .. c.debugMode
 	-- warmup: keep rendering for 2s after build - the very first render can
 	-- land before atlas textures bind, leaving a blank map while stationary
-	c.buildAge = (c.buildAge or 0) + dt
-	local dirty = sig ~= c.lastSig or c.buildAge < 2
-	if dirty then
-		c.lastSig = sig
+	local tileDirty = tileSig ~= c.lastTileSig
+	local scrollDirty = scrollSig ~= c.lastScrollSig
+	c.rfsRenderT = (c.rfsRenderT or 0) + dt
+	local doPaint = c.rfsRenderT >= 0.05
+	if tileDirty then
+		c.lastTileSig = tileSig
+		c.lastScrollSig = scrollSig
+		c.lastSig = scrollSig .. ";" .. tileSig
 
 	-- per-frame visibility: interior cells draw full-size in the grid pool;
 	-- cells CROSSING the circle edge are hidden there and drawn instead in
@@ -1257,20 +1317,30 @@ function MinimapHud.client_onUpdate( self, dt )
 	end
 	c.frameW.Childs = lf
 
-	local okr, err = pcall(function() c.gui:render(c.root) end)
-	if not okr and not c.renderErr then
-		c.renderErr = true
-		sm.gui.chatMessage("[minimap] render error: " .. tostring(err))
-	end
+		c.rfsRenderT = 0
+		local okr, err = pcall(function() c.gui:render(c.root) end)
+		if not okr and not c.renderErr then
+			c.renderErr = true
+			sm.gui.chatMessage("[minimap] render error: " .. tostring(err))
+		end
 
-	end -- dirty
+	elseif (scrollDirty or warm) and doPaint then
+		c.rfsRenderT = 0
+		c.lastScrollSig = scrollSig
+		c.lastSig = scrollSig .. ";" .. tileSig
+		local okr, err = pcall(function() c.gui:render(c.root) end)
+		if not okr and not c.renderErr then
+			c.renderErr = true
+			sm.gui.chatMessage("[minimap] render error: " .. tostring(err))
+		end
+	end
 
 	-- ring/arrow/pin gui: tiny static tree, own signature (arrow angle
 	-- quantized to ~3 degrees + pin position + ring/pin color state)
 	if c.gui3 and c.root3 then
 		local sig3 = math.floor((c.arrow.RotatingSkinAngle or 0) * 20)
 			.. ";" .. tostring(hasWp and wpm and (wpCol .. ":" .. wpm.x .. "," .. wpm.y) or "-")
-		if sig3 ~= c.lastSig3 or c.buildAge < 2 then
+		if sig3 ~= c.lastSig3 or (warm and doPaint) then
 			c.lastSig3 = sig3
 			local okr3, err3 = pcall(function() c.gui3:render(c.root3) end)
 			if not okr3 and not c.renderErr3 then
@@ -1295,28 +1365,30 @@ function MinimapHud.client_onUpdate( self, dt )
 				end
 			end
 		end
-		pcall(sm.json.save, { version = VERSION, build = BUILD,
-			-- which COPY wrote this file. The dev mod writes to its own folder
-			-- (mod-dev\minimap_stats.json) so the two can never overwrite each
-			-- other, but the flag makes a pasted stats blob self-identifying.
-			dev = (g_wmFlags and g_wmFlags.DEV) or false, flags = g_wmFlags,
-			frames = c.frames, dtMax = c.dtMax, t = c.statT,
-			ring = c.RING, cell = c.CELLPX, zoom = c.zoomIdx, diag = c.diag,
-			pos = c.posIdx, size = c.sizeIdx,
-			-- the LOGICAL view size the engine reports (~1280x720 even on 4K).
-			-- Logged so another machine's resolution can be checked from a
-			-- stats file instead of guessed at.
-			vw = c.vw, vh = c.vh,
-			rim = c.rimUsed, rimMax = c.rimSlots,
-			-- MP gate diagnostics: inits should be 1; 2+ means the owner
-			-- gate passed for another player's instance, demos counts
-			-- self-heal teardowns that followed
-			mp = { inits = g_wmMpInits or 0, demos = g_wmMpDemos or 0 },
-			wp = c.waypoint, wpc = c.wpColor, compass = c.compassDbg,
-			wpdbg = c.wpDbg, recipeDbg = c.recipeDbg,
-			x = pos.x, y = pos.y, base = tostring(c.baseX) .. "," .. tostring(c.baseY),
-			around = around },
-			C .. "/minimap_stats.json")
+		if g_wmFlags and g_wmFlags.DEV then
+			pcall(sm.json.save, { version = VERSION, build = BUILD,
+				-- which COPY wrote this file. The dev mod writes to its own folder
+				-- (mod-dev\minimap_stats.json) so the two can never overwrite each
+				-- other, but the flag makes a pasted stats blob self-identifying.
+				dev = true, flags = g_wmFlags,
+				frames = c.frames, dtMax = c.dtMax, t = c.statT,
+				ring = c.RING, cell = c.CELLPX, zoom = c.zoomIdx, diag = c.diag,
+				pos = c.posIdx, size = c.sizeIdx,
+				-- the LOGICAL view size the engine reports (~1280x720 even on 4K).
+				-- Logged so another machine's resolution can be checked from a
+				-- stats file instead of guessed at.
+				vw = c.vw, vh = c.vh,
+				rim = c.rimUsed, rimMax = c.rimSlots,
+				-- MP gate diagnostics: inits should be 1; 2+ means the owner
+				-- gate passed for another player's instance, demos counts
+				-- self-heal teardowns that followed
+				mp = { inits = g_wmMpInits or 0, demos = g_wmMpDemos or 0 },
+				wp = c.waypoint, wpc = c.wpColor, compass = c.compassDbg,
+				wpdbg = c.wpDbg, recipeDbg = c.recipeDbg,
+				x = pos.x, y = pos.y, base = tostring(c.baseX) .. "," .. tostring(c.baseY),
+				around = around },
+				C .. "/minimap_stats.json")
+		end
 		c.statT = 0; c.frames = 0; c.dtMax = 0
 	end
 end

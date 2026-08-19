@@ -96,9 +96,14 @@ local function chatOnce( flag, msg )
 	end
 	_G[flag] = true
 	print( msg )
-	pcall( function()
-		sm.gui.chatMessage( msg )
-	end )
+	-- Chat gui is not up during server_onCreate / loadCraftingRecipes (wrap stamp).
+	if sm.localPlayer and sm.localPlayer.getLocalPlayer then
+		pcall( function()
+			if sm.localPlayer.getLocalPlayer() and sm.gui and sm.gui.chatMessage then
+				sm.gui.chatMessage( msg )
+			end
+		end )
+	end
 end
 
 local function stampPrefix()

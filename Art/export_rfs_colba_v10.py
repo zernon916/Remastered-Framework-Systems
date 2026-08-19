@@ -17,6 +17,8 @@ STEM = "rfs_deepsleep_v10"
 FILL_STEM = "rfs_chemfill_v10"
 SRC_BODY = os.path.join(OUT_MESH, "rfs_deepsleep_v9.fbx")
 SRC_FILL = os.path.join(OUT_MESH, "rfs_chemfill_v9.fbx")
+# Lower body mesh so rim sits flush with adjacent blocks (full 1 SM block).
+BODY_Y_NUDGE_BLOCKS = -1.0
 
 
 def reset_scene():
@@ -104,7 +106,7 @@ def export_dae(path):
     )
 
 
-def scale_imported(path, stem):
+def scale_imported(path, stem, y_nudge_blocks=0.0):
     reset_scene()
     bpy.ops.import_scene.fbx(filepath=path)
     objs = mesh_objects()
@@ -114,6 +116,10 @@ def scale_imported(path, stem):
     for o in objs:
         o.scale = (SCALE, SCALE, SCALE)
     apply_tr(objs)
+    if y_nudge_blocks:
+        for o in objs:
+            o.location.y += y_nudge_blocks
+        apply_tr(objs)
     body = objs[0]
     body.name = stem
     if body.data:
@@ -246,7 +252,7 @@ def main():
         raise SystemExit("missing " + SRC_BODY)
     if not os.path.isfile(SRC_FILL):
         raise SystemExit("missing " + SRC_FILL)
-    body = scale_imported(SRC_BODY, STEM)
+    body = scale_imported(SRC_BODY, STEM, y_nudge_blocks=BODY_Y_NUDGE_BLOCKS)
     fill = scale_imported(SRC_FILL, FILL_STEM)
     rend = write_rend_body()
     fill_rend = write_rend_fill()
@@ -255,7 +261,9 @@ def main():
         "fill_stem": FILL_STEM,
         "scale_from_v9": SCALE,
         "hull_blocks": [17, 17, 17],
-        "note": "v9 was meters in a block-space hull; x4 puts circular base at y=-8.5",
+        "note": "v9 meters x4; body Y nudge %s blocks for ground flush"
+        % (BODY_Y_NUDGE_BLOCKS,),
+        "body_y_nudge_blocks": BODY_Y_NUDGE_BLOCKS,
         "body": body,
         "fill": fill,
         "rend": rend,

@@ -32,8 +32,8 @@
 			"hull": {
 				"col": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Collision/rfs_radio_antenna_col.obj",
 				"x": 1,
-				"y": 1,
-				"z": 7
+				"y": 7,
+				"z": 1
 			},
 			"rotationSet": "PropY",
 			"physicsMaterial": "Metal",
