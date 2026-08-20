@@ -117,6 +117,7 @@ RfsBotHijack.rangeVisible = RfsBotHijack.rangeVisible or {} -- [beaconKey] = tru
 RfsBotHijack.beaconScripts = RfsBotHijack.beaconScripts or {} -- [beaconKey] = interactable self
 RfsBotHijack._hooked = false
 RfsBotHijack._autoTick = -1
+RfsBotHijack._fullTick = -1
 
 local function unitKey( unit )
 	if not unit then
@@ -2008,15 +2009,19 @@ function RfsBotHijack.prune( world )
 	RfsBotHijack.publishGlobals()
 end
 
--- Refresh tether vs infection. Call from Game.server_onFixedUpdate.
+-- Refresh tether vs infection. Call from HijackHost / beacon (throttled). Deduped once per game tick.
 function RfsBotHijack.tick( world )
-	RfsBotHijack.ensureHooks()
-	RfsBotHijack.tickAuto( world )
-	RfsBotHijack.prune( world )
 	local now = 0
 	pcall( function()
 		now = sm.game.getCurrentTick()
 	end )
+	if now == RfsBotHijack._fullTick then
+		return
+	end
+	RfsBotHijack._fullTick = now
+	RfsBotHijack.ensureHooks()
+	RfsBotHijack.tickAuto( world )
+	RfsBotHijack.prune( world )
 	local live = {}
 	for _, u in ipairs( allUnits( world ) ) do
 		if sm.exists( u ) then
@@ -2606,6 +2611,10 @@ end
 function RfsBotHijack.ensureCharHooks()
 	local function wrapClientData( cls )
 		if type( cls ) ~= "table" then
+			return
+		end
+		-- Already wrapped — do not redefine RPC handlers every frame (0851-k FPS).
+		if cls._rfsTagRpc then
 			return
 		end
 		function cls.sv_e_rfsTag( self, params )

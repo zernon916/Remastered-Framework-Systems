@@ -15,9 +15,10 @@ end )
 local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_BeaconOrders.layout"
 local ROWS = 8
 local SCROLL_STEP = 1 -- one ally row per wheel/button tick
--- ~0.5s settle after Close before createGui (40Hz ≈ 20 ticks).
-local REOPEN_SETTLE_TICKS = 20
+-- ~1 tick after Close before reopen (pooled GUI — no destroy settle).
+local REOPEN_SETTLE_TICKS = 1 -- pooled GUI reuse; no destroy settle wait
 local bindChrome
+local rebindOrdersChrome
 local MODE_ITEMS_DEFAULT = { "Rest", "Defend", "Return", "Stay", "Recall" }
 local MODE_ITEMS_HAY = { "Rest", "Defend", "Return", "Stay", "Recall", "Farm" }
 local MODE_ITEMS_TOTE = { "Rest", "Defend", "Return", "Stay", "Recall", "Collect" }
@@ -729,14 +730,8 @@ function RfsBeaconOrdersGui.refresh( host )
 		paintSlot( gui, host, i, rows[abs] )
 	end
 	host.cl.rfsOrdersSuppressDrop = nil
-	-- setText drops button AND ColorDrop callbacks; ModeDrop survives setDropDownCallback
-	-- alone but ColorDrop needs recreate (ensureColorDrop). Cached gen/gui skips recreate
-	-- without force — second menu open looked alive but never sent sv_rfs_ordersSetColor.
-	host.cl.rfsOrdersColorDropGui = nil
-	host.cl.rfsOrdersColorDropGen = nil
-	-- NameEdit: poke only when selection changed; callbacks rebind last in bindChrome.
+	-- Rebind callbacks only — do not bust ColorDrop cache or force recreate every paint.
 	rebindOrdersChrome( host, {
-		forceColor = true,
 		forceName = host.cl.rfsOrdersNameUserEdited ~= true,
 	} )
 end
@@ -1042,7 +1037,7 @@ end
 -- setDropDownCallback. Color: ensureColorDrop (recreate once / force) then bind.
 -- Name: ensureNameEdit (setText poke + TextChanged) then bind BtnRename.
 -- Do not createDropDown Mode/Seed here (before-open cursor bug / 3.5d list wipe).
-local function rebindOrdersChrome( host, opts )
+function rebindOrdersChrome( host, opts )
 	local gui = host and host.cl and host.cl.rfsOrdersGui
 	if not gui then
 		return
@@ -1260,21 +1255,29 @@ function RfsBeaconOrdersGui.open( host, opts )
 		pcall( function() old:destroy() end )
 	end
 
-	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true, {
-		isHud = false,
-		isInteractive = true,
-		needsCursor = true,
-	} )
-	if not ok or not gui then
-		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true )
+	local gui = host.cl.rfsOrdersGuiReuse
+	local reusing = gui ~= nil
+	if reusing then
+		host.cl.rfsOrdersGuiReuse = nil
 	end
-	if not ok or not gui then
-		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true )
-	end
-	if not ok or not gui then
-		sm.gui.chatMessage( "[RFS] Failed to open Beacon Orders GUI" )
-		print( "[RFS] orders GUI create failed: " .. tostring( gui ) )
-		return
+	if not gui then
+		local ok
+		ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true, {
+			isHud = false,
+			isInteractive = true,
+			needsCursor = true,
+		} )
+		if not ok or not gui then
+			ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true )
+		end
+		if not ok or not gui then
+			ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, true )
+		end
+		if not ok or not gui then
+			sm.gui.chatMessage( "[RFS] Failed to open Beacon Orders GUI" )
+			print( "[RFS] orders GUI create failed: " .. tostring( gui ) )
+			return
+		end
 	end
 
 	-- Compare before applyOpenMeta overwrites the key (keeps cached rows on reopen).
@@ -1322,27 +1325,41 @@ function RfsBeaconOrdersGui.open( host, opts )
 	end
 	host.cl.rfsPendingOrdersGui = nil
 	host.cl.rfsOrdersReopenAfterTick = nil
-	host.cl.rfsOrdersDropsBound = nil
-	host.cl.rfsOrdersDropsGui = nil
-	host.cl.rfsOrdersColorDropGui = nil
-	host.cl.rfsOrdersColorDropGen = nil
-	host.cl.rfsOrdersNameEditGui = nil
-	host.cl.rfsOrdersNameEditGen = nil
-	host.cl.rfsOrdersNameEditWidget = nil
 	host.cl.rfsOrdersNameDraft = nil
 	host.cl.rfsOrdersNameUserEdited = nil
-	host.cl.rfsOrdersGuiGen = ( tonumber( host.cl.rfsOrdersGuiGen ) or 0 ) + 1
-
-	RfsBeaconOrdersGui.bind( host, gui )
+	if reusing then
+		host.cl.rfsOrdersGui = gui
+		bindChrome( host, gui )
+		pcall( function()
+			gui:setSliderCallback( "ScrollBar", "cl_rfs_ordersScrollChanged" )
+		end )
+		pcall( function()
+			gui:setMouseWheelCallback( "MainPanel", "cl_rfs_ordersMouseWheel" )
+		end )
+		pcall( function()
+			gui:setMouseWheelCallback( "ScrollBar", "cl_rfs_ordersMouseWheel" )
+		end )
+	else
+		host.cl.rfsOrdersDropsBound = nil
+		host.cl.rfsOrdersDropsGui = nil
+		host.cl.rfsOrdersColorDropGui = nil
+		host.cl.rfsOrdersColorDropGen = nil
+		host.cl.rfsOrdersNameEditGui = nil
+		host.cl.rfsOrdersNameEditGen = nil
+		host.cl.rfsOrdersNameEditWidget = nil
+		host.cl.rfsOrdersGuiGen = ( tonumber( host.cl.rfsOrdersGuiGen ) or 0 ) + 1
+		RfsBeaconOrdersGui.bind( host, gui )
+	end
 	gui:open()
-	bindDropDowns( host, gui )
+	if not reusing then
+		bindDropDowns( host, gui )
+	end
 	RfsBeaconOrdersGui.refresh( host )
 	-- Recreate Color + NameEdit AFTER setText paint (SM drops both on reopen).
 	rebindOrdersChrome( host, { forceColor = true, forceName = true } )
-	host.cl.rfsOrdersRebindAtTick = currentTick() + 1
-	host.cl.rfsOrdersRebindAgainAtTick = currentTick() + 4
+	host.cl.rfsOrdersRebindAtTick = currentTick() + 2
 	pcall( function()
-		sm.gui.chatMessage( "[RFS] Orders opened (HACK 3.5f)" )
+		sm.gui.chatMessage( "[RFS] Orders opened (0851-i)" )
 	end )
 
 	if type( opts.rows ) == "table" and #opts.rows > 0 then
@@ -1354,6 +1371,8 @@ function RfsBeaconOrdersGui.open( host, opts )
 			masterKey = opts.masterKey,
 		} )
 	elseif #( host.cl.rfsOrdersRows or {} ) == 0 and host.network and host.network.sendToServer then
+		host.cl.rfsOrdersNotice = "Loading allies..."
+		RfsBeaconOrdersGui.refresh( host )
 		local pos = host.cl.rfsOrdersBeaconPos
 		host.network:sendToServer( "sv_rfs_ordersList", {
 			beaconKey = host.cl.rfsOrdersBeaconKey,
@@ -1381,22 +1400,15 @@ function RfsBeaconOrdersGui.close( host )
 	host.cl.rfsOrdersGui = nil
 	host.cl.rfsPendingOrdersGui = nil
 	host.cl.rfsOrdersRebindAtTick = nil
-	host.cl.rfsOrdersRebindAgainAtTick = nil
 	detachGuiOnClose( gui )
 	pcall( function() gui:close() end )
-	pcall( function() gui:destroy() end )
+	-- Pool for reuse — skip destroy/recreate spike on E reopen (0851-i).
+	host.cl.rfsOrdersGuiReuse = gui
 	host.cl.rfsOrdersClosing = nil
 	-- Stale OnClose from an older gui instance must not clear a newer open().
 	if closingGen ~= ( tonumber( host.cl.rfsOrdersGuiGen ) or 0 ) then
 		return
 	end
-	host.cl.rfsOrdersDropsBound = nil
-	host.cl.rfsOrdersDropsGui = nil
-	host.cl.rfsOrdersColorDropGui = nil
-	host.cl.rfsOrdersColorDropGen = nil
-	host.cl.rfsOrdersNameEditGui = nil
-	host.cl.rfsOrdersNameEditGen = nil
-	host.cl.rfsOrdersNameEditWidget = nil
 	host.cl.rfsOrdersReopenAfterTick = currentTick() + REOPEN_SETTLE_TICKS
 end
 
@@ -1579,12 +1591,6 @@ function RfsBeaconOrdersGui.applyList( host, data )
 	end
 	if host.cl.rfsOrdersGui then
 		RfsBeaconOrdersGui.refresh( host )
-		-- List paint uses setText; rebind Mode/Color/Rename so Independent
-		-- beacons still apply Collect/Stay after close+E (no Master required).
-		rebindOrdersChrome( host, {
-			forceColor = true,
-			forceName = host.cl.rfsOrdersNameUserEdited ~= true,
-		} )
 	end
 end
 

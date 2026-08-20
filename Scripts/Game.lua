@@ -60,8 +60,10 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Dev/build id (log + join chat prefix via RFS_JOIN_CHAT).
-RFS_PACK_STAMP = "[RFS] pack 0851-h KomiSanN minimap credit"
-RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — Use /gensettings, /setup, and /menu. MiniMap always on; craft Nutt's GPS for the atlas. Wire a Battery to Hack Beacons."
+-- SHIPPED (git/steam/deploy): 0851-h production join chat — see commit d3cf26b.
+-- LOCAL ONLY below: dev stamp + testing hints; do not commit/push without reverting to ship chat.
+RFS_PACK_STAMP = "[RFS] pack 0851-k-dev local testing"
+RFS_JOIN_CHAT = RFS_PACK_STAMP .. " — [dev] Use /gensettings, /setup, and /menu - check /setup for recent changes, especially Farming settings. minimap_stats/api_dump DEV-gated; 0851-k beacon FPS throttle + hook dedup."
 RFS_SPEND_CHAT = "[RFS] wire a Battery container (electricity) to the beacon"
 
 -- Nutt GPS hand tool. Hideout schematic + Craftbot recipe share this uuid.
@@ -680,6 +682,7 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 	self.cl.rfsOrdersDropsGui = nil
 	self.cl.rfsOrdersDropsGen = nil
 	self.cl.rfsOrdersGui = nil
+	self.cl.rfsOrdersGuiReuse = nil
 	self.cl.rfsPendingOrdersGui = nil
 	self.cl.rfsAutoSetupTriggered = false
 	self.cl.rfsAutoSetupSent = false
@@ -779,20 +782,13 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true, forceName = true } )
 			end
 		end
-		local rebindAgain = self.cl and self.cl.rfsOrdersRebindAgainAtTick
-		if rebindAgain then
-			local tick = sm.game.getCurrentTick()
-			if tick >= rebindAgain and self.cl.rfsOrdersGui
-				and type( RfsBeaconOrdersGui ) == "table"
-				and type( RfsBeaconOrdersGui.rebindChrome ) == "function" then
-				self.cl.rfsOrdersRebindAgainAtTick = nil
-				RfsBeaconOrdersGui.rebindChrome( self, { forceColor = true, forceName = true } )
-			end
-		end
 	end
 	-- Character countdown hooks must run on the client (unit globals are server-only).
+	-- Throttle: ensureCharHooks used to redefine 18 class RPC tables every frame (~1 FPS near beacon).
+	local tick = sm.game.getCurrentTick()
 	pcall( function()
-		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
+		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks
+			and ( tick % 40 ) == 0 then
 			RfsBotHijack.ensureCharHooks()
 		end
 		if type( RfsBotInteract ) == "table" and RfsBotInteract.ensurePlayerHook then

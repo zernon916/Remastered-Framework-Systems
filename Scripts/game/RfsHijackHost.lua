@@ -56,17 +56,19 @@ function RfsHijackHost.server_onFixedUpdate( self, dt )
 	pcall( function()
 		tick = sm.game.getCurrentTick()
 	end )
-	-- After load, unit classes re-dofile vanilla melee. Re-wrap every tick in THIS env.
-	pcall( function()
-		if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
-			RfsHackTether.ensureHooks()
-		end
-		RfsBotHijack.ensureHooks()
-	end )
+	-- After load, unit classes re-dofile vanilla melee. Re-wrap every 10 ticks (not every tick).
+	if ( tick % 10 ) == 0 then
+		pcall( function()
+			if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
+				RfsHackTether.ensureHooks()
+			end
+			RfsBotHijack.ensureHooks()
+		end )
+	end
 	-- Beacon countdown env cannot register into this world's allies[]. Drain
-	-- apply-on-zero from publicData (engine-shared) and sm.storage every tick.
+	-- apply-on-zero from publicData (engine-shared) and sm.storage (throttled scan).
 	if type( RfsHackApply ) == "table" then
-		if type( RfsHackApply.consumePublicFlags ) == "function" then
+		if ( tick % 2 ) == 0 and type( RfsHackApply.consumePublicFlags ) == "function" then
 			pcall( RfsHackApply.consumePublicFlags, self.world )
 		end
 		if type( RfsHackApply.drainStorageQueue ) == "function" then

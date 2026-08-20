@@ -263,9 +263,6 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 			pcall( function()
 				RfsBotHijack.unregisterBeacon( self.sv.key )
 			end )
-			pcall( function()
-				RfsBotHijack.ensureHooks()
-			end )
 		end
 		local tickOff = 0
 		pcall( function()
@@ -352,16 +349,18 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 				end
 			end
 		end
+		-- Throttled ally tick when this cell is loaded: tick() every 10 game ticks only.
+		-- Never tickAuto every tick here (0851-j ~10 FPS). RfsBotHijack.tick dedupes with HijackHost.
 		if world then
+			local tnow = 0
 			pcall( function()
-				RfsBotHijack.ensureHooks()
-				local tnow = sm.game.getCurrentTick()
-				if ( tnow % 10 ) == 0 then
-					RfsBotHijack.tick( world )
-				else
-					RfsBotHijack.tickAuto( world )
-				end
+				tnow = sm.game.getCurrentTick()
 			end )
+			if ( tnow % 10 ) == 0 then
+				pcall( function()
+					RfsBotHijack.tick( world )
+				end )
+			end
 		end
 		pcall( function()
 			linked = RfsBotHijack.linkedCount( self.sv.key ) or 0
@@ -438,11 +437,6 @@ function RfsHackBeacon.client_onCreate( self )
 			self.cl.beaconKey = tostring( self.shape.id )
 		end
 	end )
-	pcall( function()
-		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
-			RfsBotHijack.ensureCharHooks()
-		end
-	end )
 	if type( RfsHackRange ) == "table" then
 		RfsHackRange.tearDownBeacon( self )
 	end
@@ -486,14 +480,8 @@ function RfsHackBeacon.client_onDestroy( self )
 end
 
 function RfsHackBeacon.client_onUpdate( self, dt )
-	pcall( function()
-		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
-			RfsBotHijack.ensureCharHooks()
-		end
-	end )
-	if type( RfsHackRange ) == "table" then
-		RfsHackRange.tearDownBeacon( self )
-	end
+	-- No per-frame work: Game.lua hosts char hooks + RfsRangeViz. Proximity used to
+	-- call ensureCharHooks/tearDownBeacon here every frame (~10 FPS near beacon).
 end
 
 function RfsHackBeacon.client_onFixedUpdate( self, dt )
