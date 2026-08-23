@@ -45,7 +45,7 @@ Apply these on every implement / copy / test cycle:
 | **Do not stomp Orders GUI** | Battery spend, E open/close (`queueOpen` / `cl_rfs_ordersOpen`), and thin SHOW RANGE stay frozen. |
 | **Intelligentia optional** | RFS remains the AI host. Official skip paste is `AUTHOR_SNIPPET/Intelligentia_ally_skip.lua` — optional, not a Rush phase. |
 
-Typical local test dest: `C:\sm\RFS`. Workshop content dest (only after SM is quit, and only if that is the pack being tested): `C:\Steam\steamapps\workshop\content\387990\3782487760`. Roaming dest: `%AppData%\Axolot Games\Scrap Mechanic\User\User_76561198019395152\Mods\RemasteredFrameworkSurvival`.
+Typical local test dest: `C:\sm\RFS`. Workshop content dest (only after SM is quit, and only if that is the pack being tested): `C:\Steam\steamapps\workshop\content\387990\3782487760`. Roaming dest: **only** `%AppData%\Axolot Games\Scrap Mechanic\User\User_76561198019395152\Mods\RemasteredFrameworkSurvival` - never the `User_*` root.
 
 ---
 

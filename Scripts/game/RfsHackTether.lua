@@ -102,6 +102,13 @@ local function applyFactionDamage( self, damage, impact, hitPos )
 	end )
 end
 
+local function playerDamageOutputMultiplier()
+	if type( RfsGameMode ) == "table" and RfsGameMode.playerDamageOutputMultiplier then
+		return tonumber( RfsGameMode.playerDamageOutputMultiplier() ) or 1
+	end
+	return 1
+end
+
 local function wrapFn( cls, name, make )
 	local orig = cls[name]
 	if type( orig ) ~= "function" then
@@ -131,6 +138,10 @@ function RfsHackTether.ensureHooks()
 						local impact = hitDirection
 						if impact then
 							impact = impact * 6
+						end
+						local mult = playerDamageOutputMultiplier()
+						if mult ~= 1 then
+							damage = math.max( 1, math.floor( ( tonumber( damage ) or 0 ) * mult + 0.5 ) )
 						end
 						applyFactionDamage( self, damage, impact, hitPos )
 						return
@@ -162,6 +173,10 @@ function RfsHackTether.ensureHooks()
 							pcall( function()
 								impact = hitVelocity:normalize() * 6
 							end )
+						end
+						local mult = playerDamageOutputMultiplier()
+						if mult ~= 1 then
+							damage = math.max( 1, math.floor( ( tonumber( damage ) or 0 ) * mult + 0.5 ) )
 						end
 						applyFactionDamage( self, damage, impact, hitPos )
 						return

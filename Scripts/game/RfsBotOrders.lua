@@ -739,9 +739,9 @@ end
 ---------------------------------------------------------------------------
 
 function RfsBotOrders.sv_think( timeStep, game )
-	if not hackableOn() then
-		return
-	end
+	return
+end
+if false then
 	if type( RfsBotHijack ) ~= "table" or type( RfsBotHijack.allies ) ~= "table" then
 		return
 	end

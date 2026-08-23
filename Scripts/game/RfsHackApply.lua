@@ -315,6 +315,9 @@ function RfsHackApply.wipeFalseAlly( self )
 			RfsBotHijack.allies[tostring( self.unit.id )] = nil
 		end )
 	end
+	if type( RfsHackOrdersDrop ) == "table" and type( RfsHackOrdersDrop.afterUnhack ) == "function" then
+		pcall( RfsHackOrdersDrop.afterUnhack, self.unit, nil )
+	end
 	return true
 end
 
@@ -350,6 +353,9 @@ end
 -- Adopt path uses register() directly so host-env canHackOnto (no beacon row) cannot
 -- block the unit flip.
 function RfsHackApply.applyInThisEnv( unit, ownerId, opts )
+	if type( RfsBotHijack ) == "table" and not RfsBotHijack.LIVE then
+		return false
+	end
 	if not unit then
 		return false
 	end
@@ -531,6 +537,9 @@ end
 -- Unit think: adopt only a real device/infected identity. Never default every
 -- unit to playerAlly (0818-w autohack: server_onUnitUpdate called this always).
 function RfsHackApply.pullPublicOntoUnit( self )
+	if type( RfsBotHijack ) == "table" and not RfsBotHijack.LIVE then
+		return false
+	end
 	if type( self ) ~= "table" or not self.unit then
 		return false
 	end
@@ -541,6 +550,10 @@ function RfsHackApply.pullPublicOntoUnit( self )
 	elseif type( RfsBotHijack ) == "table" and RfsBotHijack.allies then
 		local rec = RfsBotHijack.allies[unitKeyOf( self.unit )]
 		ready = rec and rec.controlled and rec.displayName and rec.displayName ~= "Bot" and not tostring( rec.displayName ):match( "^Bot%s+%d+$" )
+	end
+	-- Already a local ally: do not read publicData or pushName every think.
+	if ready then
+		return true
 	end
 	local params = RfsHackApply.readPublicApply( self.unit )
 	if type( params ) ~= "table" and self.saved.playerAlly then
@@ -578,12 +591,6 @@ function RfsHackApply.pullPublicOntoUnit( self )
 			RfsHackApply.wipeFalseAlly( self )
 		end
 		return false
-	end
-	if ready then
-		if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.pushName ) == "function" then
-			pcall( RfsHackOrdersIdentity.pushName, self.unit )
-		end
-		return true
 	end
 	params.playerAlly = true
 	if not params.unitType then
@@ -625,6 +632,9 @@ end
 
 -- World/unit env (HijackHost tick): drain beacon-enqueued converts into THIS allies[].
 function RfsHackApply.drainStorageQueue( world )
+	if type( RfsBotHijack ) == "table" and not RfsBotHijack.LIVE then
+		return 0
+	end
 	local q = nil
 	pcall( function()
 		q = sm.storage.load( STORAGE_Q )
@@ -676,9 +686,24 @@ end
 
 -- Host/unit env: character.publicData written by the beacon at countdown 0.
 function RfsHackApply.consumePublicFlags( world )
-	if type( RfsBotHijack ) ~= "table" then
+	if type( RfsBotHijack ) ~= "table" or not RfsBotHijack.LIVE then
 		return 0
 	end
+	local now = 0
+	pcall( function()
+		now = sm.game.getCurrentTick() or 0
+	end )
+	if RfsHackApply._lastFlagsTick == now then
+		return 0
+	end
+	local every = 20
+	if type( RfsHackAllyThrottle ) == "table" and RfsHackAllyThrottle.FLAGS_EVERY then
+		every = tonumber( RfsHackAllyThrottle.FLAGS_EVERY ) or 20
+	end
+	if RfsHackApply._lastFlagsTick and ( now - RfsHackApply._lastFlagsTick ) < every then
+		return 0
+	end
+	RfsHackApply._lastFlagsTick = now
 	local n = 0
 	local list = nil
 	if g_unitManager and type( g_unitManager.sv_getAllUnits ) == "function" then
@@ -812,6 +837,9 @@ end
 -- Spend once after the first finish only (not every tick while remainTicks<=0).
 -- Returns "ok" | "nobat" | "cap" | "retry"
 function RfsHackApply.tryFinish( unit, rec, bkey, need )
+	if type( RfsBotHijack ) == "table" and not RfsBotHijack.LIVE then
+		return "retry"
+	end
 	if not rec or not unit then
 		return "retry"
 	end

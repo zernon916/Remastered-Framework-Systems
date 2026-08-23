@@ -22,7 +22,6 @@ local SCHEMATIC_LOCKED = {
 	["7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8"] = true, -- Solar Panel, 5 Farmers
 	["8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e"] = true, -- Rechargeable Battery, 1 Farmer
 	["9c624f8e-b507-414a-cd93-f4081b5c7eaf"] = true, -- Rechargeable Battery Box, 2 Farmers
-	["c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247"] = true, -- Aim Core, schematic-locked
 }
 local RFS_LID = "29c99287-1213-48c7-9471-19a4a5c12247"
 local CG_ROOT = "$CONTENT_" .. RFS_LID

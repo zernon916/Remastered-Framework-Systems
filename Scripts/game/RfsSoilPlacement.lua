@@ -99,12 +99,14 @@ function RfsSoilPlacement.gridPosFromWorldPos( worldPos )
 		math.floor( worldPos.y * invRatio - SOIL_SIZE.y * 0.5 + 1e-4 )
 end
 
+-- gridZ is subdiv units (vanilla SoilBag a.z); XY/Z all convert through subdivideRatio.
 function RfsSoilPlacement.worldPosFromGridPos( gridPosX, gridPosY, gridZ )
 	local ratio = sm.construction.constants.subdivideRatio
+	local zSubdiv = gridZ or 0
 	return sm.vec3.new(
 		( gridPosX + SOIL_SIZE.x * 0.5 ) * ratio,
 		( gridPosY + SOIL_SIZE.y * 0.5 ) * ratio,
-		gridZ or 0
+		zSubdiv * ratio + ( SOIL_SIZE.z * ratio ) * 0.5
 	)
 end
 
@@ -784,16 +786,22 @@ local function probeForceBuildFlag()
 	return ok and v == true
 end
 
+-- Sticky only while LMB is held so mid-drag omitted forceBuild flags do not abort place.
+-- Clearing on stop alone left the latch stuck and ate every subsequent Soil Bag start.
 local function isForceBuildMode( self, forceBuildActive, primaryState )
-	if forceBuildActive or probeForceBuildFlag() then
+	local active = forceBuildActive == true or probeForceBuildFlag()
+	if active then
 		self._rfsForceBuildLatch = true
+		return true
 	end
-	if primaryState == sm.tool.interactState.stop
-		and not forceBuildActive
-		and not probeForceBuildFlag() then
+	if self._rfsForceBuildLatch then
+		if primaryState == sm.tool.interactState.hold
+			or self._rfsSoilPrimaryHeld == true then
+			return true
+		end
 		self._rfsForceBuildLatch = false
 	end
-	return self._rfsForceBuildLatch == true
+	return false
 end
 
 function RfsSoilPlacement.soilBagItemUuid()
@@ -1167,8 +1175,12 @@ function RfsSoilPlacement.constructionRayCast( self )
 	end
 
 	if result.type == "terrainSurface" then
-		local _, worldNormal, cellX, cellY, gridZ = RfsSoilPlacement.snapTerrainSoil( result )
+		local snapPos, worldNormal, cellX, cellY, gridZ = RfsSoilPlacement.snapTerrainSoil( result )
+		-- Cell-aligned XY for non-overlapping drag; Z from subdiv snap (same as vanilla).
 		local worldPos = RfsSoilPlacement.worldPosForTerrainCell( cellX, cellY, gridZ )
+		if not worldPos or type( worldPos.x ) ~= "number" then
+			worldPos = snapPos
+		end
 		self._rfsSoilFromBody = false
 		self._rfsSoilGridX = cellX
 		self._rfsSoilGridY = cellY
@@ -1211,7 +1223,9 @@ function RfsSoilPlacement.client_onEquippedUpdate( self, primaryState, secondary
 		return false, false
 	end
 
-	RfsSoilPlacement.ensureHooks()
+	if not SoilBag._rfsSoilPlacementHooked then
+		RfsSoilPlacement.ensureHooks()
+	end
 
 	if not self.effect then
 		return false, false
@@ -1778,7 +1792,10 @@ function RfsSoilPlacement.ensureCarryToolHooks()
 	end
 	CarryTool.client_onEquippedUpdate = RfsSoilPlacement.carryToolEquippedUpdate
 	CarryTool._rfsSoilHandPickupHooked = true
-	print( "[RFS] RfsSoilPlacement hooked CarryTool (empty hand / block soil RMB rect pickup)" )
+	if not RfsSoilPlacement._carryToolHookLogged then
+		RfsSoilPlacement._carryToolHookLogged = true
+		print( "[RFS] RfsSoilPlacement hooked CarryTool (empty hand / block soil RMB rect pickup)" )
+	end
 	return true
 end
 
@@ -1932,7 +1949,8 @@ function RfsSoilPlacement.spendSoilBagFromInventory( player, preferredSlot )
 	local soilItem = RfsSoilPlacement.soilBagItemUuid()
 	sm.container.beginTransaction()
 	if preferredSlot ~= nil then
-		sm.container.spend( player:getInventory(), soilItem, 1, true, preferredSlot )
+		-- Match vanilla SoilBag.sv_n_putSoil (hotbar slot spend).
+		sm.container.spendFromSlot( player:getInventory(), preferredSlot, soilItem, 1, true )
 	else
 		sm.container.spend( player:getInventory(), soilItem, 1, true )
 	end
@@ -2100,12 +2118,10 @@ function RfsSoilPlacement.ensureHooks()
 		return false
 	end
 
-	if SoilBag._rfsSoilPlacementHooked
-		and SoilBag.constructionRayCast == RfsSoilPlacement.constructionRayCast
-		and SoilBag.client_onEquippedUpdate == RfsSoilPlacement.client_onEquippedUpdate
-		and SoilBag.sv_n_putSoil == RfsSoilPlacement.sv_n_putSoil
-		and SoilBag.sv_n_pickupSoilBatch == RfsSoilPlacement.sv_n_pickupSoilBatch
-		and SoilBag.sv_n_soilPickupBlock == RfsSoilPlacement.sv_n_soilPickupBlock then
+	-- Once per VM: Survival may replace the SoilBag class table; re-apply silently.
+	if RfsSoilPlacement._soilBagHookedOnce
+		and SoilBag._rfsSoilPlacementHooked
+		and SoilBag.client_onEquippedUpdate == RfsSoilPlacement.client_onEquippedUpdate then
 		return true
 	end
 
@@ -2127,7 +2143,11 @@ function RfsSoilPlacement.ensureHooks()
 	SoilBag.sv_n_soilPickupBlock = RfsSoilPlacement.sv_n_soilPickupBlock
 	SoilBag.cl_n_pickupInventoryFull = RfsSoilPlacement.cl_n_pickupInventoryFull
 	SoilBag._rfsSoilPlacementHooked = true
-	print( "[RFS] RfsSoilPlacement hooked SoilBag (vanilla 3x3 subdiv snap, gridPos drag, pickup batch, fixed rot)" )
+	local first = not RfsSoilPlacement._soilBagHookedOnce
+	RfsSoilPlacement._soilBagHookedOnce = true
+	if first then
+		print( "[RFS] RfsSoilPlacement hooked SoilBag (vanilla 3x3 subdiv snap, gridPos drag, pickup batch, fixed rot)" )
+	end
 	return true
 end
 

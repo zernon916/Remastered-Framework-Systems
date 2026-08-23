@@ -53,9 +53,9 @@ local function raycastBot()
 end
 
 function RfsHandheldHackTool.client_onEquippedUpdate( self, primaryState, secondaryState )
-	if not holdingThisTool() then
-		return false, false
-	end
+	return false, false
+end
+if false then
 	local char, isAlly = raycastBot()
 	if char then
 		pcall( function()
@@ -112,9 +112,9 @@ function RfsHandheldHackTool.server_onCreate( self )
 end
 
 function RfsHandheldHackTool.sv_rfs_handheldTryOpen( self, params, player )
-	if not player or not params or not params.unitKey then
-		return
-	end
+	return
+end
+if false then
 	local unit = nil
 	pcall( function()
 		if type( RfsBotHijack ) == "table" and RfsBotHijack.unitByKey then

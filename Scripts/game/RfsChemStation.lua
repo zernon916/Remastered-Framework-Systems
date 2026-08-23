@@ -698,20 +698,19 @@ end
 -- FROZEN: Pod orchestration (formerly RfsDeepSleepPod.lua business logic)
 -- =============================================================================
 
-local BOX_Y_BLOCKS = 17
-local BLOCK_M = 0.25
 local STAND_Y_M = 0.0 -- shapeset seat Hips offset (tube center; 0850-e mesh -1.0 block)
-local EXIT_FORWARD = 1.624
-local EXIT_LIFT = 0.4
+-- Hull half-extent = 17*0.25/2 = 2.125 m. Exit must clear the pad or physics dumps you underground.
+local EXIT_FORWARD = 2.85
+local EXIT_LIFT = 0.85
 
 -- Exit stabilization tuning.
 -- SM character ejection happens when the unfreeze happens while intersecting a collider.
 -- We counter this by: (1) choosing a stable pad footprint, (2) clearing velocity, then
 -- (3) unfreezing on both server and client.
-local EXIT_PAD_XZ_OFFSET = 0.55
-local EXIT_PAD_RAYCAST_UP = 24
-local EXIT_PAD_RAYCAST_DOWN = 80
-local EXIT_PAD_CLEARANCE_Z = 0.06
+local EXIT_PAD_XZ_OFFSET = 0.35
+local EXIT_PAD_RAYCAST_UP = 8
+local EXIT_PAD_RAYCAST_DOWN = 40
+local EXIT_PAD_CLEARANCE_Z = 0.35
 local EXIT_PAD_NODE_NAMES = {
 	"exit",
 	"Exit",
@@ -734,9 +733,15 @@ local function exitWorldPos( self )
 	local origin = self.shape.worldPosition
 	local rot = self.shape.worldRotation
 	local front = rot * sm.vec3.new( 0, 0, 1 )
-	local up = rot * sm.vec3.new( 0, 1, 0 )
-	local halfY = BOX_Y_BLOCKS * BLOCK_M * 0.5
-	return origin + front * EXIT_FORWARD - up * halfY + sm.vec3.new( 0, 0, EXIT_LIFT )
+	-- Flatten onto world XY (Z-up) so we never aim "down into the dirt".
+	local fx, fy = front.x, front.y
+	local flen = math.sqrt( fx * fx + fy * fy )
+	if flen > 0.001 then
+		fx, fy = fx / flen, fy / flen
+	else
+		fx, fy = 1, 0
+	end
+	return sm.vec3.new( origin.x + fx * EXIT_FORWARD, origin.y + fy * EXIT_FORWARD, origin.z + EXIT_LIFT )
 end
 
 -- IMPORTANT: SM exit/wrap positions can intersect terrain/colliders.
@@ -794,19 +799,26 @@ local function safeExitPos( self )
 		end
 	end
 
+	-- Ray from above the station mid-height so we never start under the world.
+	local originZ = shape.worldPosition.z
+	local startZ = math.max( z, originZ ) + EXIT_PAD_RAYCAST_UP
 	local hit, result
 	local ok = pcall( function()
 		-- Scrap Mechanic world "up" is Z (see other RFS raycasts using result.pointWorld.z).
 		hit, result = sm.physics.raycast(
-			sm.vec3.new( x, y, z + EXIT_PAD_RAYCAST_UP ),
+			sm.vec3.new( x, y, startZ ),
 			sm.vec3.new( x, y, z - EXIT_PAD_RAYCAST_DOWN )
 		)
 	end )
 	if ok and hit and result and result.pointWorld and type( result.pointWorld.z ) == "number" then
-		-- Slight clearance above the first hit surface prevents immediate re-penetration.
-		return sm.vec3.new( x, y, result.pointWorld.z + EXIT_PAD_CLEARANCE_Z )
+		local groundZ = result.pointWorld.z + EXIT_PAD_CLEARANCE_Z
+		-- Reject absurd underground hits (e.g. cast clipped through the pad into void).
+		if groundZ > ( originZ - 6 ) then
+			return sm.vec3.new( x, y, groundZ )
+		end
 	end
-	return sm.vec3.new( x, y, z )
+	-- Fallback: beside the station at mid height + lift (never origin - halfHull).
+	return sm.vec3.new( x, y, math.max( z, originZ + EXIT_LIFT ) )
 end
 
 local FILL_CHEM = 10
@@ -823,15 +835,15 @@ local EXIT_PENDING_TICKS = 25 -- ~1.0-1.5s depending on client tick rate
 local EXIT_LOCKED_WATCHDOG_TICKS = 50 -- ~2-4s depending on client tick rate (was 75)
 
 -- chemfill_v10 is block-space (×4 bake from v9 meters). Placed parts get engine ×0.25.
--- ShapeRenderable does NOT: 1 mesh unit = 1 m, so scale must include BLOCK_M.
+-- ShapeRenderable does NOT: 1 mesh unit = 1 m (block numbers read as meters).
 -- Glass (same SM meters as the colba): outer r ≈ 0.774 m, h ≈ 2.75 m, floor y ≈ -1.25 m.
--- 0819-f used 0.375/0.650 as if the mesh radius was already 0.65 m → ~3 m wide / ~9 m tall.
+-- FBX (game) height is +Y after export axis bake. Do NOT pitch the FX — that lays it flat.
 local FILL_MESH_RADIUS = 2.599492
 local FILL_MESH_HEIGHT = 9.020000
-local FILL_MESH_Y_MIN = -4.789301
-local FILL_RADIUS_M = 0.56 -- diam 1.12 m / 4.5 blocks; inside 0.774 m glass with wall margin
-local FILL_HEIGHT_M = 2.00 -- below glass top ~1.51 m and claws; above metal floor
-local FILL_BOTTOM_Y_M = -1.43 -- 0850-e body mesh -1.0 block; keep fill inside glass
+local FILL_MESH_Y_MIN = -4.789301 -- height axis min in chemfill FBX / SM space
+local FILL_RADIUS_M = 0.56 -- diam 1.12 m; inside glass with wall margin
+local FILL_HEIGHT_M = 2.00
+local FILL_BOTTOM_Y_M = -1.43 -- body mesh -1.0 block nudge; keep fill inside glass
 local FILL_XZ_SCALE = FILL_RADIUS_M / FILL_MESH_RADIUS
 local FILL_Y_SCALE = FILL_HEIGHT_M / FILL_MESH_HEIGHT
 local FILL_UUID = sm.uuid.new( "a7e3c91f-6b24-4d80-8e15-2c9f4a0b7d63" )
@@ -1409,6 +1421,30 @@ function RfsChemStation.sv_n_forceExit( self, params, player )
 	sv_unlockLockedPlayer( self, player, reason )
 end
 
+-- Death/respawn at this station as home: clear tube lock without seating into heal.
+function RfsChemStation.sv_e_rfsRespawnRelease( self, params )
+	local player = params and params.player
+	if not self.sv then
+		return
+	end
+	if player and self.sv.occupant == player then
+		self.sv.occupant = nil
+		self.sv.healing = false
+		self.sv.soak = false
+		self.sv.needHeal = false
+		self.sv.fillPaid = false
+		self.sv.fillPaidSrc = nil
+		if self.sv.phase == "fill" or self.sv.phase == "heal" then
+			beginDrain( self )
+		end
+	end
+	if player and sm.exists( player ) then
+		tellRegenLock( player, false )
+		clearServerCharacterLock( player )
+	end
+	publish( self )
+end
+
 function RfsChemStation.sv_e_rfsHealApplied( self, params )
 	if type( params ) ~= "table" then
 		return
@@ -1758,6 +1794,7 @@ function RfsChemStation.cl_updateFillFx( self )
 	local up = rot * sm.vec3.new( 0, 1, 0 )
 	local yScale = math.max( fill, 0.02 ) * FILL_Y_SCALE
 	pcall( function()
+		-- Upright column: FBX height is +Y. Match shape rotation only (no extra pitch).
 		fx:setPosition( origin + up * ( FILL_BOTTOM_Y_M - FILL_MESH_Y_MIN * yScale ) )
 		fx:setRotation( rot )
 		fx:setScale( sm.vec3.new( FILL_XZ_SCALE, yScale, FILL_XZ_SCALE ) )
@@ -2224,8 +2261,6 @@ local SOLAR_UUID = "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8"
 local DEEPSLEEP_UUID = "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7"
 local BEACON_UUIDS = {
 	["b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"] = true,
-	["c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8"] = true,
-	["d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709"] = true,
 }
 
 local function uuidStr( u )
@@ -2345,18 +2380,27 @@ end
 function Time.skipFromGame( game, params )
 	params = params or {}
 	local player = params.player
+	local fromBed = params.fromBed and true or false
+	local quietFail = params.quietFail and true or false
+	local label = fromBed and "Bed" or "Chemical Regeneration Station"
 	if not Time.soloOk() then
-		skipChat( game, player, "[RFS] Chemical Regeneration Station: night skip is solo-only (vote parked)." )
+		if not quietFail then
+			skipChat( game, player, "[RFS] " .. label .. ": night skip is solo-only (vote parked)." )
+		end
 		return false, "mp"
 	end
 	local ticks, nextTod = Time.skipTicks( game )
 	if not ticks or ticks <= 0 or not nextTod then
-		skipChat( game, player, "[RFS] Chemical Regeneration Station: daytime — no night skip." )
+		if not quietFail then
+			skipChat( game, player, "[RFS] " .. label .. ": daytime - no night skip." )
+		end
 		return false, "day"
 	end
 	local ok = applyTime( game, nextTod )
 	if not ok then
-		skipChat( game, player, "[RFS] Chemical Regeneration Station: time skip API missing; respawn still set." )
+		if not quietFail then
+			skipChat( game, player, "[RFS] " .. label .. ": time skip API missing." )
+		end
 		return false, "noapi"
 	end
 	pcall( function()
@@ -2376,7 +2420,7 @@ function Time.skipFromGame( game, params )
 			} )
 		end
 	end )
-	skipChat( game, player, "[RFS] Chemical Regeneration Station: skipped night to 5 AM (" .. tostring( ticks ) .. " ticks)." )
+	skipChat( game, player, "[RFS] " .. label .. ": skipped night to 5 AM." )
 	return true, ticks
 end
 

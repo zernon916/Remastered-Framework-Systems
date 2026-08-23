@@ -43,17 +43,17 @@ Quick host commands
   /mods              show scanned mod sources
   /hijack [range]    permanently infect nearest hostile robot (cheat)
   /hijacklist        count tethered vs infected allies
-  /givehack          Give Hack + Control + Infection Beacons (cheat; needs RFS Beacons B&P)
+  /givehack          Give Hack Beacon (cheat)
   /unhijack [range]  Release nearest owned ally (host can release any; not a raid ban)
 
 Bot hijack — beacon computer
 ----------------------------
-Hack / Control / Infection Beacons: connect a Battery container, optional logic switch.
-Hack 16 m / Control 32 m / Infection 48 m (permanent submit). Lose power/range → tethered revert.
-
-  Craftbot: Hack Beacon 1 Metal (placeholder)
-  Hideout:  Hack 20 / Control 50 / Infection 120 Farmers (items, not schematics)
-  Enable local Blocks & Parts mod "RFS Beacons" or hideout rows /givehack stay empty.
+Hack Beacon: connect a Battery or Recharge box, optional logic switch.
+Raid-only. Base: 30 blocks, cap 4, hold 8 s.
+  Radio Battery Brick ×1: +10 range, +1 cap
+  Radio Antenna ×2: +10 range each
+  Radio Lock ×1: +3 cap, +3 s hold
+  Hideout: Hack Beacon schematic 10 Farmers
 
 Tethered = green. Infected = deeper green, no beacon needed.
 Allies can slowly chain-convert nearby hostiles. See HIJACK_ROADMAP.txt

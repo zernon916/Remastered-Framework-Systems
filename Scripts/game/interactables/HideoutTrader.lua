@@ -36,18 +36,8 @@ local FARMERS_ITEM_ID = "8d601982-4608-4d5e-bb9e-e4041486f7c7"
 local RFS_BEACON_UI = {
 	["b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"] = {
 		title = "Hack Beacon",
-		desc = "16 m computer. Wire a Battery container. Keep powered or tethered robots revert.",
+		desc = "Raid-only. Hacks up to 4 bots within 30 blocks for 8 s. Wire Brick / Antenna / Lock to upgrade.",
 		icon = "9f0f56e8-2c31-4d83-996c-d00a9b296c3f",
-	},
-	["c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8"] = {
-		title = "Control Beacon",
-		desc = "32 m computer. Wire a Battery container. Keep powered or tethered robots revert.",
-		icon = "8f7fd0e7-c46e-4944-a414-7ce2437bb30f",
-	},
-	["d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709"] = {
-		title = "Infection Beacon",
-		desc = "48 m computer. E infects permanently. Tethered bots in the field ~8 s also submit.",
-		icon = "1d4793af-cb66-4628-804a-9d7404712643",
 	},
 	["d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"] = {
 		title = "GPS",
@@ -1649,7 +1639,6 @@ function HideoutTrader.cl_rfs_openShop( self, params )
 	end
 	self:client_onInteract( character, true )
 	if self.cl.user == player then
-		sm.gui.chatMessage( "[RFS] Farmers Hideout shop opened (/tshop)" )
 		return true
 	end
 	return false

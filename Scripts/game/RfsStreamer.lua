@@ -7,7 +7,8 @@
 RfsStreamer = RfsStreamer or {}
 
 local RFS_LOCAL_ID = "29c99287-1213-48c7-9471-19a4a5c12247"
-local POLL_INTERVAL = 0.5 -- seconds
+local POLL_INTERVAL = 0.5 -- seconds (only while an inbox file is readable)
+local ABSENT_POLL_SEC = 120 -- missing vote.json: do not sm.json.open again for this long
 local DEFAULT_COOLDOWN_SEC = 10
 -- Soft bounds when RfsFeatures is missing; live values come from RfsFeatures.streamerCooldownSec().
 local MIN_COOLDOWN_SEC = 0
@@ -388,27 +389,28 @@ local function clearPathBackoff( path )
 	end
 end
 
+-- Returns data, path, readable.
+-- readable=true: at least one path opened (even if consumed). Never json.open a known-missing path.
 local function openVote()
+	local readable = false
 	for _, path in ipairs( VOTE_PATHS ) do
 		if pathInBackoff( path ) then
 			-- Silent skip until backoff expires.
 		else
 			local ok, data = pcall( sm.json.open, path )
 			if not ok then
-				-- Missing/unreadable: back off; do not print spam.
 				markPathBackoff( path )
 			elseif type( data ) == "table" and data.consumed ~= true
 				and ( data.action or data.unit or data.uuid or data.item ) then
-				-- Accept new schema (item/createdAt/voter) and legacy (uuid/ts/quantity).
 				clearPathBackoff( path )
-				return data, path
+				return data, path, true
 			else
-				-- File readable but empty/consumed/unknown schema — keep polling.
+				readable = true
 				clearPathBackoff( path )
 			end
 		end
 	end
-	return nil, nil
+	return nil, nil, readable
 end
 
 -- SM has no file delete API: write applied snapshot + overwrite vote with consumed marker.
@@ -675,6 +677,12 @@ function RfsStreamer.sv_think( dt, game )
 		RfsStreamer._cdLeft = math.max( 0, ( RfsStreamer._cdLeft or 0 ) - dt )
 		tickPathBackoff( dt )
 
+		local absent = tonumber( RfsStreamer._absentLeft ) or 0
+		if absent > 0 then
+			RfsStreamer._absentLeft = absent - dt
+			return
+		end
+
 		RfsStreamer._accum = ( RfsStreamer._accum or 0 ) + dt
 		if RfsStreamer._accum < POLL_INTERVAL then
 			return
@@ -685,8 +693,11 @@ function RfsStreamer.sv_think( dt, game )
 			return
 		end
 
-		local data, path = openVote()
+		local data, path, readable = openVote()
 		if not data then
+			if not readable then
+				RfsStreamer._absentLeft = ABSENT_POLL_SEC
+			end
 			return
 		end
 

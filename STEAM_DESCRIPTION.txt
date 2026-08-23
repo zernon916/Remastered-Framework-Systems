@@ -1,41 +1,47 @@
 [h1]Remastered Framework Survival[/h1]
+[b]BETA[/b]
 
-A complete overhaul for Scrap Mechanic! The bots have been hijacked by a rogue virus, but you now have the tools to fight back. Deploy Hacker Devices to take control of the bots and turn them into your allies - just be careful, because the corrupted code will fight back when threatened.
+A Survival Custom Game for Scrap Mechanic. Hostile bots are corrupted - fight back with powered Hack Beacons, reclaim them as allies, then farm, craft, and rebuild.
 
-Designed both as an action-packed survival / game mode and as a modular framework for other modders!
+Built as a full survival experience and as a framework other Blocks and Parts mods can plug into.
 
 [hr][/hr]
 
 [h2]Key Features[/h2]
 [list]
-[*][b]Custom Menus[/b] - Host [b]/setup[/b] (Main / Quest / Inventory / Farming), player [b]/menu[/b] (map + growth overlay), and host [b]/gensettings[/b] with tabs: [b]MAIN[/b] / [b]FEATURES[/b] / [b]STREAMERS[/b] / [b]DISCORD[/b].
-[*][b]Bot Hijack / Beacons[/b] - Powered Hack / Control / Infection Beacons (needs [b]RFS Beacons[/b] B&P). Hideout: 20 / 50 / 120 Farmers. Wire a Battery; tethered allies need power/range; infected stay loyal. Light chain convert + host/owner [b]/unhijack[/b]. Beacon [b]E[/b] Orders: Rest/Defend, Hay Farm, Tote Collect, Waterbot Collect Oil.
-[*][b]Expanded Inventory[/b] - Scale inventory capacity from +1 row up to +5 extra rows.
-[*][b]Advanced Farming[/b] - Instant growth options, permanent watering, soil planting, and live crop growth countdown timers.
-[*][b]Map[/b] - Always-on MiniMap (upper-left). Research/craft Nutt's GPS (Metal Block + Circuit + Component Kit + Glass), then LMB to open the atlas. Terrain/atlas map by [b]Nutt[/b] (Steam Workshop World Map [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]3780282057[/url]). Do [b]not[/b] enable World Map as a world mod if you already have it (double HUD). Weapon ammo count stays on the HUD.
-[*][b]Dev Tools[/b] - Full suite of built-in developer mode tools at your fingertips.
-[*][b]Anchor Devices / Tile Loaders[/b] - Keep distant areas active ([i]WARNING: Loading more than 2-3 tiles can severely impact performance, even on high-end PCs[/i]).
-[*][b]Faster Loads[/b] - Quieter console and snappier startup from a smarter recipe scan (less DirectoryManager spam).
+[*][b]Menus[/b] - Player [b]/menu[/b] (map, growth overlay, options). Host [b]/gensettings[/b] (MAIN / FEATURES / STREAMERS / DISCORD). Host [b]/setup[/b] opens the Cheats tab. Type [b]/help[/b] in chat for the short command list.
+[*][b]Hack Beacons[/b] - Place a Hack Beacon, wire a Rechargeable Battery Box, keep it powered. Hostile bots in range convert to tethered allies (raid-only). Cap starts at 4 bots. Hideout schematic unlocks the beacon. Cheat: [b]/givehack[/b].
+[*][b]Radio Modules[/b] - Link Radio Brick (max 1), Antenna (max 2), and Lock (max 1) to the beacon for more range, higher bot cap, and longer convert hold. Keep the electricity connection to the beacon.
+[*][b]Beacon Orders[/b] - Press [b]E[/b] on a powered beacon for Orders: Rest / Defend, Stay / Recall, Hay Farm, Tote Collect, Waterbot Collect Oil, rename, color, Master / Slave linking, and Show Range.
+[*][b]/unhijack[/b] - Release your nearest owned ally (host can release any).
+[*][b]Map[/b] - Always-on MiniMap (upper-left). Craft Nutt's GPS (Metal Block + Circuit Board + Component Kit + Glass), then use it to open the full atlas. Terrain / atlas by [b]Nutt[/b] ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map 3780282057[/url]). Do [b]not[/b] enable World Map as a world mod (double HUD). Ammo stays on the HUD.
+[*][b]Farming[/b] - Soil Bag places on flat ground (drag to lay a rectangle when Fast Place is on). Growth Time overlay. Host Farming tools in [b]/gensettings[/b] / cheats: Instant Farm, Always Watered, Dirt on Blocks, Fast Place, Fast Pickup.
+[*][b]Chemical Regeneration Station[/b] - Step in to heal over time while the tank has charge. Solo night skip to 5 AM when it finishes filling.
+[*][b]Beds[/b] - All beds (including Mattress) set your home and skip night to 5 AM when alone. Multiplayer vote-to-sleep is planned later.
+[*][b]Solar Panels[/b] - Charge connected Rechargeable Battery Boxes.
+[*][b]Inventory[/b] - Host can expand inventory size and toggle limited / unlimited for the whole session.
+[*][b]Tile Loaders / Anchors[/b] - Keep distant areas loaded ([i]WARNING: loading many tiles hurts performance even on strong PCs[/i]).
+[*][b]Streamer / Discord (optional)[/b] - In-game Streamer votes via file drops. Companion bot is on GitHub only (not in this Workshop pack).
 [/list]
 
 [hr][/hr]
 
-[h2]Built for Modders (Framework Features)[/h2]
+[h2]For Modders[/h2]
 [list]
-[*][b]Store Hooks[/b] - Seamlessly inject custom items into Craftbot, Farmers Hideout, and Mining Hub shops via JSON.
-[*][b]Progression Hooks[/b] - Mark your craftbot recipes as unlockable schematics and sell them at the Hideout (vanilla schematic unlock path - not a custom vault-tree editor).
-[*][b]Quest API[/b] - Open [b]RfsQuest[/b] wrappers around Survival QuestManager so mods can activate, complete, and hook quests (see [b]MODDER_API.txt[/b] in the mod folder). Bring your own quest ScriptableObjects.
-[*][b]Baseline / Framework Toggle[/b] - Set [b]frameworkOnly[/b] in [b]rfs_settings.json[/b] to turn off default cheat/quest tooling while keeping store hooks, the quest API, and hijack hooks. Host [b]/gensettings[/b] controls beacons/loader/features per world.
+[*][b]Store hooks[/b] - Inject Craftbot, Farmers Hideout, and Mining Hub rows via JSON (ModDatabase).
+[*][b]Schematics[/b] - Unlockable Craftbot recipes sold at the Hideout (vanilla schematic path).
+[*][b]RfsQuest API[/b] - Wrappers around Survival QuestManager (see MODDER_API.txt).
+[*][b]frameworkOnly[/b] - Flag in rfs_settings.json to keep hooks on while turning off default cheat / quest tooling.
 [/list]
 
 [hr][/hr]
 
 [h2]Install[/h2]
 [olist]
-[*]Subscribe to [b]ModDatabase[/b] (keep installed; do [b]not[/b] enable it as a world mod).
+[*]Subscribe to [b]ModDatabase[/b] (keep installed; do [b]not[/b] enable as a world mod).
 [*]Create a new world with [b]Remastered Framework Survival[/b].
-[*]Enable the Blocks & Parts mods you want (e.g. Intelligentia, Scrap Computers, RFS Beacons).
-[*]If you already have [b]World Map[/b] by Nutt, do [b]not[/b] enable it as a world mod (double HUD).
+[*]Enable the Blocks and Parts mods you want (example: Intelligentia).
+[*]If you already have [b]World Map[/b] by Nutt, do [b]not[/b] enable it as a world mod.
 [/olist]
 
 [hr][/hr]
@@ -48,36 +54,19 @@ Designed both as an action-packed survival / game mode and as a modular framewor
 
 [hr][/hr]
 
-[h2]Discord / Streamer companion (optional)[/h2]
-In-game [b]Streamer[/b] votes work via file drops in [b]%USER_DATA%/rfs_discord_bridge[/b]. The Discord / Streamer companion bot is [b]not[/b] bundled in this Workshop pack - it lives on GitHub only. Clone and run it separately:
-
-[url]https://github.com/zernon916/Remastered-Framework-Systems[/url] (folder [b]discord-bridge/[/b])
-
-Community Discord: [url]https://discord.gg/DfjDMRx9ab[/url]
-
-From that clone: configure [b].env[/b], then [b]npm install[/b] and [b]npm run watch[/b].
-
-[hr][/hr]
-
 [h2]Credits[/h2]
-MiniMap and atlas terrain by [b]Nutt[/b] (Steam Workshop [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map 3780282057[/url]). Do [b]not[/b] enable World Map as a world mod if you already have it (double HUD).
+MiniMap and atlas terrain by [b]Nutt[/b] ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3780282057]World Map 3780282057[/url]). Do not enable World Map as a world mod if you already have it.
 
-MiniMap/GPS HUD performance and dev telemetry: [b]KomiSanN[/b] (MinimapHud.zip community contribution).
+MiniMap / GPS HUD performance: [b]KomiSanN[/b] (community contribution).
 
-Chemical Regeneration Station mesh: [b]The science fiction Colba[/b] by [b]Helley[/b] ([url=https://sketchfab.com/3d-models/the-science-fiction-colba-76151618d40043d280cd3b354812742b]Sketchfab[/url], CC BY 4.0); concept CryoCapsules by capitanraketa / Igor Bulygin.
+Chemical Regeneration Station mesh: [b]The science fiction Colba[/b] by [b]Helley[/b] ([url=https://sketchfab.com/3d-models/the-science-fiction-colba-76151618d40043d280cd3b354812742b]Sketchfab[/url], CC BY 4.0). Concept: CryoCapsules by capitanraketa / Igor Bulygin.
 
 Solar Panel mesh: [b]Solar Panel (HEXARAY NODE A7)[/b] by [b]EdwinCGStudio[/b] ([url=https://sketchfab.com/3d-models/solar-panel-0f444052d1e64ccfb065fb8d00405f19]Sketchfab[/url], CC BY 4.0).
 
-Aim Core mesh: [b]Yberpunk robot head sketch[/b] by [b]3DWorkbench[/b] ([url=https://sketchfab.com/3d-models/yberpunk-robot-head-sketch-ef52dd23dc5a48de84d92fc0aed9b915]Sketchfab[/url], CC BY 4.0).
+Radio Antenna mesh: [b]R&S Military radio[/b] by [b]DTry[/b] ([url=https://sketchfab.com/3d-models/rs-military-radio-e47a8919a7ae432eb91cc744a287e9f8]Sketchfab[/url], CC BY 4.0).
 
-Hack beacon station pieces and handheld hack tool: [b]R&S Military radio[/b] by [b]DTry[/b] ([url=https://sketchfab.com/3d-models/rs-military-radio-e47a8919a7ae432eb91cc744a287e9f8]Sketchfab[/url], CC BY 4.0).
+Hack Beacon, Radio Brick, Radio Lock, and handheld radio meshes: Military communication kit by [b]Apocalyptic-Asset-Arsenal[/b] ([url=https://www.cgtrader.com/apocalyptic-asset-arsenal]CGTrader[/url]; credit required).
 
-Planned Hack Device mesh (staged, not yet in-game): Military radio by [b]yakoubimedali8[/b] ([url=https://www.cgtrader.com/yakoubimedali8]CGTrader[/url]; credit required). Source: Art/cgtrader/source/yakoubimedali8_military_radio.fbx.
-
-
-Military communication kit (Hack Lock / Hack Device / Hack Booster meshes): by [b]Apocalyptic-Asset-Arsenal[/b] ([url=https://www.cgtrader.com/apocalyptic-asset-arsenal]CGTrader[/url]; credit required). Source: Art/cgtrader/source/fbx_kit/ (FBX.rar).
-
-Deep Sleep Pod mesh: [b]Sci fi incubator[/b] by [b]A9908244[/b] ([url=https://sketchfab.com/3d-models/sci-fi-incubator-63f6bee67df14292b8c9a952b568cc96]Sketchfab[/url], CC BY 4.0).
 [b]Author:[/b] Zernon916
 
-If you enjoy this project, please consider leaving a Thumbs Up and Favorite on the Steam Workshop! Feedback and bug reports are always welcome in the comments.
+If you enjoy this project, please leave a Thumbs Up and Favorite. Feedback and bug reports are welcome in the comments.

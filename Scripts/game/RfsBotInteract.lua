@@ -7,8 +7,10 @@
 RfsBotInteract = RfsBotInteract or {}
 
 local LOOK_RANGE = 7
-local PAINT_TOOL = "c60b9627-fc2b-4319-97c5-05921cb976c6"
-local PAINT_OBJ = "731c6a84-7ae7-439d-a620-128076f9985c"
+local PAINT_TOOL = "a8f4c2d1-1b39-4bc1-9b50-0f2a6d7e3c91"
+-- Legacy parallel Color Painter uuid (removed; keep passthrough if leftover in old saves).
+local RFS_COLOR_PAINTER_LEGACY = "f3a91c2e-8b4d-4e71-9c6a-2d5f8e1b0a47"
+local AIM_LOOK_RANGE = 7
 
 function RfsBotInteract.holdingPaintTool()
 	local item = nil
@@ -19,7 +21,7 @@ function RfsBotInteract.holdingPaintTool()
 	if s == "" then
 		return false
 	end
-	if string.find( s, PAINT_TOOL, 1, true ) or string.find( s, PAINT_OBJ, 1, true ) then
+	if string.find( s, PAINT_TOOL, 1, true ) or string.find( s, RFS_COLOR_PAINTER_LEGACY, 1, true ) then
 		return true
 	end
 	return false
@@ -100,6 +102,114 @@ function RfsBotInteract.tryOpen( host, char, charScript )
 	return false
 end
 
+local function lookedShape()
+	local shape = nil
+	pcall( function()
+		local hit, result = sm.localPlayer.getLatestRaycast()
+		if hit and result and result.type == "body" and type( result.getShape ) == "function" then
+			shape = result:getShape()
+		end
+	end )
+	if shape and sm.exists( shape ) then
+		return shape
+	end
+	pcall( function()
+		local hit, result = sm.localPlayer.getRaycast( AIM_LOOK_RANGE )
+		if not hit or type( result ) ~= "table" then
+			return
+		end
+		if result.type == "body" and type( result.getShape ) == "function" then
+			shape = result:getShape()
+		elseif result.shape and sm.exists( result.shape ) then
+			shape = result.shape
+		elseif type( result.getShape ) == "function" then
+			shape = result:getShape()
+		end
+	end )
+	if shape and sm.exists( shape ) then
+		return shape
+	end
+	return nil
+end
+
+local function shapeToInteractable( shape )
+	if not shape or not sm.exists( shape ) then
+		return nil
+	end
+	local ia = nil
+	pcall( function()
+		ia = shape.interactable or ( type( shape.getInteractable ) == "function" and shape:getInteractable() or nil )
+	end )
+	if ia and sm.exists( ia ) then
+		return ia
+	end
+	return nil
+end
+
+local function isDefaultBearing( shape, interactable )
+	if not shape or not interactable then
+		return false
+	end
+	local isBearing = false
+	pcall( function()
+		local t = interactable:getType()
+		isBearing = ( t == "bearing" or t == 1 or tostring( t ) == "bearing" )
+	end )
+	if not isBearing then
+		return false
+	end
+	if type( RfsAimModes ) ~= "table" or type( RfsAimModes.colorToHex ) ~= "function" or type( RfsAimModes.isDefaultBearing ) ~= "function" then
+		return false
+	end
+	local hex = nil
+	pcall( function()
+		hex = RfsAimModes.colorToHex( shape:getColor() )
+	end )
+	return hex and RfsAimModes.isDefaultBearing( hex ) and true or false
+end
+
+local function aimCoreHostFromBearing( bearingIa )
+	if not bearingIa or not sm.exists( bearingIa ) then
+		return nil
+	end
+	if type( RfsAimLinks ) ~= "table" or type( RfsAimCore ) ~= "table" or type( RfsAimCore.clientHostFor ) ~= "function" then
+		return nil
+	end
+	for _, ia in ipairs( RfsAimLinks.connectedInteractables( bearingIa ) ) do
+		if ia and sm.exists( ia ) then
+			local key = nil
+			local pd = nil
+			pcall( function()
+				pd = ia:getPublicData()
+			end )
+			if type( pd ) == "table" and type( pd.aimTurning ) == "table" then
+				local host = RfsAimCore.clientHostFor( ia )
+				if host then
+					return host
+				end
+			end
+		end
+	end
+	return nil
+end
+
+function RfsBotInteract.tryOpenAimTurningFromLook()
+	local shape = lookedShape()
+	local ia = shapeToInteractable( shape )
+	if not ia then
+		return false
+	end
+	if not isDefaultBearing( shape, ia ) then
+		return false
+	end
+	local host = aimCoreHostFromBearing( ia )
+	if not host or type( RfsAimTurningGui ) ~= "table" then
+		return false
+	end
+	RfsAimTurningGui.open( host )
+	return true
+end
+
 function RfsBotInteract.raycastAllyChar()
 	local hit, result = false, nil
 	pcall( function()
@@ -166,11 +276,16 @@ function RfsBotInteract.ensurePlayerHook()
 	local orig = Player.client_onAction
 	function Player.client_onAction( self, action, state )
 		if state and action == sm.interactable.actions.use then
-			if self.player == sm.localPlayer.getPlayer()
-				and type( RfsBotInteract ) == "table"
-				and not RfsBotInteract.holdingPaintTool()
-				and RfsBotInteract.tryOpenFromLook( self ) then
-				return true
+			if self.player == sm.localPlayer.getPlayer() and type( RfsBotInteract ) == "table" then
+				-- Paint gun owns E → mode cycle via Player.client_onInteract.
+				-- Do not cycle here (client_onAction rarely fires; double-step if it does).
+				if RfsBotInteract.holdingPaintTool() then
+					return true
+				elseif RfsBotInteract.tryOpenAimTurningFromLook() then
+					return true
+				elseif RfsBotInteract.tryOpenFromLook( self ) then
+					return true
+				end
 			end
 		end
 		if orig then
@@ -180,4 +295,11 @@ function RfsBotInteract.ensurePlayerHook()
 	Player._rfsBotInteract = true
 end
 
-print( "[RFS] RfsBotInteract loaded (VOLATILE bot E + look fallback; paint tool passthrough)" )
+-- Install as soon as Player exists (Custom Game loads Player after these dofiles sometimes).
+pcall( function()
+	if type( Player ) == "table" then
+		RfsBotInteract.ensurePlayerHook()
+	end
+end )
+
+print( "[RFS] RfsBotInteract loaded (VOLATILE bot E + look fallback; paint E via Interact)" )

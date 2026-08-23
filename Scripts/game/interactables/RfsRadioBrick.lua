@@ -1,16 +1,18 @@
--- RfsRadioBrick.lua — station piece 5 (battery brick). Wiring stub via RfsRadioStation.
+-- RfsRadioBrick.lua — Radio Battery Brick. Connection Tool to Hack Beacon only.
 
 RfsRadioBrick = class( nil )
-RfsRadioBrick.maxParentCount = 2
-RfsRadioBrick.maxChildCount = 255
-RfsRadioBrick.connectionInput = sm.interactable.connectionType.logic + sm.interactable.connectionType.electricity
-RfsRadioBrick.connectionOutput = sm.interactable.connectionType.logic
 RfsRadioBrick.colorNormal = sm.color.new( 0x6b705cff )
 RfsRadioBrick.colorHighlight = sm.color.new( 0x9aa080ff )
 
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsRadioStation.lua" ) end )
-
-function RfsRadioBrick.server_onCreate( self ) end
-function RfsRadioBrick.client_onCreate( self ) end
+if type( RfsRadioStation ) == "table" and RfsRadioStation.applyModuleClass then
+	RfsRadioStation.applyModuleClass( RfsRadioBrick, "Radio Battery Brick — Connection Tool to Hack Beacon (+10 range, +1 bot, max 1)" )
+else
+	RfsRadioBrick.maxParentCount = 1
+	RfsRadioBrick.maxChildCount = 1
+	RfsRadioBrick.connectionInput = sm.interactable.connectionType.electricity
+	RfsRadioBrick.connectionOutput = sm.interactable.connectionType.electricity
+	RfsRadioBrick.connectIcon = "electrical"
+end
 
 print( "[RFS] RfsRadioBrick loaded" )

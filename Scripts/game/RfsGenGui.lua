@@ -37,6 +37,37 @@ local function allowlistSummaryText( host )
 	)
 end
 
+local GAME_MODE_HINTS = {
+	easy = "Easy: -33% damage taken, x2 damage output, keep inventory.",
+	normal = "Normal: stock Survival.",
+	hard = "Hard: +50% damage taken, -50% damage output, no bag, hammer + lift only.",
+}
+
+local function gameModeHintText( gm )
+	local mode = gm and gm.mode or "normal"
+	return GAME_MODE_HINTS[mode] or GAME_MODE_HINTS.normal
+end
+
+local function gameModeStrings()
+	local gm = ( type( RfsGameMode ) == "table" and RfsGameMode.snapshot and RfsGameMode.snapshot() ) or {}
+	local label = tostring( gm.modeLabel or "Normal" )
+	if gm.hardcore then
+		label = label .. " Hardcore"
+	end
+	if gm.locked then
+		label = label .. " (LOCKED)"
+	end
+	local prefix = gm.selected == true and "Game Mode: " or "Select Mode: "
+	local status = "Click the mode button to cycle Easy -> Normal -> Hard. The first pick starts the 5-minute lock."
+	if gm.selected == true and gm.locked then
+		status = "Game Mode is LOCKED"
+	elseif gm.selected == true and gm.countdownActive then
+		local sec = math.max( 0, math.floor( tonumber( gm.lockRemainingSec ) or 0 ) )
+		status = string.format( "Locking in %02d:%02d", math.floor( sec / 60 ), sec % 60 )
+	end
+	return gm, prefix .. label, status
+end
+
 local function refreshStatus( gui, snap )
 	local cheats = snap.cheats == true
 	local hackDev = snap.hackDevices ~= false
@@ -77,6 +108,9 @@ function RfsGenGui.refresh( host )
 	local chatRelay = snap.streamerChatRelay == true
 	local quests = snap.rfsQuests ~= false
 
+	local gm, gmLabel, gmStatus = gameModeStrings()
+	local tab = host.cl and host.cl.rfsGenTab or "main"
+
 	gui:setText( "BtnCheats", "Cheats: " .. onOff( cheats ) )
 	gui:setText( "BtnHackDevices", "Hack devices (beacons): " .. onOff( hackDev ) )
 	gui:setText( "BtnAreaLoader", "Anchor / Area loader: " .. onOff( area ) )
@@ -94,6 +128,10 @@ function RfsGenGui.refresh( host )
 		"TextDiscordStatus",
 		"DROP: $USER_DATA/rfs_discord_bridge/ — bot on host PC only. Clone discord-bridge from github.com/zernon916/Recipe-Framework-Systems and run npm run watch"
 	)
+	gui:setText( "BtnGameMode", gmLabel )
+	gui:setText( "BtnGameHardcore", "Hardcore: " .. onOff( gm.hardcore == true ) )
+	gui:setText( "TextGameModeStatus", gmStatus )
+	gui:setText( "GameModeHint", gameModeHintText( gm ) )
 	gui:setText( "BtnDiscordStartBot", "Start Discord bot" )
 	gui:setText( "BtnDiscordStopBot", "Stop Discord bot" )
 
@@ -107,34 +145,81 @@ function RfsGenGui.refresh( host )
 		gui:setButtonState( "BtnStreamerMode", streamer )
 		gui:setButtonState( "BtnStreamerAnnounce", announce )
 		gui:setButtonState( "BtnStreamerChatRelay", chatRelay )
+		gui:setButtonState( "BtnGameMode", gm.selected == true )
+		gui:setButtonState( "BtnGameHardcore", gm.hardcore == true )
 	end )
 
 	refreshStatus( gui, snap )
+
+	if tab == "quest" and type( RfsSetupGui ) == "table" then
+		RfsSetupGui.refreshQuest( host )
+	elseif tab == "invsize" and type( RfsSetupGui ) == "table" then
+		RfsSetupGui.refreshInvSize( host )
+	elseif tab == "farming" and type( RfsSetupGui ) == "table" then
+		RfsSetupGui.refreshFarming( host )
+	end
 end
 
 function RfsGenGui.showTab( host, tab )
 	local gui = host.cl and host.cl.rfsGenGui
 	if not gui then return end
 
-	host.cl.rfsGenTab = tab or "main"
+	tab = tab or "main"
+	host.cl.rfsGenTab = tab
+	host.cl.rfsSetupTab = tab
 	local t = host.cl.rfsGenTab
 	local main = t == "main"
+	local gamemode = t == "gamemode"
 	local features = t == "features"
 	local streamer = t == "streamer"
 	local discord = t == "discord"
+	local quest = t == "quest"
+	local inv = t == "invsize"
+	local farm = t == "farming"
 
 	gui:setVisible( "MainTab", main )
+	gui:setVisible( "GameModeTab", gamemode )
 	gui:setVisible( "FeaturesTab", features )
 	gui:setVisible( "StreamerTab", streamer )
 	gui:setVisible( "DiscordTab", discord )
+	gui:setVisible( "QuestTab", quest )
+	gui:setVisible( "InvSizeTab", inv )
+	gui:setVisible( "FarmingTab", farm )
 	pcall( function()
 		gui:setButtonState( "TabMain", main )
+		gui:setButtonState( "TabGameMode", gamemode )
 		gui:setButtonState( "TabFeatures", features )
 		gui:setButtonState( "TabStreamer", streamer )
 		gui:setButtonState( "TabDiscord", discord )
+		gui:setButtonState( "TabQuest", quest )
+		gui:setButtonState( "TabInvSize", inv )
+		gui:setButtonState( "TabFarming", farm )
 	end )
 
+	if quest or inv or farm then
+		if quest then
+			if type( RfsSetupGui ) == "table" then
+				RfsSetupGui.refreshQuest( host )
+			end
+			host.network:sendToServer( "sv_rfs_setupQuestData" )
+		elseif inv then
+			host.network:sendToServer( "sv_rfs_invSizeGet" )
+			if type( RfsSetupGui ) == "table" then
+				RfsSetupGui.refreshInvSize( host )
+			end
+		elseif farm then
+			host.network:sendToServer( "sv_rfs_farmingGet" )
+			if type( RfsSetupGui ) == "table" then
+				RfsSetupGui.refreshFarming( host )
+			end
+		end
+	end
+
 	RfsGenGui.refresh( host )
+
+	if gamemode then
+		host.network:sendToServer( "sv_rfs_gameModeGet" )
+	end
 	if streamer then
 		host.network:sendToServer( "sv_rfs_allowlistGet" )
 	end
@@ -143,13 +228,19 @@ end
 function RfsGenGui.bind( host, gui )
 	host.cl = host.cl or {}
 	host.cl.rfsGenGui = gui
+	host.cl.rfsSetupGui = gui
 	host.cl.rfsGenTab = host.cl.rfsGenTab or "main"
+	host.cl.rfsSetupTab = host.cl.rfsSetupTab or host.cl.rfsGenTab
 
 	gui:setButtonCallback( "CloseButton", "cl_rfs_genClose" )
 	gui:setButtonCallback( "TabMain", "cl_rfs_genTabMain" )
+	gui:setButtonCallback( "TabGameMode", "cl_rfs_genTabGameMode" )
 	gui:setButtonCallback( "TabFeatures", "cl_rfs_genTabFeatures" )
 	gui:setButtonCallback( "TabStreamer", "cl_rfs_genTabStreamer" )
 	gui:setButtonCallback( "TabDiscord", "cl_rfs_genTabDiscord" )
+	gui:setButtonCallback( "TabQuest", "cl_rfs_setupTabQuest" )
+	gui:setButtonCallback( "TabInvSize", "cl_rfs_setupTabInvSize" )
+	gui:setButtonCallback( "TabFarming", "cl_rfs_setupTabFarming" )
 	gui:setButtonCallback( "BtnCheats", "cl_rfs_genToggleCheats" )
 	gui:setButtonCallback( "BtnHackDevices", "cl_rfs_genToggleHackDevices" )
 	gui:setButtonCallback( "BtnAreaLoader", "cl_rfs_genToggleAreaLoader" )
@@ -162,12 +253,30 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnStreamerChatRelay", "cl_rfs_genToggleStreamerChatRelay" )
 	gui:setButtonCallback( "BtnStreamerAllowlistReload", "cl_rfs_genReloadAllowlist" )
 	gui:setButtonCallback( "BtnStreamerAllowlistCycle", "cl_rfs_genCycleAllowlistUnit" )
+	gui:setButtonCallback( "BtnGameMode", "cl_rfs_genCycleGameMode" )
 	gui:setButtonCallback( "BtnDiscordStartBot", "cl_rfs_genDiscordStartBot" )
 	gui:setButtonCallback( "BtnDiscordStopBot", "cl_rfs_genDiscordStopBot" )
+	gui:setButtonCallback( "QuestRefresh", "cl_rfs_setupQuestRefresh" )
+	gui:setButtonCallback( "QuestPrev", "cl_rfs_setupQuestPrev" )
+	gui:setButtonCallback( "QuestNext", "cl_rfs_setupQuestNext" )
+	for i = 0, 5 do
+		gui:setButtonCallback( "QuestRow" .. i, "cl_rfs_setupQuestSelect" )
+		gui:setButtonCallback( "QuestInfo" .. i, "cl_rfs_setupQuestInfo" )
+		gui:setButtonCallback( "QuestStart" .. i, "cl_rfs_setupQuestStart" )
+		gui:setButtonCallback( "QuestDone" .. i, "cl_rfs_setupQuestDone" )
+	end
+	for i = 0, 4 do
+		gui:setButtonCallback( "InvSize" .. i, "cl_rfs_setupInvSizeSelect" )
+	end
+	gui:setButtonCallback( "BtnInstantFarm", "cl_rfs_setupInstantFarm" )
+	gui:setButtonCallback( "BtnAlwaysWatered", "cl_rfs_setupToggleAlwaysWatered" )
+	gui:setButtonCallback( "BtnDirtOnBlocks", "cl_rfs_setupToggleDirtOnBlocks" )
+	gui:setButtonCallback( "BtnFastPlace", "cl_rfs_setupToggleFastPlace" )
+	gui:setButtonCallback( "BtnFastPickup", "cl_rfs_setupToggleFastPickup" )
 	gui:setOnCloseCallback( "cl_rfs_genClose" )
 end
 
-function RfsGenGui.open( host )
+function RfsGenGui.open( host, tab )
 	local okHost, isHost = pcall( function() return sm.isHost end )
 	if not ( okHost and isHost ) then
 		sm.gui.chatMessage( "[RFS] /gensettings is host-only." )
@@ -187,11 +296,12 @@ function RfsGenGui.open( host )
 	end
 
 	RfsGenGui.bind( host, gui )
-	RfsGenGui.showTab( host, host.cl.rfsGenTab or "main" )
+	local snap = ( type( RfsGameMode ) == "table" and RfsGameMode.snapshot and RfsGameMode.snapshot() ) or {}
+	local startTab = tab or host.cl.rfsGenTab or ( snap.selected ~= true and "gamemode" or "main" )
+	RfsGenGui.showTab( host, startTab )
 	gui:open()
 	host.network:sendToServer( "sv_rfs_featuresGet" )
 	host.network:sendToServer( "sv_rfs_allowlistGet" )
-	sm.gui.chatMessage( "RFS Gen Settings opened" )
 end
 
 function RfsGenGui.close( host )
@@ -201,5 +311,8 @@ function RfsGenGui.close( host )
 	end
 	if host.cl then
 		host.cl.rfsGenGui = nil
+		host.cl.rfsSetupGui = nil
+		host.cl.rfsSetupTab = nil
+		host.cl.rfsGenTab = nil
 	end
 end

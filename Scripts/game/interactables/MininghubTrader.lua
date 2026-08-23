@@ -613,7 +613,6 @@ function MininghubTrader.cl_rfs_openShop( self, params )
 
 	self.cl_selectTab( self, "All", nil )
 	self.cl.updateGui = true
-	sm.gui.chatMessage( "[RFS] Mining Hub shop opened (/mshop)" )
 	return true
 end
 

@@ -4,12 +4,13 @@
 -- SHOW RANGE is Game-hosted RfsRangeViz via RfsHackRange. Never parent FX onto this interactable.
 
 RfsHackBeacon = class( nil )
-RfsHackBeacon.maxParentCount = 2
+-- High parent/child so Battery + logic + radio modules attach directly (no long chains).
+RfsHackBeacon.maxParentCount = 255
 RfsHackBeacon.maxChildCount = 255
--- Logic + electricity like PlasmaDrill / rush-base. Lua spends 1 bat; always
--- setActive(false) so the engine does not treat this as a motor.
+-- Logic + electricity. Lua spends 1 bat; always setActive(false) so the engine
+-- does not treat this as a motor. Elec out lets modules hang as children.
 RfsHackBeacon.connectionInput = sm.interactable.connectionType.logic + sm.interactable.connectionType.electricity
-RfsHackBeacon.connectionOutput = sm.interactable.connectionType.logic
+RfsHackBeacon.connectionOutput = sm.interactable.connectionType.logic + sm.interactable.connectionType.electricity
 RfsHackBeacon.colorNormal = sm.color.new( 0xd02525ff )
 RfsHackBeacon.colorHighlight = sm.color.new( 0xff6a6aff )
 RfsHackBeacon.connectIcon = "electrical"
@@ -38,8 +39,10 @@ pcall( function()
 end )
 rfsDofile( "Scripts/game/RfsHackPower.lua" )
 rfsDofile( "Scripts/game/RfsHackCaps.lua" )
+rfsDofile( "Scripts/game/RfsRadioStation.lua" )
 rfsDofile( "Scripts/game/RfsHackSave.lua" )
 rfsDofile( "Scripts/game/RfsHackRange.lua" )
+rfsDofile( "Scripts/game/RfsHackStatusOverlay.lua" )
 rfsDofile( "Scripts/game/RfsBotHijack.lua" )
 rfsDofile( "Scripts/game/RfsBotInventory.lua" )
 rfsDofile( "Scripts/game/RfsHackApply.lua" )
@@ -49,54 +52,54 @@ rfsDofile( "Scripts/game/RfsFeatures.lua" )
 rfsDofile( "Scripts/game/RfsBeaconOrdersGui.lua" )
 rfsDofile( "Scripts/game/RfsHackOrdersList.lua" )
 rfsDofile( "Scripts/game/RfsHackOrdersGui.lua" )
+rfsDofile( "Scripts/game/hack/RfsHackV1.lua" )
 
--- uuid → tier. Infect ticks = game ticks in an Infection Beacon field to go permanent.
--- Battery drain lives in RfsHackPower.DRAIN_EVERY. Caps live in RfsHackCaps.
+-- uuid → base tier. Live range/cap/hold come from RfsRadioStation.bonuses.
 local TIERS = {
 	["b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"] = {
 		name = "Hack Beacon",
-		range = 16,
+		range = 30,
 		canInfect = false,
-		hijackTicks = 40 * 8,
+		hijackTicks = 40 * 8, -- convert telegraph / legacy; hold is holdSec
 		infectTicks = 0,
+		holdSec = 8,
 		ringColor = sm.color.new( 0.95, 0.35, 0.12, 1.0 ),
 	},
-	["c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8"] = {
-		name = "Control Beacon",
-		range = 32,
-		canInfect = false,
-		hijackTicks = 40 * 5,
-		infectTicks = 0,
-		ringColor = sm.color.new( 0.95, 0.55, 0.10, 1.0 ),
-	},
-	["d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709"] = {
-		name = "Infection Beacon",
-		range = 48,
-		canInfect = true,
-		hijackTicks = 40 * 3,
-		infectTicks = 40 * 8,
-		ringColor = sm.color.new( 0.55, 0.95, 0.25, 1.0 ),
-	},
-	-- Station Core visual swap uuid: keep identical hack behavior/menu binding.
+	-- Legacy Aim Core / Station Core uuid: same Hack tier if an old save still has it.
 	["c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247"] = {
 		name = "Hack Beacon",
-		range = 16,
+		range = 30,
 		canInfect = false,
 		hijackTicks = 40 * 8,
 		infectTicks = 0,
+		holdSec = 8,
 		ringColor = sm.color.new( 0.95, 0.35, 0.12, 1.0 ),
 	},
 }
 
-local function tierOf( shape )
+local function tierOf( shape, beacon )
 	local id = tostring( shape.uuid )
 	local t = TIERS[id] or TIERS["b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"]
 	local out = {}
 	for k, v in pairs( t ) do
 		out[k] = v
 	end
-	out.hackCap = ( type( RfsHackCaps ) == "table" and RfsHackCaps.forUuid( id ) ) or 2
+	out.hackCap = ( type( RfsHackCaps ) == "table" and RfsHackCaps.forUuid( id ) ) or 4
+	out.holdSec = tonumber( out.holdSec ) or 8
 	out.drainEvery = ( type( RfsHackPower ) == "table" and RfsHackPower.drainEvery( id ) ) or ( 40 * 56 )
+	if beacon and type( RfsRadioStation ) == "table" and RfsRadioStation.bonuses then
+		local ok, b = pcall( RfsRadioStation.bonuses, beacon )
+		if ok and type( b ) == "table" then
+			out.range = tonumber( b.range ) or out.range
+			out.hackCap = tonumber( b.cap ) or out.hackCap
+			out.holdSec = tonumber( b.holdSec ) or out.holdSec
+			out.modules = {
+				brick = tonumber( b.brick ) or 0,
+				antenna = tonumber( b.antenna ) or 0,
+				lock = tonumber( b.lock ) or 0,
+			}
+		end
+	end
 	return out
 end
 
@@ -148,20 +151,47 @@ local function publish( self, extra )
 		role = self.sv and self.sv.role or "independent"
 		masterKey = self.sv and self.sv.masterKey or nil
 	end
+	local powered = ( not disabled ) and self.sv.powered and true or false
+	local converting = extra and extra.converting or ( tonumber( self.sv and self.sv.converting ) or 0 )
+	local raid = extra and extra.raid
+	if raid == nil then
+		raid = self.sv and self.sv._rfsHackV1WasRaid and true or false
+	end
+	local powerReason = extra and extra.powerReason
+	if powerReason == nil and ( not powered ) and type( RfsHackPower ) == "table" and RfsHackPower.powerFailReason then
+		pcall( function()
+			powerReason = RfsHackPower.powerFailReason( self )
+		end )
+	end
+	local statusLine = nil
+	if type( RfsHackStatusOverlay ) == "table" and RfsHackStatusOverlay.lineFrom then
+		statusLine = select( 1, RfsHackStatusOverlay.lineFrom( {
+			disabled = disabled,
+			powered = powered,
+			raid = raid and true or false,
+			converting = converting,
+			modules = t.modules,
+		} ) )
+	end
 	local data = {
-		powered = ( not disabled ) and self.sv.powered and true or false,
+		powered = powered,
 		disabled = disabled,
 		range = t.range,
 		name = t.name,
+		hackCap = tonumber( t.hackCap ) or 4,
+		holdSec = tonumber( t.holdSec ) or 8,
+		modules = t.modules,
 		canInfect = t.canInfect and true or false,
 		linked = extra and extra.linked or 0,
-		converting = extra and extra.converting or 0,
+		converting = converting,
 		homeAllies = ( extra and extra.homeAllies ~= nil ) and extra.homeAllies or homeAllies,
 		batteries = extra and extra.batteries or 0,
 		wired = extra and extra.wired and true or false,
-		hijackSec = extra and extra.hijackSec or ( ( t.hijackTicks or 320 ) / 40 ),
-		raid = extra and extra.raid and true or false,
+		hijackSec = extra and extra.hijackSec or ( tonumber( t.holdSec ) or ( ( t.hijackTicks or 320 ) / 40 ) ),
+		raid = raid and true or false,
 		raidRange = extra and extra.raidRange or t.range,
+		powerReason = powerReason,
+		statusLine = statusLine,
 		beaconKey = self.sv and self.sv.key or nil,
 		role = role,
 		masterKey = masterKey,
@@ -189,22 +219,14 @@ function RfsHackBeacon.server_onCreate( self )
 		self.sv.role = "independent"
 		self.sv.masterKey = nil
 	end
-	self.sv.tier = tierOf( self.shape )
+	self.sv.tier = tierOf( self.shape, self )
 	self.sv.powered = false
 	self.sv.drainAcc = 0
 	self.sv.key = beaconKey( self.shape )
 	pcall( function()
 		self.interactable:setActive( false )
 	end )
-	if type( RfsBotHijack ) == "table" and self.sv.key then
-		RfsBotHijack.beaconScripts = RfsBotHijack.beaconScripts or {}
-		RfsBotHijack.beaconScripts[tostring( self.sv.key )] = self
-	end
-	if type( RfsHackTether ) == "table" then
-		pcall( function()
-			RfsHackTether.ensureHooks()
-		end )
-	end
+	-- 0851-r: no RfsHackTether.ensureHooks / convert register.
 end
 
 function RfsHackBeacon.server_onDestroy( self )
@@ -239,7 +261,8 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 		return
 	end
 	self.sv = self.sv or {}
-	self.sv.tier = self.sv.tier or tierOf( self.shape )
+	-- Refresh modules often so wiring Brick/Antenna/Lock updates range/cap/hold live.
+	self.sv.tier = tierOf( self.shape, self )
 	local shape = self.shape
 	if not shape or not sm.exists( shape ) then
 		return
@@ -249,10 +272,6 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 		self.interactable:setActive( false )
 	end )
 	self.sv.key = self.sv.key or beaconKey( shape )
-	if type( RfsBotHijack ) == "table" and self.sv.key then
-		RfsBotHijack.beaconScripts = RfsBotHijack.beaconScripts or {}
-		RfsBotHijack.beaconScripts[tostring( self.sv.key )] = self
-	end
 	local devicesOn = hackDevicesOn()
 	local wasPowered = self.sv.powered and true or false
 
@@ -268,6 +287,12 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 		pcall( function()
 			tickOff = sm.game.getCurrentTick()
 		end )
+		-- TEMP: gensettings Hack Devices off → v1 never ticks.
+		if ( tickOff % ( 40 * 5 ) ) == 0 then
+			pcall( function()
+				self.network:sendToClients( "cl_rfsMsg", "hack: Hack Devices OFF in /gensettings" )
+			end )
+		end
 		if wasPowered or ( tickOff % 10 ) == 0 then
 			local boxes = RfsHackPower.elecContainers( self )
 			publish( self, {
@@ -282,141 +307,64 @@ function RfsHackBeacon.server_onFixedUpdate( self, dt )
 
 	self.sv.powered = RfsHackPower.isPowered( self )
 	local t = self.sv.tier
-	local linked = 0
-	local converting = 0
-	if type( RfsBotHijack ) == "table" then
-		local world = nil
-		pcall( function()
-			world = shape.body:getWorld()
-		end )
-		local ownerId = 0
-		pcall( function()
-			local players = sm.player.getAllPlayers()
-			if players and players[1] then
-				ownerId = players[1].id or 0
-			end
-		end )
-		pcall( function()
-			RfsBotHijack.registerBeacon( self.sv.key, {
-				key = self.sv.key,
-				pos = shape.worldPosition,
-				world = world,
-				range = t.range,
-				canInfect = t.canInfect,
-				hackCap = t.hackCap or ( type( RfsHackCaps ) == "table" and RfsHackCaps.forUuid( tostring( shape.uuid ) ) ) or 2,
-				hijackTicks = t.hijackTicks or ( 40 * 8 ),
-				infectTicks = t.infectTicks,
-				powered = self.sv.powered,
-				name = t.name,
-				ownerId = ownerId,
-				role = self.sv.role or "independent",
-				masterKey = self.sv.masterKey,
-				canSpendOne = function()
-					return RfsHackPower.canSpendOne( self )
-				end,
-				spendOne = function()
-					-- Safety net: at most 1 Lua battery per 20 ticks (0.5 s) per beacon.
-					self.sv = self.sv or {}
-					local now = 0
-					pcall( function()
-						now = sm.game.getCurrentTick()
-					end )
-					local last = tonumber( self.sv.luaSpendTick )
-					if last and ( now - last ) < 20 then
-						return false
-					end
-					local ok = RfsHackPower.spendOne( self, true )
-					if ok then
-						self.sv.luaSpendTick = now
-					end
-					return ok
-				end,
-			} )
-		end )
-		if RfsBotHijack.applyBeaconRoleState then
-			local prevRole = self.sv.role
-			local prevMaster = self.sv.masterKey
-			local newRole, newMaster = RfsBotHijack.applyBeaconRoleState(
-				self.sv.key,
-				self.sv.role,
-				self.sv.masterKey
-			)
-			self.sv.role = newRole or "independent"
-			self.sv.masterKey = newMaster
-			if prevRole ~= self.sv.role or tostring( prevMaster or "" ) ~= tostring( newMaster or "" ) then
-				if type( RfsHackSave ) == "table" then
-					RfsHackSave.saveRole( self )
-				end
-			end
-		end
-		-- Throttled ally tick when this cell is loaded: tick() every 10 game ticks only.
-		-- Never tickAuto every tick here (0851-j ~10 FPS). RfsBotHijack.tick dedupes with HijackHost.
-		if world then
-			local tnow = 0
-			pcall( function()
-				tnow = sm.game.getCurrentTick()
-			end )
-			if ( tnow % 10 ) == 0 then
-				pcall( function()
-					RfsBotHijack.tick( world )
-				end )
-			end
-		end
-		pcall( function()
-			linked = RfsBotHijack.linkedCount( self.sv.key ) or 0
-		end )
-		pcall( function()
-			converting = RfsBotHijack.pendingCount( self.sv.key ) or 0
-		end )
-		local working = self.sv.powered and ( linked > 0 or converting > 0 )
-		RfsHackPower.tickWorkDrain( self, working )
+	-- 0851-r: do not registerBeacon / tickAuto / convert. Idle work-drain stays off.
+	RfsHackPower.tickWorkDrain( self, false )
+
+	if type( RfsHackV1 ) == "table" then
+		RfsHackV1.serverTick( self )
 	end
 
 	local tick = 0
 	pcall( function()
 		tick = sm.game.getCurrentTick()
 	end )
-	if self.sv.powered ~= wasPowered or ( tick % 10 ) == 0 then
-		local boxes = RfsHackPower.elecContainers( self )
-		local inRaid = false
-		local raidRange = t.range
+	local converting = tonumber( self.sv.converting ) or 0
+	if type( RfsHackV1Timer ) == "table" and RfsHackV1Timer.countForBeacon and self.sv.key then
 		pcall( function()
-			if type( RfsBotHijack ) ~= "table" or not RfsBotHijack.areaHasRaid then
-				return
-			end
-			local w = nil
-			pcall( function()
-				w = shape.body:getWorld()
-			end )
-			inRaid = RfsBotHijack.areaHasRaid( shape.worldPosition, w )
-			if inRaid and RfsBotHijack.effectiveRange then
-				raidRange = RfsBotHijack.effectiveRange( { range = t.range, pos = shape.worldPosition, world = w } )
-			end
+			converting = RfsHackV1Timer.countForBeacon( self.sv.key ) or converting
 		end )
+	end
+	self.sv.converting = converting
+	local raid = self.sv._rfsHackV1WasRaid and true or false
+	local mods = ( t and t.modules ) or { brick = 0, antenna = 0, lock = 0 }
+	local modSig = string.format( "%d:%d:%d", tonumber( mods.brick ) or 0, tonumber( mods.antenna ) or 0, tonumber( mods.lock ) or 0 )
+	local statusLine = nil
+	if type( RfsHackStatusOverlay ) == "table" and RfsHackStatusOverlay.lineFrom then
+		statusLine = select( 1, RfsHackStatusOverlay.lineFrom( {
+			disabled = false,
+			powered = self.sv.powered and true or false,
+			raid = raid,
+			converting = converting,
+			modules = mods,
+		} ) )
+	end
+	local statusChanged = ( self.sv._rfsStatusLine ~= statusLine )
+		or ( self.sv.powered ~= wasPowered )
+		or ( self.sv._rfsStatusRaid ~= raid )
+		or ( self.sv._rfsStatusConv ~= converting )
+		or ( self.sv._rfsStatusMods ~= modSig )
+	-- Publish ~1/s or on status / module change (overlay is primary feedback).
+	if statusChanged or ( tick % 40 ) == 0 then
+		self.sv._rfsStatusLine = statusLine
+		self.sv._rfsStatusRaid = raid
+		self.sv._rfsStatusConv = converting
+		self.sv._rfsStatusMods = modSig
+		local boxes = RfsHackPower.elecContainers( self )
+		local reason = nil
+		if not self.sv.powered then
+			reason = RfsHackPower.powerFailReason( self )
+		end
 		publish( self, {
-			linked = linked,
+			linked = 0,
 			converting = converting,
 			batteries = RfsHackPower.totalBatteries( boxes ),
 			wired = #boxes > 0,
-			hijackSec = ( t.hijackTicks or 320 ) / 40,
-			raid = inRaid,
-			raidRange = raidRange,
-			homeAllies = ( type( RfsBotHijack ) == "table" and RfsBotHijack.homeAllyCount and RfsBotHijack.homeAllyCount( self.sv.key ) ) or 0,
+			hijackSec = tonumber( t.holdSec ) or ( ( t.hijackTicks or 320 ) / 40 ),
+			raid = raid,
+			raidRange = t.range,
+			powerReason = reason,
+			homeAllies = 0,
 		} )
-		if type( RfsBotHijack ) == "table" and RfsBotHijack.isRangeVisible
-			and self.sv.key and RfsBotHijack.isRangeVisible( self.sv.key ) then
-			if type( RfsHackRange ) == "table" then
-				RfsHackRange.push( self, true, { tier = t } )
-			end
-		end
-	end
-	if type( RfsBotHijack ) == "table" and RfsBotHijack.pullAnnounce then
-		local msg = RfsBotHijack.pullAnnounce()
-		if msg then
-			pcall( function()
-				self.network:sendToClients( "cl_rfsMsg", msg )
-			end )
-		end
 	end
 end
 
@@ -443,6 +391,11 @@ function RfsHackBeacon.client_onCreate( self )
 end
 
 function RfsHackBeacon.client_onDestroy( self )
+	if type( RfsHackStatusOverlay ) == "table" and RfsHackStatusOverlay.cl_destroy then
+		pcall( function()
+			RfsHackStatusOverlay.cl_destroy( self )
+		end )
+	end
 	local key = nil
 	if self.cl and self.cl.beaconKey then
 		key = tostring( self.cl.beaconKey )
@@ -480,8 +433,10 @@ function RfsHackBeacon.client_onDestroy( self )
 end
 
 function RfsHackBeacon.client_onUpdate( self, dt )
-	-- No per-frame work: Game.lua hosts char hooks + RfsRangeViz. Proximity used to
-	-- call ensureCharHooks/tearDownBeacon here every frame (~10 FPS near beacon).
+	-- Floating HACK: STANDBY / ARMED / ENGAGED / NO POWER. Cheap billboard FX only.
+	if type( RfsHackStatusOverlay ) == "table" and RfsHackStatusOverlay.cl_update then
+		RfsHackStatusOverlay.cl_update( self, dt )
+	end
 end
 
 function RfsHackBeacon.client_onFixedUpdate( self, dt )
@@ -499,16 +454,43 @@ function RfsHackBeacon.client_onClientDataUpdate( self, data )
 end
 
 function RfsHackBeacon.client_getAvailableParentConnectionCount( self, connectionType )
-	if type( RfsHackPower ) ~= "table" then
-		return 0
+	local LOGIC = sm.interactable.connectionType.logic
+	local ELEC = sm.interactable.connectionType.electricity
+	local band = nil
+	if type( RfsHackPower ) == "table" and RfsHackPower.band then
+		band = RfsHackPower.band
+	else
+		band = function( a, b )
+			if type( bit ) == "table" and type( bit.band ) == "function" then
+				return bit.band( a, b )
+			end
+			return a % ( b * 2 ) >= b and b or 0
+		end
 	end
-	local LOGIC = RfsHackPower.LOGIC
-	local ELEC = RfsHackPower.ELEC
-	if RfsHackPower.band( connectionType, ELEC ) ~= 0 then
-		return 1 - #self.interactable:getParents( ELEC )
+	-- Battery / Recharge / logic switch as parents.
+	if band( connectionType, ELEC ) ~= 0 or band( connectionType, LOGIC ) ~= 0 then
+		return 255
 	end
-	if RfsHackPower.band( connectionType, LOGIC ) ~= 0 then
-		return 1 - #self.interactable:getParents( LOGIC )
+	return 0
+end
+
+function RfsHackBeacon.client_getAvailableChildConnectionCount( self, connectionType )
+	local LOGIC = sm.interactable.connectionType.logic
+	local ELEC = sm.interactable.connectionType.electricity
+	local band = nil
+	if type( RfsHackPower ) == "table" and RfsHackPower.band then
+		band = RfsHackPower.band
+	else
+		band = function( a, b )
+			if type( bit ) == "table" and type( bit.band ) == "function" then
+				return bit.band( a, b )
+			end
+			return a % ( b * 2 ) >= b and b or 0
+		end
+	end
+	-- Radio modules (and other elec/logic children) hang off the beacon.
+	if band( connectionType, ELEC ) ~= 0 or band( connectionType, LOGIC ) ~= 0 then
+		return 255
 	end
 	return 0
 end
@@ -556,7 +538,9 @@ end
 -- was nil in the beacon sandbox or g_rfsGame was missing.
 -- E always opens Orders (empty list / unpowered still). Hijack is Tinker/U.
 local function cl_openOrders( self )
-	local pd = cl_pd( self )
+	return
+end
+if false then
 	local key = cl_beaconKey( self )
 	if not key then
 		pcall( function()
@@ -612,92 +596,27 @@ local function cl_openOrders( self )
 end
 
 function RfsHackBeacon.client_canInteract( self )
-	local pd = cl_pd( self )
-	if pd.disabled then
-		sm.gui.setInteractionText( "", "", "Disabled by host" )
-		return true
-	end
-	local name = pd.name or "Hack Beacon"
-	local homeN = tonumber( pd.homeAllies ) or 0
-	local useKey = sm.gui.getKeyBinding( "Use", true )
-	local role = tostring( pd.role or "independent" )
-	local roleTxt = ""
-	if role == "master" then
-		roleTxt = " [MASTER]"
-	elseif role == "slave" then
-		roleTxt = " [SLAVE]"
-	end
-	if not pd.powered then
-		local hint = "Orders (no power) - wire a Battery container"
-		if pd.wired then
-			hint = "Orders (no power) - Battery container is empty"
-		end
-		sm.gui.setInteractionText( "", useKey, hint .. roleTxt .. " - " .. name )
-		return true
-	end
-	sm.gui.setInteractionText(
-		"",
-		useKey,
-		"Orders (" .. tostring( homeN ) .. " allies)" .. roleTxt .. " - " .. name
-	)
-	return true
+	if type( RfsHackV1 ) == "table" then return RfsHackV1.canInteract( self ) end
+	return false
 end
 
 function RfsHackBeacon.client_canTinker( self, character )
-	local pd = cl_pd( self )
-	if pd.disabled or not pd.powered then
-		return false
-	end
-	-- Hijack is U/Tinker (E always opens Orders, including empty).
-	local nBat = tonumber( pd.batteries ) or 0
-	local sec = tonumber( pd.hijackSec ) or 8
-	local verb = pd.canInfect and "Auto-infect" or "Auto-hijack"
-	local range = pd.range or 16
-	local rangeTxt = tostring( range ) .. " m"
-	if pd.raid then
-		rangeTxt = tostring( math.floor( ( tonumber( pd.raidRange ) or ( range * 0.5 ) ) + 0.5 ) ) .. " m RAID"
-	end
-	sm.gui.setInteractionText(
-		"",
-		sm.gui.getKeyBinding( "Tinker", true ),
-		verb .. " " .. rangeTxt .. " / " .. tostring( sec ) .. "s  " .. tostring( nBat ) .. " Battery"
-	)
-	return true
+	return false
 end
 
 function RfsHackBeacon.cl_botTags( self, rows )
 end
 
 function RfsHackBeacon.sv_openOrdersGui( self, params, player )
-	if type( RfsHackOrdersGui ) == "table" and type( RfsHackOrdersGui.sv_openOrdersGui ) == "function" then
-		return RfsHackOrdersGui.sv_openOrdersGui( self, params, player )
-	end
-	params = params or {}
-	pcall( function()
-		sm.event.sendToGame( "sv_rfs_ordersScheduleOpen", {
-			player = player,
-			beaconKey = params.beaconKey or ( self.sv and self.sv.key ),
-			beaconName = params.beaconName,
-			role = params.role,
-			masterKey = params.masterKey,
-			range = params.range,
-			rows = params.rows,
-			pos = params.pos,
-			notice = params.notice,
-		} )
-	end )
+	return
 end
 
 function RfsHackBeacon.sv_ordersList( self, params, player )
-	if type( RfsHackOrdersGui ) == "table" and type( RfsHackOrdersGui.sv_ordersList ) == "function" then
-		return RfsHackOrdersGui.sv_ordersList( self, params, player )
-	end
+	return
 end
 
 function RfsHackBeacon.sv_setShowRange( self, params, player )
-	if type( RfsHackOrdersGui ) == "table" and type( RfsHackOrdersGui.sv_setShowRange ) == "function" then
-		return RfsHackOrdersGui.sv_setShowRange( self, params, player )
-	end
+	return
 end
 
 function RfsHackBeacon.sv_setMaster( self, params, player )
@@ -712,33 +631,22 @@ function RfsHackBeacon.sv_clearMaster( self, params, player )
 	end
 end
 
+function RfsHackBeacon.sv_hackListOpen( self, params, player )
+	if type( RfsHackV1 ) == "table" then RfsHackV1.svBeaconOpen( self, params, player ) end
+end
+
 function RfsHackBeacon.client_onInteract( self, character, state )
-	-- Pre-Close-fix (9cbdbc1): open on E-press. Panel stayed open that way.
-	if not state then
-		return
-	end
-	local pd = cl_pd( self )
-	if pd.disabled then
-		pcall( function()
-			sm.gui.chatMessage( "[RFS] Beacon disabled by host" )
-		end )
-		return
-	end
-	-- Always open Orders (empty / unpowered still). Hijack is Tinker/U.
-	cl_openOrders( self )
+	if type( RfsHackV1 ) == "table" then RfsHackV1.onBeaconInteract( self, character, state ) end
 end
 
 function RfsHackBeacon.client_onTinker( self, character, state )
-	if not state then
-		return
-	end
-	self.network:sendToServer( "sv_hijack", {} )
+	return
 end
 
 function RfsHackBeacon.sv_hijack( self, params, player )
-	if type( RfsBotHijack ) ~= "table" then
-		return
-	end
+	return
+end
+if false then
 	RfsBotHijack.ensureHooks()
 	local shape = self.shape
 	if not shape or not sm.exists( shape ) then

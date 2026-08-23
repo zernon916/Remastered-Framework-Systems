@@ -1,7 +1,7 @@
 -- RfsHackPower.lua
 -- OWNER: hacked-device battery spend / circuit helpers.
--- FROZEN: work timer. Idle powered = no drain. Work = 1 battery every 40*56 / 40*36 / 40*22
--- ticks (Hack / Control / Infection) while tethered bots are linked OR auto-hijack is converting.
+-- FROZEN: work timer. Idle powered = no drain. Work = 1 battery every 40*56
+-- ticks (Hack) while tethered bots are linked OR auto-hijack is converting.
 -- Spend is Lua sm.container.spend of exactly 1. Never TryConsumePowerResource / pipeGraph / setActive.
 -- Finder: electricity-connected parents/children (battery box → cable → beacon). Not welded/nearby.
 
@@ -27,16 +27,12 @@ RfsHackPower.LOGIC = LOGIC
 RfsHackPower.ELEC = ELEC
 
 local UUID_HACK = "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"
-local UUID_CTRL = "c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8"
-local UUID_INFE = "d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709"
 local UUID_CORE = "c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247"
 
--- Bit-identical to rush-base RfsHackBeacon TIERS.drainEvery.
+-- Bit-identical to rush-base Hack drainEvery (Control/Infection removed).
 RfsHackPower.DRAIN_EVERY = {
 	[UUID_HACK] = 40 * 56, -- ~56 s/bat while working (~PlasmaDrill)
-	[UUID_CTRL] = 40 * 36, -- ~36 s/bat while working
-	[UUID_INFE] = 40 * 22, -- ~22 s/bat while working
-	[UUID_CORE] = 40 * 56, -- Station Core visual swap follows Hack Beacon timing
+	[UUID_CORE] = 40 * 56, -- legacy Station Core / Aim uuid follows Hack timing
 }
 
 function RfsHackPower.band( a, b )
@@ -50,29 +46,48 @@ function RfsHackPower.drainEvery( uuid )
 	return RfsHackPower.DRAIN_EVERY[tostring( uuid or "" )] or ( 40 * 56 )
 end
 
+local function rechargeMilli( ia )
+	if not ia or not sm.exists( ia ) then
+		return 0
+	end
+	local milli = 0
+	-- Prefer live box script pool (same env), then publicData / slotMilli.
+	pcall( function()
+		if type( RfsRecharge ) == "table" and type( RfsRecharge.scriptFor ) == "function" then
+			local script = RfsRecharge.scriptFor( ia )
+			if script and script.sv then
+				milli = tonumber( script.sv.chargeMilli ) or milli
+			end
+		end
+	end )
+	pcall( function()
+		local pd = ia:getPublicData()
+		if type( pd ) == "table" then
+			if pd.chargeMilli ~= nil then
+				milli = tonumber( pd.chargeMilli ) or milli
+			end
+			if milli < 1 and type( pd.slotMilli ) == "table" then
+				local slots = ( type( RfsRecharge ) == "table" and tonumber( RfsRecharge.BOX_SLOTS ) ) or 5
+				for i = 1, slots do
+					milli = milli + ( tonumber( pd.slotMilli[i] ) or 0 )
+				end
+			end
+		end
+	end )
+	return milli
+end
+
 local function batteryCount( container )
 	if not container or not sm.exists( container ) then
 		return 0
 	end
 
-	-- Rechargeable Battery Box: stored energy lives in interactable publicData
-	-- (chargeMilli) and is not a vanilla battery UUID inside the box slots.
-	-- Treat 1 vanilla battery as MILLI_PER_BATTERY milli.
+	-- Rechargeable Battery Box: energy in interactable publicData / script.sv,
+	-- not as vanilla battery UUID in the slots.
 	if type( RfsRecharge ) == "table"
 		and type( RfsRecharge.isBoxInteractable ) == "function"
 		and RfsRecharge.isBoxInteractable( container ) then
-		local pd = nil
-		pcall( function()
-			pd = container:getPublicData()
-		end )
-		local milli = tonumber( pd and pd.chargeMilli ) or 0
-		if milli < 1 and type( pd and pd.slotMilli ) == "table" then
-			-- Fallback for older saves: aggregate slot milli.
-			local slots = tonumber( RfsRecharge.BOX_SLOTS ) or 5
-			for i = 1, slots do
-				milli = milli + ( tonumber( ( pd.slotMilli or {} )[i] ) or 0 )
-			end
-		end
+		local milli = rechargeMilli( container )
 		local mpb = tonumber( RfsRecharge.MILLI_PER_BATTERY ) or 1000
 		if mpb < 1 then
 			return 0
@@ -147,51 +162,62 @@ local function isElectricityNode( ia )
 end
 
 function RfsHackPower.elecContainers( self )
-	-- rush-base 75abb2f: containers on electricity-connected parents/children.
-	-- Player wires Battery container → electricity cable → beacon. No radius search.
+	-- Walk the electricity graph (Battery/RechargeBox → cable(s) → beacon).
+	-- Immediate-neighbor only missed boxes behind a cable hop. No pipeGraph /
+	-- radius / weld scan (those dump batteries via TryConsumePowerResource).
 	local list, seen, seenIa = {}, {}, {}
-	local function consider( ia )
-		if not ia or not sm.exists( ia ) then
-			return
-		end
-		local id = tostring( ia )
-		if seenIa[id] then
-			return
-		end
-		seenIa[id] = true
-		if isElectricityNode( ia ) then
-			-- Add rechargeable battery *box interactables* as "power sources".
-			-- Their energy is in publicData (chargeMilli), not as vanilla batteries in the box slots.
-			pcall( function()
-				if type( RfsRecharge ) == "table"
-					and type( RfsRecharge.isBoxInteractable ) == "function"
-					and RfsRecharge.isBoxInteractable( ia ) then
-					addContainer( list, seen, ia )
-				end
-			end )
-			containersFromInteractable( ia, list, seen )
+	local start = self and self.interactable
+	if not start or not sm.exists( start ) then
+		return list
+	end
+	local queue = { start }
+	local hops = 0
+	local function enqueue( neighbors )
+		for _, other in ipairs( neighbors or {} ) do
+			if other and sm.exists( other ) and not seenIa[tostring( other )] then
+				queue[#queue + 1] = other
+			end
 		end
 	end
-	pcall( function()
-		for _, p in ipairs( self.interactable:getParents() or {} ) do
-			consider( p )
+	local function consider( ia )
+		if not ia or not sm.exists( ia ) or ia == start then
+			return
 		end
-	end )
-	pcall( function()
-		for _, p in ipairs( self.interactable:getParents( ELEC ) or {} ) do
-			consider( p )
+		if not isElectricityNode( ia ) then
+			return
 		end
-	end )
-	pcall( function()
-		for _, c in ipairs( self.interactable:getChildren() or {} ) do
-			consider( c )
+		pcall( function()
+			if type( RfsRecharge ) == "table"
+				and type( RfsRecharge.isBoxInteractable ) == "function"
+				and RfsRecharge.isBoxInteractable( ia ) then
+				addContainer( list, seen, ia )
+			end
+		end )
+		containersFromInteractable( ia, list, seen )
+	end
+	while #queue > 0 and hops < 48 do
+		local ia = table.remove( queue, 1 )
+		if ia and sm.exists( ia ) then
+			local key = tostring( ia )
+			if not seenIa[key] then
+				seenIa[key] = true
+				hops = hops + 1
+				consider( ia )
+				pcall( function()
+					enqueue( ia:getParents( ELEC ) )
+				end )
+				pcall( function()
+					enqueue( ia:getChildren( ELEC ) )
+				end )
+				pcall( function()
+					enqueue( ia:getParents() )
+				end )
+				pcall( function()
+					enqueue( ia:getChildren() )
+				end )
+			end
 		end
-	end )
-	pcall( function()
-		for _, c in ipairs( self.interactable:getChildren( ELEC ) or {} ) do
-			consider( c )
-		end
-	end )
+	end
 	return list
 end
 
@@ -319,6 +345,12 @@ end
 function RfsHackPower.hasElectricityNeighbor( self )
 	local lists = {}
 	pcall( function()
+		lists[#lists + 1] = self.interactable:getParents( ELEC ) or {}
+	end )
+	pcall( function()
+		lists[#lists + 1] = self.interactable:getChildren( ELEC ) or {}
+	end )
+	pcall( function()
 		lists[#lists + 1] = self.interactable:getParents() or {}
 	end )
 	pcall( function()
@@ -334,12 +366,69 @@ function RfsHackPower.hasElectricityNeighbor( self )
 	return false
 end
 
+-- Short reason when isPowered is false (for overlay / rare toast).
+-- nil when powered (or fuel-off creative).
+function RfsHackPower.powerFailReason( self )
+	if not RfsHackPower.logicAllows( self ) then
+		return "logic blocked"
+	end
+	if not RfsHackPower.fuelConsumptionOn() then
+		return nil
+	end
+	local boxes = RfsHackPower.elecContainers( self )
+	if RfsHackPower.totalBatteries( boxes ) > 0 then
+		return nil
+	end
+	if #boxes > 0 then
+		return "0 batteries"
+	end
+	if RfsHackPower.hasElectricityNeighbor( self ) then
+		return "0 batteries"
+	end
+	return "no elec wire"
+end
+
 function RfsHackPower.isPowered( self )
 	if not RfsHackPower.logicAllows( self ) then
 		return false
 	end
 	if RfsHackPower.totalBatteries( RfsHackPower.elecContainers( self ) ) > 0 then
 		return true
+	end
+	-- Recharge box with cell but unreadable milli: still treat as powered so
+	-- spendOne can event the box (matches Deep Sleep / ChemStation gate).
+	if type( RfsRecharge ) == "table" and type( RfsRecharge.connectedBoxes ) == "function" then
+		for _, ia in ipairs( RfsRecharge.connectedBoxes( self ) ) do
+			local has = false
+			local sawPd = false
+			local pdMilli = 0
+			pcall( function()
+				has = RfsRecharge.boxHasCell( ia )
+			end )
+			pcall( function()
+				local pd = ia:getPublicData()
+				if type( pd ) == "table" then
+					if pd.hasCell then
+						has = true
+					end
+					if pd.chargeMilli ~= nil then
+						sawPd = true
+						pdMilli = tonumber( pd.chargeMilli ) or 0
+					end
+				end
+			end )
+			if has then
+				if sawPd then
+					if pdMilli >= 1000 then
+						return true
+					end
+				elseif rechargeMilli( ia ) >= 1000 then
+					return true
+				else
+					return true
+				end
+			end
+		end
 	end
 	-- Creative / fuel off: no box required. Do not call CanSpendFromConnectedContainer
 	-- (pipe-graph walk; companion of TryConsumePowerResource).
@@ -380,4 +469,4 @@ function RfsHackPower.tickWorkDrain( self, working )
 	return self.sv.powered and true or false
 end
 
-print( "[RFS] RfsHackPower loaded (0817-i wired; lua spend = 1 bat / 56s work only)" )
+print( "[RFS] RfsHackPower loaded (0852-i elec BFS + recharge; lua spend = 1 bat / 56s work only)" )

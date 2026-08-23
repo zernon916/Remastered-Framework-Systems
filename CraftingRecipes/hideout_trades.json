@@ -53,24 +53,6 @@
 			]
 		},
 		{
-			"itemId": "c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8",
-			"quantity": 1,
-			"craftTime": 0,
-			"schematic": false,
-			"ingredientList": [
-				{ "quantity": 50, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
-			]
-		},
-		{
-			"itemId": "d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709",
-			"quantity": 1,
-			"craftTime": 0,
-			"schematic": false,
-			"ingredientList": [
-				{ "quantity": 120, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
-			]
-		},
-		{
 			"itemId": "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7",
 			"quantity": 1,
 			"craftTime": 0,
@@ -108,16 +90,6 @@
 			"_title": "Rechargeable Battery Box",
 			"ingredientList": [
 				{ "quantity": 2, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
-			]
-		},
-		{
-			"itemId": "c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247",
-			"quantity": 1,
-			"craftTime": 0,
-			"schematic": true,
-			"_title": "Aim Core",
-			"ingredientList": [
-				{ "quantity": 20, "itemId": "8d601982-4608-4d5e-bb9e-e4041486f7c7" }
 			]
 		}
 	]

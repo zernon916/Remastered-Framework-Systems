@@ -162,6 +162,9 @@ local function robotUnit( unit )
 end
 
 function RfsHackReload.scanWorld( world )
+	if type( RfsBotHijack ) == "table" and not RfsBotHijack.LIVE then
+		return
+	end
 	RfsHackReload.ensureRestoreHook()
 	RfsHackReload._restored = RfsHackReload._restored or {}
 	local tick = 0
@@ -204,6 +207,9 @@ function RfsHackReload.scanWorld( world )
 end
 
 function RfsHackReload.tick( world )
+	if type( RfsBotHijack ) == "table" and not RfsBotHijack.LIVE then
+		return
+	end
 	local tick = 0
 	pcall( function()
 		tick = sm.game.getCurrentTick() or 0

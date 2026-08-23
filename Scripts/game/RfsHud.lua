@@ -117,6 +117,70 @@ local function updateChargeBar( gui )
 	end )
 end
 
+local function updatePaintBar( gui )
+	local state = nil
+	pcall( function()
+		if type( RfsPaintTool ) == "table" and RfsPaintTool.cl_paintChargeHudState then
+			state = RfsPaintTool.cl_paintChargeHudState()
+		end
+	end )
+	if type( state ) ~= "table" then
+		pcall( function()
+			gui:setVisible( "RfsPaintPanel", false )
+		end )
+		return
+	end
+	local frac = tonumber( state.frac ) or ( ( tonumber( state.charges ) or 0 ) / 100 )
+	if frac < 0 then
+		frac = 0
+	elseif frac > 1 then
+		frac = 1
+	end
+	local filled = 0
+	local pct = math.floor( frac * 100 + 0.5 )
+	pcall( function()
+		if type( RfsRecharge ) == "table" and RfsRecharge.chargePips then
+			filled, pct = RfsRecharge.chargePips( frac )
+		else
+			filled = math.floor( frac * 10 + 0.0001 )
+		end
+	end )
+	local col = nil
+	pcall( function()
+		if type( RfsPaintPalette ) == "table" and RfsPaintPalette.colorFromHex then
+			col = RfsPaintPalette.colorFromHex( state.hex )
+		end
+	end )
+	if not col then
+		pcall( function()
+			col = sm.color.new( "ffffff" )
+		end )
+	end
+	pcall( function()
+		gui:setVisible( "RfsPaintPanel", true )
+		gui:setText( "RfsPaintLabel", string.format( "Ink %d%%", pct ) )
+	end )
+	for i = 0, 9 do
+		local name = "RfsPaintPip" .. tostring( i )
+		local on = i < filled
+		pcall( function()
+			gui:setVisible( name, on )
+		end )
+		if on then
+			pcall( function()
+				gui:setButtonState( name, true )
+				if col then
+					gui:setColor( name, col )
+				end
+			end )
+		else
+			pcall( function()
+				gui:setButtonState( name, false )
+			end )
+		end
+	end
+end
+
 local function updateBlockOverlay( gui, host )
 	local text = host and host.cl and host.cl.rfsBlockHud
 	if type( text ) ~= "string" or text == "" then
@@ -126,6 +190,25 @@ local function updateBlockOverlay( gui, host )
 	pcall( function()
 		gui:setVisible( "RfsOverlayPanel", true )
 		gui:setText( "RfsOverlayText", text )
+	end )
+end
+
+local function updateGameMode( gui )
+	local snap = type( RfsGameMode ) == "table" and RfsGameMode.snapshot and RfsGameMode.snapshot() or nil
+	if type( snap ) ~= "table" or snap.locked == true or snap.countdownActive ~= true then
+		pcall( function() gui:setVisible( "RfsGameModePanel", false ) end )
+		return
+	end
+	local remaining = math.max( 0, math.floor( tonumber( snap.lockRemainingSec ) or 0 ) )
+	local mins = math.floor( remaining / 60 )
+	local secs = remaining % 60
+	local label = tostring( snap.modeLabel or "Normal" )
+	if snap.hardcore then
+		label = label .. " Hardcore"
+	end
+	pcall( function()
+		gui:setVisible( "RfsGameModePanel", true )
+		gui:setText( "RfsGameModeText", string.format( "%s locks in %02d:%02d", label, mins, secs ) )
 	end )
 end
 
@@ -192,5 +275,7 @@ function RfsHud.update( host )
 	pcall( function() gui:setText( "RfsCompassText", compass ) end )
 	updateAmmo( gui )
 	updateBlockOverlay( gui, host )
+	updateGameMode( gui )
 	updateChargeBar( gui )
+	updatePaintBar( gui )
 end

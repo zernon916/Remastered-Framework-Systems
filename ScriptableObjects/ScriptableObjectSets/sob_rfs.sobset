@@ -4,6 +4,11 @@
 			"filename": "$CONTENT_DATA/Scripts/game/RfsHijackHost.lua",
 			"classname": "RfsHijackHost",
 			"uuid": "a7c3e91f-2b48-4d6a-9e15-6f8d0c1a2b3c"
+		},
+		{
+			"filename": "$CONTENT_DATA/Scripts/game/hack/RfsHackV1Host.lua",
+			"classname": "RfsHackV1Host",
+			"uuid": "b8d4f02a-3c59-4e7b-af26-7e9e1d2c3b4d"
 		}
 	]
 }

@@ -4,6 +4,7 @@ dofile( "$SURVIVAL_DATA/Scripts/game/SurvivalPlayer.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsHud.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsMiniMap.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsGameMode.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCarry.lua" )
 pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsGuiPrefs.lua" ) end )
@@ -18,6 +19,67 @@ local RFS_MAP_DEFAULT_ZOOM = 200
 -- ~0.75s at 40 tick/s - blocks open->immediate toggle-close on double chat fire
 local RFS_MAP_OPEN_DEBOUNCE_TICKS = 30
 local RFS_MAP_SHAPE_GRACE_TICKS = 40
+-- Chemical Regeneration Station (respawn bed must not seat into the tube).
+local RFS_CHEM_STATION_UUID = "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7"
+
+local function rfsIsChemStationShape( shape )
+	if not shape or not sm.exists( shape ) then
+		return false
+	end
+	return string.lower( tostring( shape.uuid ) ) == RFS_CHEM_STATION_UUID
+end
+
+local function rfsSvReleaseChemRespawn( self, shape )
+	local player = self.player
+	local char = nil
+	pcall( function()
+		char = player:getCharacter()
+	end )
+	local pos = nil
+	pcall( function()
+		if type( RfsChemStation ) == "table" and RfsChemStation.exitPosForShape then
+			pos = RfsChemStation.exitPosForShape( shape )
+		end
+	end )
+	if char and sm.exists( char ) then
+		pcall( function()
+			local ia = shape and shape.interactable
+			if ia and sm.exists( ia ) and ia.getSeatCharacter and ia:getSeatCharacter() == char then
+				ia:setSeatCharacter( char )
+			end
+		end )
+		pcall( function()
+			char:setLockingInteractable( nil )
+		end )
+		pcall( function()
+			char:setImmovable( false )
+		end )
+		if pos then
+			pcall( function()
+				char:setWorldPosition( pos )
+			end )
+		end
+		pcall( function()
+			char:setVelocity( sm.vec3.zero() )
+		end )
+		pcall( function()
+			char:setLinearVelocity( sm.vec3.zero() )
+		end )
+	end
+	pcall( function()
+		local ia = shape and shape.interactable
+		if ia and sm.exists( ia ) then
+			sm.event.sendToInteractable( ia, "sv_e_rfsRespawnRelease", { player = player } )
+		end
+	end )
+	pcall( function()
+		self.network:sendToClient( player, "cl_rfs_releaseFromPod", {
+			x = pos and pos.x,
+			y = pos and pos.y,
+			z = pos and pos.z,
+		} )
+	end )
+end
 
 g_rfs_mapFocus = g_rfs_mapFocus or nil
 g_rfs_mapZoom = g_rfs_mapZoom or RFS_MAP_DEFAULT_ZOOM
@@ -29,6 +91,7 @@ function Player.server_onCreate( self )
 	self.sv = self.sv or {}
 	self.sv.rfsFly = false
 	self.sv.rfsInRegen = false
+	self.sv.rfsGameModePendingRestore = nil
 	self.sv.rfsMapOpen = false
 	self.sv.rfsMapShape = nil
 	self.sv.rfsMapOpenTick = 0
@@ -51,6 +114,13 @@ function Player.server_onCreate( self )
 			local prefs = RfsGuiPrefs.load( self.player )
 			self.sv.rfsGuiPrefs = prefs
 			self.network:sendToClient( self.player, "cl_rfs_guiPrefState", prefs )
+		end
+	end )
+	pcall( function()
+		if type( RfsPaintPalette ) == "table" and RfsPaintPalette.loadPersisted then
+			local paint = RfsPaintPalette.loadPersisted( self.player )
+			self.sv.rfsPaintPrefs = paint
+			self.network:sendToClient( self.player, "cl_rfs_paintPrefsState", paint )
 		end
 	end )
 	pcall( function()
@@ -107,6 +177,40 @@ function Player.server_onCreate( self )
 	end )
 end
 
+-- Respawn at Chemical Station: Survival seats you in the tube (stuck). Warp to exit pad instead.
+function Player.sv_e_onSpawnCharacter( self )
+	local chemShape = nil
+	pcall( function()
+		if self.sv and self.sv.spawnparams and self.sv.spawnparams.respawn and g_respawnManager then
+			local bed = g_respawnManager:sv_getPlayerBed( self.player )
+			if bed and rfsIsChemStationShape( bed.shape ) then
+				chemShape = bed.shape
+			end
+		end
+	end )
+	SurvivalPlayer.sv_e_onSpawnCharacter( self )
+	if chemShape then
+		rfsSvReleaseChemRespawn( self, chemShape )
+	end
+end
+
+function Player.cl_seatCharacter( self, params )
+	local shape = params and params.shape
+	if rfsIsChemStationShape( shape ) then
+		local pos = nil
+		pcall( function()
+			if type( RfsChemStation ) == "table" and RfsChemStation.exitPosForShape then
+				pos = RfsChemStation.exitPosForShape( shape )
+			end
+		end )
+		if type( RfsChemStation ) == "table" and RfsChemStation.cl_releasePlayerLocal then
+			RfsChemStation.cl_releasePlayerLocal( shape.interactable, shape, pos )
+		end
+		return
+	end
+	SurvivalPlayer.cl_seatCharacter( self, params )
+end
+
 function Player.client_onCreate( self )
 	SurvivalPlayer.client_onCreate( self )
 	self.cl = self.cl or {}
@@ -118,6 +222,7 @@ function Player.client_onCreate( self )
 	self.cl.rfsMapHeight = RFS_MAP_HEIGHT
 	self.cl.rfsMapZoom = RFS_MAP_DEFAULT_ZOOM
 	self.cl.rfsGrowthOverlay = false
+	self.cl.rfsGameModeSpectator = false
 	if self.player == sm.localPlayer.getPlayer() then
 		g_rfs_clientFly = false
 		RfsFarming.cl_setLocalGrowthOverlay( false )
@@ -231,6 +336,31 @@ function Player.sv_rfs_guiPref( self, params )
 	prefs = RfsGuiPrefs.save( self.player, prefs )
 	self.sv.rfsGuiPrefs = prefs
 	self.network:sendToClient( self.player, "cl_rfs_guiPrefState", prefs )
+end
+
+function Player.sv_rfs_paintPrefsSave( self, params )
+	if type( RfsPaintPalette ) ~= "table" or not RfsPaintPalette.savePersisted then
+		return
+	end
+	self.sv = self.sv or {}
+	local data = RfsPaintPalette.savePersisted( self.player, params or {} )
+	self.sv.rfsPaintPrefs = data
+	self.network:sendToClient( self.player, "cl_rfs_paintPrefsState", data )
+end
+
+function Player.cl_rfs_paintPrefsState( self, data )
+	if type( data ) ~= "table" then
+		return
+	end
+	_G.g_rfsPaintPersist = data
+	self.cl = self.cl or {}
+	self.cl.rfsPaintPrefs = data
+	pcall( function()
+		if type( RfsPaintGui ) == "table" and RfsPaintGui.applyPersisted then
+			local host = _G.g_rfsPaintToolLocal or _G.g_rfsGame
+			RfsPaintGui.applyPersisted( host, data )
+		end
+	end )
 end
 
 function Player.cl_rfs_guiPrefState( self, data )
@@ -526,7 +656,6 @@ function Player.cl_rfs_mapAwaitLock( self, params )
 
 	-- Start forcing camera immediately while lock replicates (one-shot alone is ignored)
 	self:cl_rfs_applyMapCamera()
-	sm.gui.chatMessage( "[RFS] Map opening - camera armed, binding lock..." )
 	print( "[RFS] /map client awaitLock - confirming to server" )
 	self.network:sendToServer( "sv_rfs_mapClientReady" )
 end
@@ -565,10 +694,9 @@ function Player.cl_rfs_mapFallbackOpen( self, params )
 		self:cl_rfs_applyMapCamera()
 	end )
 	if ok then
-		sm.gui.chatMessage( "[RFS] Map open (fallback camera - no lock part). Esc or /mapclose to close." )
 		print( "[RFS] /map fallback camera active" )
 	else
-		sm.gui.chatMessage( "[RFS] Map failed completely: " .. tostring( err ) )
+		sm.gui.chatMessage( "[RFS] Map failed to open." )
 		print( "[RFS] /map fallback failed: " .. tostring( err ) )
 		self.cl.rfsMapOpen = false
 		self.cl.rfsMapFallback = false
@@ -621,17 +749,40 @@ function Player.cl_rfs_mapClosed( self, params )
 		sm.localPlayer.setLockedControls( false )
 	end )
 	local reason = params and params.reason
-	if reason and reason ~= "toggle" and reason ~= "close" then
-		sm.gui.chatMessage( "[RFS] Map closed (" .. tostring( reason ) .. ")" )
-	else
-		sm.gui.chatMessage( "[RFS] Map closed" )
-	end
 	print( "[RFS] /map closed reason=" .. tostring( reason ) )
 end
 
 function Player.cl_rfs_mapMsg( self, msg )
-	sm.gui.chatMessage( "[RFS] " .. tostring( msg ) )
-	print( "[RFS] /map msg: " .. tostring( msg ) )
+	-- Keep real failures in chat; drop routine status spam.
+	local s = tostring( msg or "" )
+	if string.find( string.lower( s ), "fail", 1, true )
+		or string.find( string.lower( s ), "error", 1, true ) then
+		sm.gui.chatMessage( "[RFS] " .. s )
+	end
+	print( "[RFS] /map msg: " .. s )
+end
+
+function Player.cl_rfs_gameModeSpectator( self, data )
+	self.cl = self.cl or {}
+	local active = false
+	if type( data ) == "table" then
+		active = data.active == true
+	else
+		active = data and true or false
+	end
+	local changed = self.cl.rfsGameModeSpectator ~= active
+	self.cl.rfsGameModeSpectator = active
+	if self.player == sm.localPlayer.getPlayer() then
+		pcall( function()
+			sm.localPlayer.setLockedControls( active )
+		end )
+		pcall( function()
+			sm.camera.setCameraState( sm.camera.state.default )
+		end )
+		if active and changed and data and data.msg then
+			sm.gui.chatMessage( "[RFS] " .. tostring( data.msg ) )
+		end
+	end
 end
 
 function Player.client_onCancel( self )
@@ -686,6 +837,12 @@ function Player.server_onFixedUpdate( self, dt )
 			end )
 		end
 	end
+
+	pcall( function()
+		if type( RfsGameMode ) == "table" and RfsGameMode.processPendingRestore then
+			RfsGameMode.processPendingRestore( self )
+		end
+	end )
 
 	if self.sv and self.sv.rfsMapOpen then
 		local character = self.player:getCharacter()
@@ -754,6 +911,11 @@ function Player.client_onUpdate( self, dt )
 				RfsHealthBars.ensureHooks()
 			end
 		end )
+		if self.cl and self.cl.rfsGameModeSpectator then
+			pcall( function()
+				sm.localPlayer.setLockedControls( true )
+			end )
+		end
 	end
 
 	-- Force top-down camera every frame while map is open (continuous camera set)
@@ -843,7 +1005,52 @@ function Player.sv_takeDamage( self, damage, source, typeUuid )
 	if rfsInRegenStation( self ) and ( source == "shock" or source == "impact" ) then
 		return
 	end
-	SurvivalPlayer.sv_takeDamage( self, damage, source, typeUuid )
+	local adjustedDamage = math.max( 0, math.floor( tonumber( damage ) or 0 ) )
+	if adjustedDamage <= 0 then
+		SurvivalPlayer.sv_takeDamage( self, adjustedDamage, source, typeUuid )
+		return
+	end
+	local gm = ( type( RfsGameMode ) == "table" and RfsGameMode.snapshot and RfsGameMode.snapshot() ) or {}
+	local takenMult = 1
+	if type( RfsGameMode ) == "table" and RfsGameMode.playerDamageTakenMultiplier then
+		takenMult = tonumber( RfsGameMode.playerDamageTakenMultiplier() ) or 1
+	end
+	adjustedDamage = math.max( 1, math.floor( adjustedDamage * takenMult + 0.5 ) )
+	local hp = 0
+	if self.sv and self.sv.saved and type( self.sv.saved.stats ) == "table" then
+		hp = tonumber( self.sv.saved.stats.hp ) or 0
+	end
+	local fatal = hp > 0 and adjustedDamage >= hp
+	local restore = nil
+	if fatal and ( gm.mode == "easy" or gm.mode == "hard" ) then
+		if type( RfsGameMode ) == "table" and RfsGameMode.prepareDeathInventory then
+			restore = RfsGameMode.prepareDeathInventory( self.player, gm.mode )
+		end
+	end
+	SurvivalPlayer.sv_takeDamage( self, adjustedDamage, source, typeUuid )
+	if fatal then
+		if gm.hardcore == true then
+			if restore and gm.mode == "easy" then
+				pcall( function()
+					if type( RfsGameMode ) == "table" and RfsGameMode.restoreInventory then
+						RfsGameMode.restoreInventory( self.player, restore.snapshot )
+					end
+				end )
+			elseif restore and gm.mode == "hard" then
+				pcall( function()
+					if type( RfsGameMode ) == "table" and RfsGameMode.applyHardLoadout then
+						RfsGameMode.applyHardLoadout( self.player )
+					end
+				end )
+			end
+			if type( RfsGameMode ) == "table" and RfsGameMode.enterSpectator then
+				RfsGameMode.enterSpectator( self.player )
+			end
+		elseif restore then
+			self.sv = self.sv or {}
+			self.sv.rfsGameModePendingRestore = restore
+		end
+	end
 end
 
 function Player.sv_e_rfsDeepSleepHeal( self, params )

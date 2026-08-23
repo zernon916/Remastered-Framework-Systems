@@ -5,6 +5,8 @@ Workshop: 3782487760
 Date: 2026-08-15  
 SM: 1.0.5  
 
+**FROZEN — Hack v1 = golden / no touch (user locked).** Do not edit `Scripts/game/hack/*`, `RfsHackBeacon`, hack power/fight/convert/hold/tags, or rewrite hack stamp behavior. Paint/menu/other tickets must leave hack alone.
+
 WIP note: local **HACK 3.13** — 3.11 open + PREV/NEXT never setVisible; not all on GitHub (push freeze).  
 Scan tags: `[DONE]` / `[NEXT]` / `[FUTURE]`. Source of truth for Orders: `HIJACK_ROADMAP.txt` Phase 3.
 
@@ -145,3 +147,25 @@ Shipped on `rush/digital-signs`. Spec was high-level only.
 - Logic output follows display-on
 - Inventory LCD S / L / XL (`rush/signs-lcd`): item name + count from a welded/adjacent or logic-wired chest. Small = one stack (instruction readout); L/XL list rows and scroll. LCD output stays inactive so chest loot-vacuum is not triggered. Text Digital Signs keep UUID `f8c2a5e4-…`. Factory UUID untouched.
 - Gaps: no ON/OFF dual messages; no Hideout trade; vanilla Survival signs stay non-logic
+
+---
+
+## 8) Remove join-chat Nutt / MiniMap / GPS spam — **[NEXT]** (scheduled only)
+
+**Do not implement until picked up.** No Lua / deploy for this item yet.
+
+**Next fix:** Remove the join-chat spam line about Nutt World Map / MiniMap / GPS, currently something like:
+
+`[RFS] Map: World Map by Nutt (Workshop 3780282057). Upper-left MiniMap on. Craft/research the GPS to open the atlas. Do not enable World Map as a world mod if you already have it (double HUD).`
+
+User is tired of seeing it every join. When implemented: strip that chat line only.
+
+**Keep:** Nutt credits in `STEAM_DESCRIPTION.txt` (and Steam / description credits). Do **not** remove Steam credits when this is later implemented.
+
+---
+
+## 9) Color Painter replaces vanilla paint gun — **[DONE] 0852-u-dev**
+
+**Shipped:** RFS Color Painter overrides vanilla Paint Tool `c60b9627…` with `RfsPaintTool` + stock mesh/anims. Paint Ammo `c7322cd1…` (inkammo); spray sound `PaintTool - Paint`; E cycles Single (instant) / 3x3 (instant) / All (queue, R apply). Q = SM palette + 10 hex slots. Client+server `setColor` so Single/3x3 show immediately. Hack untouched.
+
+**Retest:** stamp `0852-u-dev paint ammo modes` → E cycle modes → Single LMB instant → 3x3 → All queue + R → no ammo toast.

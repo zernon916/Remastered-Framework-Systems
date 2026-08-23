@@ -1,11 +1,11 @@
--- RfsSolarPanel.lua — placeable solar. Charges connected rechargeable boxes only.
--- Electricity cable like beacons (parents/children). Not a weld scan.
--- Always setActive(false). Does not touch Hack spend.
+-- RfsSolarPanel.lua — placeable solar. Electricity ONLY to Rechargeable Battery Box.
+-- Optional logic parent (switch). Always setActive(false). Does not touch Hack spend.
 
 RfsSolarPanel = class( nil )
-RfsSolarPanel.maxParentCount = 255
+RfsSolarPanel.maxParentCount = 1
 RfsSolarPanel.maxChildCount = 255
-RfsSolarPanel.connectionInput = sm.interactable.connectionType.logic + sm.interactable.connectionType.electricity
+-- Logic in only (blocks vanilla BatteryContainer → solar). Elec out; non-box wires severed.
+RfsSolarPanel.connectionInput = sm.interactable.connectionType.logic
 RfsSolarPanel.connectionOutput = sm.interactable.connectionType.electricity
 RfsSolarPanel.colorNormal = sm.color.new( 0x1a6db5ff )
 RfsSolarPanel.colorHighlight = sm.color.new( 0x4aa3e6ff )
@@ -28,12 +28,20 @@ rfsDofile( "Scripts/game/RfsRecharge.lua" )
 
 local LOGIC = sm.interactable.connectionType.logic
 local ELEC = sm.interactable.connectionType.electricity
+-- Rechargeable Battery Box only (not vanilla Battery Container da4833fd-…).
+local RECHARGE_BOX_UUID = "9c624f8e-b507-414a-cd93-f4081b5c7eaf"
 
 local function band( a, b )
 	if type( bit ) == "table" and type( bit.band ) == "function" then
 		return bit.band( a, b )
 	end
 	return a % ( b * 2 ) >= b and b or 0
+end
+
+local function uuidStr( u )
+	local s = string.lower( tostring( u or "" ) )
+	local m = string.match( s, "%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x" )
+	return m or s
 end
 
 local function logicAllows( self )
@@ -62,6 +70,104 @@ local function logicAllows( self )
 	return switches == 0
 end
 
+local function rechargeBoxUuid()
+	if type( RfsRecharge ) == "table" and type( RfsRecharge.BOX_UUID ) == "string" then
+		return string.lower( RfsRecharge.BOX_UUID )
+	end
+	return RECHARGE_BOX_UUID
+end
+
+-- Keep electricity wires only to Rechargeable Battery Box. Cut everything else
+-- (vanilla Battery Container, engines, beacons, chem, …) including old saves.
+local function severNonRechargeElecLinks( self )
+	local ia = self and self.interactable
+	if not ia or not sm.exists( ia ) then
+		return
+	end
+	local boxId = rechargeBoxUuid()
+	local function checkAndCut( other, solarIsChild )
+		if not other or not sm.exists( other ) then
+			return
+		end
+		local id = nil
+		pcall( function()
+			local shape = other.shape or other:getShape()
+			if shape then
+				id = uuidStr( shape.uuid )
+			end
+		end )
+		if id == boxId then
+			return
+		end
+		pcall( function()
+			if solarIsChild then
+				sm.interactable.disconnect( other, ia )
+			else
+				sm.interactable.disconnect( ia, other )
+			end
+		end )
+		pcall( function()
+			if type( ia.disconnect ) == "function" then
+				ia:disconnect( other )
+			end
+		end )
+		pcall( function()
+			if type( other.disconnect ) == "function" then
+				other:disconnect( ia )
+			end
+		end )
+	end
+	pcall( function()
+		for _, p in ipairs( ia:getParents( ELEC ) or {} ) do
+			checkAndCut( p, true )
+		end
+	end )
+	pcall( function()
+		for _, c in ipairs( ia:getChildren( ELEC ) or {} ) do
+			checkAndCut( c, false )
+		end
+	end )
+end
+
+local function eligibleBoxes( self )
+	local list = {}
+	if type( RfsRecharge ) ~= "table" or not RfsRecharge.connectedBoxes then
+		return list
+	end
+	for _, ia in ipairs( RfsRecharge.connectedBoxes( self ) or {} ) do
+		local has = false
+		pcall( function()
+			has = RfsRecharge.boxHasCell( ia )
+		end )
+		if has then
+			list[#list + 1] = ia
+		end
+	end
+	return list
+end
+
+-- Split whole milli evenly across N boxes (remainder to the first rem boxes).
+local function splitMilliToBoxes( boxes, whole )
+	local n = #boxes
+	if n < 1 or whole < 1 then
+		return
+	end
+	local base = math.floor( whole / n )
+	local rem = whole - base * n
+	for i = 1, n do
+		local add = base
+		if i <= rem then
+			add = add + 1
+		end
+		if add > 0 then
+			local ia = boxes[i]
+			pcall( function()
+				RfsRecharge.addMilliOn( ia, add )
+			end )
+		end
+	end
+end
+
 local function publish( self )
 	local data = {
 		on = self.sv.on and true or false,
@@ -85,12 +191,17 @@ function RfsSolarPanel.server_onCreate( self )
 	pcall( function()
 		self.interactable:setActive( false )
 	end )
+	severNonRechargeElecLinks( self )
 	publish( self )
 end
 
 function RfsSolarPanel.server_onFixedUpdate( self )
 	if not self.sv then
 		return
+	end
+	-- Cut forbidden elec wires often so Connect-tool flashes do not stick.
+	if ( sm.game.getCurrentTick() % 8 ) == 0 then
+		severNonRechargeElecLinks( self )
 	end
 	local on = logicAllows( self )
 	local rate, label = 0, "off"
@@ -105,23 +216,18 @@ function RfsSolarPanel.server_onFixedUpdate( self )
 		local milli = RfsRecharge.milliPerTick( rate )
 		self.sv.frac = ( self.sv.frac or 0 ) + milli
 		local whole = math.floor( self.sv.frac )
-		if whole >= 1 then
+		local eligible = eligibleBoxes( self )
+		boxes = #eligible
+		if whole >= 1 and boxes > 0 then
 			self.sv.frac = self.sv.frac - whole
-			for _, ia in ipairs( RfsRecharge.connectedBoxes( self ) ) do
-				local has = false
-				pcall( function()
-					has = RfsRecharge.boxHasCell( ia )
-				end )
-				if has then
-					boxes = boxes + 1
-					RfsRecharge.addMilliOn( ia, whole )
-				end
-			end
-		else
-			pcall( function()
-				boxes = #( RfsRecharge.connectedBoxes( self ) or {} )
-			end )
+			splitMilliToBoxes( eligible, whole )
+		elseif whole >= 1 then
+			self.sv.frac = self.sv.frac - whole
 		end
+	else
+		pcall( function()
+			boxes = #( RfsRecharge.connectedBoxes( self ) or {} )
+		end )
 	end
 	self.sv.boxes = boxes
 	pcall( function()
@@ -146,26 +252,21 @@ end
 function RfsSolarPanel.client_canInteract( self )
 	local pd = self.cl or {}
 	if not pd.on then
-		sm.gui.setInteractionText( "", "", "Solar Panel — off (logic)" )
+		sm.gui.setInteractionText( "", "", "Solar Panel — off (logic) · Rechargeable Battery Box only" )
 		return true
 	end
 	local pct = math.floor( ( tonumber( pd.rate ) or 0 ) * 100 + 0.5 )
+	local n = tonumber( pd.boxes ) or 0
+	local boxHint = n > 1 and ( " · split ×" .. tostring( n ) ) or ( n < 1 and " · wire Rechargeable Battery Box" or "" )
 	sm.gui.setInteractionText(
 		"",
 		"",
-		"Solar Panel — " .. tostring( pct ) .. "% (" .. tostring( pd.label or "" ) .. ")"
+		"Solar Panel — " .. tostring( pct ) .. "% (" .. tostring( pd.label or "" ) .. ")" .. boxHint
 	)
 	return true
 end
 
 function RfsSolarPanel.client_getAvailableParentConnectionCount( self, connectionType )
-	if band( connectionType, ELEC ) ~= 0 then
-		local n = 0
-		pcall( function()
-			n = #( self.interactable:getParents( ELEC ) or {} )
-		end )
-		return 255 - n
-	end
 	if band( connectionType, LOGIC ) ~= 0 then
 		local n = 0
 		pcall( function()
@@ -173,6 +274,7 @@ function RfsSolarPanel.client_getAvailableParentConnectionCount( self, connectio
 		end )
 		return 1 - n
 	end
+	-- No electricity parents (blocks vanilla BatteryContainer → solar).
 	return 0
 end
 
@@ -213,15 +315,12 @@ function RfsSolarPanel.sv_e_rfsSkipCharge( self, params )
 	if milli < 1 then
 		return
 	end
-	for _, ia in ipairs( RfsRecharge.connectedBoxes( self ) ) do
-		local has = false
-		pcall( function()
-			has = RfsRecharge.boxHasCell( ia )
-		end )
-		if has then
-			RfsRecharge.addMilliOn( ia, milli )
-		end
+	local eligible = eligibleBoxes( self )
+	if #eligible < 1 then
+		return
 	end
+	self.sv.splitIdx = nil
+	splitMilliToBoxes( eligible, milli )
 end
 
-print( "[RFS] RfsSolarPanel loaded" )
+print( "[RFS] RfsSolarPanel loaded (elec → Rechargeable Battery Box only; split charge)" )

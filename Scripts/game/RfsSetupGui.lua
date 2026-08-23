@@ -199,12 +199,11 @@ function RfsSetupGui.refreshFarming( host )
 	end
 	gui:setText( "FarmingStatus", table.concat( lines, "\n" ) )
 	gui:setText( "Status", string.format(
-		"Farming | watered=%s | dirtBlocks=%s | fastPlace=%s | fastPickup=%s | cheats=%s",
+		"Farming | watered=%s | dirtBlocks=%s | fastPlace=%s | fastPickup=%s",
 		watered and "ON" or "OFF",
 		dirt and "ON" or "OFF",
 		fastPlace and "ON" or "OFF",
-		fastPickup and "ON" or "OFF",
-		cheats and "ON" or "OFF"
+		fastPickup and "ON" or "OFF"
 	) )
 end
 
@@ -299,22 +298,9 @@ function RfsSetupGui.open( host )
 		return
 	end
 
-	if host.cl and host.cl.rfsSetupGui then
-		pcall( function() host.cl.rfsSetupGui:close() end )
-		host.cl.rfsSetupGui = nil
+	if type( RfsMenuGui ) == "table" and type( RfsMenuGui.open ) == "function" then
+		RfsMenuGui.open( host, "cheats" )
 	end
-
-	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT )
-	if not ok or not gui then
-		sm.gui.chatMessage( "[RFS] Failed to open /setup GUI" )
-		print( "[RFS] setup GUI create failed: " .. tostring( gui ) )
-		return
-	end
-
-	RfsSetupGui.bind( host, gui )
-	RfsSetupGui.showTab( host, "main" )
-	gui:open()
-	sm.gui.chatMessage( "RFS Setup opened" )
 end
 
 function RfsSetupGui.close( host )

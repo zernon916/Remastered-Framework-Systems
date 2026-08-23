@@ -15,7 +15,7 @@ We spent many hours rebreaking bots by editing the same files for unrelated tick
 
 ## Frozen vs volatile (do not mix)
 
-- **FROZEN** unless the user explicitly asks: battery spend (idle = no drain; 56/36/22s), caps 2/4/6, hijack damage/HP (bots must take hits), Orders `queueOpen` / E / `cl_rfs_ordersOpen` open path.
+-- FROZEN unless the user explicitly asks: battery spend (idle = no drain; 56s Hack), caps **base 4** (+ radio modules), hijack damage/HP (bots must take hits), Orders `queueOpen` / E / `cl_rfs_ordersOpen` open path.
 - **VOLATILE**: Orders GUI widgets, rename labels, `/menu` names, Stay/Recall copy.
 - **SHOW RANGE**: Game-hosted `RfsRangeViz` only. Never parent FX/`ShapeRenderable`/lights onto the beacon interactable (welds onto the electrical net and dumps the battery box). Do not “finish #6” by re-hosting on the beacon.
 

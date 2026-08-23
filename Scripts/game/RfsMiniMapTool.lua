@@ -233,9 +233,6 @@ if g_rfsNuttMap and MinimapHud then
 			end
 			if not self.cl.rfsNuttCredit then
 				self.cl.rfsNuttCredit = true
-				pcall( function()
-					sm.gui.chatMessage( "[RFS] Map: World Map by Nutt (Workshop 3780282057). Upper-left MiniMap on. Craft/research the GPS to open the atlas. Do not enable World Map as a world mod if you already have it (double HUD)." )
-				end )
 			end
 		end
 	end

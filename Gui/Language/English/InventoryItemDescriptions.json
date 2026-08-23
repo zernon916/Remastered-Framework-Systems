@@ -1,134 +1,245 @@
-{
-	"fe8bfeba-850b-4827-9785-10e2468c9c23": {
-		"title": "Corn",
-		"upperCaseTitle": "CORN",
-		"keywords": [ "corn", "food", "woc", "farm" ],
-		"description": "Wocs love to eat corn. Stacks to 20. Force-place puts the whole stack; Wocs eat the full stack (5 corn = 1 milk)."
-	},
-	"9a1528a6-acd2-44db-8050-b2f493362191": {
-		"title": "RFS Map Lock",
-		"upperCaseTitle": "RFS MAP LOCK",
-		"keywords": [ "rfs", "map" ],
-		"description": "Internal map camera lock. Not used — open the atlas with Nutt's GPS tool."
-	},
-	"d96c2fe4-177b-49bb-be40-e4b1bcdd8f76": {
-		"title": "GPS",
-		"upperCaseTitle": "GPS",
-		"keywords": [ "gps", "map", "minimap", "navigation", "waypoint", "nutt", "tool" ],
-		"description": "GPS. Buy the schematic at the Hideout (1 Farmer), then craft at the Craftbot (1 Metal, 1 Circuit, 1 Component, 1 Glass). In hand: LMB opens the atlas, RMB cycles MiniMap zoom, Q moves/hides the MiniMap, R cycles MiniMap size. Atlas terrain by Nutt."
-	},
-	"b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7": {
-		"title": "Hack Beacon",
-		"upperCaseTitle": "HACK BEACON",
-		"keywords": [ "logic", "hack", "beacon", "station", "rfs" ],
-		"description": "Computer for hijacked robots. Hideout 10 Farmers (schematic). Connect a Battery container. Press E to hijack hostiles within 16 m (1 Battery each). Keep it powered and in converting-beacon range or tethered bots revert."
-	},
-	"c5f9d2b1-8e30-4ba2-ad4f-30a2b9e7c6f8": {
-		"title": "Control Beacon",
-		"upperCaseTitle": "CONTROL BEACON",
-		"keywords": [ "logic", "hack", "beacon", "rfs" ],
-		"description": "Stronger computer for hijacked robots. 32 m range. Connect a Battery container. Press E to hijack (1 Battery each). Keep it powered and in range or they revert."
-	},
-	"d6a0e3c2-9f41-4cb3-be50-41b3c0f8d709": {
-		"title": "Infection Beacon",
-		"upperCaseTitle": "INFECTION BEACON",
-		"keywords": [ "logic", "hack", "beacon", "rfs", "infect" ],
-		"description": "Powerful computer that can permanently infect robots into submission. 48 m. E infects immediately. Tethered bots that stay in its powered field for ~8 s also go permanent."
-	},
-	"e7b1f4d3-0a52-4dc4-cf61-52c4d1e9e81a": {
-		"title": "Area Loader",
-		"upperCaseTitle": "AREA LOADER",
-		"keywords": [ "radio", "stream", "cell", "load", "rfs" ],
-		"description": "Keeps this area streamed (one 64 m cell) while powered. Wire a Battery container; optional logic switch. Light Battery drain. Units may still exist — cell load cannot exclude bots."
-	},
-	"f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b": {
-		"title": "Digital Sign",
-		"upperCaseTitle": "DIGITAL SIGN",
-		"keywords": [ "sign", "text", "logic", "display", "rfs" ],
-		"description": "Shows custom text on the face. Press E to edit. Optional logic switch: unpowered logic hides the text. No battery required."
-	},
-	"09d3b6f5-2c74-4fe6-a183-74e6f3010a3c": {
-		"title": "Digital Sign Large",
-		"upperCaseTitle": "DIGITAL SIGN LARGE",
-		"keywords": [ "sign", "text", "logic", "display", "rfs" ],
-		"description": "Larger digital sign. Shows custom text. Press E to edit. Optional logic switch hides the text when off."
-	},
-	"1ae4c706-3d85-40f7-b294-85f704121b4d": {
-		"title": "Digital Sign Extra Large",
-		"upperCaseTitle": "DIGITAL SIGN EXTRA LARGE",
-		"keywords": [ "sign", "text", "logic", "display", "rfs" ],
-		"description": "Extra-large digital sign. Shows custom text. Press E to edit. Optional logic switch hides the text when off."
-	},
-	"3c06e928-5f97-42a9-d4b6-a7f926343d7f": {
-		"title": "Inventory LCD",
-		"upperCaseTitle": "INVENTORY LCD",
-		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
-		"description": "Shows one chest stack: item name and amount. Weld onto or next to a chest, or connect LCD → chest. Optional logic switch hides the face. Scrolls stacks. No battery. Not a computer."
-	},
-	"4d17fa39-60a8-43ba-e5c7-b80a37454e80": {
-		"title": "Inventory LCD Large",
-		"upperCaseTitle": "INVENTORY LCD LARGE",
-		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
-		"description": "Shows a chest inventory list (item + count). Weld to a chest or connect LCD → chest. Scrolls when there are more stacks than lines. Optional logic switch hides the face."
-	},
-	"5e280b4a-71b9-44cb-f6d8-c91b48565f91": {
-		"title": "Inventory LCD Extra Large",
-		"upperCaseTitle": "INVENTORY LCD EXTRA LARGE",
-		"keywords": [ "lcd", "sign", "chest", "inventory", "display", "rfs" ],
-		"description": "Wide chest inventory list (item + count). Weld to a chest or connect LCD → chest. Scrolls extra stacks. Optional logic switch hides the face."
-	},
-	"6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7": {
-		"title": "Chemical Regeneration Station",
-		"upperCaseTitle": "CHEMICAL REGENERATION STATION",
-		"keywords": [ "heal", "pod", "sleep", "medical", "chemical", "cryo", "rfs" ],
-		"description": "Chemical Regeneration Station. Hideout 10 Farmers (schematic). E to stand in the tube. Fill costs 10 Chemicals (~3.5 s tank). Heal (~10 s 1→full) drips 10 more Chemicals and 5 batteries (or 1/4 rechargeable cell). Wire a Battery box or Rechargeable box for heal ticks. Mesh: The science fiction Colba by Helley (CC BY), concept CryoCapsules / capitanraketa / Igor Bulygin."
-	},
-	"7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8": {
-		"title": "Solar Panel",
-		"upperCaseTitle": "SOLAR PANEL",
-		"keywords": [ "solar", "power", "recharge", "rfs" ],
-		"description": "Solar Panel. Hideout 5 Farmers (schematic). Wire electricity to a Rechargeable Battery Box. Charges: sun+clear 100%, sun+cloudy 50%, night 25%, rain+night 5%. About one in-game day to fill one cell. Mesh: Solar Panel by EdwinCGStudio (CC BY)."
-	},
-	"8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e": {
-		"title": "Rechargeable Battery",
-		"upperCaseTitle": "RECHARGEABLE BATTERY",
-		"keywords": [ "battery", "recharge", "solar", "rfs" ],
-		"description": "Rechargeable cell. Hideout 1 Farmer (schematic). Put in a Rechargeable Battery Box — open the box and select a slot to see the charge meter. Charge is stored in the box (5 slots). A full cell equals 20 vanilla batteries."
-	},
-	"9c624f8e-b507-414a-cd93-f4081b5c7eaf": {
-		"title": "Rechargeable Battery Box",
-		"upperCaseTitle": "RECHARGEABLE BATTERY BOX",
-		"keywords": [ "battery", "container", "recharge", "solar", "rfs" ],
-		"description": "Holds 5 Rechargeable Batteries (no stacking). Hideout 2 Farmers (schematic). Wire Solar in and devices out (electricity cables, not welds). Side bars show box fill across all 5 slots (one full cell = 20%). Each cell = 20 vanilla batteries of energy."
-	},
-	"c2f158b0-4d7e-4a19-9c6b-8e3a1f50d247": {
-		"title": "Aim Core",
-		"upperCaseTitle": "AIM CORE",
-		"keywords": [ "aim", "turret", "logic", "head", "rfs" ],
-		"description": "Aim Core. Creation-mounted aiming brain. Wire logic in to switch commands later; logic out is reserved for on-target. Mesh: Yberpunk robot head sketch by 3DWorkbench (Sketchfab, CC BY 4.0)."
-	},
-	"e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c": {
-		"title": "Handheld Radio",
-		"upperCaseTitle": "HANDHELD RADIO",
-		"keywords": [ "radio", "hack", "handheld", "tool", "rfs" ],
-		"description": "Player handheld hack tool (NOT the station core). Hideout 5 Farmers (schematic). Craft: 1 Metal Block + 1 Circuit Board. Equip, E on a bot within 8 m: 40% chance to hack, then Follow or Defend. Out of range 10 s → bot reverts."
-	},
-	"d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b": {
-		"title": "Radio Battery Brick",
-		"upperCaseTitle": "RADIO BATTERY BRICK",
-		"keywords": [ "radio", "battery", "station", "rfs" ],
-		"description": "Station piece 5. Hideout 15 Farmers (schematic). Wire to Hack Beacon core with the long antenna for mid-tier range (stub)."
-	},
-	"ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e": {
-		"title": "Radio Antenna",
-		"upperCaseTitle": "RADIO ANTENNA",
-		"keywords": [ "radio", "antenna", "station", "rfs" ],
-		"description": "Station piece 9 (long pole). Hideout 15 Farmers (schematic). Wire to Hack Beacon core with the battery brick for mid-tier cap/range (stub)."
-	},
-	"bb1c098e-094a-4b6c-7d08-ea293a4b5c6d": {
-		"title": "Radio Lock",
-		"upperCaseTitle": "RADIO LOCK",
-		"keywords": [ "radio", "lock", "ampfilter", "station", "rfs" ],
-		"description": "Station lock tier 10. Miner shop schematic 8000 warehouse tokens. Persist conversion when leaving range (stub)."
-	}
+﻿{
+    "fe8bfeba-850b-4827-9785-10e2468c9c23":  {
+                                                 "title":  "Corn",
+                                                 "upperCaseTitle":  "CORN",
+                                                 "keywords":  [
+                                                                  "corn",
+                                                                  "food",
+                                                                  "woc",
+                                                                  "farm"
+                                                              ],
+                                                 "description":  "Wocs love to eat corn. Stacks to 20. Force-place puts the whole stack; Wocs eat the full stack (5 corn = 1 milk)."
+                                             },
+    "9a1528a6-acd2-44db-8050-b2f493362191":  {
+                                                 "title":  "RFS Map Lock",
+                                                 "upperCaseTitle":  "RFS MAP LOCK",
+                                                 "keywords":  [
+                                                                  "rfs",
+                                                                  "map"
+                                                              ],
+                                                 "description":  "Internal map camera lock. Not used â€” open the atlas with the GPS tool."
+                                             },
+    "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76":  {
+                                                 "title":  "GPS",
+                                                 "upperCaseTitle":  "GPS",
+                                                 "keywords":  [
+                                                                  "gps",
+                                                                  "map",
+                                                                  "minimap",
+                                                                  "navigation",
+                                                                  "waypoint",
+                                                                  "nutt",
+                                                                  "tool"
+                                                              ],
+                                                 "description":  "Handheld map tool. Hideout schematic 1 Farmer. Craft: Metal + Circuit + Component + Glass. LMB atlas, RMB MiniMap zoom, Q move/hide MiniMap, R MiniMap size."
+                                             },
+    "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7":  {
+                                                 "title":  "Hack Beacon",
+                                                 "upperCaseTitle":  "HACK BEACON",
+                                                 "keywords":  [
+                                                                  "logic",
+                                                                  "hack",
+                                                                  "beacon",
+                                                                  "station",
+                                                                  "rfs",
+                                                                  "raid"
+                                                              ],
+                                                 "description":  "Hacks up to 4 nearby bots within 30 blocks. Short-term control (8 seconds). Only activates during raids.\n\nWire upgrades to the beacon:\nâ€¢ Radio Battery Brick â€” +10 range, +1 bot (max 1)\nâ€¢ Radio Antenna â€” +10 range each (max 2)\nâ€¢ Radio Lock â€” +3 bots, +3 seconds hold (max 1)\n\nWire Battery or Recharge (electricity); optional logic switch. Hideout schematic 10 Farmers."
+                                             },
+    "e7b1f4d3-0a52-4dc4-cf61-52c4d1e9e81a":  {
+                                                 "title":  "Area Loader",
+                                                 "upperCaseTitle":  "AREA LOADER",
+                                                 "keywords":  [
+                                                                  "radio",
+                                                                  "stream",
+                                                                  "cell",
+                                                                  "load",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Keeps one 64 m cell streamed while a logic parent is ON. Wire a switch or button (logic). No battery spend. Units in the cell may still exist."
+                                             },
+    "f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b":  {
+                                                 "title":  "Digital Sign",
+                                                 "upperCaseTitle":  "DIGITAL SIGN",
+                                                 "keywords":  [
+                                                                  "sign",
+                                                                  "text",
+                                                                  "logic",
+                                                                  "display",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Shows custom text. E to edit. Optional logic switch: off hides the text. No battery."
+                                             },
+    "09d3b6f5-2c74-4fe6-a183-74e6f3010a3c":  {
+                                                 "title":  "Digital Sign Large",
+                                                 "upperCaseTitle":  "DIGITAL SIGN LARGE",
+                                                 "keywords":  [
+                                                                  "sign",
+                                                                  "text",
+                                                                  "logic",
+                                                                  "display",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Larger digital sign. E to edit. Optional logic switch hides text when off. No battery."
+                                             },
+    "1ae4c706-3d85-40f7-b294-85f704121b4d":  {
+                                                 "title":  "Digital Sign Extra Large",
+                                                 "upperCaseTitle":  "DIGITAL SIGN EXTRA LARGE",
+                                                 "keywords":  [
+                                                                  "sign",
+                                                                  "text",
+                                                                  "logic",
+                                                                  "display",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Extra-large digital sign. E to edit. Optional logic switch hides text when off. No battery."
+                                             },
+    "3c06e928-5f97-42a9-d4b6-a7f926343d7f":  {
+                                                 "title":  "Inventory LCD",
+                                                 "upperCaseTitle":  "INVENTORY LCD",
+                                                 "keywords":  [
+                                                                  "lcd",
+                                                                  "sign",
+                                                                  "chest",
+                                                                  "inventory",
+                                                                  "display",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Shows one chest stack (name + count). Weld next to a chest or connect LCD â†’ chest. Optional logic hides the face. No battery."
+                                             },
+    "4d17fa39-60a8-43ba-e5c7-b80a37454e80":  {
+                                                 "title":  "Inventory LCD Large",
+                                                 "upperCaseTitle":  "INVENTORY LCD LARGE",
+                                                 "keywords":  [
+                                                                  "lcd",
+                                                                  "sign",
+                                                                  "chest",
+                                                                  "inventory",
+                                                                  "display",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Chest inventory list (item + count). Weld or connect LCD â†’ chest. Scrolls extra stacks. Optional logic hides the face."
+                                             },
+    "5e280b4a-71b9-44cb-f6d8-c91b48565f91":  {
+                                                 "title":  "Inventory LCD Extra Large",
+                                                 "upperCaseTitle":  "INVENTORY LCD EXTRA LARGE",
+                                                 "keywords":  [
+                                                                  "lcd",
+                                                                  "sign",
+                                                                  "chest",
+                                                                  "inventory",
+                                                                  "display",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Wide chest inventory list. Weld or connect LCD â†’ chest. Scrolls extra stacks. Optional logic hides the face."
+                                             },
+    "6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7":  {
+                                                 "title":  "Chemical Regeneration Station",
+                                                 "upperCaseTitle":  "CHEMICAL REGENERATION STATION",
+                                                 "keywords":  [
+                                                                  "heal",
+                                                                  "pod",
+                                                                  "sleep",
+                                                                  "medical",
+                                                                  "chemical",
+                                                                  "cryo",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Stand inside (E) to heal. Needs Chemicals plus Battery or Recharge power on electricity. Optional logic. Fill costs Chemicals; heal drips more Chemicals + batteries. Hideout schematic 10 Farmers."
+                                             },
+    "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8":  {
+                                                 "title":  "Solar Panel",
+                                                 "upperCaseTitle":  "SOLAR PANEL",
+                                                 "keywords":  [
+                                                                  "solar",
+                                                                  "power",
+                                                                  "recharge",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Electricity out only to a Rechargeable Battery Box (not vanilla Battery Container). Fastest in clear sun; slower cloudy/night/rain. Optional logic switch. Hideout schematic 5 Farmers."
+                                             },
+    "8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e":  {
+                                                 "title":  "Rechargeable Battery",
+                                                 "upperCaseTitle":  "RECHARGEABLE BATTERY",
+                                                 "keywords":  [
+                                                                  "battery",
+                                                                  "recharge",
+                                                                  "solar",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Cell for the Rechargeable Battery Box (5 slots). Open the box and select a slot for the charge meter. 1 full cell = 20 vanilla batteries. Hideout schematic 1 Farmer."
+                                             },
+    "9c624f8e-b507-414a-cd93-f4081b5c7eaf":  {
+                                                 "title":  "Rechargeable Battery Box",
+                                                 "upperCaseTitle":  "RECHARGEABLE BATTERY BOX",
+                                                 "keywords":  [
+                                                                  "battery",
+                                                                  "container",
+                                                                  "recharge",
+                                                                  "solar",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Holds 5 rechargeable cells (no stacking). Wire Solar in and devices out with electricity cables (not welds). Powers beacons and heal stations. Hideout schematic 2 Farmers."
+                                             },
+    "c60b9627-fc2b-4319-97c5-05921cb976c6":  {
+                                                 "title":  "Paint Tool",
+                                                 "upperCaseTitle":  "PAINT TOOL",
+                                                 "keywords":  [
+                                                                  "paint",
+                                                                  "vanilla",
+                                                                  "stock",
+                                                                  "tool",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Vanilla paint gun restored to stock Scrap Mechanic behavior."
+                                             },
+    "e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c":  {
+                                                 "title":  "Handheld Radio",
+                                                 "upperCaseTitle":  "HANDHELD RADIO",
+                                                 "keywords":  [
+                                                                  "radio",
+                                                                  "hack",
+                                                                  "handheld",
+                                                                  "tool",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "Handheld hack tool (not the station beacon). Hideout schematic 5 Farmers. Equip, E on a bot within 8 m for a chance to hack, then Follow or Defend. Out of range too long â†’ bot reverts."
+                                             },
+    "d9e3b1a0-2b6c-4d8e-9f1a-0c4d5e6f7a8b":  {
+                                                 "title":  "Radio Battery Brick",
+                                                 "upperCaseTitle":  "RADIO BATTERY BRICK",
+                                                 "keywords":  [
+                                                                  "radio",
+                                                                  "battery",
+                                                                  "station",
+                                                                  "rfs",
+                                                                  "hack"
+                                                              ],
+                                                 "description":  "Hack Beacon upgrade. Wire to the beacon (logic or electricity). +10 range and +1 bot capacity. Only 1 Brick per beacon. Hideout schematic 15 Farmers."
+                                             },
+    "ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e":  {
+                                                 "title":  "Radio Antenna",
+                                                 "upperCaseTitle":  "RADIO ANTENNA",
+                                                 "keywords":  [
+                                                                  "radio",
+                                                                  "antenna",
+                                                                  "station",
+                                                                  "rfs",
+                                                                  "hack"
+                                                              ],
+                                                 "description":  "Hack Beacon upgrade. Wire to the beacon (logic or electricity). +10 range per Antenna. Up to 2 Antennas per beacon. Hideout schematic 15 Farmers."
+                                             },
+    "bb1c098e-094a-4b6c-7d08-ea293a4b5c6d":  {
+                                                 "title":  "Radio Lock",
+                                                 "upperCaseTitle":  "RADIO LOCK",
+                                                 "keywords":  [
+                                                                  "radio",
+                                                                  "lock",
+                                                                  "ampfilter",
+                                                                  "station",
+                                                                  "rfs",
+                                                                  "hack"
+                                                              ],
+                                                 "description":  "Hack Beacon upgrade. Wire to the beacon (logic or electricity). +3 bot capacity and +3 seconds hold time. Only 1 Lock per beacon. Miner shop schematic."
+                                             }
 }

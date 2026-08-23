@@ -876,7 +876,6 @@ function MinimapHud.cl_buildProbeGrid( self )
 		end
 	end
 	self.cl.probeGrid = grid
-	sm.gui.chatMessage("[minimap] STATIC PROBE: rows top->bottom = S0-early / S0-mid / S0-late / S1-early. Which ROW BANDS show tiles?")
 end
 
 function MinimapHud.cl_probeUpdate( self, dt, char )

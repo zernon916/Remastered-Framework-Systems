@@ -10,6 +10,10 @@
 
 RfsHackOrdersList = RfsHackOrdersList or {}
 
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersDrop.lua" )
+end )
+
 local function ownerFilterFor( player )
 	local allowHost = false
 	pcall( function()
@@ -282,6 +286,15 @@ local function collectFromPublic( beaconKey, player, opts )
 	local matchedRange = {}
 	local matchedAny = {}
 	eachUnit( opts.world or unitWorld( player ), function( unit )
+		if type( RfsHackOrdersDrop ) == "table" and type( RfsHackOrdersDrop.unitLooksDead ) == "function" then
+			local dead = false
+			pcall( function()
+				dead = RfsHackOrdersDrop.unitLooksDead( unit ) and true or false
+			end )
+			if dead then
+				return
+			end
+		end
 		local blob = publicBlob( unit )
 		if not blob then
 			return
@@ -404,8 +417,12 @@ function RfsHackOrdersList.collect( beaconKey, player, opts )
 			end
 		end
 	end
+	if type( rows ) ~= "table" then
+		rows = {}
+	end
 	if type( rows ) ~= "table" or #rows == 0 then
-		return publicRows
+		rows = publicRows
+		publicRows = {}
 	end
 	-- Merge publicData + Game/beacon allies[] + in-range. Do not drop public-only keys.
 	local byKey = {}
@@ -476,6 +493,20 @@ function RfsHackOrdersList.collect( beaconKey, player, opts )
 	table.sort( merged, function( a, b )
 		return tostring( a.name or "" ) < tostring( b.name or "" )
 	end )
+	-- Dead / destroyed units must not stay as ghost "Bot" rows.
+	if type( RfsHackOrdersDrop ) == "table" and type( RfsHackOrdersDrop.rowIsDead ) == "function" then
+		local liveRows = {}
+		for _, row in ipairs( merged ) do
+			local dead = false
+			pcall( function()
+				dead = row and row.key and RfsHackOrdersDrop.rowIsDead( row.key )
+			end )
+			if not dead then
+				liveRows[#liveRows + 1] = row
+			end
+		end
+		merged = liveRows
+	end
 	return merged
 end
 

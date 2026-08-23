@@ -1,0 +1,43 @@
+---
+description: Parked ideas — do not implement unless the user explicitly unparks them.
+alwaysApply: true
+---
+
+# Parked (do not implement)
+
+These are back-burner ideas. Do not start them as part of current hack/GPS/beacon/sleep-pose work. Do not bump pack stamp, copy Roaming/Steam, or edit game Lua for parked items.
+
+## Healing pod (Sketchfab incubator)
+
+- **Idea:** Sci-fi incubator → **healing pod** in Remastered Framework Survival
+- **URL:** https://sketchfab.com/3d-models/sci-fi-incubator-63f6bee67df14292b8c9a952b568cc96
+- **Sketchfab:** “Sci fi incubator” by A9908244
+- **License on page (2026-08-17):** CC Attribution — re-check before any implement
+- **Status:** implemented as Deep Sleep Pod — do not re-implement
+
+**Before any implement:** re-check Sketchfab license (download / commercial / game use). Do not steal the mesh if the license forbids it. CC Attribution typically requires credit; confirm terms still allow game use at implement time.
+
+## Multiplayer vote-to-sleep (Deep Sleep Pod)
+
+- **Idea:** If more than one player is in the world, sleeping on the Deep Sleep Pod should require a **vote** (not instant skip for everyone)
+- Solo can still skip night to 5 AM (current work on another agent — do not implement vote now)
+- **Status:** parked — not in current hack/GPS/beacon/sleep-pose work
+
+## Core Paint Tool (B&P)
+
+- **Path:** `C:\Users\benko\Desktop\mods\CorePaintTool`
+- **localId:** `3f8a1c2e-9b4d-4e71-a6c0-5d2f8e1b0a94`
+- **Tool UUID:** `a8f4c2d1-1b39-4bc1-9b50-0f2a6d7e3c91`
+- **Status:** parked — stripped from Custom Game for Steam ship; add later as world B&P
+- Do not re-merge paint scripts into RFS CG unless the user asks
+
+## Aim Core (B&P)
+
+- **Path:** `C:\Users\benko\Desktop\mods\AimCore`
+- **localId:** `7e4f2a91-6c3b-4d8e-a1f0-9b5c8d2e4a70`
+- **Status:** parked — not in Custom Game
+
+## Control / Infection Beacons
+
+- **Status:** removed from Custom Game for Steam ship (Hack Beacon only, cap 2)
+- Do not re-add Control/Infection shapes/trades unless the user asks

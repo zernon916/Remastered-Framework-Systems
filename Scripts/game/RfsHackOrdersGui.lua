@@ -37,7 +37,9 @@ end
 -- Close/Master/Color. Do NOT open via beacon-sandbox RfsBeaconOrdersGui
 -- (that made Close dead). Server bounce is fallback only.
 function RfsHackOrdersGui.cl_openOrders( self )
-	local key = cl_beaconKey( self )
+	return
+end
+if false then
 	local pd = ( self.cl and self.cl.pd ) or {}
 	if not key then
 		return

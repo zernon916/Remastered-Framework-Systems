@@ -11,16 +11,12 @@ local function dofileContent( path )
 end
 
 function RfsHackUnitSandbox.ensureModules()
-	dofileContent( "$CONTENT_DATA/Scripts/game/RfsHackTether.lua" )
-	dofileContent( "$CONTENT_DATA/Scripts/game/RfsHackApply.lua" )
-	dofileContent( "$CONTENT_DATA/Scripts/game/RfsBotHijack.lua" )
+	-- 0851-r: live hack parked — do not re-dofile hijack into the unit sandbox.
+	return
 end
 
 function RfsHackUnitSandbox.ensureDamage()
-	RfsHackUnitSandbox.ensureModules()
-	if type( RfsHackTether ) == "table" and type( RfsHackTether.ensureHooks ) == "function" then
-		pcall( RfsHackTether.ensureHooks )
-	end
+	return
 end
 
-print( "[RFS] RfsHackUnitSandbox loaded (unit-env damage bootstrap)" )
+print( "[RFS] RfsHackUnitSandbox loaded (unit-env damage bootstrap, parked)" )

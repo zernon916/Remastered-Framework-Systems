@@ -54,7 +54,7 @@
 				<Property key="NeedMouse" value="true"/>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.06" name="MainHint">
-					<Property key="Caption" value="Host toggles — same as chat commands. HUD clock/compass stays on without this menu."/>
+					<Property key="Caption" value="Host toggles — same as chat commands."/>
 					<Property key="FontName" value="SM_TextLabel"/>
 					<Property key="TextAlign" value="Left VCenter"/>
 				</Widget>
@@ -76,7 +76,7 @@
 				</Widget>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.60 0.96 0.30" name="MainFooter">
-					<Property key="Caption" value="Also: /fly /god /limited /unlimited /questlist"/>
+					<Property key="Caption" value="Also: /fly /god /limited /unlimited"/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>
 					<Property key="WordWrap" value="true"/>

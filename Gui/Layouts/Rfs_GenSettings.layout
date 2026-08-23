@@ -27,30 +27,51 @@
 				<Property key="FontName" value="SM_TabSmall"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="Button" skin="InventoryTab" position_real="0.20 0.060 0.18 0.045" name="TabFeatures">
+			<Widget type="Button" skin="InventoryTab" position_real="0.20 0.060 0.18 0.045" name="TabGameMode">
+				<Property key="Caption" value="GAMEMODE"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="InventoryTab" position_real="0.39 0.060 0.18 0.045" name="TabFeatures">
 				<Property key="Caption" value="FEATURES"/>
 				<Property key="FontName" value="SM_TabSmall"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="Button" skin="InventoryTab" position_real="0.39 0.060 0.20 0.045" name="TabStreamer">
+			<Widget type="Button" skin="InventoryTab" position_real="0.58 0.060 0.18 0.045" name="TabStreamer">
 				<Property key="Caption" value="STREAMERS"/>
 				<Property key="FontName" value="SM_TabSmall"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="Button" skin="InventoryTab" position_real="0.60 0.060 0.18 0.045" name="TabDiscord">
+			<Widget type="Button" skin="InventoryTab" position_real="0.77 0.060 0.17 0.045" name="TabDiscord">
 				<Property key="Caption" value="DISCORD"/>
 				<Property key="FontName" value="SM_TabSmall"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.115 0.92 0.035" name="Status">
+			<Widget type="Button" skin="InventoryTab" position_real="0.04 0.115 0.16 0.045" name="TabQuest">
+				<Property key="Caption" value="QUESTS"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="InventoryTab" position_real="0.21 0.115 0.18 0.045" name="TabInvSize">
+				<Property key="Caption" value="INVENTORY"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+			<Widget type="Button" skin="InventoryTab" position_real="0.40 0.115 0.16 0.045" name="TabFarming">
+				<Property key="Caption" value="FARMING"/>
+				<Property key="FontName" value="SM_TabSmall"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.165 0.92 0.035" name="Status">
 				<Property key="Caption" value="Host only — world flags (sm.storage). Framework hooks always stay on."/>
 				<Property key="FontName" value="SM_TextLabel"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
 
 			<!-- ===== MAIN TAB — cheats + modded blocks ===== -->
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="MainTab">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="MainTab">
 				<Property key="NeedMouse" value="true"/>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecCheats">
@@ -88,8 +109,40 @@
 				</Widget>
 			</Widget>
 
+			<!-- ===== GAMEMODE TAB ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="GameModeTab">
+				<Property key="NeedMouse" value="true"/>
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecGameMode">
+					<Property key="Caption" value="GAME MODE"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.09 0.88 0.08" name="BtnGameMode">
+					<Property key="Caption" value="Game Mode: Normal"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.19 0.88 0.08" name="BtnGameHardcore">
+					<Property key="Caption" value="Hardcore: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.04 0.30 0.92 0.10" name="TextGameModeStatus">
+					<Property key="Caption" value="Pick Easy / Normal / Hard, then the 5-minute lock begins and the HUD countdown appears under the minimap."/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.04 0.45 0.92 0.22" name="GameModeHint">
+					<Property key="Caption" value="Selected mode details appear here. Hardcore stays separate."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+			</Widget>
+
 			<!-- ===== FEATURES TAB — robots + quests ===== -->
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="FeaturesTab">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="FeaturesTab">
 				<Property key="NeedMouse" value="true"/>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecFeatures">
@@ -122,7 +175,7 @@
 			</Widget>
 
 			<!-- ===== STREAMERS TAB ===== -->
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="StreamerTab">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="StreamerTab">
 				<Property key="NeedMouse" value="true"/>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecStreamer">
@@ -171,7 +224,7 @@
 			</Widget>
 
 			<!-- ===== DISCORD TAB ===== -->
-			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.160 0.92 0.80" name="DiscordTab">
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="DiscordTab">
 				<Property key="NeedMouse" value="true"/>
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.05" name="SecDiscord">
@@ -206,6 +259,269 @@
 
 				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.46 0.96 0.48" name="DiscordFooter">
 					<Property key="Caption" value="Chat relay = Discord→game (needs bot Message Content Intent). Game→Discord uses /say or /d when Streamer + relay are ON. Start/Stop write $USER_DATA/rfs_discord_bridge/*_request.json only — discord-bridge is NOT in the Steam pack; clone from GitHub and run npm run watch once at login. Framework hooks stay on."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+			</Widget>
+
+			<!-- ===== QUESTS TAB ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="QuestTab">
+				<Property key="NeedMouse" value="true"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.00 0.70 0.06" name="QuestHint">
+					<Property key="Caption" value="Quests (active / available / completed)"/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.00 0.24 0.06" name="QuestRefresh">
+					<Property key="Caption" value="REFRESH"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.08 0.46 0.07" name="QuestRow0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.50 0.08 0.15 0.07" name="QuestInfo0">
+					<Property key="Caption" value="INFO"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.66 0.08 0.15 0.07" name="QuestStart0">
+					<Property key="Caption" value="START"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.82 0.08 0.16 0.07" name="QuestDone0">
+					<Property key="Caption" value="DONE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.16 0.46 0.07" name="QuestRow1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.50 0.16 0.15 0.07" name="QuestInfo1">
+					<Property key="Caption" value="INFO"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.66 0.16 0.15 0.07" name="QuestStart1">
+					<Property key="Caption" value="START"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.82 0.16 0.16 0.07" name="QuestDone1">
+					<Property key="Caption" value="DONE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.24 0.46 0.07" name="QuestRow2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.50 0.24 0.15 0.07" name="QuestInfo2">
+					<Property key="Caption" value="INFO"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.66 0.24 0.15 0.07" name="QuestStart2">
+					<Property key="Caption" value="START"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.82 0.24 0.16 0.07" name="QuestDone2">
+					<Property key="Caption" value="DONE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.32 0.46 0.07" name="QuestRow3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.50 0.32 0.15 0.07" name="QuestInfo3">
+					<Property key="Caption" value="INFO"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.66 0.32 0.15 0.07" name="QuestStart3">
+					<Property key="Caption" value="START"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.82 0.32 0.16 0.07" name="QuestDone3">
+					<Property key="Caption" value="DONE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.40 0.46 0.07" name="QuestRow4">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.50 0.40 0.15 0.07" name="QuestInfo4">
+					<Property key="Caption" value="INFO"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.66 0.40 0.15 0.07" name="QuestStart4">
+					<Property key="Caption" value="START"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.82 0.40 0.16 0.07" name="QuestDone4">
+					<Property key="Caption" value="DONE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.48 0.46 0.07" name="QuestRow5">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.50 0.48 0.15 0.07" name="QuestInfo5">
+					<Property key="Caption" value="INFO"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.66 0.48 0.15 0.07" name="QuestStart5">
+					<Property key="Caption" value="START"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.82 0.48 0.16 0.07" name="QuestDone5">
+					<Property key="Caption" value="DONE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.02 0.58 0.14 0.07" name="QuestPrev">
+					<Property key="Caption" value="&lt;"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.18 0.58 0.64 0.07" name="QuestPage">
+					<Property key="Caption" value="Page 1"/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.84 0.58 0.14 0.07" name="QuestNext">
+					<Property key="Caption" value="&gt;"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="EditBox" skin="EditBox" position_real="0.02 0.68 0.96 0.30" name="QuestDetail">
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="WordWrap" value="true"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="ReadOnly" value="true"/>
+					<Property key="Static" value="true"/>
+					<Property key="Caption" value="Select a quest row or INFO for details."/>
+				</Widget>
+			</Widget>
+
+			<!-- ===== INVENTORY TAB ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="InvSizeTab">
+				<Property key="NeedMouse" value="true"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.02 0.96 0.08" name="InvSizeHint">
+					<Property key="Caption" value="Personal inventory size (10 slots per row). Shrinking may lose items in removed slots."/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.14 0.80 0.10" name="InvSize0">
+					<Property key="Caption" value="Vanilla"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.26 0.80 0.10" name="InvSize1">
+					<Property key="Caption" value="Vanilla + 1 row"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.38 0.80 0.10" name="InvSize2">
+					<Property key="Caption" value="Vanilla + 3 rows"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.50 0.80 0.10" name="InvSize3">
+					<Property key="Caption" value="Vanilla + 4 rows"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.62 0.80 0.10" name="InvSize4">
+					<Property key="Caption" value="Vanilla + 5 rows"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.78 0.96 0.18" name="InvSizeStatus">
+					<Property key="Caption" value="Current: Vanilla (40 slots)"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+			</Widget>
+
+			<!-- ===== FARMING TAB ===== -->
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.220 0.92 0.72" name="FarmingTab">
+				<Property key="NeedMouse" value="true"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.00 0.96 0.08" name="FarmingHint">
+					<Property key="Caption" value="Host world farming. Cheat options need cheats ON. Growth Time overlay is in /menu."/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.12 0.80 0.10" name="BtnInstantFarm">
+					<Property key="Caption" value="Instant Farm"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.22 0.80 0.08" name="BtnAlwaysWatered">
+					<Property key="Caption" value="Always watered: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.32 0.80 0.08" name="BtnDirtOnBlocks">
+					<Property key="Caption" value="Dirt on blocks: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.42 0.80 0.08" name="BtnFastPlace">
+					<Property key="Caption" value="Fast place: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.52 0.80 0.08" name="BtnFastPickup">
+					<Property key="Caption" value="Fast pickup: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.10 0.40 0.80 0.01" name="BtnGrowthOverlay">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="Visible" value="false"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.64 0.96 0.34" name="FarmingStatus">
+					<Property key="Caption" value=""/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>
 					<Property key="WordWrap" value="true"/>

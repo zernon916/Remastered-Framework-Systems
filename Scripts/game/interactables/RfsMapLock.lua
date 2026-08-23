@@ -127,7 +127,6 @@ function RfsMapLock.cl_n_begin( self, params )
 	g_rfs_mapLockReady = true
 
 	self:cl_applyCamera()
-	sm.gui.chatMessage( "[RFS] Map open - WASD pan, scroll zoom, RMB recenter, E/Esc or /mapclose to close" )
 	print( "[RFS] /map camera active (lock ready)" )
 end
 

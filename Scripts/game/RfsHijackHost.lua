@@ -9,10 +9,16 @@ pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsHackApply.lua" )
 end )
 pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackAllyThrottle.lua" )
+end )
+pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsChemStation.lua" )
 end )
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersIdentity.lua" )
+end )
+pcall( function()
+	dofile( "$CONTENT_DATA/Scripts/game/RfsHackOrdersDrop.lua" )
 end )
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsHackReload.lua" )
@@ -31,18 +37,8 @@ RfsHijackHost = class( nil )
 
 function RfsHijackHost.server_onCreate( self )
 	_G.g_rfsHijackHost = self
-	pcall( function()
-		if type( RfsHackReload ) == "table" and RfsHackReload.resetLoadWindow then
-			RfsHackReload.resetLoadWindow( self.world )
-		end
-	end )
-	pcall( function()
-		if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
-			RfsHackTether.ensureHooks()
-		end
-		RfsBotHijack.ensureHooks()
-	end )
-	print( "[RFS] Hijack host created (world script)" )
+	-- 0851-r: live hack parked — no ensureHooks / unit wrap.
+	print( "[RFS] Hijack host created (parked, no tick)" )
 end
 
 function RfsHijackHost.server_onDestroy( self )
@@ -52,123 +48,24 @@ function RfsHijackHost.server_onDestroy( self )
 end
 
 function RfsHijackHost.server_onFixedUpdate( self, dt )
-	local tick = 0
-	pcall( function()
-		tick = sm.game.getCurrentTick()
-	end )
-	-- After load, unit classes re-dofile vanilla melee. Re-wrap every 10 ticks (not every tick).
-	if ( tick % 10 ) == 0 then
-		pcall( function()
-			if type( RfsHackTether ) == "table" and RfsHackTether.ensureHooks then
-				RfsHackTether.ensureHooks()
-			end
-			RfsBotHijack.ensureHooks()
-		end )
-	end
-	-- Beacon countdown env cannot register into this world's allies[]. Drain
-	-- apply-on-zero from publicData (engine-shared) and sm.storage (throttled scan).
-	if type( RfsHackApply ) == "table" then
-		if ( tick % 2 ) == 0 and type( RfsHackApply.consumePublicFlags ) == "function" then
-			pcall( RfsHackApply.consumePublicFlags, self.world )
-		end
-		if type( RfsHackApply.drainStorageQueue ) == "function" then
-			pcall( RfsHackApply.drainStorageQueue, self.world )
-		end
-	end
-	if ( tick % 10 ) == 0 and type( RfsBotHijack ) == "table" then
-		pcall( function()
-			RfsBotHijack.tick( self.world )
-		end )
-	end
-	-- Collect/Farm/Oil must tick here: Game.lua cannot unit:addContainer / getAllBodies.
-	pcall( function()
-		if type( RfsBotOrders ) == "table" and RfsBotOrders.sv_think then
-			RfsBotOrders.sv_think( dt, self )
-		end
-	end )
-	pcall( function()
-		if type( RfsHackReload ) == "table" and RfsHackReload.tick then
-			RfsHackReload.tick( self.world )
-		end
-	end )
+	-- 0851-r: live hack parked — no convert drain, unit scan, orders think, or hook rewrap.
+	return
 end
 
 function RfsHijackHost.sv_e_rfsApplyHack( self, params )
-	params = params or {}
-	if type( RfsHackApply ) == "table" and type( RfsHackApply.payloadHasDevice ) == "function"
-		and not RfsHackApply.payloadHasDevice( params ) then
-		return
-	end
-	local unit = params.unit
-	if ( not unit or not sm.exists( unit ) ) and params.unitKey and type( RfsBotHijack ) == "table" then
-		local okU, u = pcall( RfsBotHijack.unitByKey, params.unitKey, self.world )
-		if okU then
-			unit = u
-		end
-	end
-	params.playerAlly = true
-	if unit and type( RfsHackApply ) == "table" then
-		if type( RfsHackApply.applyInThisEnv ) == "function" then
-			pcall( RfsHackApply.applyInThisEnv, unit, params.ownerId or params.owner or 0, params )
-		end
-		-- Re-fire from this world env so the unit class handler (Select's sandbox) runs.
-		pcall( function()
-			sm.event.sendToUnit( unit, "sv_e_rfsApplyHack", params )
-		end )
-		if type( RfsHackOrdersIdentity ) == "table" and type( RfsHackOrdersIdentity.pushName ) == "function" then
-			pcall( RfsHackOrdersIdentity.pushName, unit )
-		end
-	end
+	return
 end
 
 function RfsHijackHost.sv_e_hijack( self, params )
-	params = params or {}
-	local player = params.player
-	local range = params.range or 16
-	if type( RfsBotHijack ) ~= "table" then
-		sm.gui.chatMessage( "[RFS] Hijack failed: RfsBotHijack not loaded" )
-		return
-	end
-	RfsBotHijack.ensureHooks()
-	if type( RfsFeatures ) == "table" and type( RfsFeatures.hackableRobotsEnabled ) == "function" then
-		local ok, on = pcall( RfsFeatures.hackableRobotsEnabled )
-		if ok and not on then
-			sm.gui.chatMessage( "[RFS] Hijack failed: hackable robots disabled by host" )
-			return
-		end
-	end
-	local n, info = RfsBotHijack.convertNearest( player, range, self.world )
-	if n and n > 0 then
-		sm.gui.chatMessage( "[RFS] Infected " .. tostring( info ) .. " (allies=" .. tostring( RfsBotHijack.count( self.world ) ) .. ")" )
-	else
-		sm.gui.chatMessage( "[RFS] Hijack failed: " .. tostring( info ) .. " (range " .. tostring( range ) .. ")" )
-	end
+	return
 end
 
 function RfsHijackHost.sv_e_hijackList( self, params )
-	if type( RfsBotHijack ) ~= "table" then
-		sm.gui.chatMessage( "[RFS] Ally robots: 0 (host not ready)" )
-		return
-	end
-	RfsBotHijack.ensureHooks()
-	local n, tethered, infected = RfsBotHijack.count( self.world )
-	sm.gui.chatMessage( "[RFS] Ally robots: " .. tostring( n or 0 ) .. " (tethered " .. tostring( tethered or 0 ) .. ", infected " .. tostring( infected or 0 ) .. ")" )
+	return
 end
 
 function RfsHijackHost.sv_e_rfsOrdersIdentity( self, params )
-	params = params or {}
-	params.world = self.world
-	local kind = tostring( params.kind or "color" )
-	if type( RfsHackOrdersIdentity ) ~= "table" then
-		return
-	end
-	if kind == "rename" then
-		pcall( RfsHackOrdersIdentity.applyRename, params )
-	elseif kind == "order" then
-		pcall( RfsHackOrdersIdentity.applyOrder, params )
-	else
-		pcall( RfsHackOrdersIdentity.applyColor, params )
-	end
+	return
 end
 
 function RfsHijackHost.sv_e_rfsKillBots( self, params )
@@ -288,18 +185,7 @@ function RfsHijackHost.sv_e_rfsKillBots( self, params )
 end
 
 function RfsHijackHost.sv_e_unhijack( self, params )
-	params = params or {}
-	if type( RfsBotHijack ) ~= "table" then
-		sm.gui.chatMessage( "[RFS] Unhijack failed: RfsBotHijack not loaded" )
-		return
-	end
-	RfsBotHijack.ensureHooks()
-	local n, info = RfsBotHijack.unhijackNearest( params.player, params.range or 16, self.world, params.allowAny == true )
-	if n and n > 0 then
-		sm.gui.chatMessage( "[RFS] Released " .. tostring( info ) .. " (voluntary — still hackable)" )
-	else
-		sm.gui.chatMessage( "[RFS] Unhijack failed: " .. tostring( info ) )
-	end
+	return
 end
 
 function RfsHijackHost.sv_e_rfsDeepSleepWorldSkip( self, params )

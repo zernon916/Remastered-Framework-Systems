@@ -1,79 +1,124 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MyGUI type="Layout" version="3.2.0">
-	<!-- Recipe Framework Survival /menu — player panel (Recipe Radar style skins). Author: DemonsDen126 -->
+	<!-- Recipe Framework Survival /menu - player panel (Recipe Radar style skins). Author: DemonsDen126 -->
 	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
 		<Property key="NeedKey" value="false"/>
 		<Property key="NeedMouse" value="true"/>
 
-		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.28 0.04 0.44 0.92" name="MainPanel">
+		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.28 0.06 0.44 0.88" name="MainPanel">
 			<Property key="NeedKey" value="false"/>
 			<Property key="NeedMouse" value="true"/>
 			<Property key="InheritsAlpha" value="false"/>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.015 0.68 0.05" name="Title">
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.02 0.68 0.06" name="Title">
 				<Property key="Caption" value="RFS MENU"/>
 				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
 				<Property key="TextAlign" value="Left VCenter"/>
 			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.015 0.22 0.05" name="CloseButton">
+			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.02 0.22 0.06" name="CloseButton">
 				<Property key="Caption" value="CLOSE"/>
 				<Property key="FontName" value="SM_Button"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.07 0.92 0.04" name="Status">
-				<Property key="Caption" value="Per-player options — available to everyone"/>
-				<Property key="FontName" value="SM_TextLabel"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.115 0.84 0.055" name="BtnMap">
-				<Property key="Caption" value="Map: craft GPS"/>
-				<Property key="FontName" value="SM_Button"/>
+			<Widget type="Button" skin="InventoryTab" position_real="0.04 0.10 0.18 0.055" name="TabMain">
+				<Property key="Caption" value="MAIN"/>
+				<Property key="FontName" value="SM_TabSmall"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.175 0.84 0.055" name="BtnGrowthOverlay">
-				<Property key="Caption" value="Growth Time: OFF"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.235 0.84 0.055" name="BtnBlockOverlay">
-				<Property key="Caption" value="Block overlay: OFF"/>
-				<Property key="FontName" value="SM_Button"/>
+			<Widget type="Button" skin="InventoryTab" position_real="0.23 0.10 0.18 0.055" name="TabCheats">
+				<Property key="Caption" value="CHEATS"/>
+				<Property key="FontName" value="SM_TabSmall"/>
 				<Property key="TextAlign" value="Center"/>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.30 0.92 0.04" name="GuiSection">
-				<Property key="Caption" value="GUI"/>
-				<Property key="FontName" value="SM_Header"/>
-				<Property key="TextAlign" value="Left VCenter"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.345 0.84 0.055" name="BtnNames">
-				<Property key="Caption" value="Names: ON"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.405 0.84 0.055" name="BtnBigRed">
-				<Property key="Caption" value="Big Red: OFF"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.465 0.84 0.055" name="BtnEnemyHp">
-				<Property key="Caption" value="Enemy bar: Red"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
-			</Widget>
-			<Widget type="Button" skin="PrimaryButton" position_real="0.08 0.525 0.84 0.055" name="BtnNeutralHp">
-				<Property key="Caption" value="Neutral bar: Green"/>
-				<Property key="FontName" value="SM_Button"/>
-				<Property key="TextAlign" value="Center"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.165 0.92 0.76" name="MainTab">
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="true"/>
+				<Property key="InheritsAlpha" value="false"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.00 1.00 0.05" name="MainStatus">
+					<Property key="Caption" value="Per-player options -- available to everyone"/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.08 0.92 0.07" name="BtnMap">
+					<Property key="Caption" value="Map"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.16 0.92 0.07" name="BtnGrowthOverlay">
+					<Property key="Caption" value="Growth Time: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.27 1.00 0.05" name="GuiSection">
+					<Property key="Caption" value="GUI"/>
+					<Property key="FontName" value="SM_Header"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.33 0.92 0.07" name="BtnNames">
+					<Property key="Caption" value="Names: ON"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.41 0.92 0.07" name="BtnBigRed">
+					<Property key="Caption" value="Big Red: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.49 0.92 0.07" name="BtnEnemyHp">
+					<Property key="Caption" value="Enemy bar: Red"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.57 0.92 0.07" name="BtnNeutralHp">
+					<Property key="Caption" value="Neutral bar: Green"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.67 1.00 0.28" name="MenuHint">
+					<Property key="Caption" value="Map: /map atlas (Nutt) or camera fallback. Growth Time: yours only. Names: world tags on/off. Big Red: farmbots show Big Red instead of Farm. Enemy/Neutral colors tint RFS tags."/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
 			</Widget>
 
-			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.595 0.92 0.38" name="MenuHint">
-				<Property key="Caption" value="MiniMap upper-left. Craft Nutt GPS, then LMB for atlas. Lua fills the rest after open."/>
-				<Property key="FontName" value="SM_Text"/>
-				<Property key="TextAlign" value="Left Top"/>
-				<Property key="WordWrap" value="true"/>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.04 0.165 0.92 0.76" name="CheatsTab">
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="true"/>
+				<Property key="InheritsAlpha" value="false"/>
+
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.00 1.00 0.05" name="CheatsStatus">
+					<Property key="Caption" value="Inventory | Fly | God"/>
+					<Property key="FontName" value="SM_TextLabel"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.09 0.92 0.08" name="BtnInventory">
+					<Property key="Caption" value="Inventory: Limited"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.19 0.92 0.08" name="BtnFly">
+					<Property key="Caption" value="Fly: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.29 0.92 0.08" name="BtnGod">
+					<Property key="Caption" value="God: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.43 1.00 0.30" name="CheatsFooter">
+					<Property key="Caption" value="Also: /fly /god /limited /unlimited"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left Top"/>
+					<Property key="WordWrap" value="true"/>
+				</Widget>
 			</Widget>
 		</Widget>
 	</Widget>

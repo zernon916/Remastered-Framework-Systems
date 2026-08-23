@@ -59,9 +59,9 @@ function RfsHandheldHack.inRange( unit, player )
 end
 
 function RfsHandheldHack.tryHack( unit, player, orderMode )
-	if type( RfsBotHijack ) ~= "table" then
-		return false, "hijack unavailable"
-	end
+	return false, "hack parked"
+end
+if false then
 	if not unit or not sm.exists( unit ) then
 		return false, "bot gone"
 	end
@@ -113,6 +113,9 @@ function RfsHandheldHack.tryHack( unit, player, orderMode )
 end
 
 function RfsHandheldHack.serverTick()
+	return
+end
+if false then
 	if type( RfsBotHijack ) ~= "table" or not RfsBotHijack.allies then
 		return
 	end

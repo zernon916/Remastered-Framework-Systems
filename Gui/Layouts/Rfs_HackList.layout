@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+		<Property key="NeedKey" value="true"/>
+		<Property key="NeedMouse" value="true"/>
+
+		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.34 0.22 0.32 0.56" name="MainPanel">
+			<Property key="NeedKey" value="true"/>
+			<Property key="NeedMouse" value="true"/>
+			<Property key="InheritsAlpha" value="false"/>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.03 0.68 0.10" name="Title">
+				<Property key="Caption" value="HACKED ROBOTS"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.03 0.22 0.10" name="CloseButton">
+				<Property key="Caption" value="CLOSE"/>
+				<Property key="FontName" value="SM_Button"/>
+				<Property key="TextAlign" value="Center"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.14 0.92 0.08" name="Status">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.24 0.88 0.08" name="Bot0">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.32 0.88 0.08" name="Bot1">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.40 0.88 0.08" name="Bot2">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.48 0.88 0.08" name="Bot3">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.56 0.88 0.08" name="Bot4">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.64 0.88 0.08" name="Bot5">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.72 0.88 0.08" name="Bot6">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.06 0.80 0.88 0.08" name="Bot7">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+		</Widget>
+	</Widget>
+</MyGUI>
