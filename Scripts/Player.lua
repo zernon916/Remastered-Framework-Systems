@@ -299,6 +299,10 @@ function Player.sv_rfs_toggleGrowthOverlay( self )
 	} )
 end
 
+-- Legacy no-op (corn stacking is native itemStack now).
+function Player.sv_rfs_placeCornStack( self, params )
+end
+
 function Player.cl_rfs_growthOverlayState( self, data )
 	self.cl = self.cl or {}
 	local enabled = false

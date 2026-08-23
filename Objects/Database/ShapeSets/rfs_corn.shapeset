@@ -31,10 +31,7 @@
 			"stackSize": 20,
 			"sticky": "-Y+Y",
 			"uuid": "fe8bfeba-850b-4827-9785-10e2468c9c23",
-			"scripted": {
-				"classname": "RfsCorn",
-				"filename": "$CONTENT_DATA/Scripts/game/RfsCorn.lua"
-			}
+			"itemStack": {}
 		}
 	]
 }

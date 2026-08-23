@@ -67,7 +67,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
-RFS_PACK_STAMP = "[RFS] pack 0854-bf join chat drop /map"
+RFS_PACK_STAMP = "[RFS] pack 0854-bn corn native itemStack"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
 RFS_SPEND_CHAT = nil
@@ -1508,6 +1508,14 @@ function RecipeFrameworkSurvival.sv_e_rfsPickupSoilBatch( self, params )
 		return
 	end
 	RfsSoilPlacement.sv_pickupSoilBatchForPlayer( player, params )
+end
+
+-- Corn Force Build uses native shapeset itemStack (no Game arm/place RPC).
+-- Legacy RPCs kept as no-ops so old clients do not error.
+function RecipeFrameworkSurvival.sv_e_rfsArmCornStack( self, params )
+end
+
+function RecipeFrameworkSurvival.sv_e_rfsPlaceCornStack( self, params )
 end
 
 -- Legacy sendToGame path. Tool uses sv_n_soilPickupBlock.

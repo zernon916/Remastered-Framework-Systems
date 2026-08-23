@@ -11,15 +11,79 @@ local CORN_UUID = obj_resource_corn
 
 function RfsCorn.server_onCreate( self )
 	self.sv = self.storage:load() or {}
+	local qty = 1
+	local armKey = _G.g_rfsPendingCornArmKey
 	local pending = _G.g_rfsPendingCornQty
 	if type( pending ) == "number" and pending > 0 then
-		self.sv.qty = math.floor( pending )
+		qty = math.floor( pending )
 		_G.g_rfsPendingCornQty = nil
-	elseif type( self.sv.qty ) ~= "number" or self.sv.qty < 1 then
-		self.sv.qty = 1
+		_G.g_rfsPendingCornArmKey = nil
+	elseif type( self.sv.qty ) == "number" and self.sv.qty > 1 then
+		qty = math.floor( self.sv.qty )
 	end
+	-- Prefer per-player arm if still fresh (engine place may land after pending clear).
+	pcall( function()
+		local arms = _G.g_rfsCornArmByPlayer
+		if not arms then
+			return
+		end
+		local bestKey, bestArm = nil, nil
+		local now = sm.game.getCurrentTick()
+		for key, arm in pairs( arms ) do
+			if type( arm ) == "table" and type( arm.qty ) == "number" and arm.qty > 0 then
+				if not arm.tick or ( now - arm.tick ) <= 80 then
+					if not bestArm or arm.qty > bestArm.qty then
+						bestKey, bestArm = key, arm
+					end
+				end
+			end
+		end
+		if bestArm and bestArm.qty > qty then
+			qty = math.floor( bestArm.qty )
+			armKey = bestKey
+		elseif bestArm and not armKey then
+			armKey = bestKey
+			qty = math.max( qty, math.floor( bestArm.qty ) )
+		end
+	end )
+	pcall( function()
+		local map = _G.g_rfsCornQtyById
+		local id = self.shape and self.shape.id
+		if map and id ~= nil and type( map[id] ) == "number" and map[id] > qty then
+			qty = math.floor( map[id] )
+		end
+	end )
+	if qty < 1 then
+		qty = 1
+	elseif qty > 20 then
+		qty = 20
+	end
+	self.sv.qty = qty
 	self.storage:save( self.sv )
 	self:sv_syncPublic()
+	pcall( function()
+		if type( RfsFarming ) == "table" and type( RfsFarming.sv_onCornStackPlaced ) == "function" then
+			RfsFarming.sv_onCornStackPlaced( armKey, self.shape, qty )
+		end
+	end )
+end
+
+-- Force-place stamps qty after createPart (pending alone can race / miss).
+function RfsCorn.sv_n_setQty( self, params )
+	local qty = type( params ) == "table" and tonumber( params.qty ) or nil
+	if not qty or qty < 1 then
+		return
+	end
+	self.sv = self.sv or {}
+	self.sv.qty = math.floor( qty )
+	self.storage:save( self.sv )
+	self:sv_syncPublic()
+	pcall( function()
+		_G.g_rfsCornQtyById = _G.g_rfsCornQtyById or {}
+		if self.shape and self.shape.id ~= nil then
+			_G.g_rfsCornQtyById[self.shape.id] = self.sv.qty
+		end
+	end )
 end
 
 function RfsCorn.sv_syncPublic( self )
@@ -58,14 +122,20 @@ end
 
 function RfsCorn.client_canInteract( self )
 	local qty = 1
-	if self.interactable and sm.exists( self.interactable ) then
-		local pd = self.interactable:getClientPublicData() or self.interactable:getPublicData()
-		if type( pd ) == "table" and type( pd.rfsCornQty ) == "number" then
-			qty = math.max( 1, math.floor( pd.rfsCornQty ) )
-		end
+	if self.cl and type( self.cl.qty ) == "number" and self.cl.qty > 0 then
+		qty = math.floor( self.cl.qty )
 	end
-	if self.cl and self.cl.qty then
-		qty = math.max( qty, self.cl.qty )
+	-- Client must not call getPublicData (server-only → sandbox violation spam).
+	if self.interactable and sm.exists( self.interactable ) then
+		pcall( function()
+			local pd = nil
+			if type( self.interactable.getClientPublicData ) == "function" then
+				pd = self.interactable:getClientPublicData()
+			end
+			if type( pd ) == "table" and type( pd.rfsCornQty ) == "number" and pd.rfsCornQty > 0 then
+				qty = math.max( qty, math.floor( pd.rfsCornQty ) )
+			end
+		end )
 	end
 	local key = sm.gui.getKeyBinding( "Use", true )
 	if qty > 1 then
@@ -93,13 +163,11 @@ function RfsCorn.sv_n_pickup( self, player )
 	end
 	local ok = false
 	pcall( function()
-		ok = sm.container.collect( inv, CORN_UUID, qty, true )
+		if sm.container.beginTransaction() then
+			sm.container.collect( inv, CORN_UUID, qty, true )
+			ok = sm.container.endTransaction() == true
+		end
 	end )
-	if not ok then
-		pcall( function()
-			ok = sm.container.collect( inv, CORN_UUID, qty )
-		end )
-	end
 	if ok then
 		self.shape:destroyShape()
 	end

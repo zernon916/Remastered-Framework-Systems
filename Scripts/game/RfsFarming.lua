@@ -931,23 +931,22 @@ function RfsFarming.ensureGrowHooks()
 end
 
 function RfsFarming.ensureHooks()
-	RfsFarming.ensureGrowHooks()
-	RfsFarming.ensureSoilBagHooks()
-	RfsFarming.ensureCornHooks()
-	RfsFarming.ensureBotFarmHooks()
+	pcall( function() RfsFarming.ensureGrowHooks() end )
+	pcall( function() RfsFarming.ensureSoilBagHooks() end )
+	pcall( function() RfsFarming.ensureCornHooks() end )
+	pcall( function() RfsFarming.ensureBotFarmHooks() end )
 	if not SEED_LABELS then
-		rebuildSeedIndex()
+		pcall( function() rebuildSeedIndex() end )
 	end
 end
 
 ---------------------------------------------------------------------------
--- Corn stack (inventory 20) + force-place full stack + Woc eats stack
--- Vanilla: stackSize 10, CornPerMilk = 5 (5 corn → 1 milk).
--- RFS: shapeset override stackSize 20; force-place stamps qty on RfsCorn;
--- Woc consumes full shape qty and milk uses vanilla 5:1.
+-- Corn stack (inventory 20) + native itemStack force-place + Woc eats stack
+-- Vanilla corn has NO itemStack → Force Build places qty 1 only.
+-- RFS shapeset adds itemStack + stackSize 20; engine stamps shape.stackedAmount.
+-- Woc consumes stackedAmount (vanilla ratio 5 corn = 1 milk).
 ---------------------------------------------------------------------------
 
-pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsCorn.lua" ) end )
 pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/survival_items.lua" ) end )
 pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/survival_loot.lua" ) end )
 pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/units/unit_util.lua" ) end )
@@ -955,129 +954,15 @@ pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/units/unit_util.lua" ) en
 local RFS_CORN_UUID = obj_resource_corn or sm.uuid.new( "fe8bfeba-850b-4827-9785-10e2468c9c23" )
 local RFS_CORN_PER_MILK = 5 -- match WocUnit.lua CornPerMilk
 
-local function rfsCornSlotQty( container, slot, uuid )
-	local qty = 0
+local function rfsCornStackedAmount( shape )
+	local qty = 1
 	pcall( function()
-		local item = container:getItem( slot )
-		if item and item.uuid == uuid and type( item.quantity ) == "number" then
-			qty = item.quantity
+		local n = shape.stackedAmount
+		if type( n ) == "number" and n > 0 then
+			qty = math.floor( n )
 		end
 	end )
-	if qty < 1 then
-		pcall( function()
-			local item = sm.container.getItem( container, slot )
-			if item and item.uuid == uuid and type( item.quantity ) == "number" then
-				qty = item.quantity
-			end
-		end )
-	end
-	return math.max( 0, math.floor( qty ) )
-end
-
-function RfsFarming._eatClientEquippedUpdate( self, primaryState, secondaryState, forceBuildActive )
-	-- Corn force-build: place entire hotbar stack as one shape (qty on RfsCorn).
-	if forceBuildActive and not self.eating then
-		local activeItem = nil
-		pcall( function() activeItem = sm.localPlayer.getActiveItem() end )
-		if activeItem == RFS_CORN_UUID then
-			if primaryState == sm.tool.interactState.start then
-				local valid, result = sm.localPlayer.getLatestRaycast()
-				if valid and result and result.pointWorld then
-					local normal = result.normalWorld or sm.vec3.new( 0, 0, 1 )
-					local pos = result.pointWorld + normal * 0.35
-					self.network:sendToServer( "sv_n_rfsPlaceCornStack", {
-						pos = pos,
-						slot = sm.localPlayer.getSelectedHotbarSlot()
-					} )
-				end
-			end
-			UpdateForceBuildText()
-			return true, false
-		end
-		-- Other foods: keep vanilla force-build (engine places 1).
-		return false, false
-	end
-
-	local orig = RfsFarming._eatOrigEquippedUpdate
-	if orig then
-		return orig( self, primaryState, secondaryState, forceBuildActive )
-	end
-	return true, false
-end
-
-function RfsFarming._eatSvPlaceCornStack( self, params )
-	local player = self.tool:getOwner()
-	if not player or type( params ) ~= "table" or not params.pos then
-		return
-	end
-	local inv = player:getInventory()
-	if not inv then
-		return
-	end
-	local slot = params.slot or 0
-	local qty = rfsCornSlotQty( inv, slot, RFS_CORN_UUID )
-	if qty < 1 then
-		return
-	end
-	local spent = false
-	pcall( function()
-		spent = sm.container.spendFromSlot( inv, slot, RFS_CORN_UUID, qty, true )
-	end )
-	if not spent then
-		pcall( function()
-			spent = sm.container.spend( inv, RFS_CORN_UUID, qty, true )
-		end )
-	end
-	if not spent then
-		return
-	end
-	_G.g_rfsPendingCornQty = qty
-	local shape = nil
-	local ok, err = pcall( function()
-		shape = sm.shape.createPart( RFS_CORN_UUID, params.pos, sm.quat.identity(), true, true )
-	end )
-	if not ok then
-		_G.g_rfsPendingCornQty = nil
-		pcall( function() sm.container.collect( inv, RFS_CORN_UUID, qty, true ) end )
-		print( "[RFS] corn force-place failed: " .. tostring( err ) )
-		return
-	end
-	-- Fallback registry if shapeset scripted override did not attach RfsCorn.
-	if shape and sm.exists( shape ) then
-		_G.g_rfsCornQtyById = _G.g_rfsCornQtyById or {}
-		local id = nil
-		pcall( function() id = shape.id end )
-		if id ~= nil then
-			_G.g_rfsCornQtyById[id] = qty
-		end
-	end
-	-- If RfsCorn.server_onCreate did not consume pending, clear so the next place is clean.
-	if _G.g_rfsPendingCornQty == qty then
-		_G.g_rfsPendingCornQty = nil
-	end
-end
-
-function RfsFarming.ensureEatCornHooks()
-	if type( Eat ) ~= "table" then
-		pcall( function()
-			dofile( "$SURVIVAL_DATA/Scripts/game/tools/Eat.lua" )
-		end )
-	end
-	if type( Eat ) ~= "table" then
-		return false
-	end
-	if Eat._rfsCornHooked and Eat.client_onEquippedUpdate == RfsFarming._eatClientEquippedUpdate then
-		Eat.sv_n_rfsPlaceCornStack = RfsFarming._eatSvPlaceCornStack
-		return true
-	end
-	if not RfsFarming._eatOrigEquippedUpdate then
-		RfsFarming._eatOrigEquippedUpdate = Eat.client_onEquippedUpdate
-	end
-	Eat.client_onEquippedUpdate = RfsFarming._eatClientEquippedUpdate
-	Eat.sv_n_rfsPlaceCornStack = RfsFarming._eatSvPlaceCornStack
-	Eat._rfsCornHooked = true
-	print( "[RFS] Eat corn force-place stack hooked" )
-	return true
+	return math.max( 1, qty )
 end
 
 function RfsFarming._wocServerOnUnitUpdate( self, dt )
@@ -1117,10 +1002,8 @@ function RfsFarming._wocServerOnUnitUpdate( self, dt )
 				local eatFacingXY = sm.vec3.new( eatFacingDirection.x, eatFacingDirection.y, 0 ):safeNormalize( sm.vec3.new( 1, 0, 0 ) )
 				if self.currentState == self.turnState or facingXY:dot( eatFacingXY ) > math.cos( math.rad( 10 ) ) then
 					self.currentState = self.eatEventState
-					-- RFS: consume full stack qty on the corn shape (vanilla was always +1).
-					local qty = 1
-					pcall( function() qty = RfsCorn.consumeShapeQty( targetCorn ) end )
-					qty = math.max( 1, math.floor( qty or 1 ) )
+					-- Native itemStack: engine places full hotbar stack as shape.stackedAmount.
+					local qty = rfsCornStackedAmount( targetCorn )
 					self.saved.stats.cornEaten = self.saved.stats.cornEaten + qty
 					self.saved.deathTickTimestamp = sm.game.getCurrentTick() + DaysInTicks( 30 )
 					if not self.saved.isCattle then
@@ -1185,12 +1068,12 @@ function RfsFarming.ensureWocCornHooks()
 	RfsFarming._wocOrigOnUnitUpdate = WocUnit.server_onUnitUpdate
 	WocUnit.server_onUnitUpdate = RfsFarming._wocServerOnUnitUpdate
 	WocUnit._rfsCornHooked = true
-	print( "[RFS] WocUnit corn stack-eat hooked (5 corn = 1 milk)" )
+	print( "[RFS] WocUnit corn stack-eat hooked (stackedAmount, 5:1 milk)" )
 	return true
 end
 
 function RfsFarming.ensureCornHooks()
-	RfsFarming.ensureEatCornHooks()
+	-- Force-place is native via rfs_corn.shapeset itemStack — no Eat wrap.
 	RfsFarming.ensureWocCornHooks()
 end
 

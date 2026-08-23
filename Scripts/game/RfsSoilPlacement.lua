@@ -394,48 +394,36 @@ local function rebuildTerrainDragRect( self, startCell, curCellX, curCellY )
 	local minY = math.min( startCell.cellY, curCellY )
 	local maxY = math.max( startCell.cellY, curCellY )
 	local refWorldZ = startCell.refWorldZ
-	local flatDrag = startCell.flat ~= false and startCell.gridZ ~= nil
-	local anchorNormal = startCell.normal or sm.vec3.new( 0, 0, 1 )
+	-- Always raycast each terrain cell. Locking start-cell gridZ across the rect
+	-- (old flatDrag path) left soil floating when ground height changed.
 	local dragCells = {}
 	for cx = minX, maxX do
 		for cy = minY, maxY do
 			local gridKey = RfsSoilPlacement.gridKey( cx, cy )
-			if flatDrag then
-				local worldPos = RfsSoilPlacement.worldPosForAnchoredFlatCell( cx, cy, startCell )
-				local blocked = RfsSoilPlacement.isPlacementBlocked( worldPos, false, anchorNormal )
+			local sample = RfsSoilPlacement.sampleTerrainAtCell( cx, cy, refWorldZ )
+			if sample and sample.pos then
 				dragCells[gridKey] = {
-					pos = worldPos,
-					normal = anchorNormal,
-					gridZ = startCell.gridZ,
-					flat = true,
-					blocked = blocked,
+					pos = sample.pos,
+					normal = sample.normal,
+					gridZ = sample.gridZ,
+					flat = sample.flat,
+					blocked = sample.blocked,
 					fromBody = false,
 				}
 			else
-				local sample = RfsSoilPlacement.sampleTerrainAtCell( cx, cy, refWorldZ )
-				if sample and sample.pos then
-					dragCells[gridKey] = {
-						pos = sample.pos,
-						normal = sample.normal,
-						gridZ = sample.gridZ,
-						flat = sample.flat,
-						blocked = sample.blocked,
-						fromBody = false,
-					}
-				else
-					local gridPosX, gridPosY = RfsSoilPlacement.gridPosXYForCell( cx, cy )
-					local pos = RfsSoilPlacement.worldPosFromGridPos(
-						gridPosX,
-						gridPosY,
-						startCell.gridZ or 0
-					)
-					dragCells[gridKey] = {
-						pos = pos,
-						flat = false,
-						blocked = true,
-						fromBody = false,
-					}
-				end
+				-- No terrain hit — invalid only. Do not invent start-cell Z (floats in air).
+				local gridPosX, gridPosY = RfsSoilPlacement.gridPosXYForCell( cx, cy )
+				local pos = RfsSoilPlacement.worldPosFromGridPos(
+					gridPosX,
+					gridPosY,
+					startCell.gridZ or 0
+				)
+				dragCells[gridKey] = {
+					pos = pos,
+					flat = false,
+					blocked = true,
+					fromBody = false,
+				}
 			end
 		end
 	end
