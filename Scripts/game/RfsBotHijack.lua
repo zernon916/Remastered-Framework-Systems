@@ -31,10 +31,15 @@ pcall( function()
 end )
 
 RfsBotHijack = RfsBotHijack or {}
--- 0851-r: live hack parked (keep blocks). No convert, wrap, allUnits scan, tags.
+-- 0851-r: live hack parked (no convert / wrap / allUnits scan).
+-- Tags + char hooks stay on so /menu Names and identity labels still paint.
 RfsBotHijack.LIVE = false
+RfsBotHijack.TAGS = true
 function RfsBotHijack.liveEnabled()
 	return false
+end
+function RfsBotHijack.tagsEnabled()
+	return RfsBotHijack.TAGS ~= false
 end
 
 local ALLY_COLOR = sm.color.new( "3dff8aff" )
@@ -2599,7 +2604,7 @@ local function kindFromText( text )
 end
 
 function RfsBotHijack.pushTag( unit, text, kind )
-	if not RfsBotHijack.LIVE then
+	if not RfsBotHijack.tagsEnabled() then
 		return
 	end
 	if not unit or not sm.exists( unit ) or not unit.character or not sm.exists( unit.character ) then
@@ -2769,7 +2774,7 @@ function RfsBotHijack.cl_applyCharTag( self, data )
 end
 
 function RfsBotHijack.ensureCharHooks()
-	if not RfsBotHijack.LIVE then
+	if not RfsBotHijack.tagsEnabled() then
 		return false
 	end
 	local function wrapClientData( cls )

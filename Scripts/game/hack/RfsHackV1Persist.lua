@@ -65,7 +65,11 @@ function RfsHackV1Persist.onApply( self, params )
 	self.saved = self.saved or {}
 	-- Do not set saved.friendly — that no-ops RobotSelectTarget (no wave fighting).
 	self.saved.friendly = false
-	self.saved.rfsHackV1Name = nil
+	if params.name and tostring( params.name ) ~= "" then
+		self.saved.rfsHackV1Name = tostring( params.name )
+	elseif params.typeLabel and tostring( params.typeLabel ) ~= "" then
+		self.saved.rfsHackV1Name = tostring( params.typeLabel )
+	end
 	if params.beaconKey then
 		self.saved.rfsHackV1BeaconKey = tostring( params.beaconKey )
 	end
@@ -98,9 +102,10 @@ function RfsHackV1Persist.onApply( self, params )
 		pcall( function()
 			tick = sm.game.getCurrentTick() or 0
 		end )
-		local holdText = "HACKED"
+		local allyName = tostring( self.saved.rfsHackV1Name or "" )
+		local holdText = allyName ~= "" and allyName or "HACKED"
 		if type( RfsHackV1Hold ) == "table" and RfsHackV1Hold.releaseTagText then
-			holdText = RfsHackV1Hold.releaseTagText( self.saved.rfsHackV1UnhackAt, tick )
+			holdText = RfsHackV1Hold.releaseTagText( self.saved.rfsHackV1UnhackAt, tick, allyName )
 		end
 		RfsHackV1Convert.pushTag( self.unit, holdText )
 	end
@@ -136,7 +141,13 @@ function RfsHackV1Persist.hydrateSelf( self )
 		return
 	end
 	self.saved = self.saved or {}
-	self.saved.rfsHackV1Name = nil
+	if ( not self.saved.rfsHackV1Name or self.saved.rfsHackV1Name == "" )
+		and self.unit and type( RfsHackV1Registry ) == "table" and RfsHackV1Registry.read then
+		local blob = RfsHackV1Registry.read( self.unit )
+		if blob and ( blob.name or blob.typeLabel ) then
+			self.saved.rfsHackV1Name = tostring( blob.name or blob.typeLabel )
+		end
+	end
 	local key = self.saved.rfsHackV1BeaconKey
 	if not key or key == "" then
 		return

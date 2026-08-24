@@ -223,6 +223,22 @@ local function applyCharTag( self, text )
 	if not char or not sm.exists( char ) then
 		return
 	end
+	-- /menu Names OFF: hide Type N labels; keep HACK/timer overlays.
+	if text ~= "" then
+		local prefs = nil
+		if type( RfsGuiPrefs ) == "table" and RfsGuiPrefs.client then
+			prefs = RfsGuiPrefs.client()
+		end
+		if prefs and prefs.names == false then
+			local isNameOnly = string.match( text, "^%S+%s+%d+$" ) ~= nil
+			local isNameTimer = string.match( text, "^%S+%s+%d+%s+%d+:%d%d$" ) ~= nil
+			if isNameOnly or isNameTimer then
+				text = ""
+			end
+		elseif prefs and prefs.bigRed then
+			text = tostring( text ):gsub( "Farm ", "Big Red " )
+		end
+	end
 	if text == "" then
 		destroyTagFx( self )
 		self.cl.rfsHackV1TagText = nil
@@ -367,10 +383,18 @@ function RfsHackV1Convert.convertUnit( unit, beaconKey, cap, holdSec )
 	if type( RfsHackV1Hold ) == "table" and RfsHackV1Hold.unhackAtFromSeconds then
 		unhackAt = RfsHackV1Hold.unhackAtFromSeconds( holdSec, tick )
 	end
+	local allyName = label
+	if type( RfsHackV1Registry ) == "table" and RfsHackV1Registry.allocName then
+		allyName = RfsHackV1Registry.allocName( label )
+		if RfsHackV1Registry.observeName then
+			RfsHackV1Registry.observeName( allyName )
+		end
+	end
 	local blob = {
 		ally = true,
 		beaconKey = tostring( beaconKey or "" ),
 		typeLabel = label,
+		name = allyName,
 		unhackAt = unhackAt,
 		cap = cap,
 		holdSec = holdSec,
@@ -386,11 +410,12 @@ function RfsHackV1Convert.convertUnit( unit, beaconKey, cap, holdSec )
 			unhackAt = unhackAt,
 			cap = cap,
 			holdSec = holdSec,
+			name = allyName,
 		} )
 	end )
-	local holdText = "HACKED"
+	local holdText = allyName
 	if type( RfsHackV1Hold ) == "table" and RfsHackV1Hold.releaseTagText then
-		holdText = RfsHackV1Hold.releaseTagText( unhackAt, tick )
+		holdText = RfsHackV1Hold.releaseTagText( unhackAt, tick, allyName )
 	end
 	RfsHackV1Convert.pushTag( unit, holdText )
 	return true

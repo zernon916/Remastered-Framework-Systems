@@ -382,16 +382,32 @@ function RfsHackV1Fight.pulseTag( self )
 	end
 	self._rfsHackV1TagTick = tick
 	local unhackAt = tonumber( self.saved and self.saved.rfsHackV1UnhackAt )
-	if not unhackAt and type( RfsHackV1Registry ) == "table" and RfsHackV1Registry.read then
+	local allyName = tostring( self.saved and self.saved.rfsHackV1Name or "" )
+	if type( RfsHackV1Registry ) == "table" and RfsHackV1Registry.read then
 		local blob = RfsHackV1Registry.read( self.unit )
-		unhackAt = blob and tonumber( blob.unhackAt )
+		if blob then
+			if not unhackAt then
+				unhackAt = tonumber( blob.unhackAt )
+			end
+			if allyName == "" then
+				allyName = tostring( blob.name or blob.typeLabel or "" )
+				if allyName ~= "" and self.saved then
+					self.saved.rfsHackV1Name = allyName
+				end
+			end
+		end
 	end
-	local text = "HACKED"
+	local text = allyName ~= "" and allyName or "HACKED"
 	if type( RfsHackV1Hold ) == "table" and RfsHackV1Hold.releaseTagText then
-		text = RfsHackV1Hold.releaseTagText( unhackAt, tick )
+		text = RfsHackV1Hold.releaseTagText( unhackAt, tick, allyName )
 	elseif unhackAt then
 		local left = math.max( 0, math.ceil( ( unhackAt - tick ) / 40 ) )
-		text = string.format( "HACKED %d:%02d", math.floor( left / 60 ), left % 60 )
+		local timer = string.format( "%d:%02d", math.floor( left / 60 ), left % 60 )
+		if allyName ~= "" then
+			text = allyName .. "  " .. timer
+		else
+			text = "HACKED " .. timer
+		end
 	end
 	if type( RfsHackV1Convert ) == "table" and RfsHackV1Convert.pushTag then
 		RfsHackV1Convert.pushTag( self.unit, text )

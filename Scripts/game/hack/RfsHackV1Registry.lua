@@ -101,10 +101,26 @@ function RfsHackV1Registry.clear( unit )
 end
 
 function RfsHackV1Registry.observeName( name )
+	name = tostring( name or "" )
+	local label, n = string.match( name, "^(%S+)%s+(%d+)$" )
+	if not label or not n then
+		return
+	end
+	n = tonumber( n ) or 0
+	local seq = RfsHackV1Registry._seq
+	if n > ( seq[label] or 0 ) then
+		seq[label] = n
+	end
 end
 
 function RfsHackV1Registry.allocName( typeLabel )
-	return ""
+	typeLabel = tostring( typeLabel or "Bot" )
+	if typeLabel == "" then
+		typeLabel = "Bot"
+	end
+	local seq = RfsHackV1Registry._seq
+	seq[typeLabel] = ( seq[typeLabel] or 0 ) + 1
+	return typeLabel .. " " .. tostring( seq[typeLabel] )
 end
 
 function RfsHackV1Registry.allyCount( beaconKey )
@@ -131,7 +147,16 @@ end
 
 -- Valid living allies for this beacon (dead units omitted).
 function RfsHackV1Registry.listNames( beaconKey, world )
-	return {}
+	local rows = RfsHackV1Registry.listAllies( beaconKey, world )
+	local names = {}
+	for i = 1, #rows do
+		local blob = RfsHackV1Registry.read( rows[i].unit )
+		local n = blob and ( blob.name or blob.typeLabel ) or nil
+		if n and n ~= "" then
+			names[#names + 1] = tostring( n )
+		end
+	end
+	return names
 end
 
 function RfsHackV1Registry.listAllies( beaconKey, world )

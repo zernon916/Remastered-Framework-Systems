@@ -37,16 +37,24 @@ function RfsHackV1Hold.unhackAtTick( _cap, now, holdSec )
 	return RfsHackV1Hold.unhackAtFromSeconds( BASE_SEC, now )
 end
 
-function RfsHackV1Hold.releaseTagText( unhackAt, tick )
+function RfsHackV1Hold.releaseTagText( unhackAt, tick, allyName )
+	allyName = tostring( allyName or "" ):gsub( "^%s+", "" ):gsub( "%s+$", "" )
 	unhackAt = tonumber( unhackAt )
 	tick = tonumber( tick ) or 0
 	if not unhackAt then
+		if allyName ~= "" then
+			return allyName
+		end
 		return "HACKED"
 	end
 	local left = math.max( 0, math.ceil( ( unhackAt - tick ) / TPS ) )
 	local m = math.floor( left / 60 )
 	local s = left % 60
-	return string.format( "HACKED %d:%02d", m, s )
+	local timer = string.format( "%d:%02d", m, s )
+	if allyName ~= "" then
+		return allyName .. "  " .. timer
+	end
+	return "HACKED " .. timer
 end
 
 function RfsHackV1Hold.expire( ctx )

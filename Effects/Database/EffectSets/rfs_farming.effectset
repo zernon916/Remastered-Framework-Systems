@@ -61,11 +61,11 @@
 				"TextContent" : "HACK 8.0",
 				"TextMaterial" : "InWorldText",
 				"FontName" : "SM_IntlText",
-				"FontSize" : 24,
+				"FontSize" : 28,
 				"lineOfSight" : false,
 				"distanceFade" : true,
-				"maxRenderDistance" : 56.0,
-				"distanceFadeRange" : 12.0,
+				"maxRenderDistance" : 64.0,
+				"distanceFadeRange" : 14.0,
 				"shadow" : true,
 				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
 				"shadowOffset" : [ 1.0, -1.0 ],
@@ -82,7 +82,88 @@
 			],
 			"Color" : [ 1.0, 0.72, 0.08, 1.0 ],
 			"FontName" : "SM_IntlText",
+			"FontSize" : 28,
 			"TextContent" : "HACK 8.0",
+			"TextMaterial" : "InWorldText",
+			"anchor" : "CENTER"
+		}
+	},
+	"RfsUnitName" :
+	{
+		"effectList" :
+		[
+			{
+				"delay" : 0.0,
+				"direction" :
+				{
+					"x" : 0.0,
+					"y" : 1.0,
+					"z" : 0.0
+				},
+				"name" : "text",
+				"type" : "text",
+				"Color" : [ 1.0, 0.25, 0.2, 1.0 ],
+				"TextContent" : "Name",
+				"TextMaterial" : "InWorldText",
+				"FontName" : "SM_IntlText",
+				"FontSize" : 17,
+				"lineOfSight" : false,
+				"distanceFade" : true,
+				"maxRenderDistance" : 72.0,
+				"distanceFadeRange" : 16.0,
+				"shadow" : true,
+				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
+				"shadowOffset" : [ 1.0, -1.0 ],
+				"anchor" : "CENTER"
+			}
+		],
+		"parameterList" :
+		{
+			"ASG" : [ 0.0, 0.0, 1.0 ],
+			"Color" : [ 1.0, 0.25, 0.2, 1.0 ],
+			"FontName" : "SM_IntlText",
+			"FontSize" : 17,
+			"TextContent" : "Name",
+			"TextMaterial" : "InWorldText",
+			"anchor" : "CENTER"
+		}
+	},
+	"RfsHpMeter" :
+	{
+		"effectList" :
+		[
+			{
+				"delay" : 0.0,
+				"direction" :
+				{
+					"x" : 0.0,
+					"y" : 1.0,
+					"z" : 0.0
+				},
+				"name" : "text",
+				"type" : "text",
+				"Color" : [ 1.0, 0.22, 0.18, 1.0 ],
+				"TextContent" : "==============",
+				"TextMaterial" : "InWorldText",
+				"FontName" : "SM_IntlText",
+				"FontSize" : 26,
+				"lineOfSight" : false,
+				"distanceFade" : true,
+				"maxRenderDistance" : 72.0,
+				"distanceFadeRange" : 16.0,
+				"shadow" : true,
+				"shadowColor" : [ 0.0, 0.0, 0.0, 1.0 ],
+				"shadowOffset" : [ 1.0, -1.0 ],
+				"anchor" : "CENTER"
+			}
+		],
+		"parameterList" :
+		{
+			"ASG" : [ 0.0, 0.0, 1.0 ],
+			"Color" : [ 1.0, 0.22, 0.18, 1.0 ],
+			"FontName" : "SM_IntlText",
+			"FontSize" : 26,
+			"TextContent" : "==============",
 			"TextMaterial" : "InWorldText",
 			"anchor" : "CENTER"
 		}

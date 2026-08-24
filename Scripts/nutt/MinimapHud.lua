@@ -33,7 +33,7 @@ local BEZELVER = "b5"
 -- NOTE: description.json's "version" is NOT this - it is a game-side integer
 -- (0 there brings back the MODS OUTDATED launch warning) and must stay at 2.
 local VERSION = "1.1.2"
-local BUILD = 47
+local BUILD = 48
 -- vanilla StatusPanel: 196x86 bottom-left, health row at local y 42 ->
 -- health bar top = vh - 44 (SurvivalPlayer.lua:425, StatusPanel.gui)
 local HEALTHTOP = 44
@@ -464,11 +464,12 @@ function MinimapHud.cl_buildGui( self )
 	-- 900p = 1.25x) where no size parity can help.
 	CELLPX = CELLPX - (CELLPX % 2)
 	self.cl.RING, self.cl.CELLPX = RING, CELLPX
-	-- draw size only - ALL layout math stays on CELLPX. Neighbors overlap by
-	-- 1 logical px, so a 1-physical-px rounding gap can never show background.
-	-- The sheets' 3px edge-extended padding makes the doubled edge column
-	-- invisible; the big map's big tier has shipped this overlap since v34.
-	local OVERPX = CELLPX + 1
+	-- draw size only - ALL layout math stays on CELLPX. Neighbors overlap so
+	-- physical-scale rounding (1080p 1.5x) cannot open a light seam while the
+	-- map scrolls (floor(inner) crawls 1 logical px). +1 was not enough once
+	-- scroll snap ate the budget; +2 keeps a continuous quilt under the ring.
+	-- Sheets' 3px edge-extended padding hides the doubled edge column.
+	local OVERPX = CELLPX + 2
 	self.cl.OVERPX = OVERPX
 
 	local n = math.ceil(RING / CELLPX) + 2
@@ -1114,8 +1115,9 @@ function MinimapHud.client_onUpdate( self, dt )
 	-- container is ((h+fx), (n-h-fy)) cells from its top-left. n-h == h+1 only
 	-- for ODD n -- the old h+1 constant made even-n zoom levels scroll the map
 	-- one cell south under the arrow (zoom parity bug, Eric 8/8)
-	c.inner.x = math.floor(RING / 2 - (h + fx) * CELLPX)
-	c.inner.y = math.floor(RING / 2 - (n - h - fy) * CELLPX)
+	-- Round (not truncate) so crawl seams don't bias one direction under 1.5x.
+	c.inner.x = math.floor(RING / 2 - (h + fx) * CELLPX + 0.5)
+	c.inner.y = math.floor(RING / 2 - (n - h - fy) * CELLPX + 0.5)
 
 	-- arrow follows camera heading (ring/arrow/pin render via gui3 below,
 	-- gated by their own signature)
@@ -1169,7 +1171,11 @@ function MinimapHud.client_onUpdate( self, dt )
 	local scrollDirty = scrollSig ~= c.lastScrollSig
 	c.rfsRenderT = (c.rfsRenderT or 0) + dt
 	local doPaint = c.rfsRenderT >= 0.05
-	if tileDirty then
+	-- Rim slices are MapFrame children (not under MapInner). Scrolling only
+	-- the inner without re-laying rim left a visible tear/gap quilt while
+	-- walking. Re-run the clip pass on scroll paints too (~20 Hz).
+	local needLayout = tileDirty or ((scrollDirty or warm) and doPaint)
+	if needLayout then
 		c.lastTileSig = tileSig
 		c.lastScrollSig = scrollSig
 		c.lastSig = scrollSig .. ";" .. tileSig
@@ -1259,15 +1265,12 @@ function MinimapHud.client_onUpdate( self, dt )
 					p.x = px; p.y = py
 					p.width = math.max(1, math.floor(sx1 + 0.5) - px)
 					p.height = math.max(1, math.floor(sy1 + 0.5) - py)
-					-- +1 overlap along the STACKING axis only (same fractional
-					-- physical-scale rounding as the grid cells - abutting
-					-- strips round 1 physical px apart at 1080p's 1.5x and the
-					-- rim shimmers). The chord axis stays exact: it draws the
-					-- circle and its error budget is the 8px ring.
+					-- +2 overlap along the STACKING axis (match grid OVERPX budget
+					-- so abutting rim strips do not open a light seam at 1.5x).
 					if vert then
-						p.height = p.height + 1
+						p.height = p.height + 2
 					else
-						p.width = p.width + 1
+						p.width = p.width + 2
 					end
 					local pc = {}
 					for res, cw in pairs(sl.per) do
@@ -1318,16 +1321,6 @@ function MinimapHud.client_onUpdate( self, dt )
 	c.frameW.Childs = lf
 
 		c.rfsRenderT = 0
-		local okr, err = pcall(function() c.gui:render(c.root) end)
-		if not okr and not c.renderErr then
-			c.renderErr = true
-			sm.gui.chatMessage("[minimap] render error: " .. tostring(err))
-		end
-
-	elseif (scrollDirty or warm) and doPaint then
-		c.rfsRenderT = 0
-		c.lastScrollSig = scrollSig
-		c.lastSig = scrollSig .. ";" .. tileSig
 		local okr, err = pcall(function() c.gui:render(c.root) end)
 		if not okr and not c.renderErr then
 			c.renderErr = true

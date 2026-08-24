@@ -67,7 +67,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
-RFS_PACK_STAMP = "[RFS] pack 0854-bn corn native itemStack"
+RFS_PACK_STAMP = "[RFS] pack 0854-ch world anchor at back height"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
 RFS_SPEND_CHAT = nil
@@ -555,7 +555,13 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 			RfsSoilPlacement.ensureHarvestableSoilHooks()
 		end
 	end )
-	-- 0851-r: no RfsBotHijack.ensureHooks (live hack parked)
+	-- 0851-r: no full RfsBotHijack.ensureHooks (live convert parked).
+	-- Tags + HP bars still install (Names / Enemy-Neutral bars in /menu).
+	pcall( function()
+		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
+			RfsBotHijack.ensureCharHooks()
+		end
+	end )
 	pcall( function()
 		if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
 	end )
@@ -638,7 +644,17 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 				RfsSoilPlacement.ensureHarvestableSoilHooks()
 			end
 		end )
-		-- 0851-r: no RfsBotHijack / RfsHackTether ensureHooks
+		-- 0851-r: no full hijack ensureHooks; tags + HP bars yes
+		pcall( function()
+			if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
+				RfsBotHijack.ensureCharHooks()
+			end
+		end )
+		pcall( function()
+			if type( RfsHackV1Convert ) == "table" and RfsHackV1Convert.ensureCharHooks then
+				RfsHackV1Convert.ensureCharHooks()
+			end
+		end )
 		pcall( function()
 			if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
 		end )
@@ -712,7 +728,17 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 			RfsSoilPlacement.ensureHarvestableSoilHooks()
 		end
 	end )
-	-- 0851-r: skip hijack char/unit hooks and bot E player wrap.
+	-- 0851-r: skip full hijack convert hooks; keep tag + HP + bot E.
+	pcall( function()
+		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
+			RfsBotHijack.ensureCharHooks()
+		end
+	end )
+	pcall( function()
+		if type( RfsHackV1Convert ) == "table" and RfsHackV1Convert.ensureCharHooks then
+			RfsHackV1Convert.ensureCharHooks()
+		end
+	end )
 	pcall( function()
 		if type( RfsSoilPlacement ) == "table" and RfsSoilPlacement.ensurePlayerHandPickupHooks then
 			RfsSoilPlacement.ensurePlayerHandPickupHooks()
@@ -796,6 +822,11 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 		end )
 	end
 	pcall( function()
+		if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
+			RfsBotHijack.ensureCharHooks()
+		end
+	end )
+	pcall( function()
 		if type( RfsHealthBars ) == "table" and RfsHealthBars.ensureHooks then
 			RfsHealthBars.ensureHooks()
 		end
@@ -803,6 +834,11 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	-- Re-apply Farming hooks if Survival reloaded tool/harvestable classes
 	if ( sm.game.getCurrentTick() % 200 ) == 0 then
 		pcall( function() RfsFarming.ensureHooks() end )
+		pcall( function()
+			if type( RfsBotHijack ) == "table" and RfsBotHijack.ensureCharHooks then
+				RfsBotHijack.ensureCharHooks()
+			end
+		end )
 		pcall( function()
 			if type( RfsHealthBars ) == "table" then RfsHealthBars.ensureHooks() end
 		end )
