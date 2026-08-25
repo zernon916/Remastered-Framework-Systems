@@ -1,0 +1,42 @@
+{
+	"partList":
+	[
+		{
+			"autoTool": "2bff990a-0e74-43c7-b7dc-889b3a086fa3",
+			"color": "e6d023ff",
+			"consumable": true,
+			"edible":
+			{
+				"grantPerk": false,
+				"hpGain": 4
+			},
+			"flammable": true,
+			"hull":
+			{
+				"col": "$SURVIVAL_DATA/Objects/Collision/obj_consumable_corn_col.obj",
+				"x": 1,
+				"y": 2,
+				"z": 1
+			},
+			"name": "obj_resource_corn",
+			"physicsMaterial": "Fruit",
+			"ratings":
+			{
+				"buoyancy": 4,
+				"density": 1,
+				"durability": 1,
+				"friction": 4
+			},
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/resource/obj_resource_corn.rend",
+			"restrictions":
+			{
+				"paintable": false
+			},
+			"rotationSet": "PropY",
+			"stackSize": 20,
+			"sticky": "-Y+Y",
+			"uuid": "fe8bfeba-850b-4827-9785-10e2468c9c23",
+			"itemStack": {}
+		}
+	]
+}

@@ -150,13 +150,17 @@ function RfsCrafterGrid.installRecipeSet( scan )
 						end
 					end
 					if recipeIsValid( recipe ) then
-						if recipe.itemId == GPS_UUID then
-							gpsInFile = true
-						end
-						recipes[recipe.itemId] = recipe
-						recipesByIndex[#recipesByIndex + 1] = recipe
-						if fromRfsOwn and not SCHEMATIC_LOCKED[recipe.itemId] then
-							alwaysAvailable[recipe.itemId] = true
+						if recipes[recipe.itemId] then
+							-- Already from an earlier path (first wins). Avoid index/grid twins.
+						else
+							if recipe.itemId == GPS_UUID then
+								gpsInFile = true
+							end
+							recipes[recipe.itemId] = recipe
+							recipesByIndex[#recipesByIndex + 1] = recipe
+							if fromRfsOwn and not SCHEMATIC_LOCKED[recipe.itemId] then
+								alwaysAvailable[recipe.itemId] = true
+							end
 						end
 					end
 				end
@@ -221,6 +225,54 @@ local function vanillaSetCount( self )
 	return n
 end
 
+-- itemIds already present in Survival / other recipe sets (e.g. Scrap Overdrive
+-- craftbot_custom). Whole-file addGridItemsFromFile cannot partial-filter, so
+-- skip a path when every recipe id is already known.
+local function collectKnownRecipeIds()
+	local seen = {}
+	if type( g_craftingRecipeSets ) ~= "table" then
+		return seen
+	end
+	for setName, setData in pairs( g_craftingRecipeSets ) do
+		if setName ~= "craftbot_rfs_mods" and type( setData ) == "table" and type( setData.recipes ) == "table" then
+			for id, _ in pairs( setData.recipes ) do
+				seen[tostring( id )] = true
+			end
+		end
+	end
+	return seen
+end
+
+local function pathHasNewRecipeIds( path, seen )
+	local ok, json = pcall( sm.json.open, path )
+	if not ok or type( json ) ~= "table" or isVanillaIndexFile( json ) then
+		return false
+	end
+	local any = false
+	for _, raw in ipairs( json ) do
+		if type( raw ) == "table" and raw.itemId then
+			any = true
+			if not seen[tostring( raw.itemId )] then
+				return true
+			end
+		end
+	end
+	-- Empty / unreadable: do not add.
+	return false
+end
+
+local function markPathRecipeIds( path, seen )
+	local ok, json = pcall( sm.json.open, path )
+	if not ok or type( json ) ~= "table" then
+		return
+	end
+	for _, raw in ipairs( json ) do
+		if type( raw ) == "table" and raw.itemId then
+			seen[tostring( raw.itemId )] = true
+		end
+	end
+end
+
 local function rfsClUpdateRecipeGrid( self )
 	local vanilla = Crafter._rfsVanillaUpdateGrid
 	if type( vanilla ) == "function" then
@@ -259,19 +311,32 @@ local function rfsClUpdateRecipeGrid( self )
 	end
 	unlocked[GPS_UUID] = true
 	extraOpts.unlockedRecipes = unlocked
+	local seen = collectKnownRecipeIds()
+	local skipped = 0
 	for _, path in ipairs( paths ) do
-		local ok, err = pcall( function()
-			self.cl.guiInterface:addGridItemsFromFile( "RecipeGrid", path, extraOpts )
-		end )
-		if not _G.g_rfsGridAddChat then
-			chatOnce( "g_rfsGridAddChat", string.format(
-				"%s wrap addGrid ok=%s %s",
-				stampPrefix(), tostring( ok ), tostring( path )
-			) )
-			if not ok then
-				print( "[RFS] addGridItemsFromFile failed: " .. tostring( err ) )
+		if not pathHasNewRecipeIds( path, seen ) then
+			skipped = skipped + 1
+		else
+			local ok, err = pcall( function()
+				self.cl.guiInterface:addGridItemsFromFile( "RecipeGrid", path, extraOpts )
+			end )
+			markPathRecipeIds( path, seen )
+			if not _G.g_rfsGridAddChat then
+				chatOnce( "g_rfsGridAddChat", string.format(
+					"%s wrap addGrid ok=%s %s",
+					stampPrefix(), tostring( ok ), tostring( path )
+				) )
+				if not ok then
+					print( "[RFS] addGridItemsFromFile failed: " .. tostring( err ) )
+				end
 			end
 		end
+	end
+	if skipped > 0 and not _G.g_rfsGridSkipChat then
+		chatOnce( "g_rfsGridSkipChat", string.format(
+			"%s craftbot skip %d path(s) already on grid (itemId dedupe)",
+			stampPrefix(), skipped
+		) )
 	end
 	if self.cl then
 		self.cl._rfsModGridApplied = true

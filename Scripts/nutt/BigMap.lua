@@ -26,28 +26,179 @@ local ROTSIGN = -1
 -- mini tier (baked rotations) below MINI_MAX, big tier (r0+RotatingSkin)
 -- above. Pool caps sized for the worst case at MINSCALE with the
 -- biome-fallback overflow redirect.
-local MINSCALE, MAXSCALE = 26, 110
--- MINI TIER ONLY (v37): the RotatingSkin big tier garbled at arbitrary
--- sizes (v31 - the last clean build - kept those widgets at exactly their
--- creation size; every arbitrary-size build since garbled). Plain ImageBox
--- resize is proven safe (minimap rim does it every frame). Mini frames are
--- 64px: slightly soft above ~64px/cell - correctness over crispness.
+local MINSCALE, MAXSCALE = 8, 110
+-- Default open zoom (px/cell). Lower = more world visible.
+local DEFAULT_SCALE = 16
+local MARKER = 22
+local POILABELS = 24
+local BM_UI_REV = 19
+local LEGEND_W = 188
+local INFO_W = 188
+local POI_ICON_CAP = 256
+local MARK_ROWS = 7
+-- Beacon-derived PNG tiles (scaled); ImageTexture scales correctly — BeaconIconMap
+-- ImageBox clips the 66px sheet cell and looks stuck in the corner.
+local HOME_BLUE = "0.31 0.42 1.0" -- ~BEACON_COLORS[1] 4F6CFF
+local TEX_HOME = "rfs_bcn_home_b1.png"
+-- Top filter row (under north pan): icon-only buttons.
+local POI_CATS = {
+	{ key = "mines", cap = "Mine/Lab", tex = "rfs_bcn_mine_b1.png", dot = "orange" },
+	{ key = "warehouses", cap = "Warehouse", tex = "rfs_bcn_gear_b1.png", dot = "yellow" },
+	{ key = "ruins", cap = "Ruin", tex = "rfs_bcn_ruin_b1.png", dot = "red" },
+	{ key = "farms", cap = "Farm", tex = "rfs_bcn_flower_b1.png", dot = "green" },
+	{ key = "chem", cap = "Chem/Oil", tex = "rfs_bcn_bang_b1.png", dot = "blue" },
+	{ key = "hideout", cap = "Hideout", tex = "rfs_bcn_farmer_b1.png", dot = "orange" },
+}
+
+-- Survival grow-lab overworld entrance tile UUIDs (6 unique entrance tiles;
+-- wiki lists Growlab 1–7 — some seeds reuse a tile type). These ARE the
+-- Grow Labs, not mines.
+local GROWLAB_UUID = {
+	["e70e6ba129a340a49ec3cc2ed60a69c9"] = true, -- dungeon quest
+	["d159bbf67b8740738da7c6cc3b85e4b5"] = true, -- entrance / desert 256_07
+	["312e8d1cde9c479d861acace1cb480f7"] = true, -- burnt forest 256_03
+	["b5b956c1bab04bbeabb0e0ab8d3f1fab"] = true, -- forest 256_04
+	["08f0037b92334fe8b7e1c1a0c4a2913b"] = true, -- chemical
+	["8e1538ae61694053b9aed80258c6fb3b"] = true, -- water
+}
+
+-- Real underground / excavation access (not Grow Lab entrances).
+local MINE_ENTRANCE_UUID = {
+	["3d8544c664394fa498f0ca6d172af467"] = true, -- overworld→underground elevator
+}
+
+local function truncLabel( s, n )
+	s = tostring( s or "" )
+	if #s <= n then return s end
+	return string.sub( s, 1, n - 3 ) .. "..."
+end
+
+-- Drill-filter subtype: Grow Lab vs real mine/elevator entrance.
+local function poiMineKind( label, uid )
+	local id = ( string.gsub( tostring( uid or "" ), "%-", "" ) )
+	if GROWLAB_UUID[id] then return "growlab" end
+	if MINE_ENTRANCE_UUID[id] then return "mine" end
+	local l = string.lower( tostring( label or "" ) )
+	if string.find( l, "growlab", 1, true ) or string.find( l, "grow lab", 1, true ) then
+		return "growlab"
+	end
+	-- Every minidungeon overworld entrance tile is a Grow Lab.
+	if string.find( l, "minidungeon", 1, true )
+		and string.find( l, "entrance", 1, true ) then
+		return "growlab"
+	end
+	if string.find( l, "elevator", 1, true )
+		or string.find( l, "excavation", 1, true )
+		or string.find( l, "mine entrance", 1, true ) then
+		return "mine"
+	end
+	return nil
+end
+
+local function poiCatFromLabel( label, uid )
+	local id = ( string.gsub( tostring( uid or "" ), "%-", "" ) )
+	if GROWLAB_UUID[id] then return "mines" end
+	if MINE_ENTRANCE_UUID[id] then return "mines" end
+	local l = string.lower( tostring( label or "" ) )
+	if string.find( l, "minidungeon", 1, true )
+		or ( string.find( l, "dungeon", 1, true ) and string.find( l, "entrance", 1, true ) )
+		or string.find( l, "growlab", 1, true )
+		or string.find( l, "grow lab", 1, true )
+		or string.find( l, "mine entrance", 1, true )
+		or string.find( l, "overworld to underground", 1, true )
+		or ( string.find( l, "excavation", 1, true ) and string.find( l, "island", 1, true ) ) then
+		return "mines"
+	end
+	if string.find( l, "warehouse", 1, true ) then return "warehouses" end
+	if string.find( l, "ruin", 1, true ) then return "ruins" end
+	if string.find( l, "farming patch", 1, true ) then return "farms" end
+	if string.find( l, "chemical plant", 1, true )
+		or string.find( l, "schematic station", 1, true )
+		or string.find( l, "chemical lake", 1, true )
+		or string.find( l, "oil lake", 1, true )
+		or string.find( l, "oil pool", 1, true ) then
+		return "chem"
+	end
+	if string.find( l, "hideout", 1, true ) then return "hideout" end
+	return nil
+end
+
+local function poiDisplayLabel( a )
+	if a and a.mineKind == "growlab" then return "Grow Lab" end
+	if a and a.mineKind == "mine" then return "MINE" end
+	if a and a.cat == "mines" then return "Grow Lab" end
+	return truncLabel( a and a.label, 22 )
+end
+
+local function poiDotForKey( key )
+	for _, c in ipairs( POI_CATS ) do
+		if c.key == key then return c.dot end
+	end
+	return "red"
+end
+
+local function poiDotForAnchor( a )
+	local l = string.lower( tostring( a and a.label or "" ) )
+	if string.find( l, "oil lake", 1, true ) or string.find( l, "oil pool", 1, true ) then
+		return "orange"
+	end
+	if a and a.mineKind == "growlab" then
+		return "green"
+	end
+	if a and a.mineKind == "mine" then
+		return "orange"
+	end
+	if a and a.cat == "mines" then
+		return "green"
+	end
+	return poiDotForKey( a and a.cat )
+end
+
+-- Short "what to expect" copy for the hover tip.
+local function poiExpect( label, cat, a )
+	local l = string.lower( tostring( label or "" ) )
+	local kind = a and a.mineKind
+	if string.find( l, "oil lake", 1, true ) or string.find( l, "oil pool", 1, true ) then
+		return "Oil site", "Harvest crude oil for fuel and crafting."
+	end
+	if string.find( l, "chemical lake", 1, true ) then
+		return "Chemical lake", "Toxic water — chem resources nearby. Caution."
+	end
+	if string.find( l, "chemical plant", 1, true ) then
+		return "Chemical plant", "Industrial site. Expect chem loot and hazards."
+	end
+	if string.find( l, "schematic station", 1, true ) then
+		return "Schematic station", "Unlock crafting recipes here."
+	end
+	if kind == "growlab" or ( cat == "mines" and kind ~= "mine" ) then
+		return "Grow Lab", "Underground grow lab. Keyed rooms, bots, and loot."
+	end
+	if kind == "mine" then
+		return "MINE", "Underground / excavation access."
+	end
+	if cat == "warehouses" then
+		return "Warehouse", "Large loot run. Expect farmbots and locked rooms."
+	end
+	if cat == "ruins" then
+		return "Ruin", "Overworld ruin. Scrap, bots, and side paths."
+	end
+	if cat == "farms" then
+		return "Farming patch", "Soil / crop area for planting."
+	end
+	if cat == "hideout" then
+		return "Hideout", "Trader farmer. Schematics and trades."
+	end
+	return truncLabel( label, 22 ), "Point of interest on this seed."
+end
 local TIERS = {
 	{ px = 32, tier = "mini" },
 }
--- with pruned render trees (v31) pool size no longer costs FPS - sized so
--- overflow is impossible (city tiles stack 64 subcells into ONE resource)
+-- SOLID map paints WhiteSkin flats (Xaero-ish). Atlas cell pools only for
+-- non-solid fallback. dims = legend filter; shades = hillshade.
 local POOLCAP = {
-	{ per = 1100, roads = 220 },
+	{ per = 200, roads = 40, dims = 1600, flats = 2400, shades = 2400 },
 }
--- 0851-d: spread ~1320 pool widgets across frames during background prebuild
--- (GPS open burst was ~1554 widgets in one frame).
-local POOL_BUILD_STEP = 72
-local MARKER = 22
-local POILABELS = 24
--- seconds without a new drag sample that count as "the button was released".
--- Matched to the ghost's own 0.25 s freshness window so the committed pin
--- appears on exactly the frame the ghost disappears (BUG-5).
+local POOL_BUILD_STEP = 96
 local DRAGEND = 0.25
 
 local function stripDashes(s)
@@ -74,6 +225,14 @@ local function W(name, typ, skin, x, y, w, h, extra)
 	return t
 end
 
+-- Must be after local W. Scaled PNG tiles (not BeaconIconMap — that clips).
+local function bcnTex( name, x, y, sz, file, colour )
+	return W( name, "ImageBox", "ImageBox", x, y, sz, sz, {
+		ImageTexture = CC .. "/Gui/" .. file,
+		Colour = colour or "1 1 1",
+		NeedMouse = false })
+end
+
 -- raw event logging (bm_events.json, capped ring buffer)
 local function evlog(hud, tag, a, b, c2, d)
 	local c = hud.cl
@@ -92,6 +251,20 @@ end
 -- frame lookup for a world cell on a tier; nil = water/out of bounds (the
 -- water backdrop shows through). Returns frameInfo, flags, isRealImagery.
 function BigMap.resolve(hud, wx, wy, tierName)
+	if type( RfsBiomeMap ) ~= "table" then
+		pcall( function()
+			dofile( "$CONTENT_DATA/Scripts/game/RfsBiomeMap.lua" )
+		end )
+		if type( RfsBiomeMap ) ~= "table" then
+			pcall( function()
+				dofile( "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsBiomeMap.lua" )
+			end )
+		end
+	end
+	-- Solid biome field (no atlas road collage).
+	if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID then
+		return RfsBiomeMap.resolveFrame( hud.cl.td, hud.cl.atlas, wx, wy, tierName or "mini" )
+	end
 	local td = hud.cl.td
 	local b = td.bounds
 	if wx < b.xMin or wx > b.xMax or wy < b.yMin or wy > b.yMax then return nil end
@@ -145,17 +318,33 @@ function BigMap.queuePoolBuild(hud, firstOf)
 	bm.poolBuildIdx = 1
 	bm.pools = {}
 	bm.widgetByName = bm.widgetByName or {}
+	local solid = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
 	for ti, T in ipairs(TIERS) do
-		local pool = { byRes = {}, roads = {}, used = {}, roadsUsed = 0 }
+		local pool = {
+			byRes = {}, roads = {}, dims = {}, flats = {}, shades = {},
+			used = {}, roadsUsed = 0, dimsUsed = 0, flatsUsed = 0, shadesUsed = 0
+		}
 		bm.pools[ti] = pool
-		for res, first in pairs(firstOf[T.tier]) do
-			for i = 1, POOLCAP[ti].per do
-				bm.poolQueue[#bm.poolQueue + 1] = {
-					kind = "cell", ti = ti, T = T, res = res, first = first, i = i }
+		if solid then
+			for i = 1, ( POOLCAP[ti].flats or 0 ) do
+				bm.poolQueue[#bm.poolQueue + 1] = { kind = "flat", ti = ti, T = T, i = i }
 			end
-		end
-		for i = 1, POOLCAP[ti].roads do
-			bm.poolQueue[#bm.poolQueue + 1] = { kind = "road", ti = ti, T = T, i = i }
+			for i = 1, ( POOLCAP[ti].shades or 0 ) do
+				bm.poolQueue[#bm.poolQueue + 1] = { kind = "shade", ti = ti, T = T, i = i }
+			end
+			for i = 1, ( POOLCAP[ti].dims or 0 ) do
+				bm.poolQueue[#bm.poolQueue + 1] = { kind = "dim", ti = ti, T = T, i = i }
+			end
+		else
+			for res, first in pairs(firstOf[T.tier]) do
+				for i = 1, POOLCAP[ti].per do
+					bm.poolQueue[#bm.poolQueue + 1] = {
+						kind = "cell", ti = ti, T = T, res = res, first = first, i = i }
+				end
+			end
+			for i = 1, POOLCAP[ti].roads do
+				bm.poolQueue[#bm.poolQueue + 1] = { kind = "road", ti = ti, T = T, i = i }
+			end
 		end
 	end
 end
@@ -171,7 +360,28 @@ function BigMap.flushPoolBuild(hud, budget)
 		n = n + 1
 		local ti, T = q.ti, q.T
 		local pool = bm.pools[ti]
-		if q.kind == "cell" then
+		if q.kind == "flat" then
+			local cw = W("bmf" .. ti .. "_" .. q.i, "Widget", "WhiteSkin",
+				0, 0, T.px, T.px, {
+					Colour = "0.3 0.3 0.3", Alpha = 1, Visible = false,
+					NeedToolTip = true, onClick = "cl_bm_cell",
+					onDrag = "cl_bm_curs", onToolTip = "cl_bm_hover" })
+			bm.view.Childs[#bm.view.Childs + 1] = cw
+			pool.flats[q.i] = cw
+			bm.widgetByName[cw.Name] = cw
+		elseif q.kind == "shade" then
+			local ov = W("bms" .. ti .. "_" .. q.i, "Widget", "WhiteSkin",
+				0, 0, T.px, T.px,
+				{ Colour = "0 0 0", Alpha = 0.2, Visible = false, NeedMouse = false })
+			bm.view.Childs[#bm.view.Childs + 1] = ov
+			pool.shades[q.i] = ov
+		elseif q.kind == "dim" then
+			local ov = W("bmd" .. ti .. "_" .. q.i, "Widget", "WhiteSkin",
+				0, 0, T.px, T.px,
+				{ Colour = "0 0 0", Alpha = 0.55, Visible = false, NeedMouse = false })
+			bm.view.Childs[#bm.view.Childs + 1] = ov
+			pool.dims[q.i] = ov
+		elseif q.kind == "cell" then
 			local lst = pool.byRes[q.res]
 			if not lst then lst = {}; pool.byRes[q.res] = lst end
 			local extra = { ImageResource = q.res, ImageGroup = q.res,
@@ -226,6 +436,17 @@ function BigMap.build(hud, poolBudget)
 	local c = hud.cl
 	local bm = c.bm or {}
 	c.bm = bm
+	-- Pack sync can leave an old chrome tree in memory — rebuild legend/layout.
+	if ( bm.uiRev or 0 ) ~= BM_UI_REV then
+		bm.root = nil
+		bm.root2 = nil
+		bm.poolReady = false
+		bm.poolQueue = nil
+		bm.pools = nil
+		bm.anchors = nil
+		bm.scale = DEFAULT_SCALE
+		bm.uiRev = BM_UI_REV
+	end
 	if bm.poolReady and bm.gui and bm.root then
 		BigMap.syncWpUi(hud)
 		return true
@@ -264,10 +485,27 @@ function BigMap.build(hud, poolBudget)
 		c.wpGen = gen
 		bm.gsfx = (g_wmFlags and g_wmFlags.WP_FRESH_NAMES) and ("_g" .. gen) or ""
 
-		-- viewport (clips its children = the map cells)
-		local VW, VH = vw - 160, vh - 110
-		local vx, vy = 80, 64
-		bm.VW, bm.VH = VW, VH
+		-- Layout: legend (left) | pan | map | pan | info (right).
+		-- Top chrome = title row + north pan + POI filter row (above the map).
+		local pan = 48
+		local side = 16
+		local POI_ROW_H = 42
+		local topChrome = 58 + POI_ROW_H
+		local botChrome = 52
+		local vx = side + LEGEND_W + 8 + pan
+		local vy = topChrome
+		local VW = vw - vx - pan - 8 - INFO_W - side
+		local VH = vh - topChrome - botChrome
+		if VW < 400 then VW = math.max(320, vw - 200 - INFO_W) end
+		if VH < 280 then VH = math.max(240, vh - 120) end
+		bm.poiRowH = POI_ROW_H
+		-- Outer frame size (chrome + pans); inner view is inset for rounded look.
+		local frameW, frameH = VW, VH
+		local inset = 8
+		bm.frameW, bm.frameH = frameW, frameH
+		bm.infoX = vx + frameW + pan + 8
+		bm.infoY = vy
+		bm.infoH = frameH
 
 		-- NeedMouse=true ONLY on clickables + their ancestor chain (root/view/
 		-- cells/buttons): any other pick-enabled widget SWALLOWS the picks -
@@ -275,16 +513,40 @@ function BigMap.build(hud, poolBudget)
 		local root = W("BMRoot", "Widget", "PanelEmpty", 0, 0, vw, vh)
 		local back = W("BMBack", "Widget", "WhiteSkin", 0, 0, vw, vh,
 			{ Colour = "0 0 0", Alpha = 0.8, NeedMouse = false })
-		local view = W("BMView", "Widget", "PanelEmpty", vx, vy, VW, VH, {
+		local view = W("BMView", "Widget", "PanelEmpty",
+			vx + inset, vy + inset, frameW - inset * 2, frameH - inset * 2, {
 			onMouseWheel = "cl_bm_wheel" })
-		root.Childs = { back, view }
+		-- Rounded dark chrome behind the map (inventory skins stretch with soft corners).
+		root.Childs = {
+			back,
+			W( "BMMapChromeT", "Widget", "BackgroundDarkRoundedUpperRight",
+				vx, vy, frameW, math.floor( frameH / 2 ), { NeedMouse = false } ),
+			W( "BMMapChromeB", "Widget", "BackgroundDarkRoundedLowerLeft",
+				vx, vy + math.floor( frameH / 2 ), frameW, frameH - math.floor( frameH / 2 ),
+				{ NeedMouse = false } ),
+			view,
+		}
 		bm.view = view
+		bm.VW = frameW - inset * 2
+		bm.VH = frameH - inset * 2
+		VW, VH = bm.VW, bm.VH
+		bm.vx, bm.vy = vx + inset, vy + inset
+		-- Keep outer origin for chrome-aligned pans / title.
+		bm.fx, bm.fy = vx, vy
+		bm.frameW, bm.frameH = frameW, frameH
 
-		-- water backdrop (stretched water frame; water cells are never drawn)
-		local waterRes = c.atlas.mini["water_r0"].res
-		bm.water = W("BMWater", "ImageBox", "ImageBox",
-			0, 0, VW, VH, { ImageResource = waterRes, ImageGroup = waterRes,
-			  ImageName = "water_r0", NeedMouse = false })
+		-- water / ocean backdrop
+		local solidPaint = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
+		if solidPaint then
+			bm.water = W("BMWater", "Widget", "WhiteSkin",
+				0, 0, VW, VH, {
+					Colour = RfsBiomeMap.colorForId( 0 ), Alpha = 1, NeedMouse = false })
+		else
+			local waterRes = c.atlas.mini["water_r0"].res
+			bm.water = W("BMWater", "ImageBox", "ImageBox",
+				0, 0, VW, VH, { ImageResource = waterRes, ImageGroup = waterRes,
+				  ImageName = "water_r0", NeedMouse = false })
+		end
 		view.Childs[#view.Childs + 1] = bm.water
 	bm.poiLabels = {}
 	for i = 1, POILABELS do
@@ -342,45 +604,208 @@ function BigMap.build(hud, poolBudget)
 		return b
 	end
 	root.Childs[#root.Childs + 1] = W("BMTitle", "TextBox", "TextBox",
-		vx, 18, 340, 30, {
-		  -- players see the public version only (Eric). The build number that
-		  -- ties a report to an exact ship still goes to the stats file and to
-		  -- the bm_events "session" marker written on every map open - and to
-		  -- the title itself in the dev copy (titleFor).
+		vx, 14, math.min(360, frameW - 460), 32, {
 		  Caption = titleFor(c),
 		  FontName = "SM_HeaderLarge_Medium",
 		  TextAlign = "Left", TextShadow = true, NeedMouse = false })
-	-- minimap show/hide, mirrored with Q's hidden stop (pos 5 IS hidden -
-	-- one shared state). Caption shows the CURRENT state; a click flips it.
-	local mmb = btn("BMMini", (c.posIdx == 5) and "MINIMAP: OFF" or "MINIMAP: ON",
-		vx + VW - 448, 16, 152)
+	-- Top chrome: north pan centered; MINIMAP immediately LEFT of it (was
+	-- overlapping when map narrowed for the right INFO panel).
+	local panNX = vx + math.floor( ( frameW - 48 ) / 2 )
+	local mmW = 152
+	local mmb = btn( "BMMini", ( c.posIdx == 5 ) and "MINIMAP: OFF" or "MINIMAP: ON",
+		panNX - 8 - mmW, 8, mmW )
 	root.Childs[#root.Childs + 1] = mmb
 	bm.mmBtn = mmb
-	root.Childs[#root.Childs + 1] = btn("BMZoomOut", "-", vx + VW - 288, 16, 48)
-	root.Childs[#root.Childs + 1] = btn("BMZoomIn", "+", vx + VW - 232, 16, 48)
-	root.Childs[#root.Childs + 1] = btn("BMYou", "YOU", vx + VW - 176, 16, 64)
-	root.Childs[#root.Childs + 1] = btn("BMClose", "CLOSE [E]", vx + VW - 104, 16, 104, "PrimaryButton")
-	-- arrows hug their map edge exactly like the top bar hugs the map top
-	-- (0px gap), centered along each side
-	root.Childs[#root.Childs + 1] = btnPan("BMPanW", "arrow_left_b1.png", vx - 48, vy + math.floor((VH - 48) / 2))
-	root.Childs[#root.Childs + 1] = btnPan("BMPanE", "arrow_right_b1.png", vx + VW, vy + math.floor((VH - 48) / 2))
-	root.Childs[#root.Childs + 1] = btnPan("BMPanN", "arrow_up_b1.png", vx + math.floor((VW - 48) / 2), vy - 48)
-	root.Childs[#root.Childs + 1] = btnPan("BMPanS", "arrow_down_b1.png", vx + math.floor((VW - 48) / 2), vy + VH)
+	root.Childs[#root.Childs + 1] = btnPan( "BMPanN", "arrow_up_b1.png", panNX, 8 )
+	-- Zoom / YOU / CLOSE stay on the right edge of the map frame.
+	root.Childs[#root.Childs + 1] = btn("BMZoomOut", "-", vx + frameW - 288, 8, 48)
+	root.Childs[#root.Childs + 1] = btn("BMZoomIn", "+", vx + frameW - 232, 8, 48)
+	root.Childs[#root.Childs + 1] = btn("BMYou", "YOU", vx + frameW - 176, 8, 64)
+	root.Childs[#root.Childs + 1] = btn("BMClose", "CLOSE [E]", vx + frameW - 104, 8, 104, "PrimaryButton")
+	root.Childs[#root.Childs + 1] = btnPan("BMPanW", "arrow_left_b1.png", vx - pan, vy + math.floor((frameH - 48) / 2))
+	root.Childs[#root.Childs + 1] = btnPan("BMPanE", "arrow_right_b1.png", vx + frameW, vy + math.floor((frameH - 48) / 2))
+	root.Childs[#root.Childs + 1] = btnPan("BMPanS", "arrow_down_b1.png", vx + math.floor((frameW - 48) / 2), vy + frameH)
 
-	-- waypoint controls (Eric v66 feedback): OFF the map, in the strip below
-	-- it, right-aligned - mirroring how CLOSE sits in the strip above. 5
-	-- always-visible color dot buttons; the SELECTED color shows the teardrop
-	-- pin (circle-height, Eric v66) instead of the flat circle. CLEAR
-	-- WAYPOINT greys via a dark overlay child and no-ops while no waypoint
-	-- exists.
+	-- POI filter row: ABOVE the map (was overlapping the viewport and vanished).
+	do
+		c.poiFilters = c.poiFilters or {}
+		bm.poiBtns = {}
+		bm.poiIconImgs = {}
+		local rowY = vy - POI_ROW_H + 3
+		local bw, gap = 40, 6
+		local nBtn = #POI_CATS
+		local total = nBtn * bw + ( nBtn - 1 ) * gap
+		local rowX = vx + math.floor( ( frameW - total ) / 2 )
+		for i, cat in ipairs( POI_CATS ) do
+			local b = W( "BMPoi_" .. cat.key, "Button", "StyledButtonLarge",
+				rowX + ( i - 1 ) * ( bw + gap ), rowY, bw, 36, {
+					Caption = "", onClick = "cl_bm_btn" } )
+			local ic = bcnTex( "BMPoiI_" .. cat.key, 4, 2, 32, cat.tex, "1 1 1" )
+			b.Childs = { ic }
+			root.Childs[#root.Childs + 1] = b
+			bm.poiBtns[cat.key] = b
+			bm.poiIconImgs[cat.key] = ic
+		end
+	end
+
+	-- Legend panel (left): rounded inventory chrome + readable labels.
+	do
+		local lx, ly = side, vy
+		local legH = frameH
+		root.Childs[#root.Childs + 1] = W("BMLegChromeT", "Widget", "BackgroundDarkRoundedUpperRight",
+			lx, ly, LEGEND_W, math.floor( legH / 2 ), { NeedMouse = false })
+		root.Childs[#root.Childs + 1] = W("BMLegChromeB", "Widget", "BackgroundDarkRoundedLowerLeft",
+			lx, ly + math.floor( legH / 2 ), LEGEND_W, legH - math.floor( legH / 2 ),
+			{ NeedMouse = false })
+		root.Childs[#root.Childs + 1] = W("BMLegTitle", "Button", "StyledButtonLarge",
+			lx + 4, ly + 4, LEGEND_W - 8, 36, {
+				Caption = "LEGEND", FontName = "SM_Button", TextAlign = "Center",
+				NeedMouse = false })
+		local rows = ( type( RfsBiomeMap ) == "table" and RfsBiomeMap.LEGEND ) or {}
+		local rowY = ly + 48
+		local rowH = 30
+		bm.legBtns = {}
+		bm.legLbs = {}
+		for i, row in ipairs( rows ) do
+			local b = W("BMLegPick_" .. i, "Button", "StyledButtonLarge",
+				lx + 4, rowY, LEGEND_W - 8, rowH - 3, {
+					Caption = "", onClick = "cl_bm_btn" })
+			local col = row.color or ( RfsBiomeMap and RfsBiomeMap.colorForId( row.id ) ) or "0.5 0.5 0.5"
+			local lb = W("BMLegLb_" .. i, "TextBox", "TextBox", 30, 3, LEGEND_W - 56, rowH - 9, {
+				Caption = tostring( row.label or "" ),
+				FontName = "SM_TextLabel", TextAlign = "Left VCenter",
+				TextShadow = true, NeedMouse = false })
+			b.Childs = {
+				W("BMLegRim_" .. i, "Widget", "WhiteSkin", 6, 4, 20, 20, {
+					Colour = "0.12 0.12 0.14", Alpha = 1, NeedMouse = false }),
+				W("BMLegSw_" .. i, "Widget", "WhiteSkin", 7, 5, 18, 18, {
+					Colour = col, Alpha = 1, NeedMouse = false }),
+				lb,
+			}
+			root.Childs[#root.Childs + 1] = b
+			bm.legBtns[i] = b
+			bm.legLbs[i] = lb
+			rowY = rowY + rowH
+		end
+		rowY = rowY + 10
+		root.Childs[#root.Childs + 1] = W("BMLegMarkHd", "TextBox", "TextBox",
+			lx + 10, rowY, LEGEND_W - 20, 18, {
+				Caption = "MARKERS", FontName = "SM_HeaderTiny",
+				TextAlign = "Left", TextShadow = true, NeedMouse = false })
+		rowY = rowY + 20
+		-- Scrollable marker directory (replaces dense POI text on the map).
+		bm.markScroll = 0
+		bm.markSel = nil
+		local listH = MARK_ROWS * 26 + 4
+		local listPanel = W( "BMMarkList", "Widget", "PanelEmpty",
+			lx + 4, rowY, LEGEND_W - 8, listH, {
+				NeedMouse = true, onMouseWheel = "cl_bm_wheel" } )
+		listPanel.Childs = {
+			W( "BMMarkListBgT", "Widget", "BackgroundDarkRoundedUpperRight",
+				0, 0, LEGEND_W - 8, math.floor( listH / 2 ), { NeedMouse = false } ),
+			W( "BMMarkListBgB", "Widget", "BackgroundDarkRoundedLowerLeft",
+				0, math.floor( listH / 2 ), LEGEND_W - 8, listH - math.floor( listH / 2 ),
+				{ NeedMouse = false } ),
+		}
+		bm.markRows = {}
+		for i = 1, MARK_ROWS do
+			local ry = 2 + ( i - 1 ) * 26
+			local b = W( "BMMark_" .. i, "Button", "StyledButtonLarge",
+				2, ry, LEGEND_W - 12, 24, {
+					Caption = "", onClick = "cl_bm_btn" } )
+			-- Light plate so black beacon glyphs stay visible on dark chrome.
+			local plate = W( "BMMarkPlate_" .. i, "Widget", "WhiteSkin", 1, 1, 22, 22, {
+				Colour = "0.92 0.92 0.95", Alpha = 1, NeedMouse = false } )
+			local ic = bcnTex( "BMMarkI_" .. i, 2, 2, 20, "rfs_bcn_dot_b1.png", "1 1 1" )
+			ic.Visible = false
+			plate.Visible = false
+			local lb = W( "BMMarkLb_" .. i, "TextBox", "TextBox", 26, 2, LEGEND_W - 52, 20, {
+				Caption = "", FontName = "SM_TextLabel", TextAlign = "Left VCenter",
+				TextShadow = true, NeedMouse = false })
+			b.Childs = { plate, ic, lb }
+			listPanel.Childs[#listPanel.Childs + 1] = b
+			bm.markRows[i] = { btn = b, icon = ic, lb = lb, plate = plate }
+		end
+		root.Childs[#root.Childs + 1] = listPanel
+		rowY = rowY + listH + 4
+		-- Real arrow art (SM font has no ▲▼ — those rendered as boxed X).
+		local upB = W( "BMMarkUp", "Button", "StyledButtonLarge",
+			lx + 4, rowY, 40, 28, { Caption = "", onClick = "cl_bm_btn" } )
+		upB.Childs = {
+			W( "BMMarkUpI", "ImageBox", "ImageBox", 8, 2, 24, 24, {
+				ImageTexture = CC .. "/Gui/arrow_up_b1.png", NeedMouse = false } )
+		}
+		local dnB = W( "BMMarkDn", "Button", "StyledButtonLarge",
+			lx + 48, rowY, 40, 28, { Caption = "", onClick = "cl_bm_btn" } )
+		dnB.Childs = {
+			W( "BMMarkDnI", "ImageBox", "ImageBox", 8, 2, 24, 24, {
+				ImageTexture = CC .. "/Gui/arrow_down_b1.png", NeedMouse = false } )
+		}
+		root.Childs[#root.Childs + 1] = upB
+		root.Childs[#root.Childs + 1] = dnB
+		bm.markCountLb = W( "BMMarkCnt", "TextBox", "TextBox",
+			lx + 94, rowY + 4, LEGEND_W - 100, 20, {
+				Caption = "", FontName = "SM_HeaderTiny",
+				TextAlign = "Left", TextShadow = true, NeedMouse = false } )
+		root.Childs[#root.Childs + 1] = bm.markCountLb
+	end
+
+	-- INFO panel (right): same chrome language as legend; click details live here
+	-- (no floating tip over the map — that drew under tiles).
+	do
+		local ix = bm.infoX or ( vx + frameW + pan + 8 )
+		local iy = bm.infoY or vy
+		local infoH = bm.infoH or frameH
+		root.Childs[#root.Childs + 1] = W( "BMInfoChromeT", "Widget", "BackgroundDarkRoundedUpperRight",
+			ix, iy, INFO_W, math.floor( infoH / 2 ), { NeedMouse = false } )
+		root.Childs[#root.Childs + 1] = W( "BMInfoChromeB", "Widget", "BackgroundDarkRoundedLowerLeft",
+			ix, iy + math.floor( infoH / 2 ), INFO_W, infoH - math.floor( infoH / 2 ),
+			{ NeedMouse = false } )
+		root.Childs[#root.Childs + 1] = W( "BMInfoHd", "Button", "StyledButtonLarge",
+			ix + 4, iy + 4, INFO_W - 8, 36, {
+				Caption = "INFO", FontName = "SM_Button", TextAlign = "Center",
+				NeedMouse = false } )
+		bm.infoTitle = W( "BMInfoTitle", "TextBox", "TextBox",
+			ix + 10, iy + 48, INFO_W - 20, 28, {
+				Caption = "—", FontName = "SM_HeaderTiny", TextAlign = "Left",
+				TextShadow = true, NeedMouse = false } )
+		bm.infoBody = W( "BMInfoBody", "TextBox", "TextBox",
+			ix + 10, iy + 80, INFO_W - 20, 120, {
+				Caption = "Click a map marker\nor Markers list row.",
+				FontName = "SM_TextLabel", TextAlign = "Left",
+				TextShadow = true, NeedMouse = false } )
+		bm.infoMeta = W( "BMInfoMeta", "TextBox", "TextBox",
+			ix + 10, iy + 210, INFO_W - 20, 80, {
+				Caption = "", FontName = "SM_HeaderTiny", TextAlign = "Left",
+				TextShadow = true, NeedMouse = false } )
+		root.Childs[#root.Childs + 1] = bm.infoTitle
+		root.Childs[#root.Childs + 1] = bm.infoBody
+		root.Childs[#root.Childs + 1] = bm.infoMeta
+	end
+
+	-- waypoint controls: farm | GAP | panS | GAP | … | home | red… | CLEAR
+	-- Home sits immediately left of the red waypoint circle; pan gaps unchanged.
 	local clrW = 190
-	local clrX = vx + VW - clrW
-	local wpY = vy + VH
-	local dotX = clrX - 12 - (5 * 46 - 6)
+	local clrX = vx + frameW - clrW
+	local wpY = vy + frameH
+	local panMidX = vx + math.floor( ( frameW - 48 ) / 2 )
+	local gap = 28
+	local homeW = 40
+	local wpStride = 46
+	local wpBlock = 5 * wpStride - 6
+	local homeGap = 6
+	local wpStart = clrX - 8 - wpBlock
+	local homeX = wpStart - homeGap - homeW
+	-- Keep home from eating into the south-pan clearance.
+	local panRight = panMidX + 48 + gap
+	if homeX < panRight then
+		homeX = panRight
+		wpStart = homeX + homeW + homeGap
+	end
 	bm.colDot = {}
 	for i, col in ipairs(Waypoint.COLORS) do
 		local b = W("BMWpCol_" .. col, "Button", "StyledButtonLarge",
-			dotX + (i - 1) * 46, wpY + 4, 40, 40,
+			wpStart + (i - 1) * wpStride, wpY + 4, 40, 40,
 			{ Caption = "", onClick = "cl_bm_btn" })
 		local circ = W("BMWpColI_" .. col, "ImageBox", "ImageBox", 8, 8, 24, 24,
 			{ ImageTexture = CC .. "/Gui/wpdot_" .. col .. "_b1.png",
@@ -400,8 +825,71 @@ function BigMap.build(hud, poolBudget)
 		{ Colour = "0 0 0", Alpha = 0.55, NeedMouse = false, Visible = true })
 	clr.Childs = { bm.clearDim }
 	root.Childs[#root.Childs + 1] = clr
-	bm.vx, bm.vy = vx, vy
 
+	-- Blue home — immediately left of red wpdot.
+	do
+		local hb = W( "BMHome", "Button", "StyledButtonLarge",
+			homeX, wpY + 4, homeW, 40, { Caption = "", onClick = "cl_bm_btn" } )
+		local hic = bcnTex( "BMHomeI", 4, 4, 32, TEX_HOME, HOME_BLUE )
+		hb.Childs = { hic }
+		bm.homeBtn = hb
+		bm.homeIcon = hic
+		root.Childs[#root.Childs + 1] = hb
+	end
+
+	-- Farm seed pins: left of south pan, with a clear gap before the arrow.
+	do
+		local farmStride = 40
+		local farmBlock = 5 * farmStride
+		local farmX = panMidX - gap - farmBlock
+		bm.farmBtns = {}
+		for i, col in ipairs( Waypoint.COLORS ) do
+			local b = W( "BMFarmCol_" .. col, "Button", "StyledButtonLarge",
+				farmX + ( i - 1 ) * farmStride, wpY + 4, 36, 40,
+				{ Caption = "", onClick = "cl_bm_btn" } )
+			b.Childs = {
+				W( "BMFarmI_" .. col, "ImageBox", "ImageBox", 6, 8, 24, 24, {
+					ImageTexture = CC .. "/Gui/wpdot_" .. col .. "_b1.png",
+					NeedMouse = false } )
+			}
+			bm.farmBtns[col] = b
+			root.Childs[#root.Childs + 1] = b
+		end
+	end
+
+	-- Base + farm markers inside the viewport (clickable to clear).
+	bm.basePin = W( "BMBasePin" .. bm.gsfx, "ImageBox", "ImageBox", 0, 0, 32, 32, {
+		ImageTexture = CC .. "/Gui/" .. TEX_HOME, Colour = HOME_BLUE,
+		Visible = false, onClick = "cl_bm_btn" } )
+	view.Childs[#view.Childs + 1] = bm.basePin
+	bm.farmPins = {}
+	for _, col in ipairs( Waypoint.COLORS ) do
+		local p = W( "BMFarmPin_" .. col .. bm.gsfx, "ImageBox", "ImageBox", 0, 0, 20, 28, {
+			ImageTexture = CC .. "/Gui/gps_marker_" .. col .. "_b1.png",
+			Visible = false, onClick = "cl_bm_btn" } )
+		view.Childs[#view.Childs + 1] = p
+		bm.farmPins[col] = p
+	end
+
+	-- POI category icon pool (filter dots on map — hoverable for tip + list jump).
+	bm.poiIcons = {}
+	bm.poiIconMeta = {}
+	for i = 1, POI_ICON_CAP do
+		local ic = W( "BMPoiIc_" .. i, "ImageBox", "ImageBox", 0, 0, 20, 20, {
+			ImageTexture = CC .. "/Gui/wpdot_red_b1.png",
+			Visible = false, NeedMouse = true, NeedToolTip = true,
+			onToolTip = "cl_bm_hover", onClick = "cl_bm_btn" } )
+		view.Childs[#view.Childs + 1] = ic
+		bm.poiIcons[i] = ic
+	end
+
+	-- Selection ring for marker-list pick (find without map text).
+	bm.selRing = W( "BMSelRing" .. bm.gsfx, "ImageBox", "ImageBox", 0, 0, 22, 22, {
+		ImageTexture = CC .. "/Gui/wpdot_sel_b1.png",
+		Visible = false, NeedMouse = false } )
+	view.Childs[#view.Childs + 1] = bm.selRing
+
+	-- vx/vy already set to the inset view origin for cursor math.
 	bm.root = root
 	bm.clickMap = {}
 
@@ -412,6 +900,7 @@ function BigMap.build(hud, poolBudget)
 	-- proves HUD layers > screen guis). Originals stay in the interactive
 	-- gui for clicks + viewport clipping; update() mirrors positions and
 	-- hides overlay copies at the viewport edge (gui2 has no clip parent).
+	-- Marker details use the right INFO panel (not a floating tip).
 	local ok2, gui2 = pcall(sm.jsonGui.createGui,
 		{ isHud = true, isInteractive = false, needsCursor = false })
 	if ok2 and gui2 then
@@ -466,12 +955,20 @@ function BigMap.build(hud, poolBudget)
 				for wx = b.xMin, b.xMax do
 					local uid = row[wx]
 					if uid then
-						local p = poi[stripDashes(tostring(uid))]
+						local uidKey = stripDashes(tostring(uid))
+						local p = poi[uidKey]
 						if p and (not xrow or (xrow[wx] or 0) == 0)
 						     and (not yrow or (yrow[wx] or 0) == 0) then
-							anchors[#anchors + 1] = { label = p.label, tier = p.tier or 1,
-								sx = p.sx or 1,
-								cx = wx + (p.sx or 1) / 2, cy = wy + (p.sy or 1) / 2 }
+							local cat = poiCatFromLabel( p.label, uidKey )
+							local mineKind = poiMineKind( p.label, uidKey )
+							if cat == "mines" and not mineKind then
+								mineKind = "growlab"
+							end
+							anchors[#anchors + 1] = {
+								label = p.label, tier = p.tier or 1,
+								sx = p.sx or 1, uid = uidKey,
+								cx = wx + (p.sx or 1) / 2, cy = wy + (p.sy or 1) / 2,
+								cat = cat, mineKind = mineKind }
 						end
 					end
 				end
@@ -486,16 +983,17 @@ end
 -- -------------------------------------------------------------- refill -----
 function BigMap.refill(hud)
 	local bm = hud.cl.bm
-	bm.scale = math.max(MINSCALE, math.min(MAXSCALE, bm.scale or 34))
+	bm.scale = math.max(MINSCALE, math.min(MAXSCALE, bm.scale or DEFAULT_SCALE))
 	bm.tierIdx = 1
 	local T = TIERS[bm.tierIdx]
 	local px = bm.scale
-	local pxi = math.max(2, math.floor(px + 0.5))
 	local pool = bm.pools[bm.tierIdx]
 	pool.used = {}
 	pool.roadsUsed = 0
+	pool.dimsUsed = 0
+	pool.flatsUsed = 0
+	pool.shadesUsed = 0
 	bm.clickMap = {}
-	-- placed registry for the smooth-pan reposition pass (v35)
 	bm.placed = {}
 	bm.refillCx, bm.refillCy = bm.cx, bm.cy
 	local VW, VH = bm.VW, bm.VH
@@ -504,19 +1002,80 @@ function BigMap.refill(hud)
 	local y0 = math.floor(bm.cy - VH / (2 * px)) - 1
 	local y1 = math.ceil(bm.cy + VH / (2 * px)) + 1
 	local skipped = 0
-	-- EXACT ABUTMENT (v40): each cell's width/height = neighbor edge minus
-	-- own edge. Rounding scale once (pxi) left 1px gaps at fractional scales
-	-- (spacing 79, width 78) with the cyan water backdrop showing through -
-	-- Eric's "tile borders at some zoom levels".
+	local solid = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
+	local filt = bm.legendFilter
 	local function edgeX(wx) return math.floor(VW / 2 + (wx - bm.cx) * px + 0.5) end
 	local function edgeY(wy) return math.floor(VH / 2 - (wy - bm.cy) * px + 0.5) end
-	local function assign(f, sx, sy, w, h, wx, wy)
+
+	-- Soft NW hillshade (skip pure water — keeps ocean clean).
+	local function shadeAlpha( id, wx, wy, ww, wh )
+		if id == 0 then return 0 end
+		local e = RfsBiomeMap.elev( wx, wy )
+		local eE = RfsBiomeMap.elev( wx + ww, wy )
+		local eN = RfsBiomeMap.elev( wx, wy + wh )
+		local slope = ( e - eE ) + ( e - eN )
+		if slope >= 0 then
+			-- lit face: mountains get a slight lighten via lower shade skip
+			return 0
+		end
+		local a = -slope * 0.55
+		if id == 8 then a = a * 1.25 end -- stronger relief on mountains
+		if a < 0.06 then return 0 end
+		if a > 0.38 then a = 0.38 end
+		return a
+	end
+
+	local function placeOverlays( id, sx, sy, w, h, wx, wy, ww, wh )
+		local sa = shadeAlpha( id, wx, wy, ww, wh )
+		if sa > 0 and pool.shades and pool.shadesUsed < #pool.shades then
+			pool.shadesUsed = pool.shadesUsed + 1
+			local sh = pool.shades[pool.shadesUsed]
+			sh.Visible = true
+			sh.Alpha = sa
+			sh.x = sx; sh.y = sy
+			sh.width = w + 1; sh.height = h + 1
+			bm.placed[#bm.placed + 1] = { w = sh, wx = wx, wy = wy, ww = ww, wh = wh, dim = true }
+		end
+		if filt ~= nil and id ~= filt and pool.dims and pool.dimsUsed < #pool.dims then
+			pool.dimsUsed = pool.dimsUsed + 1
+			local ov = pool.dims[pool.dimsUsed]
+			ov.Visible = true
+			ov.Alpha = 0.55
+			ov.x = sx; ov.y = sy
+			ov.width = w + 1; ov.height = h + 1
+			bm.placed[#bm.placed + 1] = { w = ov, wx = wx, wy = wy, ww = ww, wh = wh, dim = true }
+		end
+	end
+
+	local function assignFlat( id, sx, sy, w, h, wx, wy, ww, wh )
+		ww = ww or 1
+		wh = wh or 1
+		if not pool.flats or pool.flatsUsed >= #pool.flats then return false end
+		pool.flatsUsed = pool.flatsUsed + 1
+		local cw = pool.flats[pool.flatsUsed]
+		if cw and cw.Name == bm.pinName then
+			if pool.flatsUsed >= #pool.flats then return false end
+			pool.flatsUsed = pool.flatsUsed + 1
+			cw = pool.flats[pool.flatsUsed]
+		end
+		bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, ww = ww, wh = wh }
+		cw.Visible = true
+		cw.Colour = RfsBiomeMap.colorForId( id )
+		cw.Alpha = 1
+		cw.x = sx; cw.y = sy
+		cw.width = w + 1; cw.height = h + 1
+		bm.clickMap[cw.Name] = { x = wx, y = wy }
+		placeOverlays( id, sx, sy, w, h, wx, wy, ww, wh )
+		return true
+	end
+
+	local function assign(f, sx, sy, w, h, wx, wy, ww, wh)
+		ww = ww or 1
+		wh = wh or 1
 		local lst = pool.byRes[f.res]
 		if not lst then return false end
 		local u = (pool.used[f.res] or 0) + 1
 		if u > #lst then return false end
-		-- a widget pinned by an active drag keeps its assignment (recycling
-		-- the pressed widget kills the engine's drag session)
 		local cw = lst[u]
 		if cw and cw.Name == bm.pinName then
 			u = u + 1
@@ -524,18 +1083,10 @@ function BigMap.refill(hud)
 			if not cw then return false end
 		end
 		pool.used[f.res] = u
-		bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, rs = T.rotskin }
+		bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, ww = ww, wh = wh, rs = T.rotskin }
 		cw.Visible = true
-		-- THE LINE the v34 refactor dropped (five builds of "garbled tiles"):
-		-- without it every widget renders its creation-time default frame
 		cw.ImageName = f.name
 		cw.x = sx; cw.y = sy
-		-- +1 DRAW OVERLAP (8/14): logical abutment is exact (v40), but the
-		-- engine scales this 1280x720-logical gui to physical pixels PER
-		-- WIDGET, and at fractional scales (1080p = 1.5x) neighbors can round
-		-- 1 physical px apart - crawling background lines between tiles.
-		-- Overlapping the draw rect by 1 logical px covers any such gap;
-		-- layout math (edges, clickMap) stays on the exact values.
 		cw.width = w + 1; cw.height = h + 1
 		if T.rotskin then
 			cw.RotatingSkinAngle = (f.rot or 0) * ROTSIGN * (math.pi / 2)
@@ -543,52 +1094,107 @@ function BigMap.refill(hud)
 			cw.RotatingSkinCenterY = math.floor((h + 1) / 2)
 		end
 		bm.clickMap[cw.Name] = { x = wx, y = wy }
+		placeOverlays( f.id or -1, sx, sy, w, h, wx, wy, ww, wh )
 		return true
 	end
+
 	local atlas = hud.cl.atlas
-	for wy = y0, y1 do
-		for wx = x0, x1 do
-			local f, flags, real = BigMap.resolve(hud, wx, wy, T.tier)
-			if f then
-				local sx = edgeX(wx)
-				local sy = edgeY(wy + 1)
-				local w = edgeX(wx + 1) - sx
-				local h = edgeY(wy) - sy
-				local done = assign(f, sx, sy, w, h, wx, wy)
-				if not done then
-					-- primary pool saturated (monotile region): degrade to
-					-- the biome-tint frame, which lives in a different pool
-					local t = math.floor((flags or 0) / 4096) % 16
-					local fbName, tbl
-					if T.tier == "mini" then
-						fbName = (t >= 1 and t <= 8) and ("biome_" .. t .. "_r0") or "unknown_r0"
-						tbl = atlas.mini
+	if solid then
+		-- Cap merge size so coastlines stay jagged (Xaero feel), not huge slabs.
+		local maxSide = 1
+		if px < 10 then maxSide = 5
+		elseif px < 14 then maxSide = 3
+		elseif px < 22 then maxSide = 2
+		end
+		local ids = {}
+		for wy = y0, y1 do
+			local row = {}
+			ids[wy] = row
+			for wx = x0, x1 do
+				row[wx] = RfsBiomeMap.cellId( hud.cl.td, wx, wy )
+			end
+		end
+		-- Land next to water → coast strip (sandy), then lakes/shores paint blue.
+		RfsBiomeMap.applyCoast( ids, x0, x1, y0, y1 )
+		local visited = {}
+		local function vkey( wx, wy ) return wy * 65536 + wx end
+		for wy = y0, y1 do
+			for wx = x0, x1 do
+				if not visited[vkey( wx, wy )] then
+					local id = ids[wy][wx]
+					-- Open ocean: leave to blue backdrop (saves draw pool).
+					if id == 0 and RfsBiomeMap.isOpenOcean( ids, wx, wy, x0, x1, y0, y1 ) then
+						visited[vkey( wx, wy )] = true
 					else
-						fbName = (t >= 1 and t <= 8) and ("biome_" .. t) or "unknown"
-						tbl = atlas.big
+						local x2 = wx
+						while x2 < x1 and ( x2 - wx + 1 ) < maxSide
+							and ids[wy][x2 + 1] == id and not visited[vkey( x2 + 1, wy )] do
+							x2 = x2 + 1
+						end
+						local y2 = wy
+						while y2 < y1 and ( y2 - wy + 1 ) < maxSide do
+							local okRow = true
+							for x = wx, x2 do
+								if ids[y2 + 1][x] ~= id or visited[vkey( x, y2 + 1 )] then
+									okRow = false
+									break
+								end
+							end
+							if not okRow then break end
+							y2 = y2 + 1
+						end
+						for y = wy, y2 do
+							for x = wx, x2 do
+								visited[vkey( x, y )] = true
+							end
+						end
+						local ww, wh = x2 - wx + 1, y2 - wy + 1
+						local sx = edgeX( wx )
+						local sy = edgeY( wy + wh )
+						local w = edgeX( wx + ww ) - sx
+						local h = edgeY( wy ) - sy
+						if not assignFlat( id, sx, sy, w, h, wx, wy, ww, wh ) then
+							skipped = skipped + 1
+						end
 					end
-					local h2 = tbl[fbName]
-					if h2 and h2.res ~= f.res then
-						done = assign({ res = h2.res, name = fbName, rot = 0 }, sx, sy, w, h, wx, wy)
-					end
-					if not done then skipped = skipped + 1 end
-					if done then real = false end
 				end
-				local mask = math.floor((flags or 0) / 256) % 16
-				if real == false and mask ~= 0 and pool.roadsUsed < #pool.roads then
-					pool.roadsUsed = pool.roadsUsed + 1
-					local ov = pool.roads[pool.roadsUsed]
-					ov.Visible = true
-					ov.x = sx; ov.y = sy
-					ov.width = w + 1; ov.height = h + 1
-					ov.ImageName = "road_" .. mask
-					bm.placed[#bm.placed + 1] = { w = ov, wx = wx, wy = wy }
+			end
+		end
+	else
+		for wy = y0, y1 do
+			for wx = x0, x1 do
+				local f, flags, real = BigMap.resolve(hud, wx, wy, T.tier)
+				if f then
+					local sx = edgeX(wx)
+					local sy = edgeY(wy + 1)
+					local w = edgeX(wx + 1) - sx
+					local h = edgeY(wy) - sy
+					local done = assign(f, sx, sy, w, h, wx, wy, 1, 1)
+					if not done then
+						local t = math.floor((flags or 0) / 4096) % 16
+						local fbName = (t >= 1 and t <= 8) and ("biome_" .. t .. "_r0") or "unknown_r0"
+						local h2 = atlas.mini[fbName]
+						if h2 and h2.res ~= f.res then
+							done = assign({ res = h2.res, name = fbName, rot = 0, id = t }, sx, sy, w, h, wx, wy, 1, 1)
+						end
+						if not done then skipped = skipped + 1 end
+						if done then real = false end
+					end
+					local mask = math.floor((flags or 0) / 256) % 16
+					if real == false and mask ~= 0 and pool.roadsUsed < #pool.roads then
+						pool.roadsUsed = pool.roadsUsed + 1
+						local ov = pool.roads[pool.roadsUsed]
+						ov.Visible = true
+						ov.x = sx; ov.y = sy
+						ov.width = w + 1; ov.height = h + 1
+						ov.ImageName = "road_" .. mask
+						bm.placed[#bm.placed + 1] = { w = ov, wx = wx, wy = wy, ww = 1, wh = 1 }
+					end
 				end
 			end
 		end
 	end
 	bm.skipped = skipped
-	-- hide leftovers (both tiers; the inactive tier hides fully)
 	for ti = 1, #TIERS do
 		local p = bm.pools[ti]
 		for res, lst in pairs(p.byRes) do
@@ -596,51 +1202,110 @@ function BigMap.refill(hud)
 			for i = u + 1, #lst do lst[i].Visible = false end
 		end
 		local ru = (ti == bm.tierIdx) and pool.roadsUsed or 0
-		for i = ru + 1, #p.roads do p.roads[i].Visible = false end
+		for i = ru + 1, #(p.roads or {}) do p.roads[i].Visible = false end
+		local du = (ti == bm.tierIdx) and (pool.dimsUsed or 0) or 0
+		for i = du + 1, #(p.dims or {}) do p.dims[i].Visible = false end
+		local fu = (ti == bm.tierIdx) and (pool.flatsUsed or 0) or 0
+		for i = fu + 1, #(p.flats or {}) do p.flats[i].Visible = false end
+		local su = (ti == bm.tierIdx) and (pool.shadesUsed or 0) or 0
+		for i = su + 1, #(p.shades or {}) do p.shades[i].Visible = false end
 	end
-	-- POI labels: only sized landmarks (829 raw anchors in a typical world -
-	-- unfiltered is label soup). Region view: 4+ cell tiles; close-up: 2+.
-	local minSx = (bm.scale >= 40) and 2 or 4
+	-- No POI text soup on the map — names live in the MARKERS list.
+	for i = 1, #bm.poiLabels do bm.poiLabels[i].Visible = false end
 	local li = 0
-	for _, a in ipairs(bm.anchors or {}) do
-		if (a.sx or 1) >= minSx and li < #bm.poiLabels then
-			local sx = VW / 2 + (a.cx - bm.cx) * px
-			local sy = VH / 2 - (a.cy - bm.cy) * px
-			if sx > -80 and sx < VW + 80 and sy > -20 and sy < VH + 20 then
-				li = li + 1
-				local tb = bm.poiLabels[li]
-				tb.Visible = true
-				tb.Caption = a.label
-				tb.x = math.floor(sx - 70)
-				tb.y = math.floor(sy - 9)
-				bm.placed[#bm.placed + 1] = { w = tb, ax = a.cx, ay = a.cy, lbl = true }
+
+	-- POI category icons (active filters only). Skip minSx gate — chem/oil
+	-- lakes and plants are often sx 1–2 and must still place when filtered.
+	-- Collect visible first, nearest-to-center wins when over POI_ICON_CAP
+	-- (old south-first scan starved northern ruins).
+	local filters = hud.cl.poiFilters or {}
+	local anyPoi = false
+	for _, cat in ipairs( POI_CATS ) do
+		if filters[cat.key] then anyPoi = true break end
+	end
+	local ii = 0
+	bm.poiIconMeta = {}
+	if anyPoi and bm.poiIcons then
+		local vis = {}
+		local midX, midY = VW / 2, VH / 2
+		for _, a in ipairs( bm.anchors or {} ) do
+			if a.cat and filters[a.cat] then
+				local sx = midX + ( a.cx - bm.cx ) * px
+				local sy = midY - ( a.cy - bm.cy ) * px
+				if sx > -20 and sx < VW + 20 and sy > -20 and sy < VH + 20 then
+					local dx, dy = sx - midX, sy - midY
+					vis[#vis + 1] = { a = a, sx = sx, sy = sy, d2 = dx * dx + dy * dy }
+				end
 			end
 		end
+		table.sort( vis, function( u, v ) return u.d2 < v.d2 end )
+		local nPlace = math.min( #vis, #bm.poiIcons )
+		for i = 1, nPlace do
+			local v = vis[i]
+			local ic = bm.poiIcons[i]
+			ic.Visible = true
+			ic.ImageTexture = CC .. "/Gui/wpdot_" .. poiDotForAnchor( v.a ) .. "_b1.png"
+			ic.x = math.floor( v.sx - 10 )
+			ic.y = math.floor( v.sy - 10 )
+			bm.poiIconMeta[i] = v.a
+			bm.placed[#bm.placed + 1] = { w = ic, ax = v.a.cx, ay = v.a.cy, lbl = true }
+		end
+		ii = nPlace
 	end
-	for i = li + 1, #bm.poiLabels do bm.poiLabels[i].Visible = false end
+	if bm.poiIcons then
+		for i = ii + 1, #bm.poiIcons do
+			bm.poiIcons[i].Visible = false
+			bm.poiIconMeta[i] = nil
+		end
+	end
 
-	-- PRUNED render tree (v31): render(root) cost is proportional to the
-	-- tree handed over, NOT to visible pixels - only used widgets go in.
-	-- A drag-pinned widget is always included (once) so the engine keeps
-	-- its drag session alive.
+	-- Selection highlight from markers list.
+	if bm.selRing then
+		local sel = bm.markSel
+		if sel and sel.cx and sel.cy then
+			local sx = VW / 2 + ( sel.cx - bm.cx ) * px
+			local sy = VH / 2 - ( sel.cy - bm.cy ) * px
+			if sx > -30 and sx < VW + 30 and sy > -30 and sy < VH + 30 then
+				bm.selRing.Visible = true
+				bm.selRing.x = math.floor( sx - 11 )
+				bm.selRing.y = math.floor( sy - 11 )
+				bm.placed[#bm.placed + 1] = { w = bm.selRing, ax = sel.cx, ay = sel.cy, lbl = true }
+			else
+				bm.selRing.Visible = false
+			end
+		else
+			bm.selRing.Visible = false
+		end
+	end
+
 	local pinW = bm.pinName and bm.widgetByName and bm.widgetByName[bm.pinName]
 	local vc = { bm.water }
+	for i = 1, (pool.flatsUsed or 0) do
+		if pool.flats[i] ~= pinW then vc[#vc + 1] = pool.flats[i] end
+	end
 	for res, lst in pairs(pool.byRes) do
 		for i = 1, (pool.used[res] or 0) do
 			if lst[i] ~= pinW then vc[#vc + 1] = lst[i] end
 		end
 	end
+	for i = 1, (pool.shadesUsed or 0) do vc[#vc + 1] = pool.shades[i] end
 	for i = 1, pool.roadsUsed do vc[#vc + 1] = pool.roads[i] end
+	for i = 1, (pool.dimsUsed or 0) do vc[#vc + 1] = pool.dims[i] end
 	for i = 1, li do vc[#vc + 1] = bm.poiLabels[i] end
+	for i = 1, ii do vc[#vc + 1] = bm.poiIcons[i] end
 	if pinW then vc[#vc + 1] = pinW end
 	vc[#vc + 1] = bm.marker
-	-- all color pins + placement ghosts stay in the tree (10 widgets):
-	-- visibility is per-frame state in update(), no refill needed to appear
+	if bm.basePin then vc[#vc + 1] = bm.basePin end
+	if bm.selRing and bm.selRing.Visible then vc[#vc + 1] = bm.selRing end
 	for _, col in ipairs(Waypoint.COLORS) do
 		vc[#vc + 1] = bm.wpPins[col]
 		vc[#vc + 1] = bm.wpGhost[col]
+		if bm.farmPins then vc[#vc + 1] = bm.farmPins[col] end
 	end
 	bm.view.Childs = vc
+	BigMap.syncLegendUi(hud)
+	BigMap.syncPoiUi(hud)
+	BigMap.syncMarkList(hud)
 end
 
 -- ------------------------------------------------------------ open/close ---
@@ -736,7 +1401,7 @@ function BigMap.update(hud, dt, char)
 			return
 		end
 	end
-	local px = bm.scale or 34
+	local px = bm.scale or DEFAULT_SCALE
 	if char then
 		local pos = char.worldPosition
 		local sx = bm.VW / 2 + (pos.x / 64 - bm.cx) * px
@@ -795,6 +1460,35 @@ function BigMap.update(hud, dt, char)
 			p.y = math.floor(sy - 26)
 		else
 			p.Visible = false
+		end
+	end
+	-- Base house pin (centered on world point)
+	if bm.basePin then
+		local base = hud.cl.baseMarker
+		if base and base.x then
+			local sx = bm.VW / 2 + ( base.x / 64 - bm.cx ) * px
+			local sy = bm.VH / 2 - ( base.y / 64 - bm.cy ) * px
+			bm.basePin.Visible = true
+			bm.basePin.x = math.floor( sx - 16 )
+			bm.basePin.y = math.floor( sy - 16 )
+		else
+			bm.basePin.Visible = false
+		end
+	end
+	-- Farm seed pins
+	if bm.farmPins then
+		local farms = hud.cl.farmMarkers or {}
+		for col, p in pairs( bm.farmPins ) do
+			local f = farms[col]
+			if f and f.x then
+				local sx = bm.VW / 2 + ( f.x / 64 - bm.cx ) * px
+				local sy = bm.VH / 2 - ( f.y / 64 - bm.cy ) * px
+				p.Visible = true
+				p.x = math.floor( sx - 10 )
+				p.y = math.floor( sy - 26 )
+			else
+				p.Visible = false
+			end
 		end
 	end
 	if bm.wpGhost then
@@ -876,6 +1570,308 @@ local BTN_PAN = {
 	BMPanW = { -1, 0 }, BMPanE = { 1, 0 }, BMPanN = { 0, 1 }, BMPanS = { 0, -1 },
 }
 
+-- Legend selection captions ("> Meadow" while filtered).
+function BigMap.syncLegendUi(hud)
+	local bm = hud.cl.bm
+	if not bm then return end
+	if bm.legLbs then
+		local rows = ( type( RfsBiomeMap ) == "table" and RfsBiomeMap.LEGEND ) or {}
+		for i, row in ipairs( rows ) do
+			local lb = bm.legLbs[i]
+			if lb then
+				local label = tostring( row.label or "" )
+				if bm.legendFilter ~= nil and bm.legendFilter == row.id then
+					lb.Caption = "> " .. label
+				else
+					lb.Caption = label
+				end
+			end
+		end
+	end
+end
+
+function BigMap.syncPoiUi(hud)
+	local bm = hud.cl.bm
+	if not bm then return end
+	local filters = hud.cl.poiFilters or {}
+	if bm.poiIconImgs then
+		for _, cat in ipairs( POI_CATS ) do
+			local ic = bm.poiIconImgs[cat.key]
+			if ic then
+				if filters[cat.key] then
+					ic.Colour = "1 1 0.55"
+				else
+					ic.Colour = "0.55 0.55 0.55"
+				end
+			end
+		end
+	end
+	if bm.homeIcon then
+		if bm.placeMode == "base" then
+			bm.homeIcon.Colour = "0.55 0.85 1.0"
+		else
+			bm.homeIcon.Colour = HOME_BLUE
+		end
+	end
+end
+
+function BigMap.buildMarkItems(hud)
+	local bm = hud.cl.bm
+	local items = {}
+	items[#items + 1] = {
+		kind = "you", label = "You", tex = "arrow.png", colour = "1 1 1" }
+	local base = hud.cl.baseMarker
+	if base and base.x and base.y then
+		items[#items + 1] = {
+			kind = "home", label = "Home", tex = TEX_HOME, colour = HOME_BLUE,
+			cx = base.x / 64, cy = base.y / 64 }
+	end
+	local wp = hud.cl.waypoint
+	if wp and wp.x and wp.y then
+		items[#items + 1] = {
+			kind = "wp", label = "Waypoint", tex = "rfs_bcn_dot_b1.png",
+			colour = "1 0.35 0.35", cx = wp.x / 64, cy = wp.y / 64 }
+	end
+	local farms = hud.cl.farmMarkers or {}
+	for _, col in ipairs( Waypoint.COLORS ) do
+		local f = farms[col]
+		if f and f.x and f.y then
+			items[#items + 1] = {
+				kind = "farm", label = "Farm (" .. col .. ")",
+				tex = "rfs_bcn_flower_b1.png", colour = "0.55 1 0.55",
+				cx = f.x / 64, cy = f.y / 64 }
+		end
+	end
+	-- Current tracked quest only (not every Builder Quest / camping spot).
+	pcall(function()
+		local tracked = QuestManager.Cl_GetTrackedQuests and QuestManager.Cl_GetTrackedQuests()
+		if type( tracked ) ~= "table" then return end
+		for qName, qObj in pairs( tracked ) do
+			local title = tostring( qName or "Quest" ):gsub( "^quest_", "" ):gsub( "_", " " )
+			local cx, cy
+			pcall(function()
+				if sm.exists( qObj ) and qObj.getClientWaypoint then
+					local wpos = qObj:getClientWaypoint()
+					if wpos then
+						cx = wpos.x / 64
+						cy = wpos.y / 64
+					end
+				end
+			end)
+			if not cx then
+				pcall(function()
+					local data = QuestManager.Cl_GetQuestData and QuestManager.Cl_GetQuestData( qName )
+					local pos = data and ( data.waypoint or data.position or data.pos )
+					if pos and pos.x then
+						cx = pos.x / 64
+						cy = pos.y / 64
+					end
+				end)
+			end
+			if cx and cy then
+				items[#items + 1] = {
+					kind = "quest", label = truncLabel( title, 18 ),
+					tex = "rfs_bcn_bang_b1.png", colour = "1 0.85 0.35",
+					cx = cx, cy = cy }
+				break -- one current quest only
+			end
+		end
+	end)
+	-- POI directory is driven by the top filter icons (not the full 800+ soup).
+	local filters = hud.cl.poiFilters or {}
+	local pois = {}
+	for _, a in ipairs( bm.anchors or {} ) do
+		if a.cat and filters[a.cat] then
+			pois[#pois + 1] = a
+		end
+	end
+	table.sort( pois, function( a, b )
+		return tostring( a.label or "" ) < tostring( b.label or "" )
+	end )
+	for _, a in ipairs( pois ) do
+		local tex = "rfs_bcn_dot_b1.png"
+		for _, cat in ipairs( POI_CATS ) do
+			if cat.key == a.cat then
+				tex = cat.tex
+				break
+			end
+		end
+		items[#items + 1] = {
+			kind = "poi", label = poiDisplayLabel( a ), rawLabel = a.label,
+			tex = tex, colour = "1 1 1",
+			cx = a.cx, cy = a.cy, cat = a.cat, mineKind = a.mineKind }
+	end
+	bm.markItems = items
+	return items
+end
+
+function BigMap.syncMarkList(hud)
+	local bm = hud.cl.bm
+	if not ( bm and bm.markRows ) then return end
+	local items = BigMap.buildMarkItems(hud)
+	local n = #items
+	local maxScroll = math.max( 0, n - MARK_ROWS )
+	bm.markScroll = math.max( 0, math.min( maxScroll, bm.markScroll or 0 ) )
+	local scroll = bm.markScroll
+	if bm.markCountLb then
+		bm.markCountLb.Caption = tostring( n ) .. " loc"
+	end
+	for i = 1, MARK_ROWS do
+		local row = bm.markRows[i]
+		local it = items[scroll + i]
+		if it then
+			row.btn.Visible = true
+			row.icon.Visible = true
+			if row.plate then row.plate.Visible = true end
+			row.icon.ImageTexture = CC .. "/Gui/" .. it.tex
+			row.icon.Colour = it.colour or "1 1 1"
+			local sel = bm.markSel
+			local isSel = sel and sel.cx == it.cx and sel.cy == it.cy
+				and sel.label == it.label
+			local name = truncLabel( it.label, 16 )
+			if row.lb then
+				row.lb.Caption = isSel and ( "> " .. name ) or name
+			else
+				row.btn.Caption = isSel and ( "> " .. name ) or name
+			end
+		else
+			row.btn.Visible = false
+			if row.lb then row.lb.Caption = "" end
+			row.btn.Caption = ""
+			row.icon.Visible = false
+			if row.plate then row.plate.Visible = false end
+		end
+	end
+end
+
+function BigMap.markScrollBy(hud, delta)
+	local bm = hud.cl.bm
+	if not bm then return end
+	local items = bm.markItems or BigMap.buildMarkItems(hud)
+	local maxScroll = math.max( 0, #items - MARK_ROWS )
+	bm.markScroll = math.max( 0, math.min( maxScroll, ( bm.markScroll or 0 ) + delta ) )
+	BigMap.syncMarkList(hud)
+end
+
+function BigMap.goMark(hud, item)
+	local bm = hud.cl.bm
+	if not ( bm and item ) then return end
+	if item.kind == "you" then
+		local okc, char = pcall(function() return sm.localPlayer.getPlayer():getCharacter() end)
+		if okc and char then
+			bm.cx = char.worldPosition.x / 64
+			bm.cy = char.worldPosition.y / 64
+		end
+		bm.markSel = nil
+	elseif item.cx and item.cy then
+		bm.cx, bm.cy = item.cx, item.cy
+		bm.markSel = { cx = item.cx, cy = item.cy, label = item.label, kind = item.kind }
+	else
+		return
+	end
+	local b = hud.cl.td and hud.cl.td.bounds
+	if b then
+		bm.cx = math.max(b.xMin, math.min(b.xMax, bm.cx))
+		bm.cy = math.max(b.yMin, math.min(b.yMax, bm.cy))
+	end
+	bm.tgtCx, bm.tgtCy = bm.cx, bm.cy
+	BigMap.setInfoFromItem(hud, item)
+	BigMap.refill(hud)
+end
+
+-- Right INFO panel (replaces floating tip that drew under the map).
+function BigMap.setInfo(hud, title, body, meta)
+	local bm = hud.cl.bm
+	if not bm then return end
+	if bm.infoTitle then bm.infoTitle.Caption = tostring( title or "—" ) end
+	if bm.infoBody then bm.infoBody.Caption = tostring( body or "" ) end
+	if bm.infoMeta then bm.infoMeta.Caption = tostring( meta or "" ) end
+end
+
+function BigMap.setInfoFromItem(hud, item)
+	if not item then
+		BigMap.setInfo(hud, "—", "Click a map marker\nor Markers list row.", "")
+		return
+	end
+	if item.kind == "you" then
+		BigMap.setInfo(hud, "You", "Your current position on this seed.", "")
+		return
+	end
+	if item.kind == "home" then
+		local meta = item.cx and string.format( "cell %.0f, %.0f", item.cx, item.cy ) or ""
+		BigMap.setInfo(hud, "Home", "Saved home beacon. Blue house on the compass.", meta)
+		return
+	end
+	if item.kind == "wp" then
+		local meta = item.cx and string.format( "cell %.0f, %.0f", item.cx, item.cy ) or ""
+		BigMap.setInfo(hud, "Waypoint", "Active travel pin. CLEAR removes it.", meta)
+		return
+	end
+	if item.kind == "farm" then
+		local meta = item.cx and string.format( "cell %.0f, %.0f", item.cx, item.cy ) or ""
+		BigMap.setInfo(hud, item.label or "Farm", "Farm pin for planting runs.", meta)
+		return
+	end
+	if item.kind == "quest" then
+		local meta = item.cx and string.format( "cell %.0f, %.0f", item.cx, item.cy ) or ""
+		BigMap.setInfo(hud, item.label or "Quest", "Tracked quest destination.", meta)
+		return
+	end
+	if item.kind == "poi" then
+		local title, body = poiExpect( item.rawLabel or item.label, item.cat, item )
+		local meta = ""
+		if item.cx and item.cy then
+			meta = string.format( "cell %.0f, %.0f", item.cx, item.cy )
+		end
+		if item.rawLabel and item.rawLabel ~= title then
+			meta = ( meta ~= "" and ( meta .. "\n" ) or "" ) .. truncLabel( item.rawLabel, 28 )
+		end
+		BigMap.setInfo(hud, title, body, meta)
+		return
+	end
+	BigMap.setInfo(hud, item.label or "Marker", "", "")
+end
+
+-- Click a map POI dot: fill INFO + scroll Markers list to the matching row.
+function BigMap.showPoiInfo(hud, anchor)
+	local bm = hud.cl.bm
+	if not ( bm and anchor ) then return end
+	local title, body = poiExpect( anchor.label, anchor.cat, anchor )
+	local meta = string.format( "cell %.0f, %.0f", anchor.cx or 0, anchor.cy or 0 )
+	if anchor.label and poiDisplayLabel( anchor ) ~= truncLabel( anchor.label, 22 ) then
+		meta = meta .. "\n" .. truncLabel( anchor.label, 28 )
+	elseif anchor.label and title ~= truncLabel( anchor.label, 22 ) then
+		meta = meta .. "\n" .. truncLabel( anchor.label, 28 )
+	end
+	BigMap.setInfo(hud, title, body, meta)
+	bm.markSel = {
+		cx = anchor.cx, cy = anchor.cy,
+		label = poiDisplayLabel( anchor ), kind = "poi" }
+	if bm.selRing then
+		local px = bm.scale or DEFAULT_SCALE
+		local sx = ( bm.VW or 0 ) / 2 + ( anchor.cx - bm.cx ) * px
+		local sy = ( bm.VH or 0 ) / 2 - ( anchor.cy - bm.cy ) * px
+		bm.selRing.Visible = true
+		bm.selRing.x = math.floor( sx - 11 )
+		bm.selRing.y = math.floor( sy - 11 )
+	end
+	local items = BigMap.buildMarkItems(hud)
+	for i, it in ipairs( items ) do
+		if it.kind == "poi" and it.cx == anchor.cx and it.cy == anchor.cy
+			and ( it.rawLabel == anchor.label or it.label == poiDisplayLabel( anchor ) ) then
+			bm.markScroll = math.max( 0, i - 1 )
+			break
+		end
+	end
+	BigMap.syncMarkList(hud)
+end
+
+-- Compat no-op (old tip path removed).
+function BigMap.hidePoiTip( _hud ) end
+function BigMap.showPoiTip(hud, anchor, _iconW)
+	BigMap.showPoiInfo(hud, anchor)
+end
+
 -- waypoint control visuals: the selected color's dot swaps its flat circle
 -- for the teardrop pin; dim overlay on CLEAR while there is nothing to clear
 function BigMap.syncWpUi(hud)
@@ -891,6 +1887,7 @@ function BigMap.syncWpUi(hud)
 	if bm.clearDim then
 		bm.clearDim.Visible = (hud.cl.waypoint == nil)
 	end
+	BigMap.syncLegendUi(hud)
 end
 
 function BigMap.button(hud, name)
@@ -910,8 +1907,95 @@ function BigMap.button(hud, name)
 		end
 		return
 	end
+	if name == "BMBasePin" or ( bm.gsfx and name == "BMBasePin" .. bm.gsfx )
+		or string.match( name, "^BMBasePin" ) then
+		Waypoint.clearBase(hud)
+		return
+	end
+	local farmPinCol = string.match( name, "^BMFarmPin_(%a+)" )
+	if farmPinCol then
+		Waypoint.clearFarm(hud, farmPinCol)
+		return
+	end
+	local poiKey = string.match( name, "^BMPoi_(%a+)$" )
+	if poiKey then
+		Waypoint.togglePoiFilter(hud, poiKey)
+		bm.placeMode = nil
+		BigMap.refill(hud)
+		return
+	end
+	local poiIc = tonumber( string.match( name, "^BMPoiIc_(%d+)$" ) )
+	if poiIc and bm.poiIconMeta and bm.poiIconMeta[poiIc] then
+		BigMap.showPoiInfo(hud, bm.poiIconMeta[poiIc])
+		return
+	end
+	if name == "BMHome" or name == "BMBasePlace" then
+		-- Blue home: place mode, or recenter on existing home.
+		if bm.placeMode == "base" then
+			bm.placeMode = nil
+			BigMap.syncPoiUi(hud)
+			return
+		end
+		local base = hud.cl.baseMarker
+		if base and base.x and base.y then
+			local near = math.abs( ( bm.cx or 0 ) - base.x / 64 ) < 2
+				and math.abs( ( bm.cy or 0 ) - base.y / 64 ) < 2
+			if near then
+				bm.placeMode = "base"
+				BigMap.syncPoiUi(hud)
+			else
+				BigMap.goMark(hud, {
+					kind = "home", label = "Home",
+					cx = base.x / 64, cy = base.y / 64 })
+			end
+			return
+		end
+		bm.placeMode = "base"
+		BigMap.syncPoiUi(hud)
+		return
+	end
+	if name == "BMMarkUp" then
+		BigMap.markScrollBy(hud, -1)
+		return
+	end
+	if name == "BMMarkDn" then
+		BigMap.markScrollBy(hud, 1)
+		return
+	end
+	local markRow = tonumber( string.match( name, "^BMMark_(%d+)$" ) )
+	if markRow then
+		local items = bm.markItems or BigMap.buildMarkItems(hud)
+		local it = items[( bm.markScroll or 0 ) + markRow]
+		if it then BigMap.goMark(hud, it) end
+		return
+	end
+	local farmCol = string.match( name, "^BMFarmCol_(%a+)$" )
+	if farmCol then
+		if bm.placeMode == "farm_" .. farmCol then
+			bm.placeMode = nil
+		else
+			bm.placeMode = "farm_" .. farmCol
+		end
+		BigMap.syncPoiUi(hud)
+		return
+	end
+	local legIdx = tonumber( string.match( name, "^BMLegPick_(%d+)$" ) )
+	if legIdx then
+		local rows = ( type( RfsBiomeMap ) == "table" and RfsBiomeMap.LEGEND ) or {}
+		local row = rows[legIdx]
+		if row then
+			if bm.legendFilter == row.id then
+				bm.legendFilter = nil
+			else
+				bm.legendFilter = row.id
+			end
+			BigMap.refill(hud)
+		end
+		return
+	end
 	local dotCol = string.match(name, "^BMWpCol_(%a+)$")
 	if dotCol then
+		bm.placeMode = nil
 		Waypoint.setColor(hud, dotCol)
 		BigMap.syncWpUi(hud)
 		return
@@ -932,9 +2016,9 @@ function BigMap.button(hud, name)
 		end
 		-- falls through to the shared refill so the new caption renders
 	elseif name == "BMZoomIn" then
-		bm.scale = math.min(MAXSCALE, (bm.scale or 34) * 1.3)
+		bm.scale = math.min(MAXSCALE, (bm.scale or DEFAULT_SCALE) * 1.3)
 	elseif name == "BMZoomOut" then
-		bm.scale = math.max(MINSCALE, (bm.scale or 34) / 1.3)
+		bm.scale = math.max(MINSCALE, (bm.scale or DEFAULT_SCALE) / 1.3)
 	elseif BTN_PAN[name] then
 		-- click fallback: small nudge (hold-to-glide is the primary path)
 		bm.cx = bm.cx + BTN_PAN[name][1] * bm.VW * 0.10 / bm.scale
@@ -953,13 +2037,24 @@ end
 -- arg shapes are undocumented: handlers pick out the numeric args
 -- adaptively and log the raw shapes to bm_events.json (first few also to
 -- chat) so the real contract can be read off Eric's session.
--- wheel: single fire (prop on the view only), delta = 2nd arg (±120)
-function BigMap.wheel(hud, name, delta)
+-- wheel: map zoom, or marker-list scroll when over BMMark*
+function BigMap.wheel(hud, name, delta, c2, d)
 	local bm = hud.cl.bm
 	if not (bm and bm.open) then return end
-	local dir = (tonumber(delta) or 120) >= 0 and 1 or -1
+	local wname = name
+	if type( wname ) == "table" then wname = wname.Name end
+	if type( wname ) ~= "string" then wname = nil end
+	local dlt = tonumber( delta )
+	if dlt == nil then dlt = tonumber( c2 ) end
+	if dlt == nil then dlt = 120 end
+	local dir = dlt >= 0 and 1 or -1
+	if wname and ( string.find( wname, "^BMMark", 1, false )
+		or wname == "BMMarkList" or wname == "BMMarkListBg" ) then
+		BigMap.markScrollBy( hud, -dir )
+		return
+	end
 	bm.scale = math.max(MINSCALE, math.min(MAXSCALE,
-		(bm.scale or 34) * (1.15 ^ dir)))
+		(bm.scale or DEFAULT_SCALE) * (1.15 ^ dir)))
 	BigMap.refill(hud)
 end
 
@@ -977,14 +2072,13 @@ function BigMap.reposition(hud)
 			p.w.x = floor(VW / 2 + (p.ax - bm.cx) * px - 70 + 0.5)
 			p.w.y = floor(VH / 2 - (p.ay - bm.cy) * px - 9 + 0.5)
 		else
-			-- exact abutment during pans too: edges recomputed per cell, so
-			-- boundary rounding can never open 1px gaps (+1 draw overlap for
-			-- the engine's PHYSICAL per-widget rounding, same as assign)
+			local ww = p.ww or 1
+			local wh = p.wh or 1
 			local sx = floor(VW / 2 + (p.wx - bm.cx) * px + 0.5)
-			local sy = floor(VH / 2 - (p.wy - bm.cy + 1) * px + 0.5)
+			local sy = floor(VH / 2 - (p.wy + wh - bm.cy) * px + 0.5)
 			p.w.x = sx
 			p.w.y = sy
-			p.w.width = floor(VW / 2 + (p.wx + 1 - bm.cx) * px + 0.5) - sx + 1
+			p.w.width = floor(VW / 2 + (p.wx + ww - bm.cx) * px + 0.5) - sx + 1
 			p.w.height = floor(VH / 2 - (p.wy - bm.cy) * px + 0.5) - sy + 1
 		end
 	end
@@ -1048,7 +2142,7 @@ function BigMap.zoomStep(hud, dir)
 	local bm = hud.cl.bm
 	if not (bm and bm.open) then return end
 	bm.scale = math.max(MINSCALE, math.min(MAXSCALE,
-		(bm.scale or 34) * (1.15 ^ (dir or 1))))
+		(bm.scale or DEFAULT_SCALE) * (1.15 ^ (dir or 1))))
 	BigMap.refill(hud)
 end
 
@@ -1236,10 +2330,23 @@ function BigMap.cellClick(hud, name, e1, e2, e3, e4)
 		dbg.noSample = true               -- no fresh cursor event at click
 	end
 	hud.cl.wpDbg = dbg
-	-- click diagnostics straight to bm_events.json too: the 30s stats cadence
-	-- lost v65's wpdbg to a quit (stats had wpdbg=null despite a click)
 	evlog(hud, "click", dbg.used or (dbg.noSample and "noSample" or "miss"),
 		dbg.drags, dbg.hovers)
+	if bm.placeMode == "base" then
+		Waypoint.setBase(hud, x, y)
+		bm.placeMode = nil
+		BigMap.syncPoiUi(hud)
+		if dbg.used then bm.lastCur = nil end
+		return
+	end
+	local farmPlace = bm.placeMode and string.match( bm.placeMode, "^farm_(%a+)$" )
+	if farmPlace then
+		Waypoint.setFarm(hud, farmPlace, x, y)
+		bm.placeMode = nil
+		BigMap.syncPoiUi(hud)
+		if dbg.used then bm.lastCur = nil end
+		return
+	end
 	Waypoint.set(hud, x, y)
 	BigMap.syncWpUi(hud)
 	-- EXPIRE ON USE (BUG-2's principle, and it stops the drag-end path below
@@ -1267,7 +2374,21 @@ function BigMap.commitAt(hud, cur)
 	hud.cl.wpDbg = { used = "dragEnd", drags = bm.curN or 0,
 		hovers = bm.hovN or 0 }
 	evlog(hud, "dragend", string.format("%.2f,%.2f", wx, wy))
-	Waypoint.set(hud, wx * 64, wy * 64)
+	local x, y = wx * 64, wy * 64
+	if bm.placeMode == "base" then
+		Waypoint.setBase(hud, x, y)
+		bm.placeMode = nil
+		BigMap.syncPoiUi(hud)
+		return true
+	end
+	local farmPlace = bm.placeMode and string.match( bm.placeMode, "^farm_(%a+)$" )
+	if farmPlace then
+		Waypoint.setFarm(hud, farmPlace, x, y)
+		bm.placeMode = nil
+		BigMap.syncPoiUi(hud)
+		return true
+	end
+	Waypoint.set(hud, x, y)
 	BigMap.syncWpUi(hud)
 	return true
 end

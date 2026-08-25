@@ -15,10 +15,8 @@ local NILUUID = "00000000000000000000000000000000"
 -- layout (sized from screen height at build time; see cl_buildGui)
 local MARGIN = 24
 local ROADMASK = 0x0F00
--- zoom = cells across the ring window; index 3 is the original default,
--- two levels in and out from it (Eric 8/8). No key-bind API in the mod
--- sandbox: triple-crouch cycles, GPS hand tool LMB/RMB steps in/out.
-local ZOOMS = { 3, 4, 6, 9, 13 }
+-- zoom = cells across the ring window. Biome mode: always 1 (current cell only).
+local ZOOMS = { 1, 3, 4, 6, 9, 13 }
 -- thin gold marquee only (Eric 8/8: thick gold "yuck", dark band rejected
 -- too) - rim-tile pokes stay visible until real clipping (spike) is answered.
 -- texture version + build number: the engine caches textures BY PATH beyond
@@ -33,7 +31,11 @@ local BEZELVER = "b5"
 -- NOTE: description.json's "version" is NOT this - it is a game-side integer
 -- (0 there brings back the MODS OUTDATED launch warning) and must stay at 2.
 local VERSION = "1.1.2"
-local BUILD = 48
+local BUILD = 49
+-- Mini atlas frames are baked as _r0.._r3. If roads/tiles look twisted vs
+-- neighbors (classic collage), terrain.rotation sense != bake sense — flip.
+-- Same idea as BigMap ROTSIGN for the r0+RotatingSkin tier.
+local FLIP_CELL_ROT = true
 -- vanilla StatusPanel: 196x86 bottom-left, health row at local y 42 ->
 -- health bar top = vh - 44 (SurvivalPlayer.lua:425, StatusPanel.gui)
 local HEALTHTOP = 44
@@ -47,6 +49,9 @@ end
 -- modules below can read it; see Scripts/Flags.lua before adding one.
 dofile(C .. "/Scripts/nutt/Flags.lua")
 -- big map module (module table BigMap; callbacks below delegate to it)
+pcall( function()
+	dofile( C .. "/Scripts/game/RfsBiomeMap.lua" )
+end )
 dofile(C .. "/Scripts/nutt/BigMap.lua")
 -- waypoint state + compass tracking (module table Waypoint)
 dofile(C .. "/Scripts/nutt/Waypoint.lua")
@@ -259,7 +264,7 @@ function MinimapHud.cl_init( self )
 		baseX = nil, baseY = nil, hidden = false,
 		statT = 0, dtMax = 0, frames = 0,
 		probePage = 0, probeT = 0,
-		zoomIdx = 3,
+		zoomIdx = 1,
 		wpColor = "red",
 		-- minimap placement (Eric 8/14): posIdx 1-4 = BL/BR/TR/TL corner,
 		-- 5 = hidden; lastPos = the corner to return to from hidden
@@ -267,11 +272,19 @@ function MinimapHud.cl_init( self )
 	}
 	local oks, st = pcall(sm.json.open, C .. "/minimap_settings.json")
 	if oks and type(st) == "table" then
-		if st.zoom and ZOOMS[st.zoom] then self.cl.zoomIdx = st.zoom end
+		-- Biome single-cell mode: always 1 cell across (ignore saved zoom).
+		if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SINGLE_CELL_MINIMAP then
+			self.cl.zoomIdx = 1
+		elseif st.zoom and ZOOMS[st.zoom] then
+			self.cl.zoomIdx = st.zoom
+		end
 		if type(st.wp) == "table" and st.wp.x then self.cl.waypoint = st.wp end
 		if type(st.wpc) == "string" and Waypoint.valid(st.wpc) then
 			self.cl.wpColor = st.wpc
 		end
+		if type(st.base) == "table" and st.base.x then self.cl.baseMarker = st.base end
+		if type(st.farms) == "table" then self.cl.farmMarkers = st.farms end
+		if type(st.poiFilters) == "table" then self.cl.poiFilters = st.poiFilters end
 		if type(st.pos) == "number" and st.pos >= 1 and st.pos <= 5 then
 			self.cl.posIdx = math.floor(st.pos)
 		end
@@ -282,8 +295,8 @@ function MinimapHud.cl_init( self )
 			self.cl.sizeIdx = math.floor(st.size)
 		end
 	end
-	-- restore the compass icon for a persisted waypoint (runs once ready)
-	if self.cl.waypoint then self.cl.wantCompassSync = true end
+	-- restore the compass icon for a persisted waypoint / home (runs once ready)
+	if self.cl.waypoint or self.cl.baseMarker then self.cl.wantCompassSync = true end
 	local okp, poi = pcall(sm.json.open, C .. "/Scripts/nutt/data/poi_names.json")
 	if okp and type(poi) == "table" then self.cl.poi = poi end
 	local ok, idx = pcall(sm.json.open, C .. "/Scripts/nutt/data/atlas_index.json")
@@ -378,6 +391,14 @@ function MinimapHud.cl_tryLoadTerrain( self )
 end
 
 function MinimapHud.cl_frameFor( self, wx, wy, rot )
+	-- Optional solid biomes on the corner HUD (default off — show atlas tiles).
+	if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID_MINIMAP then
+		local f, flags = RfsBiomeMap.resolveFrame( self.cl.td, self.cl.atlas, wx, wy, "mini" )
+		if f then
+			return f, flags or 0, false
+		end
+		return self:cl_fallback( "water", 0 ), 0, false
+	end
 	-- returns imageset resource + frame name for world cell (wx, wy)
 	local td = self.cl.td
 	local b = td.bounds
@@ -392,6 +413,10 @@ function MinimapHud.cl_frameFor( self, wx, wy, rot )
 		return self:cl_fallback("water", 0), flags
 	end
 	local cellRot = (td.rotation and td.rotation[wy] and td.rotation[wy][wx]) or 0
+	cellRot = tonumber( cellRot ) or 0
+	if FLIP_CELL_ROT then
+		cellRot = ( 4 - ( cellRot % 4 ) ) % 4
+	end
 	local xo = (td.xOffset and td.xOffset[wy] and td.xOffset[wy][wx]) or 0
 	local yo = (td.yOffset and td.yOffset[wy] and td.yOffset[wy][wx]) or 0
 	local key = uidStr .. "_" .. xo .. "_" .. yo .. "_r" .. cellRot
@@ -594,9 +619,13 @@ function MinimapHud.cl_buildGui( self )
 			{ ImageTexture = C .. "/Gui/" .. file, Visible = (key == "idle") })
 	end
 	self.cl.bezelSet, self.cl.bezelOrder = bezelSet, bezelOrder
-	-- zoom-proportional arrow; halved at zooms 1-2 (Eric 8/8)
-	local ARROWF = { 0.35, 0.35, 0.7, 0.7, 0.7 }
-	local asz = math.max(10, math.floor(CELLPX * ARROWF[self.cl.zoomIdx]))
+	-- Zoom-proportional arrow; single-cell atlas mode keeps it small (~70% cut).
+	local ARROWF = { 0.13, 0.12, 0.18, 0.28, 0.35, 0.40 }
+	local asz = math.max(8, math.floor(CELLPX * (ARROWF[self.cl.zoomIdx] or 0.13)))
+	if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SINGLE_CELL_MINIMAP then
+		-- Absolute cap so one big cell doesn't revive the huge arrow.
+		asz = math.min( asz, 14 )
+	end
 	local arrow = W("Arrow", "ImageBox", "RotatingSkin",
 		fx0 + math.floor((RING - asz) / 2), fy0 + math.floor((RING - asz) / 2), asz, asz, {
 			ImageTexture = C .. "/Gui/arrow.png",
@@ -671,7 +700,8 @@ function MinimapHud.cl_refill( self, bx, by )
 			if real == false then diag.fb = diag.fb + 1 end
 			local ov = self.cl.overlays[idx]
 			local mask = math.floor((flags or 0) / 256) % 16
-			if (real == false) and mask ~= 0 then
+			local solidMm = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID_MINIMAP
+			if ( not solidMm ) and (real == false) and mask ~= 0 then
 				ov.ImageName = "road_" .. mask
 				self.cl.ovActive[idx] = true
 				self.cl.ovName[idx] = "road_" .. mask
@@ -716,6 +746,14 @@ end
 -- delta +1 = zoom in (fewer cells across), -1 = zoom out
 function MinimapHud.cl_setZoom( self, delta )
 	local c = self.cl
+	if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SINGLE_CELL_MINIMAP then
+		-- Size cycle only via GPS R; zoom stays at 1 cell.
+		if c.zoomIdx ~= 1 then
+			c.zoomIdx = 1
+			self:cl_applyZoom()
+		end
+		return
+	end
 	local idx = math.max(1, math.min(#ZOOMS, c.zoomIdx - delta))
 	if idx == c.zoomIdx then return end
 	c.zoomIdx = idx
@@ -724,6 +762,10 @@ end
 
 function MinimapHud.cl_zoomCycle( self )
 	local c = self.cl
+	if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SINGLE_CELL_MINIMAP then
+		c.zoomIdx = 1
+		return
+	end
 	c.zoomIdx = c.zoomIdx % #ZOOMS + 1
 	self:cl_applyZoom()
 end
@@ -822,6 +864,23 @@ end
 
 function MinimapHud.cl_bm_hover( self, a, b, c2, d )
 	BigMap.hover(self, a, b, c2, d)
+end
+
+-- Pan arrows + mousewheel bind to the script that opened the GUI (MinimapHud
+-- via GPS LMB / /map / /menu Map). SpikeHand has these too, but is not the owner.
+function MinimapHud.cl_bm_bdown( self, a, b )
+	local name = widgetName( a, b )
+	if name then
+		BigMap.btnDown( self, name )
+	end
+end
+
+function MinimapHud.cl_bm_bup( self, a, b )
+	BigMap.btnUp( self, widgetName( a, b ) )
+end
+
+function MinimapHud.cl_bm_wheel( self, a, b, c2, d )
+	BigMap.wheel( self, a, b, c2, d )
 end
 
 -- engine close hook candidates (Esc / E) - both log + fold

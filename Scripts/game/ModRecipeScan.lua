@@ -497,9 +497,13 @@ function ModRecipeScan.run()
 			if n > 0 then
 				source.craft = n
 				result.craftRecipeCount = result.craftRecipeCount + n
-				result.craftPaths[#result.craftPaths + 1] = craftPath
-				if lid == RFS_LOCAL then
-					print( "[RFS] scan RFS craftbot.json path=" .. tostring( craftPath ) .. " n=" .. tostring( n ) )
+				-- RFS craftbot.json + craftbot_rfs.json are hardcoded in RfsCrafterGrid
+				-- (C++ needs $CONTENT_<lid>/…). Do not also list them here or the
+				-- grid can double-add when path strings differ ($CONTENT_DATA vs lid).
+				if lid ~= RFS_LOCAL then
+					result.craftPaths[#result.craftPaths + 1] = craftPath
+				else
+					print( "[RFS] scan RFS craftbot.json n=" .. tostring( n ) .. " (grid via RfsCrafterGrid, not craftPaths)" )
 				end
 			end
 		end

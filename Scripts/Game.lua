@@ -67,7 +67,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
-RFS_PACK_STAMP = "[RFS] pack 0854-ch world anchor at back height"
+RFS_PACK_STAMP = "[RFS] pack 0854-dp / growlabs are growlabs (not mines)"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
 RFS_SPEND_CHAT = nil
@@ -78,6 +78,7 @@ local function rfsPostJoinChat( self )
 	end
 	-- Chat GUI is missing during client_onCreate; only mark posted on success.
 	local ok = pcall( function()
+		sm.gui.chatMessage( RFS_PACK_STAMP )
 		sm.gui.chatMessage( "Thanks for choosing RFS as your gamemode." )
 		sm.gui.chatMessage( "/menu - options  |  /gensettings - host settings  |  /help - commands" )
 	end )
@@ -101,9 +102,14 @@ local RFS_HIDEOUT_TRADER_UUID = sm.uuid.new( "614c3193-13da-40f4-9b03-37f26e760f
 local RFS_MININGHUB_TRADER_UUID = sm.uuid.new( "90762ac2-5082-461d-9028-480d38a7da10" )
 local RFS_HIJACK_HOST_UUID = sm.uuid.new( "a7c3e91f-2b48-4d6a-9e15-6f8d0c1a2b3c" )
 
--- Host checks: client uses sm.isHost; server RPCs compare sender to first connected player.
+-- Host checks: client uses sm.isHost (bool or function); server RPCs compare sender to first connected player.
 local function rfsClientIsHost()
-	local ok, v = pcall( function() return sm.isHost end )
+	local ok, v = pcall( function()
+		if type( sm.isHost ) == "function" then
+			return sm.isHost()
+		end
+		return sm.isHost
+	end )
 	return ok and v and true or false
 end
 
@@ -1092,11 +1098,9 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		self:rfs_bindOne( "/seedsplease", {}, "Give seeds and soil" )
 		self:rfs_bindOne( "/tumble", { { "bool", "enable", true } }, "Set tumble state" )
 		self:rfs_bindOne( "/god", {}, "Mechanic characters take no damage" )
-		-- /limited /unlimited: host-only bind. Flag is world-wide (everyone).
-		if host then
-			self:rfs_bindOne( "/limited", {}, "Lock inventory for EVERYONE in the session (host)" )
-			self:rfs_bindOne( "/unlimited", {}, "Unlock inventory for EVERYONE in the session (host)" )
-		end
+		-- World-wide inventory lock (host invoke). Always bind for host/admin when cheats on.
+		self:rfs_bindOne( "/limited", {}, "Lock inventory for EVERYONE in the session (host)" )
+		self:rfs_bindOne( "/unlimited", {}, "Unlock inventory for EVERYONE in the session (host)" )
 		self:rfs_bindOne( "/timeofday", { { "number", "timeOfDay", true } }, "Set time of day 0..1" )
 		self:rfs_bindOne( "/timeprogress", { { "bool", "enabled", true } }, "Enable or disable time progress" )
 
@@ -1309,13 +1313,14 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 	end
 
 	-- sm.game.setLimitedInventory is WORLD-WIDE (no per-player API). Host-only invoke.
-	-- Never no-op: always sendToServer so the engine flag actually unlocks.
+	-- Send a TABLE — bare `false` can arrive as nil on the server and flip to limited.
 	if cmd == "/unlimited" then
 		if not rfsClientIsHost() then
 			sm.gui.chatMessage( "[RFS] /unlimited is host-only." )
 			return
 		end
-		self.network:sendToServer( "sv_setLimitedInventory", false )
+		self.network:sendToServer( "sv_setLimitedInventory", { limited = false } )
+		sm.gui.chatMessage( "[RFS] Requesting unlimited inventory for everyone…" )
 		return
 	end
 	if cmd == "/limited" then
@@ -1323,7 +1328,8 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 			sm.gui.chatMessage( "[RFS] /limited is host-only." )
 			return
 		end
-		self.network:sendToServer( "sv_setLimitedInventory", true )
+		self.network:sendToServer( "sv_setLimitedInventory", { limited = true } )
+		sm.gui.chatMessage( "[RFS] Requesting limited inventory for everyone…" )
 		return
 	end
 
@@ -1471,7 +1477,15 @@ function RecipeFrameworkSurvival.sv_setLimitedInventory( self, state, player )
 			state = state.limited
 		elseif state.unlimited ~= nil then
 			state = not state.unlimited
+		else
+			-- Empty / unknown table: do not default to locking everyone.
+			print( "[RFS] sv_setLimitedInventory: ignored empty table payload" )
+			return
 		end
+	elseif state == nil then
+		-- Bare `false` sometimes arrives as nil — treat as unlock request from host path.
+		print( "[RFS] sv_setLimitedInventory: nil state, treating as unlimited" )
+		state = false
 	end
 	-- Same as Survival: state false = unlimited, true = limited.
 	local limited = ( state ~= false and state ~= 0 )
@@ -3163,7 +3177,8 @@ function RecipeFrameworkSurvival.cl_rfs_setupToggleInventory( self )
 	local limited = true
 	pcall( function() limited = sm.game.getLimitedInventory() end )
 	-- World-wide engine flag: host toggle unlocks/locks EVERYONE.
-	self.network:sendToServer( "sv_setLimitedInventory", not limited )
+	-- Table payload — bare boolean false can be dropped by the net stack.
+	self.network:sendToServer( "sv_setLimitedInventory", { limited = not limited } )
 	self.cl = self.cl or {}
 	self.cl.rfsSetupRefreshAt = sm.game.getCurrentTick() + 8
 end

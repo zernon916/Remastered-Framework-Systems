@@ -941,29 +941,21 @@ function RfsFarming.ensureHooks()
 end
 
 ---------------------------------------------------------------------------
--- Corn stack (inventory 20) + native itemStack force-place + Woc eats stack
--- Vanilla corn has NO itemStack → Force Build places qty 1 only.
--- RFS shapeset adds itemStack + stackSize 20; engine stamps shape.stackedAmount.
--- Woc consumes stackedAmount (vanilla ratio 5 corn = 1 milk).
+-- Corn stacks (Custom Game shapeset override pattern):
+-- rfs_overrides.shapeset is listed FIRST in shapesets.shapedb and adds
+-- itemStack on Survival corn uuid (same idea as Fant overrides.shapeset).
+-- WARNING: Scrap Overdrive B&P redefines corn WITHOUT itemStack and loads after
+-- the Custom Game, which strips Force Build stacks. Keep itemStack on the last
+-- corn override (Overdrive patch and/or companion B&P RfsCornItemStack).
+-- Engine Force Build then places the hotbar stack and sets shape.stackedAmount.
+-- Woc wrap reads stackedAmount (vanilla milk ratio 5:1).
 ---------------------------------------------------------------------------
 
 pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/survival_items.lua" ) end )
 pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/survival_loot.lua" ) end )
 pcall( function() dofile( "$SURVIVAL_DATA/Scripts/game/units/unit_util.lua" ) end )
 
-local RFS_CORN_UUID = obj_resource_corn or sm.uuid.new( "fe8bfeba-850b-4827-9785-10e2468c9c23" )
-local RFS_CORN_PER_MILK = 5 -- match WocUnit.lua CornPerMilk
-
-local function rfsCornStackedAmount( shape )
-	local qty = 1
-	pcall( function()
-		local n = shape.stackedAmount
-		if type( n ) == "number" and n > 0 then
-			qty = math.floor( n )
-		end
-	end )
-	return math.max( 1, qty )
-end
+local RFS_CORN_PER_MILK = 5 -- match Survival WocUnit CornPerMilk
 
 function RfsFarming._wocServerOnUnitUpdate( self, dt )
 	if not sm.exists( self.unit ) then
@@ -1002,8 +994,13 @@ function RfsFarming._wocServerOnUnitUpdate( self, dt )
 				local eatFacingXY = sm.vec3.new( eatFacingDirection.x, eatFacingDirection.y, 0 ):safeNormalize( sm.vec3.new( 1, 0, 0 ) )
 				if self.currentState == self.turnState or facingXY:dot( eatFacingXY ) > math.cos( math.rad( 10 ) ) then
 					self.currentState = self.eatEventState
-					-- Native itemStack: engine places full hotbar stack as shape.stackedAmount.
-					local qty = rfsCornStackedAmount( targetCorn )
+					-- itemStack Force Build stamps qty on stackedAmount.
+					local qty = targetCorn.stackedAmount
+					if type( qty ) ~= "number" or qty < 1 then
+						qty = 1
+					else
+						qty = math.floor( qty )
+					end
 					self.saved.stats.cornEaten = self.saved.stats.cornEaten + qty
 					self.saved.deathTickTimestamp = sm.game.getCurrentTick() + DaysInTicks( 30 )
 					if not self.saved.isCattle then
@@ -1014,7 +1011,6 @@ function RfsFarming._wocServerOnUnitUpdate( self, dt )
 					end
 					self.saved.tetherPoint = self.unit.character.worldPosition
 					self.saved.isCattle = true
-					-- Spit milk immediately for this meal (vanilla ratio 5 corn = 1 milk).
 					while self.saved.stats.cornEaten >= RFS_CORN_PER_MILK do
 						self.saved.stats.cornEaten = self.saved.stats.cornEaten - RFS_CORN_PER_MILK
 						self.saved.stats.hp = self.saved.stats.maxhp
@@ -1073,7 +1069,7 @@ function RfsFarming.ensureWocCornHooks()
 end
 
 function RfsFarming.ensureCornHooks()
-	-- Force-place is native via rfs_corn.shapeset itemStack — no Eat wrap.
+	-- Place path: rfs_overrides.shapeset itemStack (listed first in shapedb). No Eat wrap.
 	RfsFarming.ensureWocCornHooks()
 end
 

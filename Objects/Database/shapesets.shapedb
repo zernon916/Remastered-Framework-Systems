@@ -1,14 +1,14 @@
 {
-   "shapeSetList" : [
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_traders.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_hack.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_map.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_arealoader.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_sign.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_lcd.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_corn.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_deepsleep.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_solar.shapeset",
-      "$CONTENT_DATA/Objects/Database/ShapeSets/rfs_radio.shapeset"
-   ]
+	"shapeSetList": [
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_overrides.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_traders.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_hack.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_map.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_arealoader.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_sign.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_lcd.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_deepsleep.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_solar.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_radio.shapeset"
+	]
 }

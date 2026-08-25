@@ -21,15 +21,19 @@ Waypoint = {}
 -- jsonGui ImageTexture does not resolve $CONTENT_DATA (blank waypoint icons).
 local CC = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247"
 local NAME = "GPSModWaypoint"
+local NAME_HOME = "GPSModHome"
 
 Waypoint.COLORS = { "red", "green", "blue", "yellow", "orange" }
 local HEX = { red = "e13c32ff", green = "50cd5aff", blue = "468cffff",
               yellow = "f0dc46ff", orange = "ff962dff" }
+local HOME_HEX = "4f6cffff"
 -- compass icon = vanilla beacon glyph 23 (X-cross, "marks the spot") from
 -- the registered BeaconCompassIconMap imageset: the engine resolution-
 -- switches AND tints it exactly like real beacon icons (Eric v65: baked
 -- 42px png looked rasterized next to them; vanilla pipeline = always crisp)
 local GLYPH = "23"
+-- Beacon house glyph (same index as BeaconIconMap "5")
+local GLYPH_HOME = "5"
 
 function Waypoint.valid( col )
 	for _, c in ipairs(Waypoint.COLORS) do
@@ -52,9 +56,13 @@ end
 -- (the old zoom-only save dropped the persisted waypoint)
 function Waypoint.save( hud )
 	local c = hud.cl
-	pcall(sm.json.save, { zoom = c.zoomIdx, wp = c.waypoint, wpc = c.wpColor,
-		pos = c.posIdx, posl = c.lastPos, size = c.sizeIdx },
-		CC .. "/minimap_settings.json")
+	pcall(sm.json.save, {
+		zoom = c.zoomIdx, wp = c.waypoint, wpc = c.wpColor,
+		pos = c.posIdx, posl = c.lastPos, size = c.sizeIdx,
+		base = c.baseMarker,
+		farms = c.farmMarkers,
+		poiFilters = c.poiFilters,
+	}, CC .. "/minimap_settings.json")
 end
 
 function Waypoint.set( hud, x, y )
@@ -79,16 +87,115 @@ function Waypoint.setColor( hud, col )
 	c.wantCompassSync = true            -- icon image follows the color
 end
 
+function Waypoint.setBase( hud, x, y )
+	local c = hud.cl
+	c.baseMarker = { x = x, y = y }
+	Waypoint.save(hud)
+	c.wantCompassSync = true
+end
+
+function Waypoint.clearBase( hud )
+	local c = hud.cl
+	c.baseMarker = nil
+	Waypoint.save(hud)
+	c.wantCompassSync = true
+end
+
+function Waypoint.setFarm( hud, col, x, y )
+	if not Waypoint.valid(col) then return end
+	local c = hud.cl
+	c.farmMarkers = c.farmMarkers or {}
+	c.farmMarkers[col] = { x = x, y = y }
+	Waypoint.save(hud)
+end
+
+function Waypoint.clearFarm( hud, col )
+	local c = hud.cl
+	if c.farmMarkers then
+		c.farmMarkers[col] = nil
+	end
+	Waypoint.save(hud)
+end
+
+function Waypoint.togglePoiFilter( hud, key )
+	local c = hud.cl
+	c.poiFilters = c.poiFilters or {}
+	c.poiFilters[key] = not c.poiFilters[key]
+	Waypoint.save(hud)
+	return c.poiFilters[key]
+end
+
 -- ----------------------------------------------------------- compass -------
 -- called from MinimapHud.client_onUpdate (owning script's own context) while
 -- hud.cl.wantCompassSync is set. Returns true when the sync is complete (or
 -- permanently impossible) so the caller can clear the flag; false = retry.
+local function compassWorldPos( c, char, x, y )
+	local z = 0
+	pcall(function() z = char.worldPosition.z end)
+	pcall(function()
+		local e = c.td and c.td.elevation
+		local row = e and e[math.floor(y / 64)]
+		local v = row and row[math.floor(x / 64)]
+		if type(v) == "number" then z = v end
+	end)
+	local okv, pos = pcall(sm.vec3.new, x, y, z)
+	if okv then return pos end
+	return nil
+end
+
+local function compassHideIcon( c, name, flagKey )
+	if c.compass.mode == "wmm" then
+		if c.compass[flagKey] then
+			pcall(function() WorldMarkerManager.Cl_HideMarker(name) end)
+		end
+	elseif c.compass.gui then
+		pcall(function() c.compass.gui:setVisible(name, false) end)
+	end
+end
+
+local function compassShowIcon( c, name, flagKey, pos, world, glyph, color, imgFallback )
+	if c.compass.mode == "wmm" then
+		local ok, err = pcall(function()
+			WorldMarkerManager.Cl_CreateOrUpdateMarker(name, {
+				effect = "Beacon",
+				position = pos,
+				world = world,
+				compassItemIcon = { resource = "BeaconCompassIconMap",
+					group = "BeaconCompassIconMap", name = glyph },
+				compassColor = color,
+				color = color,
+				compassOnly = true,
+				activate = true,
+			})
+		end)
+		c.compass[flagKey] = c.compass[flagKey] or ok
+		return ok, err
+	end
+	local gui = c.compass.gui
+	if not gui then return false, "no gui" end
+	if not c.compass[flagKey] then
+		local ok = pcall(function() gui:compassAddIcon(name) end)
+		if not ok then return false, "compassAddIcon" end
+		c.compass[flagKey] = true
+	end
+	local okII = pcall(function()
+		gui:setItemIcon(name, "BeaconCompassIconMap", "BeaconCompassIconMap", glyph)
+	end)
+	if okII then
+		if color then pcall(function() gui:setColor(name, color) end) end
+	elseif imgFallback then
+		pcall(function() gui:setImage(name, imgFallback) end)
+	end
+	pcall(function() gui:compassSetIconWorldPosition(name, pos, world) end)
+	pcall(function() gui:setVisible(name, true) end)
+	return true, nil
+end
+
 function Waypoint.compassSync( hud )
 	local c = hud.cl
 	local dbg = c.compassDbg or {}
 	c.compassDbg = dbg
 
-	-- resolve the compass access route once
 	if not c.compass then
 		local okW, wmm = pcall(function() return WorldMarkerManager end)
 		local okG, g = pcall(function() return g_compassHud end)
@@ -112,96 +219,59 @@ function Waypoint.compassSync( hud )
 	if c.compass.mode == "none" then return true end
 
 	local wp = c.waypoint
+	local home = c.baseMarker
 	local col = Waypoint.valid(c.wpColor) and c.wpColor or "red"
+	local any = (wp ~= nil) or (home and home.x and home.y)
 
-	-- ------------------------------------------------------------ hide -----
-	if not wp then
-		if c.compass.mode == "wmm" then
-			if c.compass.added then
-				pcall(function() WorldMarkerManager.Cl_HideMarker(NAME) end)
-			end
-		elseif c.compass.gui then
-			pcall(function() c.compass.gui:setVisible(NAME, false) end)
-			if c.compass.mode == "own" and c.compass.opened then
-				pcall(function() c.compass.gui:close() end)
-				c.compass.opened = false
-			end
+	if not any then
+		compassHideIcon(c, NAME, "added")
+		compassHideIcon(c, NAME_HOME, "homeAdded")
+		if c.compass.mode == "own" and c.compass.opened then
+			pcall(function() c.compass.gui:close() end)
+			c.compass.opened = false
 		end
 		dbg.state = "hidden"
 		return true
 	end
 
-	-- ------------------------------------------------------------ show -----
 	local okc, char = pcall(function()
 		return sm.localPlayer.getPlayer():getCharacter()
 	end)
-	if not okc or char == nil then return false end   -- retry next tick
+	if not okc or char == nil then return false end
 	local okw, world = pcall(function() return char:getWorld() end)
 	if not okw or world == nil then return false end
 
-	-- z: cell elevation when the terrain grid carries one, else player z
-	-- (the bar only needs bearing; z feeds the distance readout)
-	local z = 0
-	pcall(function() z = char.worldPosition.z end)
-	pcall(function()
-		local e = c.td and c.td.elevation
-		local row = e and e[math.floor(wp.y / 64)]
-		local v = row and row[math.floor(wp.x / 64)]
-		if type(v) == "number" then z = v end
-	end)
-	local okv, pos = pcall(sm.vec3.new, wp.x, wp.y, z)
-	if not okv then return true end
-
-	local img = Waypoint.compassFile(col)
 	local okCol, color = pcall(function() return sm.color.new(HEX[col]) end)
+	local okHomeCol, homeColor = pcall(function() return sm.color.new(HOME_HEX) end)
 
-	if c.compass.mode == "wmm" then
-		local ok, err = pcall(function()
-			WorldMarkerManager.Cl_CreateOrUpdateMarker(NAME, {
-				effect = "Beacon",          -- never started: compassOnly
-				position = pos,
-				world = world,
-				compassItemIcon = { resource = "BeaconCompassIconMap",
-					group = "BeaconCompassIconMap", name = GLYPH },
-				compassColor = okCol and color or nil,
-				color = okCol and color or nil,
-				compassOnly = true,
-				activate = true,
-			})
-		end)
-		c.compass.added = c.compass.added or ok
-		dbg.state = ok and ("shown " .. col) or "wmm err"
+	if wp then
+		local pos = compassWorldPos(c, char, wp.x, wp.y)
+		if not pos then return true end
+		local img = Waypoint.compassFile(col)
+		local ok, err = compassShowIcon(c, NAME, "added", pos, world, GLYPH,
+			okCol and color or nil, img)
 		if not ok then dbg.err = tostring(err) end
-		return true
+	else
+		compassHideIcon(c, NAME, "added")
 	end
 
-	local gui = c.compass.gui
-	if not c.compass.added then
-		local ok = pcall(function() gui:compassAddIcon(NAME) end)
-		if not ok then
-			dbg.err = "compassAddIcon failed"
-			c.compass.mode = "none"
-			return true
+	if home and home.x and home.y then
+		local pos = compassWorldPos(c, char, home.x, home.y)
+		if pos then
+			local ok, err = compassShowIcon(c, NAME_HOME, "homeAdded", pos, world,
+				GLYPH_HOME, okHomeCol and homeColor or nil, nil)
+			if not ok then dbg.homeErr = tostring(err) end
+			dbg.home = "shown"
 		end
-		c.compass.added = true
-	end
-	-- primary: tinted vanilla glyph (crisp at every resolution); fallback:
-	-- our pre-colored badge png (no tint - it would just darken it)
-	local okII = pcall(function()
-		gui:setItemIcon(NAME, "BeaconCompassIconMap", "BeaconCompassIconMap", GLYPH)
-	end)
-	if okII then
-		if okCol then pcall(function() gui:setColor(NAME, color) end) end
 	else
-		dbg.imgFallback = true
-		pcall(function() gui:setImage(NAME, img) end)
+		compassHideIcon(c, NAME_HOME, "homeAdded")
+		dbg.home = "hidden"
 	end
-	pcall(function() gui:compassSetIconWorldPosition(NAME, pos, world) end)
-	pcall(function() gui:setVisible(NAME, true) end)
+
 	if c.compass.mode == "own" and not c.compass.opened then
-		pcall(function() gui:open() end)
+		pcall(function() c.compass.gui:open() end)
 		c.compass.opened = true
 	end
-	dbg.state = "shown " .. col
+	dbg.state = wp and ("shown " .. col) or "home-only"
 	return true
 end

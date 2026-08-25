@@ -230,5 +230,5 @@
                                                                   "hack"
                                                               ],
                                                  "description":  "Hack Beacon upgrade. Wire to the beacon (logic or electricity). +3 bot capacity and +3 seconds hold time. Only 1 Lock per beacon. Miner shop schematic."
-                                             }
+	}
 }
