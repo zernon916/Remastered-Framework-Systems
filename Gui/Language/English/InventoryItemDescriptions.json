@@ -33,6 +33,19 @@
                                                               ],
                                                  "description":  "Handheld map tool. Hideout schematic 1 Farmer. Craft: Metal + Circuit + Component + Glass. LMB atlas, RMB MiniMap zoom, Q move/hide MiniMap, R MiniMap size."
                                              },
+    "f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d":  {
+                                                 "title":  "Recipe Viewer",
+                                                 "upperCaseTitle":  "RECIPE VIEWER",
+                                                 "keywords":  [
+                                                                  "recipe",
+                                                                  "craft",
+                                                                  "queue",
+                                                                  "planner",
+                                                                  "lcd",
+                                                                  "tool"
+                                                              ],
+                                                 "description":  "Handheld craft planner (always unlocked). Craft: 1 Metal + 1 Circuit + 1 Glass. LMB opens known recipes; queue shows on the quest tracker (max 6 lines). Clear queue removes it."
+                                             },
     "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7":  {
                                                  "title":  "Hack Beacon",
                                                  "upperCaseTitle":  "HACK BEACON",
@@ -45,6 +58,19 @@
                                                                   "raid"
                                                               ],
                                                  "description":  "Hacks up to 4 nearby bots within 30 blocks. Short-term control (8 seconds). Only activates during raids.\n\nWire upgrades to the beacon:\nâ€¢ Radio Battery Brick â€” +10 range, +1 bot (max 1)\nâ€¢ Radio Antenna â€” +10 range each (max 2)\nâ€¢ Radio Lock â€” +3 bots, +3 seconds hold (max 1)\n\nWire Battery or Recharge (electricity); optional logic switch. Hideout schematic 10 Farmers."
+                                             },
+    "c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e":  {
+                                                 "title":  "Crafting Station",
+                                                 "upperCaseTitle":  "CRAFTING STATION",
+                                                 "keywords":  [
+                                                                  "craft",
+                                                                  "craftbot",
+                                                                  "station",
+                                                                  "crafter",
+                                                                  "rfs",
+                                                                  "compact"
+                                                              ],
+                                                 "description":  "Compact 3×3 Craftbot station. Full Craftbot crafting UI. Input −X, output +X. Paintable metal body. WIP mesh — look test build."
                                              },
     "e7b1f4d3-0a52-4dc4-cf61-52c4d1e9e81a":  {
                                                  "title":  "Area Loader",

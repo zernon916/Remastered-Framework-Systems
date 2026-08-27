@@ -54,25 +54,100 @@
 			</Widget>
 		</Widget>
 
-		<!-- Tool ammo (lower-right). Vanilla engine ammo HUD is covered by this always-on HUD. Keep visible with MiniMap. -->
-		<Widget type="Widget" skin="PanelEmpty" position_real="0.82 0.76 0.16 0.08" name="RfsAmmoPanel">
-			<Property key="NeedKey" value="false"/>
-			<Property key="NeedMouse" value="false"/>
-			<Property key="Visible" value="false"/>
-			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText">
-				<Property key="Caption" value=""/>
-				<Property key="TextAlign" value="Right Bottom"/>
-				<Property key="TextColour" value="1 1 0.752941"/>
-				<Property key="FontName" value="SM_NumberSmall"/>
-				<Property key="FontHeight" value="32"/>
-				<Property key="TextShadow" value="true"/>
-				<Property key="TextShadowColour" value="0 0 0 0.4"/>
-				<Property key="NeedKey" value="false"/>
-				<Property key="NeedMouse" value="false"/>
+		<!-- Tool ammo on the selected hotbar action slot (outline). Hidden in vehicles (seat lock). -->
+		<!-- Slot geometry mirrors Inventory HotbarPanel (0.19375 0.879167 0.595313 0.119444), 10 slots. -->
+		<Widget type="Widget" skin="ToggleButton" position_real="0.19575 0.908 0.0555 0.052" name="RfsAmmoSlot0">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText0">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.25528 0.908 0.0555 0.052" name="RfsAmmoSlot1">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText1">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.31481 0.908 0.0555 0.052" name="RfsAmmoSlot2">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText2">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.37434 0.908 0.0555 0.052" name="RfsAmmoSlot3">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText3">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.43387 0.908 0.0555 0.052" name="RfsAmmoSlot4">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText4">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.49341 0.908 0.0555 0.052" name="RfsAmmoSlot5">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText5">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.55294 0.908 0.0555 0.052" name="RfsAmmoSlot6">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText6">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.61247 0.908 0.0555 0.052" name="RfsAmmoSlot7">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText7">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.67200 0.908 0.0555 0.052" name="RfsAmmoSlot8">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText8">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="ToggleButton" position_real="0.73153 0.908 0.0555 0.052" name="RfsAmmoSlot9">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText9">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="22"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.55"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
 			</Widget>
 		</Widget>
 
-		<!-- Block/creation overlay (left-center, away from MiniMap BL and ammo BR). -->
+		<!-- Block/creation overlay (left-center, away from MiniMap). -->
 		<Widget type="Widget" skin="PanelEmpty" position_real="0.012 0.42 0.30 0.08" name="RfsOverlayPanel">
 			<Property key="NeedKey" value="false"/>
 			<Property key="NeedMouse" value="false"/>

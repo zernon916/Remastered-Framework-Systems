@@ -31,7 +31,7 @@ local MINSCALE, MAXSCALE = 8, 110
 local DEFAULT_SCALE = 16
 local MARKER = 22
 local POILABELS = 24
-local BM_UI_REV = 19
+local BM_UI_REV = 26
 local LEGEND_W = 188
 local INFO_W = 188
 local POI_ICON_CAP = 256
@@ -196,7 +196,9 @@ local TIERS = {
 -- SOLID map paints WhiteSkin flats (Xaero-ish). Atlas cell pools only for
 -- non-solid fallback. dims = legend filter; shades = hillshade.
 local POOLCAP = {
-	{ per = 200, roads = 40, dims = 1600, flats = 2400, shades = 2400 },
+	-- Keep total widgets near the known-good ~6k range (dr flood broke at ~10k).
+	{ per = 200, roads = 500, dims = 1200, flats = 1600, shades = 1200,
+	  tiles = 1800 },
 }
 local POOL_BUILD_STEP = 96
 local DRAGEND = 0.25
@@ -319,10 +321,14 @@ function BigMap.queuePoolBuild(hud, firstOf)
 	bm.pools = {}
 	bm.widgetByName = bm.widgetByName or {}
 	local solid = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
+	local useTiles = solid and RfsBiomeMap.TILES
+	local roadPaint = solid and RfsBiomeMap.ROADS
 	for ti, T in ipairs(TIERS) do
 		local pool = {
 			byRes = {}, roads = {}, dims = {}, flats = {}, shades = {},
-			used = {}, roadsUsed = 0, dimsUsed = 0, flatsUsed = 0, shadesUsed = 0
+			tiles = {},
+			used = {}, roadsUsed = 0, dimsUsed = 0, flatsUsed = 0, shadesUsed = 0,
+			tilesUsed = 0,
 		}
 		bm.pools[ti] = pool
 		if solid then
@@ -334,6 +340,16 @@ function BigMap.queuePoolBuild(hud, firstOf)
 			end
 			for i = 1, ( POOLCAP[ti].dims or 0 ) do
 				bm.poolQueue[#bm.poolQueue + 1] = { kind = "dim", ti = ti, T = T, i = i }
+			end
+			if useTiles then
+				for i = 1, ( POOLCAP[ti].tiles or 0 ) do
+					bm.poolQueue[#bm.poolQueue + 1] = { kind = "tile", ti = ti, T = T, i = i }
+				end
+			end
+			if roadPaint then
+				for i = 1, ( POOLCAP[ti].roads or 0 ) do
+					bm.poolQueue[#bm.poolQueue + 1] = { kind = "road", ti = ti, T = T, i = i }
+				end
 			end
 		else
 			for res, first in pairs(firstOf[T.tier]) do
@@ -398,6 +414,16 @@ function BigMap.flushPoolBuild(hud, budget)
 				0, 0, T.px, T.px, extra)
 			bm.view.Childs[#bm.view.Childs + 1] = cw
 			lst[q.i] = cw
+			bm.widgetByName[cw.Name] = cw
+		elseif q.kind == "tile" then
+			local cw = W( "bmtile" .. ti .. "_" .. q.i, "ImageBox", "ImageBox",
+				0, 0, T.px, T.px, {
+					ImageTexture = CC .. "/Gui/MapTiles/SolidMe.png",
+					Colour = "1 1 1",
+					Visible = false, NeedToolTip = true,
+					onClick = "cl_bm_cell", onDrag = "cl_bm_curs", onToolTip = "cl_bm_hover" })
+			bm.view.Childs[#bm.view.Childs + 1] = cw
+			pool.tiles[q.i] = cw
 			bm.widgetByName[cw.Name] = cw
 		else
 			local ov = W("bmo" .. ti .. "_" .. q.i, "ImageBox", "ImageBox",
@@ -993,6 +1019,7 @@ function BigMap.refill(hud)
 	pool.dimsUsed = 0
 	pool.flatsUsed = 0
 	pool.shadesUsed = 0
+	pool.tilesUsed = 0
 	bm.clickMap = {}
 	bm.placed = {}
 	bm.refillCx, bm.refillCy = bm.cx, bm.cy
@@ -1003,7 +1030,17 @@ function BigMap.refill(hud)
 	local y1 = math.ceil(bm.cy + VH / (2 * px)) + 1
 	local skipped = 0
 	local solid = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
+	local roadPaint = solid and RfsBiomeMap.ROADS
+	local useTiles = solid and RfsBiomeMap.TILES and px >= ( RfsBiomeMap.TILE_MIN_PX or 18 )
+	local td = hud.cl.td
 	local filt = bm.legendFilter
+	local function cellDimmed( id, wx, wy )
+		if filt == nil then return false end
+		if type( RfsBiomeMap ) == "table" and RfsBiomeMap.cellMatchesLegend then
+			return not RfsBiomeMap.cellMatchesLegend( filt, td, wx, wy, id )
+		end
+		return id ~= filt
+	end
 	local function edgeX(wx) return math.floor(VW / 2 + (wx - bm.cx) * px + 0.5) end
 	local function edgeY(wy) return math.floor(VH / 2 - (wy - bm.cy) * px + 0.5) end
 
@@ -1036,7 +1073,7 @@ function BigMap.refill(hud)
 			sh.width = w + 1; sh.height = h + 1
 			bm.placed[#bm.placed + 1] = { w = sh, wx = wx, wy = wy, ww = ww, wh = wh, dim = true }
 		end
-		if filt ~= nil and id ~= filt and pool.dims and pool.dimsUsed < #pool.dims then
+		if filt ~= nil and cellDimmed( id, wx, wy ) and pool.dims and pool.dimsUsed < #pool.dims then
 			pool.dimsUsed = pool.dimsUsed + 1
 			local ov = pool.dims[pool.dimsUsed]
 			ov.Visible = true
@@ -1066,6 +1103,83 @@ function BigMap.refill(hud)
 		cw.width = w + 1; cw.height = h + 1
 		bm.clickMap[cw.Name] = { x = wx, y = wy }
 		placeOverlays( id, sx, sy, w, h, wx, wy, ww, wh )
+		return true
+	end
+
+	local function takeFlat()
+		if not pool.flats or pool.flatsUsed >= #pool.flats then return nil end
+		pool.flatsUsed = pool.flatsUsed + 1
+		local cw = pool.flats[pool.flatsUsed]
+		if cw and cw.Name == bm.pinName then
+			if pool.flatsUsed >= #pool.flats then return nil end
+			pool.flatsUsed = pool.flatsUsed + 1
+			cw = pool.flats[pool.flatsUsed]
+		end
+		return cw
+	end
+
+	local function assignRoadOverlay( sx, sy, w, h, wx, wy, roadMask )
+		roadMask = math.floor( tonumber( roadMask ) or 0 ) % 16
+		if roadMask == 0 then return end
+		if not pool.roads or pool.roadsUsed >= #pool.roads then return end
+		pool.roadsUsed = pool.roadsUsed + 1
+		local ov = pool.roads[pool.roadsUsed]
+		ov.Visible = true
+		ov.x = sx
+		ov.y = sy
+		ov.width = w + 1
+		ov.height = h + 1
+		ov.ImageName = "road_" .. roadMask
+		bm.placed[#bm.placed + 1] = { w = ov, wx = wx, wy = wy, ww = 1, wh = 1, dim = true }
+	end
+
+	local function paintSolidCell( paintId, sx, sy, w, h, wx, wy, ww, wh, ids )
+		ww = ww or 1
+		wh = wh or 1
+		local biomeId = ids[wy][wx]
+		local roadMask = ( roadPaint and biomeId ~= 0 ) and RfsBiomeMap.roadMask( td, wx, wy ) or 0
+		if useTiles and pool.tiles and pool.tilesUsed < #pool.tiles then
+			local path = RfsBiomeMap.tileTexture( ids, wx, wy, x0, x1, y0, y1 )
+			if path then
+				pool.tilesUsed = pool.tilesUsed + 1
+				local cw = pool.tiles[pool.tilesUsed]
+				if cw and cw.Name == bm.pinName then
+					if pool.tilesUsed >= #pool.tiles then return false end
+					pool.tilesUsed = pool.tilesUsed + 1
+					cw = pool.tiles[pool.tilesUsed]
+				end
+				bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, ww = ww, wh = wh }
+				cw.Visible = true
+				cw.ImageTexture = path
+				cw.Colour = "1 1 1"
+				cw.Alpha = 1
+				cw.x = sx
+				cw.y = sy
+				cw.width = w + 1
+				cw.height = h + 1
+				bm.clickMap[cw.Name] = { x = wx, y = wy }
+				placeOverlays( biomeId, sx, sy, w, h, wx, wy, ww, wh )
+				if roadMask ~= 0 then
+					assignRoadOverlay( sx, sy, w, h, wx, wy, roadMask )
+				end
+				return true
+			end
+		end
+		local cw = takeFlat()
+		if not cw then return false end
+		bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, ww = ww, wh = wh }
+		cw.Visible = true
+		cw.Colour = RfsBiomeMap.colorForId( paintId )
+		cw.Alpha = 1
+		bm.clickMap[cw.Name] = { x = wx, y = wy }
+		cw.x = sx
+		cw.y = sy
+		cw.width = w + 1
+		cw.height = h + 1
+		placeOverlays( biomeId, sx, sy, w, h, wx, wy, ww, wh )
+		if roadMask ~= 0 then
+			assignRoadOverlay( sx, sy, w, h, wx, wy, roadMask )
+		end
 		return true
 	end
 
@@ -1100,12 +1214,15 @@ function BigMap.refill(hud)
 
 	local atlas = hud.cl.atlas
 	if solid then
-		-- Cap merge size so coastlines stay jagged (Xaero feel), not huge slabs.
+		local perCell = useTiles
 		local maxSide = 1
-		if px < 10 then maxSide = 5
-		elseif px < 14 then maxSide = 3
-		elseif px < 22 then maxSide = 2
+		if not perCell then
+			if px < 10 then maxSide = 5
+			elseif px < 14 then maxSide = 3
+			elseif px < 22 then maxSide = 2
+			end
 		end
+		local roadFilt = filt == ( RfsBiomeMap.ROAD_LEGEND_ID or 11 )
 		local ids = {}
 		for wy = y0, y1 do
 			local row = {}
@@ -1114,16 +1231,33 @@ function BigMap.refill(hud)
 				row[wx] = RfsBiomeMap.cellId( hud.cl.td, wx, wy )
 			end
 		end
-		-- Land next to water → coast strip (sandy), then lakes/shores paint blue.
 		RfsBiomeMap.applyCoast( ids, x0, x1, y0, y1 )
+		local function overlayRoadsRect( wx0, wy0, wx1, wy1 )
+			if not roadPaint then return end
+			for y = wy0, wy1 do
+				for x = wx0, wx1 do
+					if ids[y][x] ~= 0 then
+						local rm = RfsBiomeMap.roadMask( td, x, y )
+						if rm ~= 0 then
+							local csx = edgeX( x )
+							local csy = edgeY( y + 1 )
+							local cw = edgeX( x + 1 ) - csx
+							local ch = edgeY( y ) - csy
+							assignRoadOverlay( csx, csy, cw, ch, x, y, rm )
+						end
+					end
+				end
+			end
+		end
 		local visited = {}
 		local function vkey( wx, wy ) return wy * 65536 + wx end
 		for wy = y0, y1 do
 			for wx = x0, x1 do
 				if not visited[vkey( wx, wy )] then
 					local id = ids[wy][wx]
-					-- Open ocean: leave to blue backdrop (saves draw pool).
-					if id == 0 and RfsBiomeMap.isOpenOcean( ids, wx, wy, x0, x1, y0, y1 ) then
+					if roadFilt and RfsBiomeMap.roadMask( td, wx, wy ) == 0 then
+						visited[vkey( wx, wy )] = true
+					elseif id == 0 and RfsBiomeMap.isOpenOcean( ids, wx, wy, x0, x1, y0, y1 ) then
 						visited[vkey( wx, wy )] = true
 					else
 						local x2 = wx
@@ -1153,7 +1287,17 @@ function BigMap.refill(hud)
 						local sy = edgeY( wy + wh )
 						local w = edgeX( wx + ww ) - sx
 						local h = edgeY( wy ) - sy
-						if not assignFlat( id, sx, sy, w, h, wx, wy, ww, wh ) then
+						local paintId = id
+						local done
+						if perCell then
+							done = paintSolidCell( paintId, sx, sy, w, h, wx, wy, ww, wh, ids )
+						else
+							done = assignFlat( paintId, sx, sy, w, h, wx, wy, ww, wh )
+							if done and roadPaint and id ~= 0 then
+								overlayRoadsRect( wx, wy, x2, y2 )
+							end
+						end
+						if not done then
 							skipped = skipped + 1
 						end
 					end
@@ -1209,6 +1353,8 @@ function BigMap.refill(hud)
 		for i = fu + 1, #(p.flats or {}) do p.flats[i].Visible = false end
 		local su = (ti == bm.tierIdx) and (pool.shadesUsed or 0) or 0
 		for i = su + 1, #(p.shades or {}) do p.shades[i].Visible = false end
+		local tu = (ti == bm.tierIdx) and (pool.tilesUsed or 0) or 0
+		for i = tu + 1, #(p.tiles or {}) do p.tiles[i].Visible = false end
 	end
 	-- No POI text soup on the map — names live in the MARKERS list.
 	for i = 1, #bm.poiLabels do bm.poiLabels[i].Visible = false end
@@ -1282,6 +1428,9 @@ function BigMap.refill(hud)
 	local vc = { bm.water }
 	for i = 1, (pool.flatsUsed or 0) do
 		if pool.flats[i] ~= pinW then vc[#vc + 1] = pool.flats[i] end
+	end
+	for i = 1, (pool.tilesUsed or 0) do
+		if pool.tiles[i] ~= pinW then vc[#vc + 1] = pool.tiles[i] end
 	end
 	for res, lst in pairs(pool.byRes) do
 		for i = 1, (pool.used[res] or 0) do

@@ -1,6 +1,6 @@
 -- RfsBedSleep.lua
--- All Survival Bed seats (+ Mattress override) skip night to 5 AM when solo.
--- Uses RfsDeepSleepTime / Chem Station time skip. Multiplayer vote stays parked.
+-- All Survival Bed seats (+ Mattress override) skip night to 5 AM.
+-- Uses RfsDeepSleepTime / Chem Station time skip (MP advances everyone; vote UI parked).
 
 RfsBedSleep = RfsBedSleep or {}
 
@@ -56,7 +56,7 @@ function RfsBedSleep.ensureHooks()
 
 	if not RfsBedSleep._hookLogged then
 		RfsBedSleep._hookLogged = true
-		print( "[RFS] RfsBedSleep hooked Bed.sv_activateBed (solo night skip)" )
+		print( "[RFS] RfsBedSleep hooked Bed.sv_activateBed (night skip)" )
 	end
 	return true
 end

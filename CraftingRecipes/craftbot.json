@@ -101,11 +101,22 @@
 		"itemId": "7a402d6c-93e5-4f28-ab71-d2e6f9a3b5c8",
 		"quantity": 1,
 		"craftTime": 10,
-		"ingredientList": [
+			"ingredientList": [
 			{ "quantity": 5, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
 			{ "quantity": 5, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
 			{ "quantity": 3, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" },
 			{ "quantity": 5, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
+		]
+	},
+	{
+		"_comment": "Recipe Viewer handheld (always unlocked). 1 Metal + 1 Circuit + 1 Glass. Vanilla small LCD look.",
+		"itemId": "f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d",
+		"quantity": 1,
+		"craftTime": 8,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 1, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 1, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
 		]
 	}
 ]

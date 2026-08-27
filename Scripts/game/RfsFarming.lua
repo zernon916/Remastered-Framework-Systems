@@ -107,8 +107,13 @@ local WATER_INTERVAL_TICKS = 100
 local OVERLAY_EFFECTS = { "RfsGrowText", "DebugText" }
 local TEXT_FACE = sm.vec3.new( 0, 1, 0 ) -- DebugText / nametag default facing
 local WORLD_UP = sm.vec3.new( 0, 0, 1 )
-local OVERLAY_AABB_PAD = 0.32
-local OVERLAY_FX_VER = 2
+local OVERLAY_AABB_PAD = 1.15
+local OVERLAY_FX_VER = 3
+-- Condense near-identical timers: first plant in a cluster draws; others hide.
+local CLUSTER_RADIUS2 = 3.0 * 3.0
+local CLUSTER_TICK_TOL = 200 -- ~5 real seconds at 40 tick/s
+local g_rfsGrowClusterFrame = -1
+local g_rfsGrowCluster = {}
 
 local defaults = {
 	alwaysWatered = false,
@@ -742,7 +747,7 @@ local function overlayWorldPos( harvestable, grown )
 		return sm.vec3.new( x, y, maxAabb.z ) + up * OVERLAY_AABB_PAD
 	end
 
-	local height = 1.05 + math.max( 0, math.min( 1, grown or 0 ) ) * 0.75
+	local height = 1.65 + math.max( 0, math.min( 1, grown or 0 ) ) * 0.85
 	return pos + up * height
 end
 
@@ -838,6 +843,34 @@ function RfsFarming.cl_plantOverlayUpdate( self, dt )
 	local grown = 1.0 - frac
 	local label = ( remain <= 0 ) and "READY" or formatRemain( remain )
 	local color = remainColor( frac )
+
+	-- Cluster: one timer per nearby group with similar remaining time.
+	local frame = serverTick
+	pcall( function()
+		if type( sm.game.getClientTick ) == "function" then
+			frame = sm.game.getClientTick() or frame
+		end
+	end )
+	if g_rfsGrowClusterFrame ~= frame then
+		g_rfsGrowClusterFrame = frame
+		g_rfsGrowCluster = {}
+	end
+	local wx, wy = 0, 0
+	pcall( function()
+		local p = self.harvestable:getPosition()
+		wx, wy = p.x, p.y
+	end )
+	for _, e in ipairs( g_rfsGrowCluster ) do
+		if math.abs( ( e.remain or 0 ) - remain ) <= CLUSTER_TICK_TOL then
+			local dx = ( e.x or 0 ) - wx
+			local dy = ( e.y or 0 ) - wy
+			if ( dx * dx + dy * dy ) <= CLUSTER_RADIUS2 then
+				destroyGrowFx( self )
+				return
+			end
+		end
+	end
+	g_rfsGrowCluster[#g_rfsGrowCluster + 1] = { remain = remain, x = wx, y = wy }
 
 	local fx = ensureGrowFx( self )
 	if not fx then

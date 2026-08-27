@@ -6,6 +6,9 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsSettings.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFeatures.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsGameMode.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsQuest.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsCraftQueue.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsCraftQueueHost.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsRecipeViewerGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsSoilPlacement.lua" )
@@ -67,7 +70,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
-RFS_PACK_STAMP = "[RFS] pack 0854-dp / growlabs are growlabs (not mines)"
+RFS_PACK_STAMP = "[RFS] pack 0854-ci / biome ids + MP sleep/cheats + hotbar ammo"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
 RFS_SPEND_CHAT = nil
@@ -103,6 +106,7 @@ local RFS_MININGHUB_TRADER_UUID = sm.uuid.new( "90762ac2-5082-461d-9028-480d38a7
 local RFS_HIJACK_HOST_UUID = sm.uuid.new( "a7c3e91f-2b48-4d6a-9e15-6f8d0c1a2b3c" )
 
 -- Host checks: client uses sm.isHost (bool or function); server RPCs compare sender to first connected player.
+-- Listen-server MP sometimes reports sm.isHost false on the host client — fall back to first player.
 local function rfsClientIsHost()
 	local ok, v = pcall( function()
 		if type( sm.isHost ) == "function" then
@@ -110,7 +114,22 @@ local function rfsClientIsHost()
 		end
 		return sm.isHost
 	end )
-	return ok and v and true or false
+	if ok and v then
+		return true
+	end
+	local me, all = nil, nil
+	pcall( function() me = sm.localPlayer.getPlayer() end )
+	pcall( function() all = sm.player.getAllPlayers() end )
+	if me and type( all ) == "table" and all[1] then
+		local hid, pid = nil, nil
+		pcall( function() hid = all[1].id end )
+		pcall( function() pid = me.id end )
+		if hid ~= nil and pid ~= nil then
+			return hid == pid
+		end
+		return all[1] == me
+	end
+	return false
 end
 
 -- Chat-list /setup: host, or a client the engine marks as admin (if those flags exist).
@@ -725,6 +744,11 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 	_G.g_rfsGame = self
 	RfsFarming.ensureHooks()
 	pcall( function()
+		if type( RfsCraftQueue ) == "table" and RfsCraftQueue.installTrackerWrap then
+			RfsCraftQueue.installTrackerWrap()
+		end
+	end )
+	pcall( function()
 		if type( RfsBedSleep ) == "table" and RfsBedSleep.ensureHooks then
 			RfsBedSleep.ensureHooks()
 		end
@@ -808,6 +832,15 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 			RfsCrafterGrid.tick()
 		end
 	end )
+	-- Recipe Viewer: create GUI on Game tick so button callbacks bind to Game
+	-- (LMB opens from the Tool stack — createGuiFromLayout would otherwise bind to Tool).
+	if self.cl and self.cl.rfsRecipeViewerWantOpen ~= nil then
+		local data = self.cl.rfsRecipeViewerWantOpen
+		self.cl.rfsRecipeViewerWantOpen = nil
+		if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.open then
+			pcall( RfsRecipeViewerGui.open, self, type( data ) == "table" and data or {} )
+		end
+	end
 	-- Fallback: if create/clientData paths skipped binding, catch it on first tick.
 	if not ( self.cl and self.cl.rfsCmdsBound ) then
 		self:rfs_bindCommands()
@@ -1337,6 +1370,10 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 		self.network:sendToServer( "sv_rfs_toggleFly", { player = sm.localPlayer.getPlayer() } )
 		return
 	end
+	if cmd == "/god" then
+		self.network:sendToServer( "sv_switchGodMode" )
+		return
+	end
 	if cmd == "/give" then
 		self.network:sendToServer( "sv_rfs_give", { uuid = params[2], quantity = params[3] or 1 } )
 		return
@@ -1536,7 +1573,7 @@ function RecipeFrameworkSurvival.sv_setTimeOfDay( self, timeOfDay, player )
 	SurvivalGame.sv_setTimeOfDay( self, timeOfDay )
 end
 
--- Deep Sleep solo skip. Not cheat-gated. No MP vote.
+-- Deep Sleep / bed night skip. Not cheat-gated. Advances world time for all players.
 function RecipeFrameworkSurvival.sv_e_rfsDeepSleepSkip( self, params )
 	if type( RfsDeepSleepTime ) == "table" and RfsDeepSleepTime.skipFromGame then
 		RfsDeepSleepTime.skipFromGame( self, params or {} )
@@ -1622,6 +1659,9 @@ function RecipeFrameworkSurvival.sv_rfs_toggleFly( self, params, player )
 		return
 	end
 	local target = player
+	if not target and params and params.player then
+		target = params.player
+	end
 	if not target then
 		return
 	end
@@ -2100,6 +2140,149 @@ end
 function RecipeFrameworkSurvival.cl_rfs_handheldDefend( self )
 	if type( RfsHandheldHackGui ) == "table" and RfsHandheldHackGui.sendOrder then
 		RfsHandheldHackGui.sendOrder( self, "defend" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerOpen( self, data )
+	-- Defer create to client_onUpdate so callbacks bind to Game, not the Tool.
+	self.cl = self.cl or {}
+	self.cl.rfsRecipeViewerWantOpen = data or {}
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerClose( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.close then
+		RfsRecipeViewerGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerClosed( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.close then
+		RfsRecipeViewerGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerPrev( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.prev then
+		RfsRecipeViewerGui.prev( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerNext( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.next then
+		RfsRecipeViewerGui.next( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerPick( self, buttonName )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.pick then
+		RfsRecipeViewerGui.pick( self, buttonName )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerClear( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.clear then
+		RfsRecipeViewerGui.clear( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerPlus( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.plus then
+		RfsRecipeViewerGui.plus( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerMinus( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.minus then
+		RfsRecipeViewerGui.minus( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerTabQueue( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setTab then
+		RfsRecipeViewerGui.setTab( self, "queue" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerTabRecipes( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setTab then
+		RfsRecipeViewerGui.setTab( self, "recipes" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatAll( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
+		RfsRecipeViewerGui.setCategory( self, "all" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatTool( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
+		RfsRecipeViewerGui.setCategory( self, "tool" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatBlock( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
+		RfsRecipeViewerGui.setCategory( self, "block" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatInteractive( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
+		RfsRecipeViewerGui.setCategory( self, "interactive" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatPart( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
+		RfsRecipeViewerGui.setCategory( self, "part" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatConsumable( self )
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
+		RfsRecipeViewerGui.setCategory( self, "consumable" )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_craftQueueAdd( self, params, player )
+	params = params or {}
+	if type( RfsCraftQueue ) ~= "table" or not RfsCraftQueue.add then
+		return
+	end
+	local ok, err = RfsCraftQueue.add( player, params.itemId, params.qty or 1 )
+	if not ok and player then
+		self.network:sendToClient( player, "client_showMessage", "[RFS] Queue failed: " .. tostring( err ) )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_craftQueueSet( self, params, player )
+	params = params or {}
+	if type( RfsCraftQueue ) ~= "table" or not RfsCraftQueue.set then
+		return
+	end
+	local ok, err = RfsCraftQueue.set( player, params.itemId, params.qty or 0 )
+	if not ok and player then
+		self.network:sendToClient( player, "client_showMessage", "[RFS] Queue failed: " .. tostring( err ) )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_craftQueueClear( self, params, player )
+	if type( RfsCraftQueue ) == "table" and RfsCraftQueue.clear then
+		RfsCraftQueue.clear( player )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_craftQueueSync( self, snap )
+	_G.g_rfsCraftQueueClientSnap = snap
+	if type( RfsCraftQueue ) == "table" and RfsCraftQueue.cl_applyTracker then
+		RfsCraftQueue.cl_applyTracker( snap )
+	end
+	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.onQueueSync then
+		RfsRecipeViewerGui.onQueueSync( self, snap )
+	end
+	if type( QuestManager ) == "table" and QuestManager.Cl_UpdateQuestTracker then
+		pcall( QuestManager.Cl_UpdateQuestTracker )
 	end
 end
 

@@ -22,6 +22,8 @@ Waypoint = {}
 local CC = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247"
 local NAME = "GPSModWaypoint"
 local NAME_HOME = "GPSModHome"
+local SETTINGS_USER = "$USER_DATA/rfs_gps/settings.json"
+local SETTINGS_LEGACY = CC .. "/minimap_settings.json"
 
 Waypoint.COLORS = { "red", "green", "blue", "yellow", "orange" }
 local HEX = { red = "e13c32ff", green = "50cd5aff", blue = "468cffff",
@@ -52,17 +54,86 @@ function Waypoint.compassFile( col )
 	return CC .. "/Gui/compass_wp_" .. (Waypoint.valid(col) and col or "red") .. "_b1.png"
 end
 
+local function loadSettingsTable()
+	local ok, st = pcall( sm.json.open, SETTINGS_USER )
+	if ok and type( st ) == "table" then
+		return st
+	end
+	ok, st = pcall( sm.json.open, SETTINGS_LEGACY )
+	if ok and type( st ) == "table" then
+		return st
+	end
+	return {}
+end
+
+function Waypoint.readSettings()
+	return loadSettingsTable()
+end
+
+function Waypoint.loadWorld( hud )
+	local c = hud.cl
+	if not c.worldId then
+		return
+	end
+	local st = loadSettingsTable()
+	local wid = tostring( c.worldId )
+	local w = st.worlds and st.worlds[wid]
+	if type( w ) == "table" then
+		c.waypoint = w.wp
+		c.farmMarkers = w.farms
+		-- false = explicitly cleared; missing key = migrate legacy flat base
+		if w.base == false then
+			c.baseMarker = nil
+		elseif type( w.base ) == "table" and w.base.x then
+			c.baseMarker = w.base
+		elseif type( st.base ) == "table" and st.base.x then
+			c.baseMarker = st.base
+		else
+			c.baseMarker = nil
+		end
+	else
+		-- one-time migration from legacy flat keys
+		if type( st.wp ) == "table" and st.wp.x then
+			c.waypoint = st.wp
+		end
+		if type( st.base ) == "table" and st.base.x then
+			c.baseMarker = st.base
+		end
+		if type( st.farms ) == "table" then
+			c.farmMarkers = st.farms
+		end
+	end
+	if c.waypoint or c.baseMarker then
+		c.wantCompassSync = true
+	end
+end
+
 -- single writer for the settings file: every save carries the full state
 -- (the old zoom-only save dropped the persisted waypoint)
 function Waypoint.save( hud )
 	local c = hud.cl
-	pcall(sm.json.save, {
-		zoom = c.zoomIdx, wp = c.waypoint, wpc = c.wpColor,
-		pos = c.posIdx, posl = c.lastPos, size = c.sizeIdx,
-		base = c.baseMarker,
-		farms = c.farmMarkers,
-		poiFilters = c.poiFilters,
-	}, CC .. "/minimap_settings.json")
+	local all = loadSettingsTable()
+	all.zoom = c.zoomIdx
+	all.wpc = c.wpColor
+	all.pos = c.posIdx
+	all.posl = c.lastPos
+	all.size = c.sizeIdx
+	all.poiFilters = c.poiFilters
+	all.worlds = all.worlds or {}
+	local wid = c.worldId and tostring( c.worldId ) or nil
+	if wid then
+		local base = c.baseMarker
+		all.worlds[wid] = {
+			wp = c.waypoint,
+			base = ( base and base.x ) and base or false,
+			farms = c.farmMarkers,
+		}
+	else
+		all.wp = c.waypoint
+		all.base = c.baseMarker
+		all.farms = c.farmMarkers
+	end
+	pcall( sm.json.save, all, SETTINGS_USER )
 end
 
 function Waypoint.set( hud, x, y )

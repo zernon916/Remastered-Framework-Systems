@@ -586,6 +586,10 @@
 			<Index name="3c06e928-5f97-42a9-d4b6-a7f926343d7f">
 				<Frame point="864 864"/>
 			</Index>
+			<!-- Recipe Viewer tool — same art as Inventory LCD small (vanilla LCD look). -->
+			<Index name="f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d">
+				<Frame point="864 864"/>
+			</Index>
 			<Index name="4d17fa39-60a8-43ba-e5c7-b80a37454e80">
 				<Frame point="960 864"/>
 			</Index>
@@ -603,6 +607,9 @@
 			</Index>
 			<Index name="9c624f8e-b507-414a-cd93-f4081b5c7eaf">
 				<Frame point="1440 864"/>
+			</Index>
+			<Index name="c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e">
+				<Frame point="1536 864"/>
 			</Index>
 			<Index name="e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c">
 				<Frame point="1632 864"/>

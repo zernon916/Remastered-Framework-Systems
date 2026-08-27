@@ -61,5 +61,14 @@
 		"ingredientList": [
 			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
 		]
+	},
+	{
+		"_comment": "Crafting Station — compact 3x3 Craftbot mesh WIP. 1 Metal placeholder for look tests.",
+		"itemId": "c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e",
+		"quantity": 1,
+		"craftTime": 2,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
+		]
 	}
 ]

@@ -1,0 +1,52 @@
+{
+	"partList": [
+		{
+			"uuid": "c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e",
+			"name": "obj_rfs_craftingstation",
+			"renderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Renderable/rfs_crafting_station.rend",
+			"color": "df7f01",
+			"box": { "x": 3, "y": 3, "z": 3 },
+			"rotationSet": "PropY",
+			"physicsMaterial": "Mechanical",
+			"flammable": false,
+			"density": 5.0,
+			"stackSize": 5,
+			"sticky": "-Y",
+			"ratings": {
+				"buoyancy": 3,
+				"density": 4,
+				"durability": 6,
+				"friction": 5
+			},
+			"restrictions": {
+				"usable": true,
+				"paintable": true,
+				"erasable": true,
+				"liftable": true
+			},
+			"pipe": {
+				"type": "Interactable",
+				"openings": [
+					{
+						"direction": "output",
+						"side": "+X",
+						"x": 1.5,
+						"y": 0.0,
+						"z": 0.0
+					},
+					{
+						"direction": "input",
+						"side": "-X",
+						"x": -1.5,
+						"y": 0.0,
+						"z": 0.0
+					}
+				]
+			},
+			"scripted": {
+				"classname": "Craftbot",
+				"filename": "$SURVIVAL_DATA/Scripts/game/interactables/Crafter.lua"
+			}
+		}
+	]
+}

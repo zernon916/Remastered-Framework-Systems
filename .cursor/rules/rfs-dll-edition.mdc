@@ -1,0 +1,49 @@
+---
+description: RFS DLL edition — handshake paths, Cache wipe, never Workshop
+alwaysApply: true
+---
+
+# RFS DLL edition SOP (0854-dll4+)
+
+Local-only stack. **Never** SteamCMD / Workshop `3782487760` / stock `RecipeFrameworkSurvival` for native DLL work.
+
+| Path | Role |
+|------|------|
+| `Desktop\RecipeFrameworkSurvival` | Stock Workshop Custom Game |
+| `Desktop\RecipeFrameworkSurvival-DllEdition` | Local Custom Game + bridge Lua |
+| `Desktop\RfsMapDll` | Native `RfsMapDll.dll` sources — never Workshop |
+| User Mods `...\Mods\RemasteredFrameworkSurvivalDllEdition` | Play copy (`localId` `a9e1c4b2-…`) |
+| `Steam\...\Release\DLLModules\RfsMapDll.dll` | Injected module only |
+| `Steam\...\Release\vcruntime140_1.dll` | SM-DLL-Injector proxy (not our module) |
+
+## After every DllEdition script sync (mandatory)
+
+SM compiles Lua into the **pack-local** Cache. Editing files without wiping it leaves old bytecode (join chat can stay on dll1 while disk is dll4).
+
+1. Quit Scrap Mechanic first.
+2. Copy Desktop DllEdition → User Mods `RemasteredFrameworkSurvivalDllEdition`.
+3. **Delete** `...\Mods\RemasteredFrameworkSurvivalDllEdition\Cache\` (entire folder).
+4. Also delete User `...\User_*\Cache\` if present.
+5. Bump `RFS_PACK_STAMP` in DllEdition `Scripts/Game.lua` so chat proves the new build.
+6. Tell user they can relaunch.
+
+If chat still shows an old stamp or “Drop RfsMapDll.dll in Release\DLLModules”, Cache was not wiped.
+
+## Handshake (do not regress)
+
+- **Works:** DLL writes `rfs_dll_present.json` under the DllEdition pack (`Scripts/game/` and pack root). Lua opens `$CONTENT_DATA/.../rfs_dll_present.json`.
+- **Broken:** `$USER_DATA/rfs_dll_bridge/...` or relying on `$USER_DATA` opens of files created outside `sm.json.save` → DirectoryManager “Unable to replace key”.
+- Putting the DLL in `Release\` instead of `Release\DLLModules\` does **not** fix a Lua path/Cache miss. Injection was already OK once pack Cache was wiped.
+
+## Verify
+
+Join chat must show current `RFS_PACK_STAMP` and either:
+
+- `[RFS-DLL] Native bridge v…` (DLL loaded + JSON readable), or
+- `[RFS-DLL] No native bridge (dll4)…` (scripts new, handshake miss)
+
+Phase 0 = presence only (`nativeMap=no` is expected until native map work).
+Phase 1 = pollable status (`schema` 1, `phase` 1, `features.statusPoll`); chat shows `bridge v… phase=1 schema=1 [statusPoll]`.
+Phase 2 = hybrid native surfaces: GPS/`/map` still opens Nutt BigMap **chrome**; atlas tiles suppressed; DLL draws map/minimap surfaces when `nativeMap`/`nativeMinimap` true. Without injector, full Nutt atlas+HUD unchanged.
+
+DllEdition map ownership: autoTool UUID `c5d8e2f1-…` (not Workshop `7c4e9b21-…`). MinimapHud must load from `$CONTENT_a9e1c4b2-…`. Join log should print `MinimapHud owner = DllEdition`. Disable Workshop RFS as a world mod while testing DllEdition. Hide Nutt/DLL minimap while `/menu` is open (`g_rfsMenuGuiOpen`).

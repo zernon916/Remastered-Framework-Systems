@@ -13,6 +13,7 @@ RfsCrafterGrid = RfsCrafterGrid or {}
 local GPS_UUID = "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76"
 -- Hideout schematic rows exist (Farmers priced). Keep off Craftbot until unlock.
 local SCHEMATIC_LOCKED = {
+	[GPS_UUID] = true, -- GPS tool, 1 Farmer (was wrongly force-unlocked)
 	["e8f4a2b1-3c7d-4e9f-8a2b-1d5e6f7a8b9c"] = true, -- Handheld Radio tool, 5 Farmers
 	["b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7"] = true, -- Hack Beacon station core, 10 Farmers
 	["ca2d0a9f-1a5b-4c7d-8e09-fb3a4b5c6d7e"] = true, -- Radio Antenna, 15 Farmers
@@ -122,12 +123,24 @@ function RfsCrafterGrid.collectGridFiles( scan )
 	return files
 end
 
+local function schematicLockSet()
+	local locks = {}
+	for id, _ in pairs( SCHEMATIC_LOCKED ) do
+		locks[id] = true
+	end
+	for id, _ in pairs( _G.g_extraHideoutSchematicUnlocks or {} ) do
+		locks[tostring( id )] = true
+	end
+	return locks
+end
+
 function RfsCrafterGrid.installRecipeSet( scan )
 	local files = RfsCrafterGrid.collectGridFiles( scan )
 	local recipes = {}
 	local recipesByIndex = {}
 	local gpsInFile = false
 	local alwaysAvailable = {}
+	local schematicLocks = schematicLockSet()
 
 	for _, path in ipairs( files ) do
 		local fromRfsOwn = ( path == CG_CRAFTBOT_RFS or path == CG_CRAFTBOT )
@@ -158,7 +171,8 @@ function RfsCrafterGrid.installRecipeSet( scan )
 							end
 							recipes[recipe.itemId] = recipe
 							recipesByIndex[#recipesByIndex + 1] = recipe
-							if fromRfsOwn and not SCHEMATIC_LOCKED[recipe.itemId] then
+							-- Free only when this pack owns the row and it is not a Hideout schematic.
+							if fromRfsOwn and not schematicLocks[recipe.itemId] then
 								alwaysAvailable[recipe.itemId] = true
 							end
 						end
@@ -176,22 +190,30 @@ function RfsCrafterGrid.installRecipeSet( scan )
 	}
 	_G.g_rfsCraftbotGridFiles = files
 	_G.g_rfsCraftbotAlwaysAvailable = alwaysAvailable
+	_G.g_rfsCraftbotSchematicLocks = schematicLocks
 
 	g_unlockableCraftItems = g_unlockableCraftItems or {}
 	for id, _ in pairs( recipes ) do
 		if alwaysAvailable[id] then
+			-- Always craftable (non-schematic RFS rows).
+			g_unlockableCraftItems[id] = nil
+		elseif schematicLocks[id] then
+			-- Survival schematic banlist semantics: locked until Sv_UnlockRecipe.
+			-- Do NOT mark unlockable=true — tools never enter recipesToUnlock and
+			-- would otherwise appear free on the C++ grid.
 			g_unlockableCraftItems[id] = nil
 		else
 			g_unlockableCraftItems[id] = true
 		end
 	end
-	-- This pack: GPS must show on Tools without Hideout buy.
-	g_unlockableCraftItems[GPS_UUID] = nil
-	alwaysAvailable[GPS_UUID] = true
-
+	-- GPS is Hideout schematic — never force alwaysAvailable.
+	local schematicN = 0
+	for _ in pairs( schematicLocks ) do
+		schematicN = schematicN + 1
+	end
 	print( string.format(
-		"[RFS] craftbot C++ files n=%d gpsInFile=%s recipes=%d path=%s",
-		#files, tostring( gpsInFile ), #recipesByIndex, CG_CRAFTBOT
+		"[RFS] craftbot C++ files n=%d gpsInFile=%s recipes=%d schematicLocks=%d path=%s",
+		#files, tostring( gpsInFile ), #recipesByIndex, schematicN, CG_CRAFTBOT
 	) )
 	for i, path in ipairs( files ) do
 		print( "[RFS] craftbot C++ " .. tostring( i ) .. " " .. tostring( path ) )
@@ -273,6 +295,54 @@ local function markPathRecipeIds( path, seen )
 	end
 end
 
+-- Whole-file addGridItemsFromFile cannot drop individual rows. Write a pack-local
+-- deduped slice so mod A + mod B (or twin path strings) cannot twin the same uuid.
+local function saveDedupedGridFile( path, seen )
+	local ok, json = pcall( sm.json.open, path )
+	if not ok or type( json ) ~= "table" or isVanillaIndexFile( json ) then
+		return nil, 0
+	end
+	local filtered = {}
+	for _, raw in ipairs( json ) do
+		if type( raw ) == "table" and raw.itemId then
+			local id = tostring( raw.itemId )
+			if not seen[id] then
+				local row = {
+					itemId = id,
+					quantity = tonumber( raw.quantity ) or 1,
+					craftTime = tonumber( raw.craftTime ) or 0,
+					ingredientList = {},
+				}
+				for _, ing in ipairs( raw.ingredientList or {} ) do
+					if type( ing ) == "table" and ing.itemId then
+						row.ingredientList[#row.ingredientList + 1] = {
+							itemId = tostring( ing.itemId ),
+							quantity = tonumber( ing.quantity ) or 1,
+						}
+					end
+				end
+				filtered[#filtered + 1] = row
+				seen[id] = true
+			end
+		end
+	end
+	if #filtered == 0 then
+		return nil, 0
+	end
+	local safe = tostring( path ):gsub( "[^%w]", "_" )
+	if #safe > 72 then
+		safe = string.sub( safe, -72 )
+	end
+	local outPath = CG_ROOT .. "/CraftingRecipes/rfs_grid_" .. safe .. ".json"
+	local okSave, errSave = pcall( sm.json.save, filtered, outPath )
+	if not okSave then
+		print( "[RFS] dedupe save failed: " .. tostring( errSave ) .. " path=" .. tostring( outPath ) )
+		-- Fall back to original file (may twin already-known ids).
+		return path, #filtered
+	end
+	return outPath, #filtered
+end
+
 local function rfsClUpdateRecipeGrid( self )
 	local vanilla = Crafter._rfsVanillaUpdateGrid
 	if type( vanilla ) == "function" then
@@ -292,8 +362,8 @@ local function rfsClUpdateRecipeGrid( self )
 	if type( paths ) ~= "table" then
 		return
 	end
-	-- Pass unlockedRecipes so Hideout schematics (pod/solar) stay hidden.
-	-- Always-available rows (GPS) are forced on. Hideout schematics stay hidden until unlock.
+	-- Pass unlockedRecipes so Hideout schematics stay locked until Sv_UnlockRecipe.
+	-- Always-available rows are forced on. Never force schematic locks (incl. GPS) on.
 	local extraOpts = {
 		speed = ( self.crafter and self.crafter.speed ) or 1,
 	}
@@ -306,28 +376,60 @@ local function rfsClUpdateRecipeGrid( self )
 	if type( unlocked ) ~= "table" then
 		unlocked = {}
 	end
+	local schematicLocks = _G.g_rfsCraftbotSchematicLocks or schematicLockSet()
 	for id, _ in pairs( _G.g_rfsCraftbotAlwaysAvailable or {} ) do
-		unlocked[id] = true
+		if not schematicLocks[id] then
+			unlocked[id] = true
+		end
 	end
-	unlocked[GPS_UUID] = true
+	-- Strip Hideout schematic rows unless RecipeManager already unlocked them.
+	for id, _ in pairs( schematicLocks ) do
+		local really = false
+		pcall( function()
+			really = RecipeManager.Cl_IsUnlocked( id ) == true
+		end )
+		if not really then
+			unlocked[id] = nil
+		end
+	end
 	extraOpts.unlockedRecipes = unlocked
 	local seen = collectKnownRecipeIds()
 	local skipped = 0
 	for _, path in ipairs( paths ) do
-		if not pathHasNewRecipeIds( path, seen ) then
-			skipped = skipped + 1
+		if path == CG_CRAFTBOT or path == CG_CRAFTBOT_RFS then
+			if not pathHasNewRecipeIds( path, seen ) then
+				skipped = skipped + 1
+			else
+				local ok, err = pcall( function()
+					self.cl.guiInterface:addGridItemsFromFile( "RecipeGrid", path, extraOpts )
+				end )
+				markPathRecipeIds( path, seen )
+				if not _G.g_rfsGridAddChat then
+					chatOnce( "g_rfsGridAddChat", string.format(
+						"%s wrap addGrid ok=%s %s",
+						stampPrefix(), tostring( ok ), tostring( path )
+					) )
+					if not ok then
+						print( "[RFS] addGridItemsFromFile failed: " .. tostring( err ) )
+					end
+				end
+			end
 		else
-			local ok, err = pcall( function()
-				self.cl.guiInterface:addGridItemsFromFile( "RecipeGrid", path, extraOpts )
-			end )
-			markPathRecipeIds( path, seen )
-			if not _G.g_rfsGridAddChat then
-				chatOnce( "g_rfsGridAddChat", string.format(
-					"%s wrap addGrid ok=%s %s",
-					stampPrefix(), tostring( ok ), tostring( path )
-				) )
-				if not ok then
-					print( "[RFS] addGridItemsFromFile failed: " .. tostring( err ) )
+			local filteredPath, addedN = saveDedupedGridFile( path, seen )
+			if not filteredPath or addedN <= 0 then
+				skipped = skipped + 1
+			else
+				local ok, err = pcall( function()
+					self.cl.guiInterface:addGridItemsFromFile( "RecipeGrid", filteredPath, extraOpts )
+				end )
+				if not _G.g_rfsGridAddChat then
+					chatOnce( "g_rfsGridAddChat", string.format(
+						"%s wrap addGrid ok=%s new=%d %s",
+						stampPrefix(), tostring( ok ), addedN, tostring( path )
+					) )
+					if not ok then
+						print( "[RFS] addGridItemsFromFile failed: " .. tostring( err ) )
+					end
 				end
 			end
 		end
@@ -387,6 +489,57 @@ local function rfsClientOnUpdate( self, deltaTime )
 	end
 end
 
+-- Grid forces alwaysAvailable into unlockedRecipes for C++ display, but CRAFT
+-- still gates on RecipeManager.Cl/Sv_IsUnlocked (DefaultUnlocked or saved unlock).
+-- Always-available RFS rows never enter that table → yellow CRAFT, no craft.
+local function rfsIsCraftUnlocked( itemId )
+	local id = tostring( itemId or "" )
+	if id == "" then
+		return false
+	end
+	local always = _G.g_rfsCraftbotAlwaysAvailable
+	local locks = _G.g_rfsCraftbotSchematicLocks or schematicLockSet()
+	if always and always[id] and not locks[id] then
+		return true
+	end
+	local unlocked = false
+	pcall( function()
+		if sm.isServerMode() then
+			unlocked = RecipeManager.Sv_IsUnlocked( id ) == true
+		else
+			unlocked = RecipeManager.Cl_IsUnlocked( id ) == true
+		end
+	end )
+	return unlocked
+end
+
+local function rfsClOnCraft( self, buttonName, index, data )
+	local recipe = self:getRecipeByUuid( data.itemId )
+	if recipe ~= nil and rfsIsCraftUnlocked( recipe.itemId ) then
+		self.network:sendToServer( "sv_n_craft", { itemId = data.itemId } )
+	else
+		print( "Recipe is locked" )
+	end
+end
+
+local function rfsSvNCraft( self, params, player )
+	local recipe = self:getRecipeByUuid( params.itemId )
+	if recipe ~= nil and rfsIsCraftUnlocked( recipe.itemId ) then
+		self:sv_craft( { recipe = recipe }, player )
+	else
+		print( "Recipe is locked" )
+	end
+end
+
+local function rfsSvNCraftIndex( self, params, player )
+	local recipe = self:getRecipeByIndex( params.index )
+	if recipe ~= nil and rfsIsCraftUnlocked( recipe.itemId ) then
+		self:sv_craft( { recipe = recipe }, player )
+	else
+		print( "Recipe is locked index" )
+	end
+end
+
 local function patchClass( cls )
 	if type( cls ) ~= "table" then
 		return false
@@ -403,6 +556,15 @@ local function patchClass( cls )
 	end
 	if type( cls.client_onUpdate ) == "function" then
 		cls.client_onUpdate = rfsClientOnUpdate
+	end
+	if type( cls.cl_onCraft ) == "function" then
+		cls.cl_onCraft = rfsClOnCraft
+	end
+	if type( cls.sv_n_craft ) == "function" then
+		cls.sv_n_craft = rfsSvNCraft
+	end
+	if type( cls.sv_n_craftIndex ) == "function" then
+		cls.sv_n_craftIndex = rfsSvNCraftIndex
 	end
 	return true
 end
@@ -424,6 +586,9 @@ function RfsCrafterGrid.installHook()
 		Crafter._rfsVanillaGetByIndex = Crafter.getRecipeByIndex
 		Crafter._rfsVanillaGetByUuid = Crafter.getRecipeByUuid
 		Crafter._rfsVanillaClientOnUpdate = Crafter.client_onUpdate
+		Crafter._rfsVanillaClOnCraft = Crafter.cl_onCraft
+		Crafter._rfsVanillaSvNCraft = Crafter.sv_n_craft
+		Crafter._rfsVanillaSvNCraftIndex = Crafter.sv_n_craftIndex
 	end
 	-- Survival copies methods onto Craftbot at class() time. Patch both.
 	local crafterOk = patchClass( Crafter )

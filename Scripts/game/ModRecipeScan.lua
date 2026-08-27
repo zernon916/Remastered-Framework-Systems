@@ -462,6 +462,47 @@ function ModRecipeScan.run()
 		end
 		local source = { localId = lid, name = tostring( name ), craft = 0, hideout = 0, mining = 0, loot = 0 }
 
+		-- Hideout BEFORE craftbot so schematic UUIDs are known when marking unlockable.
+		-- Scrap Overdrive ships a bare trade array (not { trades = ... }); accept that
+		-- when rows look like trades. itemPresentOnPeer still drops ghost shapes.
+		local hideCfg = openJson( contentPath( lid, "CraftingRecipes/hideout_trades.json" ) )
+		if hideCfg == nil and lid == RFS_LOCAL then
+			hideCfg = openJson( "$CONTENT_DATA/CraftingRecipes/hideout_trades.json" )
+		end
+		if hideCfg == nil then
+			local rawHide = openJson( contentPath( lid, "CraftingRecipes/hideout.json" ) )
+			if type( rawHide ) == "table" and (
+				rawHide.trades
+				or rawHide.currencyItemId
+				or ( type( rawHide[1] ) == "table" and rawHide[1].itemId )
+			) then
+				hideCfg = rawHide
+			end
+		end
+		local hideList = extractTradeList( hideCfg )
+		if type( hideList ) == "table" then
+			for _, raw in ipairs( hideList ) do
+				local entry = normalizeTrade( raw, lid )
+				if entry then
+					if not itemPresentOnPeer( entry.itemId ) then
+						-- Missing mod/shape on this peer — do not publish a ghost shop row.
+					elseif hideSeen[entry.itemId] then
+						result.skippedDupes = result.skippedDupes + 1
+						-- Still record schematic lock even when the shop row was a dupe.
+						if entry.schematic ~= false then
+							_G.g_extraHideoutSchematicUnlocks[entry.itemId] = true
+						end
+					elseif dedupeAppend( result.hideoutTrades, hideSeen, entry ) then
+						source.hideout = source.hideout + 1
+						result.hideoutAdded = result.hideoutAdded + 1
+						if entry.schematic ~= false then
+							_G.g_extraHideoutSchematicUnlocks[entry.itemId] = true
+						end
+					end
+				end
+			end
+		end
+
 		local craftPath = contentPath( lid, "CraftingRecipes/craftbot.json" )
 		local recipes = openJson( craftPath )
 		if type( recipes ) == "table" then
@@ -481,15 +522,18 @@ function ModRecipeScan.run()
 				end
 			end
 			local n = 0
+			local schematicLocks = _G.g_extraHideoutSchematicUnlocks or {}
 			for _, recipe in ipairs( list ) do
 				if type( recipe ) == "table" and recipe.itemId then
 					local id = tostring( recipe.itemId )
-					-- Tools are valid (Fant is_uuid_valid); do not require a shape.
-					-- This pack: GPS stays visible on Craftbot Tools without Hideout buy.
-					if id ~= "d96c2fe4-177b-49bb-be40-e4b1bcdd8f76" then
-						g_unlockableCraftItems[id] = true
-					else
+					-- Hideout schematics (incl. GPS): Survival banlist style
+					-- (not in g_unlockableCraftItems). Marking schematic tools as
+					-- unlockable=true leaves them out of recipesToUnlock (not isPart)
+					-- and the C++ grid shows them as free — that was the unlock leak.
+					if schematicLocks[id] then
 						g_unlockableCraftItems[id] = nil
+					else
+						g_unlockableCraftItems[id] = true
 					end
 					n = n + 1
 				end
@@ -504,39 +548,6 @@ function ModRecipeScan.run()
 					result.craftPaths[#result.craftPaths + 1] = craftPath
 				else
 					print( "[RFS] scan RFS craftbot.json n=" .. tostring( n ) .. " (grid via RfsCrafterGrid, not craftPaths)" )
-				end
-			end
-		end
-
-		local hideCfg = openJson( contentPath( lid, "CraftingRecipes/hideout_trades.json" ) )
-		if hideCfg == nil and lid == RFS_LOCAL then
-			hideCfg = openJson( "$CONTENT_DATA/CraftingRecipes/hideout_trades.json" )
-		end
-		-- Prefer hideout_trades.json only. Full hideout.json dumps from other games/mods
-		-- can inject unknown UUIDs that show as "BLOCK NOT FOUND" in the shop.
-		if hideCfg == nil then
-			-- Allow hideout.json only when it declares currencyItemId / trades wrapper (RFS author format)
-			local rawHide = openJson( contentPath( lid, "CraftingRecipes/hideout.json" ) )
-			if type( rawHide ) == "table" and ( rawHide.trades or rawHide.currencyItemId ) then
-				hideCfg = rawHide
-			end
-		end
-		local hideList = extractTradeList( hideCfg )
-		if type( hideList ) == "table" then
-			for _, raw in ipairs( hideList ) do
-				local entry = normalizeTrade( raw, lid )
-				if entry then
-					if not itemPresentOnPeer( entry.itemId ) then
-						-- Missing mod/shape on this peer — do not publish a ghost shop row.
-					elseif hideSeen[entry.itemId] then
-						result.skippedDupes = result.skippedDupes + 1
-					elseif dedupeAppend( result.hideoutTrades, hideSeen, entry ) then
-						source.hideout = source.hideout + 1
-						result.hideoutAdded = result.hideoutAdded + 1
-						if entry.schematic ~= false then
-							_G.g_extraHideoutSchematicUnlocks[entry.itemId] = true
-						end
-					end
 				end
 			end
 		end
@@ -584,11 +595,18 @@ function ModRecipeScan.run()
 	_G.g_miningHubExtraTradesDirty = true
 	_G.g_miningHubExtraTradesMerged = false
 
+	-- Final pass: Survival banlist semantics for every Hideout schematic UUID.
+	local schematicN = 0
+	for id, _ in pairs( _G.g_extraHideoutSchematicUnlocks or {} ) do
+		g_unlockableCraftItems[tostring( id )] = nil
+		schematicN = schematicN + 1
+	end
+
 	-- One summary line only (per-mod prints removed — use /mods for details).
 	print( string.format(
-		"[RFS] scan done catalog=%d loaded=%d scanned=%d sources=%d craftRecipes=%d hideout+=%d mining+=%d loot=%d dupesSkipped=%d",
+		"[RFS] scan done catalog=%d loaded=%d scanned=%d sources=%d craftRecipes=%d hideout+=%d mining+=%d loot=%d dupesSkipped=%d schematicLocks=%d",
 		result.modsCatalog, result.modsLoaded, result.modsScanned, #result.sources, result.craftRecipeCount,
-		result.hideoutAdded, result.miningAdded, result.lootApplied, result.skippedDupes
+		result.hideoutAdded, result.miningAdded, result.lootApplied, result.skippedDupes, schematicN
 	) )
 
 	ModRecipeScan._last = result

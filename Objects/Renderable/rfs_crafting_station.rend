@@ -1,0 +1,36 @@
+{
+	"_comment": "Compact 3x3 Crafting Station. Vanilla Craftbot textures; UVs from Blender smart project.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_crafting_station.fbx",
+			"maxViewDistance": 1000.0,
+			"subMeshMap": {
+				"craftbot": {
+					"custom": {
+						"metalProfile": "DifAsgNor_Painted"
+					},
+					"material": "DifAsgNor_Metal",
+					"textureList": [
+						"$SURVIVAL_DATA/Character/Char_Craftbot/char_craftbot_dif.tga",
+						"$SURVIVAL_DATA/Character/Char_Craftbot/char_craftbot_asg.tga",
+						"$SURVIVAL_DATA/Character/Char_Craftbot/char_craftbot_nor.tga"
+					]
+				},
+				"screen": {
+					"custom": {
+						"uv0": {
+							"u": 0.25,
+							"v": 0.25
+						}
+					},
+					"material": "UVAnimDifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Character/Char_Craftbot/char_craftboticons_dif.tga",
+						"$SURVIVAL_DATA/Character/Char_Craftbot/char_craftboticons_asg.tga",
+						"$GAME_DATA/Textures/Materialtextures/normal_nor.tga"
+					]
+				}
+			}
+		}
+	]
+}

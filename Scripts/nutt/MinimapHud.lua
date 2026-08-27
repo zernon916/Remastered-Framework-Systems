@@ -270,7 +270,7 @@ function MinimapHud.cl_init( self )
 		-- 5 = hidden; lastPos = the corner to return to from hidden
 		posIdx = 1, lastPos = 1, sizeIdx = 2,
 	}
-	local oks, st = pcall(sm.json.open, C .. "/minimap_settings.json")
+	local oks, st = pcall( function() return Waypoint.readSettings() end )
 	if oks and type(st) == "table" then
 		-- Biome single-cell mode: always 1 cell across (ignore saved zoom).
 		if type( RfsBiomeMap ) == "table" and RfsBiomeMap.SINGLE_CELL_MINIMAP then
@@ -381,6 +381,7 @@ function MinimapHud.cl_tryLoadTerrain( self )
 		self.cl.td = td
 		self.cl.worldId = wid
 		self.cl.ready = true
+		Waypoint.loadWorld( self )
 		-- 0851-d: defer HUD widget burst until move or ~2.5s after terrain ready
 		self.cl.deferActive = true
 		self.cl.deferT = 0
