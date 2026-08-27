@@ -48,40 +48,42 @@
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.16 0.92 0.07" name="BtnGrowthOverlay">
+				<!-- Growth Time HUD retired — Farmers Tablet. Kept for callback compat, hidden. -->
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.16 0.92 0.01" name="BtnGrowthOverlay">
 					<Property key="Caption" value="Growth Time: OFF"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
+					<Property key="Visible" value="false"/>
 				</Widget>
 
-				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.27 1.00 0.05" name="GuiSection">
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.18 1.00 0.05" name="GuiSection">
 					<Property key="Caption" value="GUI"/>
 					<Property key="FontName" value="SM_Header"/>
 					<Property key="TextAlign" value="Left VCenter"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.33 0.92 0.07" name="BtnNames">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.24 0.92 0.07" name="BtnNames">
 					<Property key="Caption" value="Names: ON"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.41 0.92 0.07" name="BtnBigRed">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.32 0.92 0.07" name="BtnBigRed">
 					<Property key="Caption" value="Big Red: OFF"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.49 0.92 0.07" name="BtnEnemyHp">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.40 0.92 0.07" name="BtnEnemyHp">
 					<Property key="Caption" value="Enemy bar: Red"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
-				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.57 0.92 0.07" name="BtnNeutralHp">
+				<Widget type="Button" skin="PrimaryButton" position_real="0.04 0.48 0.92 0.07" name="BtnNeutralHp">
 					<Property key="Caption" value="Neutral bar: Green"/>
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
 
-				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.67 1.00 0.28" name="MenuHint">
-					<Property key="Caption" value="Map: /map atlas (Nutt) or camera fallback. Growth Time: yours only. Names: world tags on/off. Big Red: farmbots show Big Red instead of Farm. Enemy/Neutral colors tint RFS tags."/>
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.58 1.00 0.35" name="MenuHint">
+					<Property key="Caption" value="Map: /map atlas (Nutt) or camera fallback. Farm times: Farmers Tablet. Names: world tags on/off. Big Red: farmbots show Big Red instead of Farm. Enemy/Neutral colors tint RFS tags."/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>
 					<Property key="WordWrap" value="true"/>

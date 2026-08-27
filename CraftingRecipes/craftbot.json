@@ -118,5 +118,28 @@
 			{ "quantity": 1, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
 			{ "quantity": 1, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
 		]
+	},
+	{
+		"_comment": "Farmers Tablet handheld (always unlocked). Same cost as Recipe Viewer. Plot map + avg grow times.",
+		"itemId": "b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e",
+		"quantity": 1,
+		"craftTime": 8,
+		"ingredientList": [
+			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 1, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 1, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" }
+		]
+	},
+	{
+		"_comment": "Farm Screen XL (always unlocked). Extra-large LCD; E opens Farmers Tablet GUI. 20 Metal + 10 Glass + 3 Circuit + 1 Component Kit.",
+		"itemId": "c4f8a1b2-3d5e-4f6a-9b7c-8d0e1f2a3b4c",
+		"quantity": 1,
+		"craftTime": 16,
+		"ingredientList": [
+			{ "quantity": 20, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" },
+			{ "quantity": 10, "itemId": "5f41af56-df4c-4837-9b3c-10781335757f" },
+			{ "quantity": 3, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 1, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" }
+		]
 	}
 ]

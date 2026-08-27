@@ -106,6 +106,57 @@ function Waypoint.loadWorld( hud )
 	if c.waypoint or c.baseMarker then
 		c.wantCompassSync = true
 	end
+	-- MP: pull shared home/waypoint from the host (overrides local-only file).
+	Waypoint.requestShared()
+end
+
+-- Push home/waypoint to the server so every client map/compass updates.
+local function broadcastShared( action, x, y )
+	local payload = { action = action, x = x, y = y }
+	pcall( function()
+		local game = _G.g_rfsGame
+		if game and game.network and game.network.sendToServer then
+			game.network:sendToServer( "sv_rfs_mapMarker", payload )
+			return
+		end
+		sm.event.sendToGame( "sv_e_rfsMapMarker", payload )
+	end )
+end
+
+function Waypoint.requestShared()
+	pcall( function()
+		local game = _G.g_rfsGame
+		if game and game.network and game.network.sendToServer then
+			game.network:sendToServer( "sv_rfs_mapMarkerGet", {} )
+		else
+			sm.event.sendToGame( "sv_e_rfsMapMarkerGet", {} )
+		end
+	end )
+end
+
+-- Apply host-broadcast markers. Does not re-broadcast (avoids echo loops).
+function Waypoint.applyShared( hud, markers )
+	if not hud then
+		hud = _G.g_minimapHud
+	end
+	if not hud or not hud.cl or type( markers ) ~= "table" then
+		return
+	end
+	local c = hud.cl
+	c._rfsMarkerApplying = true
+	if type( markers.wp ) == "table" and markers.wp.x and markers.wp.y then
+		c.waypoint = { x = markers.wp.x, y = markers.wp.y }
+	else
+		c.waypoint = nil
+	end
+	if type( markers.base ) == "table" and markers.base.x and markers.base.y then
+		c.baseMarker = { x = markers.base.x, y = markers.base.y }
+	else
+		c.baseMarker = nil
+	end
+	Waypoint.save( hud )
+	c.wantCompassSync = true
+	c._rfsMarkerApplying = false
 end
 
 -- single writer for the settings file: every save carries the full state
@@ -141,6 +192,9 @@ function Waypoint.set( hud, x, y )
 	c.waypoint = { x = x, y = y }
 	Waypoint.save(hud)
 	c.wantCompassSync = true
+	if not c._rfsMarkerApplying then
+		broadcastShared( "setWp", x, y )
+	end
 end
 
 function Waypoint.clear( hud )
@@ -148,6 +202,9 @@ function Waypoint.clear( hud )
 	c.waypoint = nil
 	Waypoint.save(hud)
 	c.wantCompassSync = true
+	if not c._rfsMarkerApplying then
+		broadcastShared( "clearWp" )
+	end
 end
 
 function Waypoint.setColor( hud, col )
@@ -163,6 +220,9 @@ function Waypoint.setBase( hud, x, y )
 	c.baseMarker = { x = x, y = y }
 	Waypoint.save(hud)
 	c.wantCompassSync = true
+	if not c._rfsMarkerApplying then
+		broadcastShared( "setBase", x, y )
+	end
 end
 
 function Waypoint.clearBase( hud )
@@ -170,6 +230,9 @@ function Waypoint.clearBase( hud )
 	c.baseMarker = nil
 	Waypoint.save(hud)
 	c.wantCompassSync = true
+	if not c._rfsMarkerApplying then
+		broadcastShared( "clearBase" )
+	end
 end
 
 function Waypoint.setFarm( hud, col, x, y )

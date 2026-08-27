@@ -9,6 +9,9 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsQuest.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCraftQueue.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCraftQueueHost.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsRecipeViewerGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsFarmSoilOwners.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsFarmTablet.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsFarmTabletGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsSoilPlacement.lua" )
@@ -43,6 +46,7 @@ dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsHackBeacon.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsAreaLoader.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsDigitalSign.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsInventoryLcd.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsFarmScreen.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsDeepSleepPod.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsSolarPanel.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsRechargeBox.lua" )
@@ -70,7 +74,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
-RFS_PACK_STAMP = "[RFS] pack 0854-ci / biome ids + MP sleep/cheats + hotbar ammo"
+RFS_PACK_STAMP = "[RFS] pack 0854-cu / farm tablet seed grid scroll"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
 RFS_SPEND_CHAT = nil
@@ -796,6 +800,7 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 	pcall( function()
 		self.network:sendToServer( "sv_rfs_featuresGet" )
 		self.network:sendToServer( "sv_rfs_gameModeGet" )
+		self.network:sendToServer( "sv_rfs_mapMarkerGet", {} )
 	end )
 	print( "[RFS] client_onCreate host=" .. tostring( sm.isHost ) .. " craftbotGrid=" .. tostring( type( _G.g_rfsCraftbotGridFiles ) ) )
 end
@@ -839,6 +844,18 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 		self.cl.rfsRecipeViewerWantOpen = nil
 		if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.open then
 			pcall( RfsRecipeViewerGui.open, self, type( data ) == "table" and data or {} )
+		end
+	end
+	if self.cl and self.cl.rfsFarmTabletWantOpen ~= nil then
+		local data = self.cl.rfsFarmTabletWantOpen
+		self.cl.rfsFarmTabletWantOpen = nil
+		if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.open then
+			local ok, err = pcall( RfsFarmTabletGui.open, self, type( data ) == "table" and data or {} )
+			if not ok then
+				pcall( function()
+					sm.gui.chatMessage( "[RFS] Farmers Tablet ERROR: " .. tostring( err ) )
+				end )
+			end
 		end
 	end
 	-- Fallback: if create/clientData paths skipped binding, catch it on first tick.
@@ -1695,6 +1712,82 @@ function RecipeFrameworkSurvival.sv_rfs_mapClose( self, params, player )
 	sm.event.sendToPlayer( target, "sv_rfs_mapClose" )
 end
 
+-- Shared BigMap home / waypoint (MP). Local USER_DATA alone only updated the setter.
+local function rfsMapMarkerSnapshot( self )
+	self.sv = self.sv or {}
+	local m = self.sv.rfsMapMarkers or {}
+	return {
+		wp = m.wp,
+		base = m.base,
+	}
+end
+
+local function rfsMapMarkerApplyAction( self, params )
+	self.sv = self.sv or {}
+	self.sv.rfsMapMarkers = self.sv.rfsMapMarkers or {}
+	local m = self.sv.rfsMapMarkers
+	local action = params and tostring( params.action or "" ) or ""
+	local x = tonumber( params and params.x )
+	local y = tonumber( params and params.y )
+	if action == "setWp" and x and y then
+		m.wp = { x = x, y = y }
+	elseif action == "clearWp" then
+		m.wp = nil
+	elseif action == "setBase" and x and y then
+		m.base = { x = x, y = y }
+	elseif action == "clearBase" then
+		m.base = nil
+	else
+		return false
+	end
+	return true
+end
+
+function RecipeFrameworkSurvival.sv_rfs_mapMarker( self, params, player )
+	if not rfsMapMarkerApplyAction( self, params ) then
+		return
+	end
+	self.network:sendToClients( "cl_rfs_mapMarkerSync", rfsMapMarkerSnapshot( self ) )
+end
+
+function RecipeFrameworkSurvival.sv_e_rfsMapMarker( self, params )
+	self:sv_rfs_mapMarker( params, nil )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_mapMarkerGet( self, params, player )
+	local target = player
+	if params and params.player then
+		target = params.player
+	end
+	if not target then
+		return
+	end
+	self.sv = self.sv or {}
+	self.sv.rfsMapMarkers = self.sv.rfsMapMarkers or {}
+	pcall( function()
+		self.network:sendToClient( target, "cl_rfs_mapMarkerSync", rfsMapMarkerSnapshot( self ) )
+	end )
+end
+
+function RecipeFrameworkSurvival.sv_e_rfsMapMarkerGet( self, params )
+	-- Prefer RPC sender; event path may include player in params.
+	local player = params and params.player
+	if player then
+		self:sv_rfs_mapMarkerGet( params, player )
+	else
+		-- Broadcast current state to everyone (safe on join races).
+		self.network:sendToClients( "cl_rfs_mapMarkerSync", rfsMapMarkerSnapshot( self ) )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_mapMarkerSync( self, markers )
+	pcall( function()
+		if type( Waypoint ) == "table" and type( Waypoint.applyShared ) == "function" then
+			Waypoint.applyShared( _G.g_minimapHud, markers )
+		end
+	end )
+end
+
 function RecipeFrameworkSurvival.sv_rfs_give( self, params, player )
 	if not rfsServerAllowCheat( self, player ) then
 		return
@@ -2242,6 +2335,112 @@ end
 function RecipeFrameworkSurvival.cl_rfs_recipeViewerCatConsumable( self )
 	if type( RfsRecipeViewerGui ) == "table" and RfsRecipeViewerGui.setCategory then
 		RfsRecipeViewerGui.setCategory( self, "consumable" )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletClose( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.close then
+		RfsFarmTabletGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletClosed( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.close then
+		RfsFarmTabletGui.close( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletPrev( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.prev then
+		RfsFarmTabletGui.prev( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletNext( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.next then
+		RfsFarmTabletGui.next( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletRefresh( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.refresh then
+		RfsFarmTabletGui.refresh( self )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletScrollUp( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.scroll then
+		RfsFarmTabletGui.scroll( self, 0, -1 )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletScrollDown( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.scroll then
+		RfsFarmTabletGui.scroll( self, 0, 1 )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletScrollLeft( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.scroll then
+		RfsFarmTabletGui.scroll( self, -1, 0 )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletScrollRight( self )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.scroll then
+		RfsFarmTabletGui.scroll( self, 1, 0 )
+	end
+end
+
+-- Tool / screen: server echoes open so GUI callbacks bind on Game (reliable).
+function RecipeFrameworkSurvival.sv_rfs_farmTabletRequestOpen( self, params, player )
+	player = player or ( params and params.player )
+	if not player then
+		return
+	end
+	pcall( function()
+		self.network:sendToClient( player, "cl_rfs_farmTabletDoOpen", {} )
+	end )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletDoOpen( self, data )
+	pcall( function()
+		sm.gui.chatMessage( "[RFS] Farmers Tablet opening…" )
+	end )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.open then
+		local ok, err = pcall( RfsFarmTabletGui.open, self, type( data ) == "table" and data or {} )
+		if not ok then
+			pcall( function()
+				sm.gui.chatMessage( "[RFS] Farmers Tablet ERROR: " .. tostring( err ) )
+			end )
+			print( "[RFS] FarmTablet open error: " .. tostring( err ) )
+		end
+	else
+		pcall( function()
+			sm.gui.chatMessage( "[RFS] Farmers Tablet GUI missing" )
+		end )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_rfs_farmTabletScan( self, params, player )
+	player = player or ( params and params.player )
+	if not player then
+		return
+	end
+	local payload = { cells = {}, count = 0 }
+	pcall( function()
+		if type( RfsFarmTablet ) == "table" and RfsFarmTablet.buildPayload then
+			payload = RfsFarmTablet.buildPayload( player ) or payload
+		end
+	end )
+	pcall( function()
+		self.network:sendToClient( player, "cl_rfs_farmTabletScanResult", payload )
+	end )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_farmTabletScanResult( self, payload )
+	if type( RfsFarmTabletGui ) == "table" and RfsFarmTabletGui.applyScan then
+		RfsFarmTabletGui.applyScan( self, payload )
 	end
 end
 

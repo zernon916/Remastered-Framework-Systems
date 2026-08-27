@@ -79,9 +79,13 @@ function RfsMenuGui.refresh( host )
 	end )
 
 	local overlay = growthOn( host )
-	gui:setText( "BtnGrowthOverlay", "Growth Time: " .. ( overlay and "ON" or "OFF" ) )
+	-- Growth Time HUD retired — hide button (Farmers Tablet replaces it).
 	pcall( function()
-		gui:setButtonState( "BtnGrowthOverlay", overlay )
+		gui:setVisible( "BtnGrowthOverlay", false )
+	end )
+	pcall( function()
+		gui:setText( "BtnGrowthOverlay", "Growth Time: OFF" )
+		gui:setButtonState( "BtnGrowthOverlay", false )
 	end )
 
 	local prefs = guiPrefs( host )
@@ -101,7 +105,7 @@ function RfsMenuGui.refresh( host )
 	else
 		gui:setText( "MainStatus", "Per-player options -- available to everyone" )
 		gui:setText( "MenuHint", string.format(
-			"Map: /map atlas (Nutt) or camera fallback. Growth Time: yours only. Names: world tags on/off. Big Red: farmbots show Big Red instead of Farm. Enemy/Neutral colors tint RFS tags."
+			"Map: /map atlas (Nutt) or camera fallback. Farm times: Farmers Tablet. Names: world tags on/off. Big Red: farmbots show Big Red instead of Farm. Enemy/Neutral colors tint RFS tags."
 		) )
 	end
 end

@@ -290,12 +290,13 @@ function Player.cl_rfs_releaseFromPod( self, params )
 end
 
 function Player.sv_rfs_toggleGrowthOverlay( self )
-	local enabled = RfsFarming.togglePlayerGrowthOverlay( self.player )
+	-- Growth Time HUD retired — force off.
+	RfsFarming.setPlayerGrowthOverlay( self.player, false )
 	self.sv = self.sv or {}
-	self.sv.rfsGrowthOverlay = enabled
+	self.sv.rfsGrowthOverlay = false
 	self.network:sendToClient( self.player, "cl_rfs_growthOverlayState", {
-		enabled = enabled,
-		msg = "Growth Time overlay: " .. ( enabled and "ON" or "OFF" ),
+		enabled = false,
+		msg = "Growth Time HUD removed — use Farmers Tablet",
 	} )
 end
 

@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+	<!-- Farmers Tablet: seed-icon plot grid + scroll + avg times. VOLATILE. -->
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+		<Property key="NeedKey" value="false"/>
+		<Property key="NeedMouse" value="true"/>
+		<Widget type="Widget" skin="BackgroundInteractableWide" position_real="0.14 0.05 0.72 0.90" name="MainPanel">
+			<Widget type="TextBox" skin="TextBox" position_real="0.03 0.012 0.70 0.040" name="Title">
+				<Property key="Caption" value="FARMERS TABLET"/>
+				<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.88 0.012 0.09 0.040" name="CloseButton">
+				<Property key="Caption" value="X"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.03 0.060 0.10 0.045" name="FarmPrev">
+				<Property key="Caption" value="PREV"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.14 0.060 0.48 0.045" name="FarmLabel">
+				<Property key="Caption" value="Farm --"/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.63 0.060 0.10 0.045" name="FarmNext">
+				<Property key="Caption" value="NEXT"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="Button" skin="PrimaryButton" position_real="0.74 0.060 0.23 0.045" name="RefreshButton">
+				<Property key="Caption" value="REFRESH"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.03 0.115 0.94 0.035" name="Hint">
+				<Property key="Caption" value="Seed icons = crops. Soil bag = bare soil. Scroll for large farms."/>
+				<Property key="FontName" value="SM_Text"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.03 0.155 0.22 0.035" name="PlotTitle">
+				<Property key="Caption" value="PLOT"/>
+				<Property key="FontName" value="SM_HeaderTiny"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.26 0.155 0.07 0.035" name="ScrollUp">
+				<Property key="Caption" value="UP"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.52 0.155 0.45 0.035" name="AvgTitle">
+				<Property key="Caption" value="AVG TIMES"/>
+				<Property key="FontName" value="SM_HeaderTiny"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.03 0.835 0.07 0.040" name="ScrollLeft">
+				<Property key="Caption" value="LEFT"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.11 0.835 0.07 0.040" name="ScrollDown">
+				<Property key="Caption" value="DOWN"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.19 0.835 0.07 0.040" name="ScrollRight">
+				<Property key="Caption" value="RIGHT"/>
+				<Property key="FontName" value="SM_Button"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.27 0.835 0.22 0.040" name="ScrollLabel">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.52 0.200 0.45 0.67" name="AvgText">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left Top"/>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.2750 0.0460 0.0460" name="Plot0">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.2750 0.0460 0.0460" name="Plot1">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.2750 0.0460 0.0460" name="Plot2">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.2750 0.0460 0.0460" name="Plot3">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.2750 0.0460 0.0460" name="Plot4">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.2750 0.0460 0.0460" name="Plot5">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.2750 0.0460 0.0460" name="Plot6">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.2750 0.0460 0.0460" name="Plot7">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.2750 0.0460 0.0460" name="Plot8">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.2750 0.0460 0.0460" name="Plot9">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.3210 0.0460 0.0460" name="Plot10">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.3210 0.0460 0.0460" name="Plot11">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon11">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.3210 0.0460 0.0460" name="Plot12">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon12">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.3210 0.0460 0.0460" name="Plot13">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon13">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.3210 0.0460 0.0460" name="Plot14">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon14">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.3210 0.0460 0.0460" name="Plot15">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon15">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.3210 0.0460 0.0460" name="Plot16">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon16">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.3210 0.0460 0.0460" name="Plot17">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon17">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.3210 0.0460 0.0460" name="Plot18">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon18">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.3210 0.0460 0.0460" name="Plot19">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon19">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.3670 0.0460 0.0460" name="Plot20">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon20">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.3670 0.0460 0.0460" name="Plot21">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon21">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.3670 0.0460 0.0460" name="Plot22">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon22">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.3670 0.0460 0.0460" name="Plot23">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon23">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.3670 0.0460 0.0460" name="Plot24">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon24">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.3670 0.0460 0.0460" name="Plot25">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon25">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.3670 0.0460 0.0460" name="Plot26">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon26">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.3670 0.0460 0.0460" name="Plot27">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon27">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.3670 0.0460 0.0460" name="Plot28">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon28">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.3670 0.0460 0.0460" name="Plot29">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon29">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.4130 0.0460 0.0460" name="Plot30">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon30">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.4130 0.0460 0.0460" name="Plot31">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon31">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.4130 0.0460 0.0460" name="Plot32">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon32">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.4130 0.0460 0.0460" name="Plot33">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon33">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.4130 0.0460 0.0460" name="Plot34">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon34">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.4130 0.0460 0.0460" name="Plot35">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon35">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.4130 0.0460 0.0460" name="Plot36">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon36">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.4130 0.0460 0.0460" name="Plot37">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon37">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.4130 0.0460 0.0460" name="Plot38">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon38">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.4130 0.0460 0.0460" name="Plot39">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon39">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.4590 0.0460 0.0460" name="Plot40">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon40">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.4590 0.0460 0.0460" name="Plot41">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon41">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.4590 0.0460 0.0460" name="Plot42">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon42">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.4590 0.0460 0.0460" name="Plot43">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon43">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.4590 0.0460 0.0460" name="Plot44">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon44">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.4590 0.0460 0.0460" name="Plot45">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon45">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.4590 0.0460 0.0460" name="Plot46">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon46">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.4590 0.0460 0.0460" name="Plot47">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon47">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.4590 0.0460 0.0460" name="Plot48">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon48">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.4590 0.0460 0.0460" name="Plot49">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon49">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.5050 0.0460 0.0460" name="Plot50">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon50">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.5050 0.0460 0.0460" name="Plot51">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon51">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.5050 0.0460 0.0460" name="Plot52">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon52">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.5050 0.0460 0.0460" name="Plot53">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon53">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.5050 0.0460 0.0460" name="Plot54">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon54">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.5050 0.0460 0.0460" name="Plot55">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon55">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.5050 0.0460 0.0460" name="Plot56">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon56">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.5050 0.0460 0.0460" name="Plot57">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon57">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.5050 0.0460 0.0460" name="Plot58">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon58">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.5050 0.0460 0.0460" name="Plot59">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon59">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.5510 0.0460 0.0460" name="Plot60">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon60">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.5510 0.0460 0.0460" name="Plot61">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon61">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.5510 0.0460 0.0460" name="Plot62">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon62">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.5510 0.0460 0.0460" name="Plot63">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon63">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.5510 0.0460 0.0460" name="Plot64">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon64">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.5510 0.0460 0.0460" name="Plot65">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon65">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.5510 0.0460 0.0460" name="Plot66">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon66">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.5510 0.0460 0.0460" name="Plot67">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon67">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.5510 0.0460 0.0460" name="Plot68">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon68">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.5510 0.0460 0.0460" name="Plot69">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon69">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0300 0.5970 0.0460 0.0460" name="Plot70">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon70">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.0760 0.5970 0.0460 0.0460" name="Plot71">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon71">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1220 0.5970 0.0460 0.0460" name="Plot72">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon72">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.1680 0.5970 0.0460 0.0460" name="Plot73">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon73">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2140 0.5970 0.0460 0.0460" name="Plot74">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon74">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.2600 0.5970 0.0460 0.0460" name="Plot75">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon75">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3060 0.5970 0.0460 0.0460" name="Plot76">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon76">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3520 0.5970 0.0460 0.0460" name="Plot77">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon77">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.3980 0.5970 0.0460 0.0460" name="Plot78">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon78">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+			<Widget type="Button" skin="SecondaryButton" position_real="0.4440 0.5970 0.0460 0.0460" name="Plot79">
+				<Property key="Caption" value=""/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.06 0.06 0.88 0.88" name="PlotIcon79">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+		</Widget>
+	</Widget>
+</MyGUI>

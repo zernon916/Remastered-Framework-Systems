@@ -225,6 +225,11 @@ local function updatePaintBar( gui )
 	end
 end
 
+local function updateGrowTable( gui )
+	-- Plant timer HUD retired — Farmers Tablet owns grow times.
+	pcall( function() gui:setVisible( "RfsGrowPanel", false ) end )
+end
+
 local function updateBlockOverlay( gui, host )
 	local text = host and host.cl and host.cl.rfsBlockHud
 	if type( text ) ~= "string" or text == "" then
@@ -291,6 +296,13 @@ function RfsHud.update( host )
 		return
 	end
 
+	-- Hide RFS HUD while Farmers Tablet (or similar fullscreen tool UI) is open.
+	if _G.g_rfsFarmTabletOpen == true then
+		pcall( function() gui:setHidden( true ) end )
+		return
+	end
+	pcall( function() gui:setHidden( false ) end )
+
 	local clock = "00:00"
 	pcall( function()
 		if getTimeOfDayString then
@@ -322,4 +334,5 @@ function RfsHud.update( host )
 	updateGameMode( gui )
 	updateChargeBar( gui )
 	updatePaintBar( gui )
+	updateGrowTable( gui )
 end

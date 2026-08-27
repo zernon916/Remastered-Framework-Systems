@@ -297,6 +297,12 @@ function MinimapHud.cl_init( self )
 	end
 	-- restore the compass icon for a persisted waypoint / home (runs once ready)
 	if self.cl.waypoint or self.cl.baseMarker then self.cl.wantCompassSync = true end
+	-- MP shared markers (host-authoritative) — pull after local file restore
+	pcall( function()
+		if type( Waypoint ) == "table" and Waypoint.requestShared then
+			Waypoint.requestShared()
+		end
+	end )
 	local okp, poi = pcall(sm.json.open, C .. "/Scripts/nutt/data/poi_names.json")
 	if okp and type(poi) == "table" then self.cl.poi = poi end
 	local ok, idx = pcall(sm.json.open, C .. "/Scripts/nutt/data/atlas_index.json")

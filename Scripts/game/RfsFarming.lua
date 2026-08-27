@@ -102,18 +102,6 @@ end
 
 -- Water every ~2.5s while Always Watered is on (WaterRetention is ~1.5 days).
 local WATER_INTERVAL_TICKS = 100
--- Unhosted text (setRotation is ignored on hosted effects). Prefer RfsGrowText
--- (InWorldText / VS_CLIP_SPACE nametag-style) then vanilla DebugText.
-local OVERLAY_EFFECTS = { "RfsGrowText", "DebugText" }
-local TEXT_FACE = sm.vec3.new( 0, 1, 0 ) -- DebugText / nametag default facing
-local WORLD_UP = sm.vec3.new( 0, 0, 1 )
-local OVERLAY_AABB_PAD = 1.15
-local OVERLAY_FX_VER = 3
--- Condense near-identical timers: first plant in a cluster draws; others hide.
-local CLUSTER_RADIUS2 = 3.0 * 3.0
-local CLUSTER_TICK_TOL = 200 -- ~5 real seconds at 40 tick/s
-local g_rfsGrowClusterFrame = -1
-local g_rfsGrowCluster = {}
 
 local defaults = {
 	alwaysWatered = false,
@@ -148,43 +136,29 @@ local function loadPlayerOverlayTable()
 end
 
 function RfsFarming.getPlayerGrowthOverlay( player )
-	local key = playerIdKey( player )
-	if not key then
-		return false
-	end
-	local data = loadPlayerOverlayTable()
-	local entry = data[key]
-	if type( entry ) == "boolean" then
-		return entry
-	end
-	if type( entry ) == "table" and entry.growthOverlay ~= nil then
-		return entry.growthOverlay and true or false
-	end
+	-- HUD plant timers retired (Farmers Tablet). Always off.
 	return false
 end
 
 function RfsFarming.setPlayerGrowthOverlay( player, enabled )
+	-- Clear any old ON prefs so join sync never re-enables the HUD list.
 	local key = playerIdKey( player )
 	if not key then
 		return false
 	end
 	local data = loadPlayerOverlayTable()
-	data[key] = enabled and true or false
+	data[key] = false
 	pcall( sm.storage.save, PLAYER_OVERLAY_STORAGE, data )
-	return enabled and true or false
+	return false
 end
 
 function RfsFarming.togglePlayerGrowthOverlay( player )
-	local nextVal = not RfsFarming.getPlayerGrowthOverlay( player )
-	return RfsFarming.setPlayerGrowthOverlay( player, nextVal )
+	return RfsFarming.setPlayerGrowthOverlay( player, false )
 end
 
 -- Client-local: only the local player's preference drives plant overlays.
 _G.g_rfsGrowthOverlay = _G.g_rfsGrowthOverlay or false
-
-function RfsFarming.cl_setLocalGrowthOverlay( enabled )
-	_G.g_rfsGrowthOverlay = enabled and true or false
-end
+-- (cl_setLocalGrowthOverlay defined with grow-table helpers below)
 
 function RfsFarming.load()
 	local cfg = {
@@ -688,8 +662,23 @@ function RfsFarming.ensureSoilBagHooks()
 end
 
 ---------------------------------------------------------------------------
--- Growth overlay (client): patch GrowingHarvestable after Survival loads it
+-- Growth overlay (client): HUD table of growing crops (no world READY text)
 ---------------------------------------------------------------------------
+
+local GROW_LABEL = {
+	[tostring( hvs_growing_blueberry )] = "Blueberry",
+	[tostring( hvs_growing_banana )] = "Banana",
+	[tostring( hvs_growing_redbeet )] = "Redbeet",
+	[tostring( hvs_growing_carrot )] = "Carrot",
+	[tostring( hvs_growing_tomato )] = "Tomato",
+	[tostring( hvs_growing_orange )] = "Orange",
+	[tostring( hvs_growing_potato )] = "Potato",
+	[tostring( hvs_growing_pineapple )] = "Pineapple",
+	[tostring( hvs_growing_broccoli )] = "Broccoli",
+	[tostring( hvs_growing_cotton )] = "Cotton",
+	[tostring( hvs_growing_chili )] = "Chili",
+	[tostring( hvs_growing_pigmentflower )] = "Pigment",
+}
 
 local function formatRemain( ticks )
 	local secs = math.max( 0, math.ceil( ticks / 40 ) )
@@ -701,12 +690,6 @@ local function formatRemain( ticks )
 		return string.format( "%d:%02d:%02d", h, m, s )
 	end
 	return string.format( "%d:%02d", m, s )
-end
-
-local function remainColor( frac )
-	-- frac 1 = just started (red), frac 0 = ready (green)
-	frac = math.max( 0, math.min( 1, frac ) )
-	return sm.color.new( frac, 1.0 - frac, 0.08, 1.0 )
 end
 
 local function destroyGrowFx( self )
@@ -723,109 +706,122 @@ local function destroyGrowFx( self )
 	end
 end
 
--- World position slightly above the harvestable (AABB top, else origin + up).
-local function overlayWorldPos( harvestable, grown )
-	local pos = harvestable:getPosition()
-	local up = WORLD_UP
+-- Client grow table keyed by harvestable id (ready crops removed; no world READY).
+_G.g_rfsGrowById = _G.g_rfsGrowById or {}
+_G.g_rfsGrowHudText = _G.g_rfsGrowHudText or ""
+
+local function cropLabelFor( self )
+	local uid = nil
 	pcall( function()
-		local rot = harvestable:getRotation()
-		if rot then
-			local localUp = rot * WORLD_UP
-			if localUp:length2() > 0.01 then
-				up = localUp:normalize()
-			end
-		end
+		uid = tostring( self.harvestable.uuid )
 	end )
-
-	local minAabb, maxAabb
-	local okAabb = pcall( function()
-		minAabb, maxAabb = harvestable:getAabb()
-	end )
-	if okAabb and minAabb and maxAabb and minAabb.z and maxAabb.z then
-		local x = ( minAabb.x + maxAabb.x ) * 0.5
-		local y = ( minAabb.y + maxAabb.y ) * 0.5
-		return sm.vec3.new( x, y, maxAabb.z ) + up * OVERLAY_AABB_PAD
+	if uid and GROW_LABEL[uid] then
+		return GROW_LABEL[uid]
 	end
-
-	local height = 1.65 + math.max( 0, math.min( 1, grown or 0 ) ) * 0.85
-	return pos + up * height
+	return "Crop"
 end
 
--- Billboard: map DebugText local +Y onto -cameraDir (screen-parallel), then
--- roll so local +Z matches camera up. setRotation only works unhosted.
-local function overlayBillboardQuat( worldPos )
-	local camDir = sm.camera.getDirection()
-	local face = -camDir
-	if face:length2() < 1e-8 then
-		local toCam = sm.camera.getPosition() - worldPos
-		if toCam:length2() < 1e-8 then
-			return sm.quat.identity()
-		end
-		face = toCam:normalize()
-	else
-		face = face:normalize()
+local function harvestableKey( harvestable )
+	local id = nil
+	pcall( function() id = harvestable.id end )
+	if id == nil then
+		pcall( function() id = harvestable:getId() end )
 	end
-
-	local up = sm.camera.getUp()
-	if not up or up:length2() < 1e-8 then
-		up = WORLD_UP
+	if id ~= nil then
+		return tostring( id )
 	end
-	local upOnPlane = up - face * face:dot( up )
-	if upOnPlane:length2() > 1e-6 then
-		up = upOnPlane:normalize()
-	end
-
-	local rot = sm.vec3.getRotation( TEXT_FACE, face )
-	local zNow = rot * WORLD_UP
-	if zNow:length2() > 1e-8 and up:length2() > 1e-8 then
-		local okRoll, roll = pcall( sm.vec3.getRotation, zNow:normalize(), up )
-		if okRoll and roll then
-			rot = roll * rot
-		end
-	end
-	return rot
-end
-
-local function ensureGrowFx( self )
-	local fx = self.cl.rfsGrowFx
-	if fx then
-		local usable = false
-		pcall( function()
-			usable = sm.exists( fx ) and ( self.cl.rfsGrowFxVer == OVERLAY_FX_VER ) and ( not fx:hasHost() )
-		end )
-		if usable then
-			return fx
-		end
-		destroyGrowFx( self )
-	end
-
-	for _, name in ipairs( OVERLAY_EFFECTS ) do
-		local ok, created = pcall( sm.effect.createEffect, name )
-		if ok and created then
-			self.cl.rfsGrowFx = created
-			self.cl.rfsGrowFxName = name
-			self.cl.rfsGrowFxVer = OVERLAY_FX_VER
-			pcall( function()
-				local world = self.harvestable:getWorld()
-				if world then
-					created:setWorld( world )
-				end
-				created:setParameter( "anchor", "CENTER" )
-				created:start()
-			end )
-			return created
-		end
+	local pos = nil
+	pcall( function() pos = harvestable:getPosition() end )
+	if pos then
+		return string.format( "%.1f:%.1f:%.1f", pos.x or 0, pos.y or 0, pos.z or 0 )
 	end
 	return nil
 end
 
-function RfsFarming.cl_plantOverlayUpdate( self, dt )
-	if not _G.g_rfsGrowthOverlay then
-		destroyGrowFx( self )
+local function rebuildGrowHudText()
+	local byId = _G.g_rfsGrowById
+	if type( byId ) ~= "table" then
+		_G.g_rfsGrowHudText = ""
 		return
 	end
+	local now = sm.game.getServerTick()
+	local pending = {}
+	for key, e in pairs( byId ) do
+		if type( e ) ~= "table" or not e.remain or e.remain <= 0 then
+			byId[key] = nil
+		elseif e.tick and ( now - e.tick ) > 80 then
+			-- Plant stopped updating (destroyed / far) — drop from table.
+			byId[key] = nil
+		else
+			pending[#pending + 1] = e
+		end
+	end
+	if #pending == 0 then
+		_G.g_rfsGrowHudText = ""
+		return
+	end
+	-- Group same crop + similar remaining time (~5s), soonest first.
+	-- Show at most 3 timers total, and at most 2 per crop type.
+	local groups = {}
+	local order = {}
+	for _, e in ipairs( pending ) do
+		local bucket = math.floor( ( e.remain or 0 ) / 200 )
+		local key = tostring( e.name or "Crop" ) .. "|" .. tostring( bucket )
+		local g = groups[key]
+		if not g then
+			g = {
+				name = e.name or "Crop",
+				remain = e.remain or 0,
+				count = 0,
+			}
+			groups[key] = g
+			order[#order + 1] = g
+		end
+		g.count = g.count + 1
+		if ( e.remain or 0 ) < g.remain then
+			g.remain = e.remain or 0
+		end
+	end
+	table.sort( order, function( a, b )
+		return ( a.remain or 0 ) < ( b.remain or 0 )
+	end )
+	local lines = {}
+	local perCrop = {}
+	local maxTotal = 3
+	local maxPerCrop = 2
+	for _, g in ipairs( order ) do
+		if #lines >= maxTotal then
+			break
+		end
+		local name = g.name or "Crop"
+		local n = perCrop[name] or 0
+		if n < maxPerCrop then
+			perCrop[name] = n + 1
+			if g.count > 1 then
+				lines[#lines + 1] = string.format( "%s ×%d  %s", name, g.count, formatRemain( g.remain ) )
+			else
+				lines[#lines + 1] = string.format( "%s  %s", name, formatRemain( g.remain ) )
+			end
+		end
+	end
+	_G.g_rfsGrowHudText = table.concat( lines, "\n" )
+end
+
+function RfsFarming.cl_setLocalGrowthOverlay( enabled )
+	-- Growth Time HUD retired (Farmers Tablet). Keep tracking for tablet; never show HUD list.
+	_G.g_rfsGrowthOverlay = false
+	_G.g_rfsGrowHudText = ""
+end
+
+function RfsFarming.cl_getGrowHudText()
+	-- HUD plant timer removed; Farmers Tablet shows avg times instead.
+	return ""
+end
+
+function RfsFarming.cl_plantOverlayUpdate( self, dt )
+	-- Always clear leftover world numbers (table HUD replaces them).
+	destroyGrowFx( self )
 	if not self.harvestable or not sm.exists( self.harvestable ) then
-		destroyGrowFx( self )
 		return
 	end
 
@@ -833,60 +829,53 @@ function RfsFarming.cl_plantOverlayUpdate( self, dt )
 	local serverTick = sm.game.getServerTick()
 	local days = ( self.data and self.data.daysToGrow ) or 0.875
 	local growTickTime = DAYCYCLE_TIME_TICKS * days
-	-- Match GrowingHarvestable.client_onUpdate fertilizer visual speed (*20)
 	local fertilizeTicks = ( self.cl.fertilizeTick and self.cl.growStartTick )
 		and ( serverTick - math.max( self.cl.fertilizeTick, self.cl.growStartTick ) ) or 0
 	local growTicks = self.cl.growStartTick
 		and ( serverTick - self.cl.growStartTick + fertilizeTicks * 20 ) or 0
 	local remain = math.max( 0, growTickTime - growTicks )
-	local frac = growTickTime > 0 and ( remain / growTickTime ) or 0
-	local grown = 1.0 - frac
-	local label = ( remain <= 0 ) and "READY" or formatRemain( remain )
-	local color = remainColor( frac )
-
-	-- Cluster: one timer per nearby group with similar remaining time.
-	local frame = serverTick
-	pcall( function()
-		if type( sm.game.getClientTick ) == "function" then
-			frame = sm.game.getClientTick() or frame
-		end
-	end )
-	if g_rfsGrowClusterFrame ~= frame then
-		g_rfsGrowClusterFrame = frame
-		g_rfsGrowCluster = {}
-	end
-	local wx, wy = 0, 0
-	pcall( function()
-		local p = self.harvestable:getPosition()
-		wx, wy = p.x, p.y
-	end )
-	for _, e in ipairs( g_rfsGrowCluster ) do
-		if math.abs( ( e.remain or 0 ) - remain ) <= CLUSTER_TICK_TOL then
-			local dx = ( e.x or 0 ) - wx
-			local dy = ( e.y or 0 ) - wy
-			if ( dx * dx + dy * dy ) <= CLUSTER_RADIUS2 then
-				destroyGrowFx( self )
-				return
-			end
-		end
-	end
-	g_rfsGrowCluster[#g_rfsGrowCluster + 1] = { remain = remain, x = wx, y = wy }
-
-	local fx = ensureGrowFx( self )
-	if not fx then
+	local key = harvestableKey( self.harvestable )
+	if not key then
 		return
 	end
-
-	local worldPos = overlayWorldPos( self.harvestable, grown )
+	_G.g_rfsGrowById = _G.g_rfsGrowById or {}
+	-- Ready → drop from the table (no READY label, no world text).
+	if remain <= 0 then
+		_G.g_rfsGrowById[key] = nil
+		return
+	end
+	local pos = nil
+	pcall( function() pos = self.harvestable:getPosition() end )
+	local name = cropLabelFor( self )
+	local code = nil
 	pcall( function()
-		fx:setParameter( "TextContent", label )
-		fx:setParameter( "Color", color )
-		fx:setPosition( worldPos )
-		fx:setRotation( overlayBillboardQuat( worldPos ) )
-		if not fx:isPlaying() then
-			fx:start()
-		end
+		local uid = string.lower( tostring( self.harvestable.uuid ) )
+		local map = {
+			[string.lower( tostring( hvs_growing_blueberry ) )] = "Bl",
+			[string.lower( tostring( hvs_growing_banana ) )] = "Ba",
+			[string.lower( tostring( hvs_growing_redbeet ) )] = "Rb",
+			[string.lower( tostring( hvs_growing_carrot ) )] = "Ca",
+			[string.lower( tostring( hvs_growing_tomato ) )] = "To",
+			[string.lower( tostring( hvs_growing_orange ) )] = "Or",
+			[string.lower( tostring( hvs_growing_potato ) )] = "Po",
+			[string.lower( tostring( hvs_growing_pineapple ) )] = "Pi",
+			[string.lower( tostring( hvs_growing_broccoli ) )] = "Br",
+			[string.lower( tostring( hvs_growing_cotton ) )] = "Co",
+			[string.lower( tostring( hvs_growing_chili ) )] = "Ch",
+			[string.lower( tostring( hvs_growing_pigmentflower ) )] = "Pg",
+		}
+		code = map[uid]
 	end )
+	-- Always track for Farmers Tablet avg times (HUD list still gated by Growth Time).
+	_G.g_rfsGrowById[key] = {
+		name = name,
+		remain = remain,
+		tick = serverTick,
+		x = pos and pos.x or nil,
+		y = pos and pos.y or nil,
+		z = pos and pos.z or nil,
+		code = code,
+	}
 end
 
 function RfsFarming.ensureGrowHooks()

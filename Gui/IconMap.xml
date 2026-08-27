@@ -590,6 +590,14 @@
 			<Index name="f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d">
 				<Frame point="864 864"/>
 			</Index>
+			<!-- Farmers Tablet — green LCD (distinct from blue Recipe Viewer). -->
+			<Index name="b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e">
+				<Frame point="1344 768"/>
+			</Index>
+			<!-- Farm Screen XL — same green LCD art. -->
+			<Index name="c4f8a1b2-3d5e-4f6a-9b7c-8d0e1f2a3b4c">
+				<Frame point="1344 768"/>
+			</Index>
 			<Index name="4d17fa39-60a8-43ba-e5c7-b80a37454e80">
 				<Frame point="960 864"/>
 			</Index>

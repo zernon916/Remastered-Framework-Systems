@@ -116,6 +116,32 @@
 					"scale": { "x": 1.2, "y": 1.2, "z": 1.2 }
 				}
 			}
+		},
+		{
+			"uuid": "c4f8a1b2-3d5e-4f6a-9b7c-8d0e1f2a3b4c",
+			"name": "obj_rfs_farm_screen_xl",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_extralarge.rend",
+			"color": "4caf50",
+			"box": { "x": 8, "y": 2, "z": 1 },
+			"rotationSet": "PropYZ",
+			"physicsMaterial": "Electronics",
+			"flammable": false,
+			"stackSize": 5,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 3,
+				"durability": 3,
+				"friction": 4
+			},
+			"restrictions": {
+				"usable": true,
+				"paintable": true
+			},
+			"scripted": {
+				"classname": "RfsFarmScreen",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsFarmScreen.lua",
+				"data": {}
+			}
 		}
 	]
 }

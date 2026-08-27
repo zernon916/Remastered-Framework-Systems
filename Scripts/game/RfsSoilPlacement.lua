@@ -1055,6 +1055,13 @@ function RfsSoilPlacement.destroySoilHarvestableAfterCollect( hvs )
 	if not hvs or not sm.exists( hvs ) then
 		return false
 	end
+	local pos = nil
+	pcall( function() pos = hvs:getPosition() end )
+	pcall( function()
+		if pos and type( RfsFarmSoilOwners ) == "table" and RfsFarmSoilOwners.clear then
+			RfsFarmSoilOwners.clear( pos )
+		end
+	end )
 	local ok = false
 	pcall( function()
 		sm.event.sendToHarvestable( hvs, "sv_e_rfsBatchPickupDestroy", {} )
@@ -1960,6 +1967,11 @@ function RfsSoilPlacement.sv_n_putSoil( self, params, player )
 	if RfsSoilPlacement.spendSoilBagFromInventory( player, params.slot ) then
 		sm.harvestable.createHarvestable( hvs_soil, placePos, FIXED_SOIL_ROT )
 		sm.effect.playEffect( "Plants - SoilbagUse", placePos, nil, FIXED_SOIL_ROT )
+		pcall( function()
+			if type( RfsFarmSoilOwners ) == "table" and RfsFarmSoilOwners.mark then
+				RfsFarmSoilOwners.mark( placePos, player )
+			end
+		end )
 		self.network:sendToClients( "cl_n_putSoil", params )
 	end
 end

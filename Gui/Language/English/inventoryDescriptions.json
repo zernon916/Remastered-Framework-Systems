@@ -35,6 +35,32 @@
                                                               ],
                                                  "description":  "Handheld craft planner (always unlocked). Craft: 1 Metal + 1 Circuit + 1 Glass. LMB opens known recipes; queue shows on the quest tracker (max 6 lines). Clear queue removes it."
                                              },
+    "b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e":  {
+                                                 "title":  "Farmers Tablet",
+                                                 "upperCaseTitle":  "FARMERS TABLET",
+                                                 "keywords":  [
+                                                                  "farm",
+                                                                  "grow",
+                                                                  "soil",
+                                                                  "crop",
+                                                                  "tablet",
+                                                                  "tool"
+                                                              ],
+                                                 "description":  "Handheld farm plot viewer (always unlocked). Same craft cost as Recipe Viewer. LMB: farms within 100 from player-placed soil; gap over 9 cells splits farms. Shows plot letters and average grow times."
+                                             },
+    "c4f8a1b2-3d5e-4f6a-9b7c-8d0e1f2a3b4c":  {
+                                                 "title":  "Farm Screen",
+                                                 "upperCaseTitle":  "FARM SCREEN",
+                                                 "keywords":  [
+                                                                  "farm",
+                                                                  "grow",
+                                                                  "lcd",
+                                                                  "screen",
+                                                                  "tablet",
+                                                                  "soil"
+                                                              ],
+                                                 "description":  "Extra-large wall LCD (always unlocked). Craft: 20 Metal + 10 Glass + 3 Circuit + 1 Component Kit. Face shows nearest farm average grow times. E opens the full Farmers Tablet menu. Optional logic parent gates power."
+                                             },
     "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7":  {
                                                  "title":  "Hack Beacon",
                                                  "upperCaseTitle":  "HACK BEACON",
