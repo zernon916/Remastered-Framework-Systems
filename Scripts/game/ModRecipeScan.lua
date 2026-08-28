@@ -318,7 +318,8 @@ local function dedupeAppend( dest, seen, entry )
 	return true
 end
 
-local function applyLootForMod( recipes, lootCfg )
+-- outLootIds: optional map id -> true for items added to the random-loot / drop table.
+local function applyLootForMod( recipes, lootCfg, outLootIds )
 	if not LOOT_TABLES then
 		return 0
 	end
@@ -377,6 +378,9 @@ local function applyLootForMod( recipes, lootCfg )
 		if ok and uuid then
 			lootTable.list[#lootTable.list + 1] = { uuid = uuid, weight = weight, quantity = 1 }
 			added = added + 1
+			if type( outLootIds ) == "table" then
+				outLootIds[itemId] = true
+			end
 		end
 	end
 	return added
@@ -390,6 +394,11 @@ function ModRecipeScan.run()
 		sources = {},
 		craftPaths = {},
 		craftRecipeCount = 0,
+		-- id -> { mod, lid } for craftbot unlockables from scanned B&P + RFS pack
+		craftIds = {},
+		hideoutIds = {},
+		miningIds = {},
+		lootIds = {},
 		hideoutTrades = {},
 		miningTrades = {},
 		hideoutAdded = 0,
@@ -495,6 +504,7 @@ function ModRecipeScan.run()
 					elseif dedupeAppend( result.hideoutTrades, hideSeen, entry ) then
 						source.hideout = source.hideout + 1
 						result.hideoutAdded = result.hideoutAdded + 1
+						result.hideoutIds[entry.itemId] = { mod = tostring( name ), lid = lid }
 						if entry.schematic ~= false then
 							_G.g_extraHideoutSchematicUnlocks[entry.itemId] = true
 						end
@@ -535,6 +545,9 @@ function ModRecipeScan.run()
 					else
 						g_unlockableCraftItems[id] = true
 					end
+					-- Track all scanned craft rows (incl. RFS) for /modrecipes + /lockmodded.
+					-- /unlockmodded still prefers non-RFS craftPaths (B&P blast).
+					result.craftIds[id] = { mod = tostring( name ), lid = lid }
 					n = n + 1
 				end
 			end
@@ -565,6 +578,7 @@ function ModRecipeScan.run()
 					elseif dedupeAppend( result.miningTrades, mineSeen, entry ) then
 						source.mining = source.mining + 1
 						result.miningAdded = result.miningAdded + 1
+						result.miningIds[entry.itemId] = { mod = tostring( name ), lid = lid }
 					end
 				end
 			end
@@ -572,9 +586,13 @@ function ModRecipeScan.run()
 
 		local lootCfg = openJson( contentPath( lid, "CraftingRecipes/loot.json" ) )
 		if type( lootCfg ) == "table" then
-			local added = applyLootForMod( recipes, lootCfg )
+			local lootThis = {}
+			local added = applyLootForMod( recipes, lootCfg, lootThis )
 			source.loot = added
 			result.lootApplied = result.lootApplied + added
+			for id, _ in pairs( lootThis ) do
+				result.lootIds[id] = { mod = tostring( name ), lid = lid }
+			end
 		end
 
 		if source.craft > 0 or source.hideout > 0 or source.mining > 0 or source.loot > 0 then
@@ -615,4 +633,91 @@ end
 
 function ModRecipeScan.getLast()
 	return ModRecipeScan._last
+end
+
+-- B&P craftbot itemIds used by /unlockmodded and /lockmodded (excludes RFS pack lid).
+function ModRecipeScan.collectBpCraftIds()
+	local scan = ModRecipeScan.getLast() or ModRecipeScan.run()
+	local ids = {}
+	if type( scan.craftIds ) == "table" then
+		for id, meta in pairs( scan.craftIds ) do
+			if type( meta ) == "table" and meta.lid ~= RFS_LOCAL then
+				ids[id] = meta
+			elseif type( meta ) ~= "table" then
+				ids[id] = true
+			end
+		end
+	end
+	if next( ids ) == nil and type( scan.craftPaths ) == "table" then
+		for _, path in ipairs( scan.craftPaths ) do
+			local ok, json = pcall( sm.json.open, path )
+			if ok and type( json ) == "table" then
+				for _, recipe in ipairs( json ) do
+					if recipe and recipe.itemId then
+						ids[tostring( recipe.itemId )] = true
+					end
+				end
+			end
+		end
+	end
+	return ids, scan
+end
+
+-- Buckets for /modrecipes: trader / loot-or-random / craft-only.
+function ModRecipeScan.classifyCraftAccess()
+	local scan = ModRecipeScan.getLast() or ModRecipeScan.run()
+	local inTrader, inLoot, craftOnly = {}, {}, {}
+	local hide = scan.hideoutIds or {}
+	local mine = scan.miningIds or {}
+	local loot = scan.lootIds or {}
+	local craft = scan.craftIds or {}
+	for id, meta in pairs( craft ) do
+		local trader = hide[id] or mine[id]
+		local drop = loot[id] ~= nil
+		local row = {
+			id = id,
+			mod = type( meta ) == "table" and meta.mod or "?",
+			lid = type( meta ) == "table" and meta.lid or nil,
+			hideout = hide[id] ~= nil,
+			mining = mine[id] ~= nil,
+			loot = drop,
+		}
+		if trader then
+			inTrader[#inTrader + 1] = row
+		elseif drop then
+			inLoot[#inLoot + 1] = row
+		else
+			craftOnly[#craftOnly + 1] = row
+		end
+	end
+	-- Loot-only items that never appear on craftbot
+	for id, meta in pairs( loot ) do
+		if not craft[id] then
+			inLoot[#inLoot + 1] = {
+				id = id,
+				mod = type( meta ) == "table" and meta.mod or "?",
+				hideout = hide[id] ~= nil,
+				mining = mine[id] ~= nil,
+				loot = true,
+				lootOnly = true,
+			}
+		end
+	end
+	local function byMod( a, b )
+		local am = tostring( a.mod or "" )
+		local bm = tostring( b.mod or "" )
+		if am ~= bm then
+			return am < bm
+		end
+		return tostring( a.id ) < tostring( b.id )
+	end
+	table.sort( inTrader, byMod )
+	table.sort( inLoot, byMod )
+	table.sort( craftOnly, byMod )
+	return {
+		scan = scan,
+		inTrader = inTrader,
+		inLoot = inLoot,
+		craftOnly = craftOnly,
+	}
 end

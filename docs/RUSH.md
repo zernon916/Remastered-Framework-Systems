@@ -59,9 +59,9 @@ Remaining phases **not started or not finished**. Implement in this order. After
 
 **What “done” means:** Full menus / streamer / discord-batch **Workshop publish** of pack `3782487760` when the **user asks**.
 
-**Likely files / tools:** steamcmd workflow the user already uses; `description.json` (Nutt MiniMap credit shipped); do **not** pack `discord-bridge/` into Workshop.
+**Likely files / tools:** Cursor rule `.cursor/rules/steam-workshop-push.mdc` + `C:\sm\steamcmd-rfs\` (SteamCMD `workshop_build_item` → `3782487760`). Local Workshop-folder copy alone is **not** a cloud publish. Do **not** pack `discord-bridge/` into Workshop.
 
-**Frozen extra:** **Do not steamcmd or Workshop-push unless the user explicitly asks for Phase E.** GitHub push is also ask-only (`GITHUB.md`). No `git push origin` unless asked.
+**Frozen extra:** **Do not steamcmd or Workshop-push unless the user explicitly asks for Phase E / “push to steam”.** GitHub push is also ask-only (`GITHUB.md`). No `git push origin` unless asked.
 
 ---
 

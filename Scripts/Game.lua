@@ -12,6 +12,7 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsRecipeViewerGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarmSoilOwners.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarmTablet.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarmTabletGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsHandheldLcd.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsInventory.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsSoilPlacement.lua" )
@@ -74,7 +75,7 @@ Game = RecipeFrameworkSurvival -- alias for older tooling / cache
 RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
-RFS_PACK_STAMP = "[RFS] pack 0854-cu / farm tablet seed grid scroll"
+RFS_PACK_STAMP = "[RFS] pack 0854-dj / GPS map open when minimap hidden"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
 RFS_SPEND_CHAT = nil
@@ -109,29 +110,75 @@ local RFS_HIDEOUT_TRADER_UUID = sm.uuid.new( "614c3193-13da-40f4-9b03-37f26e760f
 local RFS_MININGHUB_TRADER_UUID = sm.uuid.new( "90762ac2-5082-461d-9028-480d38a7da10" )
 local RFS_HIJACK_HOST_UUID = sm.uuid.new( "a7c3e91f-2b48-4d6a-9e15-6f8d0c1a2b3c" )
 
--- Host checks: client uses sm.isHost (bool or function); server RPCs compare sender to first connected player.
--- Listen-server MP sometimes reports sm.isHost false on the host client — fall back to first player.
-local function rfsClientIsHost()
+-- Host checks: prefer engine sm.player.getHostPlayer() (Survival uses this).
+-- Sticky id is a fallback only. Listen MP often has sm.isHost false on the host client.
+-- Do NOT trust getAllPlayers()[1] alone — join order is not host order.
+local function rfsRawClientIsHost()
 	local ok, v = pcall( function()
 		if type( sm.isHost ) == "function" then
 			return sm.isHost()
 		end
 		return sm.isHost
 	end )
-	if ok and v then
+	return ok and v and true or false
+end
+
+local function rfsPlayerCount()
+	local n = 0
+	pcall( function()
+		local all = sm.player.getAllPlayers()
+		if type( all ) == "table" then
+			for _ in pairs( all ) do
+				n = n + 1
+			end
+		end
+	end )
+	return n
+end
+
+local function rfsEngineHostPlayer()
+	local host = nil
+	pcall( function()
+		if type( sm.player.getHostPlayer ) == "function" then
+			host = sm.player.getHostPlayer()
+		end
+	end )
+	return host
+end
+
+local function rfsEngineHostPlayerId()
+	local host = rfsEngineHostPlayer()
+	if not host then
+		return nil
+	end
+	local hid = nil
+	pcall( function() hid = host.id end )
+	return hid
+end
+
+local function rfsClientIsHost()
+	-- Engine API first (works when sticky handshake was wrong).
+	if rfsRawClientIsHost() then
 		return true
 	end
-	local me, all = nil, nil
-	pcall( function() me = sm.localPlayer.getPlayer() end )
-	pcall( function() all = sm.player.getAllPlayers() end )
-	if me and type( all ) == "table" and all[1] then
-		local hid, pid = nil, nil
-		pcall( function() hid = all[1].id end )
-		pcall( function() pid = me.id end )
-		if hid ~= nil and pid ~= nil then
-			return hid == pid
+	local okMatch = false
+	pcall( function()
+		local lp = sm.localPlayer.getPlayer()
+		local hp = rfsEngineHostPlayer()
+		if lp and hp and lp.id ~= nil and hp.id ~= nil and lp.id == hp.id then
+			okMatch = true
 		end
-		return all[1] == me
+	end )
+	if okMatch then
+		return true
+	end
+	-- Solo listen / single player.
+	if rfsPlayerCount() <= 1 then
+		return true
+	end
+	-- Sticky handshake from server (last resort for weird clients).
+	if _G.g_rfsHostStatusKnown then
+		return _G.g_rfsClientIsHost == true
 	end
 	return false
 end
@@ -164,23 +211,51 @@ local function rfsClientIsAdmin()
 	return ok and v and true or false
 end
 
+local function rfsServerGetHostId( self )
+	if self and self.sv and self.sv.rfsHostPlayerId ~= nil then
+		return self.sv.rfsHostPlayerId
+	end
+	local g = _G.g_rfsGame
+	if g and g.sv and g.sv.rfsHostPlayerId ~= nil then
+		return g.sv.rfsHostPlayerId
+	end
+	return nil
+end
+
+local function rfsServerSetHostId( self, playerId )
+	if not self then
+		return
+	end
+	self.sv = self.sv or {}
+	self.sv.rfsHostPlayerId = playerId
+end
+
 local function rfsServerPlayerIsHost( player )
 	if not player then
 		return false
 	end
-	local all = nil
-	pcall( function() all = sm.player.getAllPlayers() end )
-	if type( all ) ~= "table" or not all[1] then
+	local pid = nil
+	pcall( function() pid = player.id end )
+	if pid == nil then
 		return false
 	end
-	local host = all[1]
-	local hid, pid = nil, nil
-	pcall( function() hid = host.id end )
-	pcall( function() pid = player.id end )
-	if hid ~= nil and pid ~= nil then
-		return hid == pid
+	-- Engine host player is authoritative (Survival drops loot using this).
+	local engineId = rfsEngineHostPlayerId()
+	if engineId ~= nil then
+		if _G.g_rfsGame and _G.g_rfsGame.sv then
+			_G.g_rfsGame.sv.rfsHostPlayerId = engineId
+		end
+		return pid == engineId
 	end
-	return host == player
+	local hostId = rfsServerGetHostId( _G.g_rfsGame )
+	if hostId ~= nil then
+		return pid == hostId
+	end
+	-- No sticky yet: sole player is host.
+	if rfsPlayerCount() <= 1 then
+		return true
+	end
+	return false
 end
 
 -- Server: host, or a connected player the engine marks as admin (same flags as rfsClientIsAdmin).
@@ -208,6 +283,10 @@ local function rfsServerPlayerIsAdmin( player )
 	end )
 	return ok and v and true or false
 end
+
+-- Export for GUIs that cannot see locals (RfsGenGui / RfsSetupGui).
+_G.rfsClientIsHost = rfsClientIsHost
+_G.rfsClientIsAdmin = rfsClientIsAdmin
 
 local function rfsServerDenyTo( self, player, msg )
 	if player then
@@ -550,6 +629,29 @@ end
 
 function RecipeFrameworkSurvival.server_onPlayerJoined( self, player, newPlayer )
 	SurvivalGame.server_onPlayerJoined( self, player, newPlayer )
+	-- Sync sticky host from engine getHostPlayer(); fall back to first joiner.
+	pcall( function()
+		self.sv = self.sv or {}
+		local pid = player and player.id
+		if pid == nil then
+			return
+		end
+		local engineId = rfsEngineHostPlayerId()
+		if engineId ~= nil then
+			self.sv.rfsHostPlayerId = engineId
+			print( "[RFS] sticky host playerId=" .. tostring( engineId ) .. " (getHostPlayer)" )
+		elseif self.sv.rfsHostPlayerId == nil then
+			self.sv.rfsHostPlayerId = pid
+			print( "[RFS] sticky host playerId=" .. tostring( pid ) .. " (first join)" )
+		elseif rfsPlayerCount() <= 1 then
+			self.sv.rfsHostPlayerId = pid
+		end
+		local isHost = ( self.sv.rfsHostPlayerId == pid )
+		self.network:sendToClient( player, "cl_rfs_hostStatus", {
+			host = isHost,
+			hostId = self.sv.rfsHostPlayerId,
+		} )
+	end )
 	pcall( function()
 		local id = RfsInventory.getSavedOptionId()
 		RfsInventory.applyGameDefault( RecipeFrameworkSurvival )
@@ -598,6 +700,7 @@ function RecipeFrameworkSurvival.server_onCreate( self )
 	self.sv.rfsPendingQuestTracks = self.sv.rfsPendingQuestTracks or {}
 	self.sv.rfsGameModeNeedsPrompt = false
 	self.sv.rfsGameModePromptSent = false
+	pcall( function() self:sv_rfs_ensureMapMarkersLoaded() end )
 	pcall( function()
 		if type( RfsGameMode ) == "table" and RfsGameMode.load then
 			local state = RfsGameMode.load( true )
@@ -779,6 +882,11 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 		end
 	end )
 	pcall( function()
+		if type( RfsHandheldLcd ) == "table" and RfsHandheldLcd.ensurePlayerActionHooks then
+			RfsHandheldLcd.ensurePlayerActionHooks()
+		end
+	end )
+	pcall( function()
 		if type( RfsBotInteract ) == "table" and RfsBotInteract.ensurePlayerHook then
 			RfsBotInteract.ensurePlayerHook()
 		end
@@ -801,12 +909,45 @@ function RecipeFrameworkSurvival.client_onCreate( self )
 		self.network:sendToServer( "sv_rfs_featuresGet" )
 		self.network:sendToServer( "sv_rfs_gameModeGet" )
 		self.network:sendToServer( "sv_rfs_mapMarkerGet", {} )
+		self.network:sendToServer( "sv_rfs_gpsPrefsGet", {} )
 	end )
-	print( "[RFS] client_onCreate host=" .. tostring( sm.isHost ) .. " craftbotGrid=" .. tostring( type( _G.g_rfsCraftbotGridFiles ) ) )
+	-- Listen MP: sm.isHost is often false on the host client — claim sticky host on server.
+	pcall( function()
+		local thinks = rfsRawClientIsHost() or ( rfsPlayerCount() <= 1 )
+		if not thinks then
+			pcall( function()
+				local lp = sm.localPlayer.getPlayer()
+				local hp = rfsEngineHostPlayer()
+				if lp and hp and lp.id == hp.id then
+					thinks = true
+				end
+			end )
+		end
+		self.network:sendToServer( "sv_rfs_claimHost", {
+			clientThinksHost = thinks,
+		} )
+	end )
+	print( "[RFS] client_onCreate rawIsHost=" .. tostring( rfsRawClientIsHost() )
+		.. " craftbotGrid=" .. tostring( type( _G.g_rfsCraftbotGridFiles ) ) )
 end
 
 function RecipeFrameworkSurvival.client_onLoadingScreenLifted( self )
 	SurvivalGame.client_onLoadingScreenLifted( self )
+	pcall( function()
+		local thinks = rfsRawClientIsHost() or ( rfsPlayerCount() <= 1 )
+		if not thinks then
+			pcall( function()
+				local lp = sm.localPlayer.getPlayer()
+				local hp = rfsEngineHostPlayer()
+				if lp and hp and lp.id == hp.id then
+					thinks = true
+				end
+			end )
+		end
+		self.network:sendToServer( "sv_rfs_claimHost", {
+			clientThinksHost = thinks,
+		} )
+	end )
 	rfsPostJoinChat( self )
 end
 
@@ -835,6 +976,11 @@ function RecipeFrameworkSurvival.client_onUpdate( self, dt )
 	pcall( function()
 		if type( RfsCrafterGrid ) == "table" and RfsCrafterGrid.tick then
 			RfsCrafterGrid.tick()
+		end
+	end )
+	pcall( function()
+		if type( RfsHandheldLcd ) == "table" and RfsHandheldLcd.client_tick then
+			RfsHandheldLcd.client_tick()
 		end
 	end )
 	-- Recipe Viewer: create GUI on Game tick so button callbacks bind to Game
@@ -1096,7 +1242,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		return
 	end
 
-	if sm.isHost then
+	if sm.isHost or rfsClientIsHost() then
 		self:rfs_bindOne( "/kick", { { "string", "player name", false } }, "Kick a player from server" )
 		self:rfs_bindOne( "/ban", { { "string", "player name", false } }, "Ban a player from server" )
 	end
@@ -1119,6 +1265,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 	self:rfs_bindOne( "/mapclose", {}, "Close top-down camera map" )
 	self:rfs_bindOne( "/rfsmap", {}, "Alias of /map" )
 	self:rfs_bindOne( "/mods", {}, "List scanned mod recipe sources" )
+	self:rfs_bindOne( "/modrecipes", {}, "List mod craft items: traders vs loot vs craft-only" )
 
 		-- Phase D: game ? Discord (requires Streamer + chat relay in /gensettings)
 	local sayArgs = {}
@@ -1191,6 +1338,7 @@ function RecipeFrameworkSurvival.rfs_bindCommands( self )
 		self:rfs_bindOne( "/goto", { { "string", "location", true } }, "Teleport to start or marker" )
 		self:rfs_bindOne( "/unlockrecipe", { { "string", "uuidOrName", false } }, "Unlock one craftbot recipe" )
 		self:rfs_bindOne( "/unlockmodded", {}, "Unlock all scanned mod craftbot recipes" )
+		self:rfs_bindOne( "/lockmodded", {}, "Relock / clear learned mod craftbot recipes" )
 		self:rfs_bindOne( "/unlockvanilla", {}, "Unlock all vanilla unlockable craftbot recipes" )
 		self:rfs_bindOne( "/questlist", {}, "List active / completed quests" )
 		self:rfs_bindOne( "/rfsquestlist", {}, "Alias of /questlist" )
@@ -1226,11 +1374,13 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 			"/gensettings — host: quests, inventory, farming, streamer",
 			"/setup — host cheats tab (same as /menu Cheats)",
 			"/map — top-down world map (/mapclose to exit)",
+			"/mods — scanned mod recipe sources",
+			"/modrecipes — traders vs loot vs craft-only",
 			"/unhijack — release nearest owned ally bot",
 			"/help — this list",
 		}
 		if cheats and rfsClientIsAdmin() then
-			lines[#lines + 1] = "Cheats on: /fly /god /givehack /tshop /mshop /hijack — more in chat autocomplete"
+			lines[#lines + 1] = "Cheats on: /fly /god /givehack /unlockmodded /lockmodded — more in chat autocomplete"
 		elseif not cheats then
 			lines[#lines + 1] = "Host: enable Cheats in /gensettings for fly, god, shops, and give tools"
 		end
@@ -1270,6 +1420,10 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 
 	if cmd == "/mods" then
 		self.network:sendToServer( "sv_rfs_listMods" )
+		return
+	end
+	if cmd == "/modrecipes" then
+		self.network:sendToServer( "sv_rfs_listModRecipes" )
 		return
 	end
 
@@ -1459,6 +1613,10 @@ function RecipeFrameworkSurvival.cl_onChatCommand( self, params )
 	end
 	if cmd == "/unlockmodded" then
 		self.network:sendToServer( "sv_rfs_unlockModded" )
+		return
+	end
+	if cmd == "/lockmodded" then
+		self.network:sendToServer( "sv_rfs_lockModded" )
 		return
 	end
 	if cmd == "/unlockvanilla" then
@@ -1713,8 +1871,98 @@ function RecipeFrameworkSurvival.sv_rfs_mapClose( self, params, player )
 end
 
 -- Shared BigMap home / waypoint (MP). Local USER_DATA alone only updated the setter.
+local RFS_MAP_MARKERS_STORAGE = { "rfs", "mapMarkers" }
+
+local function rfsMapMarkerNormalize( data )
+	local out = { wp = nil, base = nil }
+	if type( data ) ~= "table" then
+		return out
+	end
+	if data.wp == false then
+		out.wp = false
+	elseif type( data.wp ) == "table" and data.wp.x and data.wp.y then
+		out.wp = { x = tonumber( data.wp.x ), y = tonumber( data.wp.y ) }
+	end
+	-- false = explicitly cleared; table = set; nil = unknown / unset
+	if data.base == false then
+		out.base = false
+	elseif type( data.base ) == "table" and data.base.x and data.base.y then
+		out.base = { x = tonumber( data.base.x ), y = tonumber( data.base.y ) }
+	end
+	return out
+end
+
+local function rfsGameWorldKey( self )
+	local wid = "0"
+	pcall( function()
+		local ow = self.sv and self.sv.saved and self.sv.saved.overworld
+		if ow and ow.id then
+			wid = tostring( ow.id )
+		end
+	end )
+	if wid == "0" then
+		pcall( function()
+			local players = sm.player.getAllPlayers()
+			local p = players and players[1]
+			local char = p and p:getCharacter()
+			if char and char.getWorld then
+				wid = tostring( char:getWorld().id )
+			end
+		end )
+	end
+	return wid
+end
+
+local function rfsMapMarkerLoad( self )
+	self.sv = self.sv or {}
+	local wid = rfsGameWorldKey( self )
+	if self.sv._rfsMapMarkersLoaded and self.sv._rfsMapMarkersWorld == wid then
+		return self.sv.rfsMapMarkers
+	end
+	local ok, data = pcall( sm.storage.load, RFS_MAP_MARKERS_STORAGE )
+	local worlds = {}
+	if ok and type( data ) == "table" then
+		if type( data.worlds ) == "table" then
+			worlds = data.worlds
+		elseif data.wp or data.base then
+			worlds[wid] = rfsMapMarkerNormalize( data )
+		end
+	end
+	self.sv._rfsMapMarkersAll = worlds
+	self.sv.rfsMapMarkers = rfsMapMarkerNormalize( worlds[wid] )
+	self.sv._rfsMapMarkersWorld = wid
+	self.sv._rfsMapMarkersLoaded = true
+	return self.sv.rfsMapMarkers
+end
+
+function RecipeFrameworkSurvival.sv_rfs_ensureMapMarkersLoaded( self )
+	return rfsMapMarkerLoad( self )
+end
+
+local function rfsMapMarkerPersist( self )
+	self.sv = self.sv or {}
+	rfsMapMarkerLoad( self )
+	local wid = rfsGameWorldKey( self )
+	local m = self.sv.rfsMapMarkers or {}
+	local entry = {}
+	if m.wp == false then
+		entry.wp = false
+	elseif type( m.wp ) == "table" and m.wp.x and m.wp.y then
+		entry.wp = { x = m.wp.x, y = m.wp.y }
+	end
+	if m.base == false then
+		entry.base = false
+	elseif type( m.base ) == "table" and m.base.x and m.base.y then
+		entry.base = { x = m.base.x, y = m.base.y }
+	end
+	self.sv._rfsMapMarkersAll = self.sv._rfsMapMarkersAll or {}
+	self.sv._rfsMapMarkersAll[wid] = entry
+	pcall( sm.storage.save, RFS_MAP_MARKERS_STORAGE, { worlds = self.sv._rfsMapMarkersAll } )
+end
+
 local function rfsMapMarkerSnapshot( self )
 	self.sv = self.sv or {}
+	rfsMapMarkerLoad( self )
 	local m = self.sv.rfsMapMarkers or {}
 	return {
 		wp = m.wp,
@@ -1724,7 +1972,7 @@ end
 
 local function rfsMapMarkerApplyAction( self, params )
 	self.sv = self.sv or {}
-	self.sv.rfsMapMarkers = self.sv.rfsMapMarkers or {}
+	rfsMapMarkerLoad( self )
 	local m = self.sv.rfsMapMarkers
 	local action = params and tostring( params.action or "" ) or ""
 	local x = tonumber( params and params.x )
@@ -1732,14 +1980,15 @@ local function rfsMapMarkerApplyAction( self, params )
 	if action == "setWp" and x and y then
 		m.wp = { x = x, y = y }
 	elseif action == "clearWp" then
-		m.wp = nil
+		m.wp = false
 	elseif action == "setBase" and x and y then
 		m.base = { x = x, y = y }
 	elseif action == "clearBase" then
-		m.base = nil
+		m.base = false
 	else
 		return false
 	end
+	rfsMapMarkerPersist( self )
 	return true
 end
 
@@ -1762,10 +2011,124 @@ function RecipeFrameworkSurvival.sv_rfs_mapMarkerGet( self, params, player )
 	if not target then
 		return
 	end
-	self.sv = self.sv or {}
-	self.sv.rfsMapMarkers = self.sv.rfsMapMarkers or {}
+	rfsMapMarkerLoad( self )
 	pcall( function()
 		self.network:sendToClient( target, "cl_rfs_mapMarkerSync", rfsMapMarkerSnapshot( self ) )
+	end )
+end
+
+-- Per-player minimap layout (pos 5 = hidden). USER_DATA json alone often fails in Custom Game.
+local RFS_GPS_PREFS_STORAGE = { "rfs", "gpsPrefs" }
+
+local function rfsGpsPrefsLoad( self )
+	self.sv = self.sv or {}
+	if self.sv._rfsGpsPrefsLoaded then
+		return self.sv.rfsGpsPrefs
+	end
+	local ok, data = pcall( sm.storage.load, RFS_GPS_PREFS_STORAGE )
+	self.sv.rfsGpsPrefs = ( ok and type( data ) == "table" ) and data or {}
+	self.sv._rfsGpsPrefsLoaded = true
+	return self.sv.rfsGpsPrefs
+end
+
+local function rfsGpsPrefsPersist( self )
+	self.sv = self.sv or {}
+	pcall( sm.storage.save, RFS_GPS_PREFS_STORAGE, self.sv.rfsGpsPrefs or {} )
+end
+
+local function rfsGpsPrefsNormalize( params )
+	if type( params ) ~= "table" then
+		return nil
+	end
+	local out = {}
+	if type( params.pos ) == "number" and params.pos >= 1 and params.pos <= 5 then
+		out.pos = math.floor( params.pos )
+	end
+	if type( params.posl ) == "number" and params.posl >= 1 and params.posl <= 4 then
+		out.posl = math.floor( params.posl )
+	end
+	if type( params.zoom ) == "number" and params.zoom >= 1 then
+		out.zoom = math.floor( params.zoom )
+	end
+	if type( params.size ) == "number" and params.size >= 1 and params.size <= 3 then
+		out.size = math.floor( params.size )
+	end
+	if type( params.wpc ) == "string" and params.wpc ~= "" then
+		out.wpc = params.wpc
+	end
+	if next( out ) == nil then
+		return nil
+	end
+	return out
+end
+
+function RecipeFrameworkSurvival.sv_rfs_gpsPrefsSet( self, params, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player then
+		return
+	end
+	local prefs = rfsGpsPrefsNormalize( params )
+	if not prefs then
+		return
+	end
+	local all = rfsGpsPrefsLoad( self )
+	local key = tostring( player.id )
+	all[key] = all[key] or {}
+	for k, v in pairs( prefs ) do
+		all[key][k] = v
+	end
+	rfsGpsPrefsPersist( self )
+end
+
+function RecipeFrameworkSurvival.sv_e_rfsGpsPrefsSet( self, params )
+	local player = type( params ) == "table" and params.player or nil
+	local clean = params
+	if type( params ) == "table" then
+		clean = {}
+		for k, v in pairs( params ) do
+			if k ~= "player" then
+				clean[k] = v
+			end
+		end
+	end
+	self:sv_rfs_gpsPrefsSet( clean, player )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_gpsPrefsGet( self, _, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player then
+		return
+	end
+	local all = rfsGpsPrefsLoad( self )
+	local key = tostring( player.id )
+	local prefs = all[key]
+	if type( prefs ) == "table" then
+		self.network:sendToClient( player, "cl_rfs_gpsPrefsSync", prefs )
+	end
+end
+
+function RecipeFrameworkSurvival.sv_e_rfsGpsPrefsGet( self, params )
+	local player = params and params.player
+	if player then
+		self:sv_rfs_gpsPrefsGet( nil, player )
+	end
+end
+
+function RecipeFrameworkSurvival.cl_rfs_gpsPrefsSync( self, prefs )
+	self.cl = self.cl or {}
+	if type( prefs ) == "table" then
+		self.cl.rfsGpsPrefsPending = prefs
+		_G.g_rfsGpsPrefsPending = prefs
+	end
+	pcall( function()
+		if type( Waypoint ) == "table" and type( Waypoint.applyGpsPrefs ) == "function" then
+			local hud = _G.g_minimapHud
+			if hud then
+				Waypoint.applyGpsPrefs( hud, prefs )
+				self.cl.rfsGpsPrefsPending = nil
+				_G.g_rfsGpsPrefsPending = nil
+			end
+		end
 	end )
 end
 
@@ -1781,9 +2144,20 @@ function RecipeFrameworkSurvival.sv_e_rfsMapMarkerGet( self, params )
 end
 
 function RecipeFrameworkSurvival.cl_rfs_mapMarkerSync( self, markers )
+	-- Queue if MiniMap HUD is not ready yet (join race); MinimapHud flushes.
+	self.cl = self.cl or {}
+	if type( markers ) == "table" then
+		self.cl.rfsMapMarkersPending = markers
+		_G.g_rfsMapMarkersPending = markers
+	end
 	pcall( function()
 		if type( Waypoint ) == "table" and type( Waypoint.applyShared ) == "function" then
-			Waypoint.applyShared( _G.g_minimapHud, markers )
+			local hud = _G.g_minimapHud
+			if hud then
+				Waypoint.applyShared( hud, markers )
+				self.cl.rfsMapMarkersPending = nil
+				_G.g_rfsMapMarkersPending = nil
+			end
 		end
 	end )
 end
@@ -2889,22 +3263,69 @@ function RecipeFrameworkSurvival.sv_rfs_unlockModded( self, _, player )
 	if not rfsServerAllowCheat( self, player ) then
 		return
 	end
-	local scan = ModRecipeScan.getLast()
+	local ids = ModRecipeScan.collectBpCraftIds()
 	local n = 0
-	if scan and scan.craftPaths then
-		for _, path in ipairs( scan.craftPaths ) do
-			local ok, json = pcall( sm.json.open, path )
-			if ok and type( json ) == "table" then
-				for _, recipe in ipairs( json ) do
-					if recipe and recipe.itemId then
-						RecipeManager.Sv_UnlockRecipe( tostring( recipe.itemId ), true )
-						n = n + 1
+	for id, _ in pairs( ids ) do
+		RecipeManager.Sv_UnlockRecipe( tostring( id ), true )
+		n = n + 1
+	end
+	rfsMsg( self, "Unlocked modded recipes: " .. tostring( n ) .. " (use /lockmodded to clear)" )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_lockModded( self, _, player )
+	if not rfsServerAllowCheat( self, player ) then
+		return
+	end
+	local rm = g_recipeManager
+	if not rm or not rm.sv or not rm.sv.saved then
+		rfsMsg( self, "[RFS] RecipeManager not ready — cannot lock." )
+		return
+	end
+	local ids = ModRecipeScan.collectBpCraftIds()
+	local unlocked = rm.sv.saved.unlockedRecipes or {}
+	local newByPlayer = rm.sv.saved.newUnlockedRecipes or {}
+	local n = 0
+	for id, _ in pairs( ids ) do
+		id = tostring( id )
+		if unlocked[id] then
+			unlocked[id] = nil
+			n = n + 1
+			-- Return to random-loot / potato-gun unlock pool when it is a craft part.
+			local already = false
+			if type( rm.sv.recipesToUnlock ) == "table" then
+				for _, uid in ipairs( rm.sv.recipesToUnlock ) do
+					if uid == id then
+						already = true
+						break
 					end
+				end
+				if not already then
+					local okPart = false
+					pcall( function()
+						okPart = sm.item.isPart( sm.uuid.new( id ) ) and true or false
+					end )
+					if okPart then
+						rm.sv.recipesToUnlock[#rm.sv.recipesToUnlock + 1] = id
+					end
+				end
+			end
+			for _, map in pairs( newByPlayer ) do
+				if type( map ) == "table" then
+					map[id] = nil
 				end
 			end
 		end
 	end
-	rfsMsg( self, "Unlocked modded recipes: " .. tostring( n ) )
+	rm.sv.saved.unlockedRecipes = unlocked
+	rm.sv.dirty = true
+	pcall( function()
+		sm.storage.save( STORAGE_CHANNEL_RECIPEMANAGER, rm.sv.saved )
+	end )
+	pcall( function()
+		rm:sv_setClientData()
+	end )
+	rm.sv.dirty = false
+	rfsMsg( self, "Relocked modded recipes (cleared from learned): " .. tostring( n ) )
 end
 
 function RecipeFrameworkSurvival.sv_rfs_unlockVanilla( self, _, player )
@@ -2913,20 +3334,7 @@ function RecipeFrameworkSurvival.sv_rfs_unlockVanilla( self, _, player )
 	end
 	local n = 0
 	if g_unlockableCraftItems then
-		local scan = ModRecipeScan.getLast()
-		local modIds = {}
-		if scan and scan.craftPaths then
-			for _, path in ipairs( scan.craftPaths ) do
-				local ok, json = pcall( sm.json.open, path )
-				if ok and type( json ) == "table" then
-					for _, recipe in ipairs( json ) do
-						if recipe and recipe.itemId then
-							modIds[tostring( recipe.itemId )] = true
-						end
-					end
-				end
-			end
-		end
+		local modIds = ModRecipeScan.collectBpCraftIds()
 		for id, _ in pairs( g_unlockableCraftItems ) do
 			if not modIds[id] then
 				RecipeManager.Sv_UnlockRecipe( id, true )
@@ -2935,6 +3343,49 @@ function RecipeFrameworkSurvival.sv_rfs_unlockVanilla( self, _, player )
 		end
 	end
 	rfsMsg( self, "Unlocked vanilla unlockables: " .. tostring( n ) )
+end
+
+local function rfsItemLabel( id )
+	local label = nil
+	pcall( function()
+		local u = sm.uuid.new( id )
+		if sm.item.getDisplayName then
+			label = sm.item.getDisplayName( u )
+		end
+	end )
+	if ( not label or label == "" ) and sm.shape and sm.shape.getShapeTitle then
+		pcall( function()
+			label = sm.shape.getShapeTitle( sm.uuid.new( id ) )
+		end )
+	end
+	if type( label ) == "string" and label ~= "" and label ~= "not found" then
+		return label
+	end
+	return string.sub( tostring( id ), 1, 8 )
+end
+
+local function rfsChatListRows( self, title, rows, maxLines )
+	maxLines = maxLines or 24
+	rfsMsg( self, title .. " (" .. tostring( #rows ) .. ")" )
+	if #rows == 0 then
+		rfsMsg( self, "  (none)" )
+		return
+	end
+	local shown = 0
+	for _, row in ipairs( rows ) do
+		shown = shown + 1
+		if shown > maxLines then
+			rfsMsg( self, "  ... +" .. tostring( #rows - maxLines ) .. " more" )
+			break
+		end
+		local where = {}
+		if row.hideout then where[#where + 1] = "hideout" end
+		if row.mining then where[#where + 1] = "mining" end
+		if row.loot then where[#where + 1] = "loot" end
+		if row.lootOnly then where[#where + 1] = "loot-only" end
+		local tag = #where > 0 and ( " [" .. table.concat( where, "," ) .. "]" ) or ""
+		rfsMsg( self, string.format( "  %s — %s%s", rfsItemLabel( row.id ), tostring( row.mod or "?" ), tag ) )
+	end
 end
 
 function RecipeFrameworkSurvival.sv_rfs_listMods( self )
@@ -2950,6 +3401,83 @@ function RecipeFrameworkSurvival.sv_rfs_listMods( self )
 			" - %s craft=%d hide=%d mine=%d loot=%d",
 			s.name, s.craft, s.hideout, s.mining, s.loot
 		) )
+	end
+	rfsMsg( self, "Tip: /modrecipes — traders vs loot vs craft-only" )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_listModRecipes( self )
+	local classed = ModRecipeScan.classifyCraftAccess()
+	rfsMsg( self, "[RFS] Mod craft access (Craftbot unlockables + loot opts)" )
+	rfsChatListRows( self, "In traders (Hideout and/or Mining Hub)", classed.inTrader, 20 )
+	rfsChatListRows( self, "Loot / random-recipe pool (not in traders)", classed.inLoot, 16 )
+	rfsChatListRows( self, "Craft-only (no trader, no loot.json — unlock/quest/cheat)", classed.craftOnly, 20 )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_claimHost( self, params, player )
+	if not player then
+		return
+	end
+	self.sv = self.sv or {}
+	local pid = nil
+	pcall( function() pid = player.id end )
+	if pid == nil then
+		return
+	end
+	local engineId = rfsEngineHostPlayerId()
+	if engineId ~= nil then
+		rfsServerSetHostId( self, engineId )
+	else
+		local clientThinks = params and params.clientThinksHost and true or false
+		local alone = rfsPlayerCount() <= 1
+		-- Sticky host still in the session?
+		local stickyAlive = false
+		local sticky = self.sv.rfsHostPlayerId
+		if sticky ~= nil then
+			pcall( function()
+				local all = sm.player.getAllPlayers()
+				if type( all ) == "table" then
+					for _, p in pairs( all ) do
+						if p and p.id == sticky then
+							stickyAlive = true
+							break
+						end
+					end
+				end
+			end )
+		end
+		if alone or self.sv.rfsHostPlayerId == nil or not stickyAlive then
+			rfsServerSetHostId( self, pid )
+		elseif clientThinks and self.sv.rfsHostPlayerId ~= pid then
+			print( "[RFS] host reclaim: sticky was " .. tostring( self.sv.rfsHostPlayerId )
+				.. " -> " .. tostring( pid ) )
+			rfsServerSetHostId( self, pid )
+		end
+	end
+	local isHost = ( self.sv.rfsHostPlayerId == pid )
+	self.network:sendToClient( player, "cl_rfs_hostStatus", {
+		host = isHost,
+		hostId = self.sv.rfsHostPlayerId,
+	} )
+end
+
+function RecipeFrameworkSurvival.cl_rfs_hostStatus( self, params )
+	local host = params and params.host and true or false
+	_G.g_rfsClientIsHost = host
+	_G.g_rfsHostStatusKnown = true
+	_G.g_rfsHostPlayerId = params and params.hostId or nil
+	self.cl = self.cl or {}
+	self.cl.rfsIsHost = host
+	-- Force cheat rebind when host status flips (listen MP often starts as "client").
+	self.cl.rfsCmdsHostBound = nil
+	self.cl.rfsCmdsAdminBound = nil
+	self:rfs_bindCommands()
+	if not self.cl.rfsHostStatusMsg then
+		self.cl.rfsHostStatusMsg = true
+		pcall( function()
+			sm.gui.chatMessage( host
+				and "[RFS] You are the host (cheats/admin gates OK)."
+				or "[RFS] You are a client (host-only cheats gated)." )
+		end )
 	end
 end
 
@@ -3836,6 +4364,33 @@ end
 
 function RecipeFrameworkSurvival.cl_rfs_genClose( self )
 	RfsGenGui.close( self )
+	pcall( function()
+		self.network:sendToServer( "sv_rfs_gameModeGenClosed", {} )
+	end )
+end
+
+function RecipeFrameworkSurvival.sv_rfs_gameModeGenClosed( self, _, player )
+	player = player or sm.player.getAllPlayers()[1]
+	if not player or not rfsServerPlayerIsHost( player ) then
+		return
+	end
+	if type( RfsGameMode ) ~= "table" or not RfsGameMode.beginLockOnGenClose then
+		return
+	end
+	local snap, changed = RfsGameMode.beginLockOnGenClose()
+	if changed then
+		self.sv = self.sv or {}
+		self.sv.rfsGameModeNeedsPrompt = false
+		local label = snap.modeLabel or "Normal"
+		if snap.hardcore then
+			label = label .. " Hardcore"
+		end
+		local sec = math.max( 0, math.floor( tonumber( snap.lockRemainingSec ) or 0 ) )
+		local msg = string.format( "Game Mode: %s | locks in %02d:%02d", label, math.floor( sec / 60 ), sec % 60 )
+		self:sv_rfs_gameModeBroadcast( msg )
+	else
+		self:sv_rfs_gameModeBroadcast( nil )
+	end
 end
 
 function RecipeFrameworkSurvival.cl_rfs_genTabMain( self )
@@ -3966,6 +4521,11 @@ function RecipeFrameworkSurvival.cl_rfs_genToggleRfsQuests( self )
 	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "rfsQuests" } )
 end
 
+function RecipeFrameworkSurvival.cl_rfs_genTogglePvp( self )
+	if not rfsClientIsHost() then return end
+	self.network:sendToServer( "sv_rfs_featuresSet", { toggle = "pvp" } )
+end
+
 function RecipeFrameworkSurvival.cl_rfs_featuresSync( self, data )
 	self.cl = self.cl or {}
 	if type( data ) == "table" and type( RfsFeatures ) == "table" and RfsFeatures.applySnapshot then
@@ -4071,6 +4631,10 @@ function RecipeFrameworkSurvival.sv_rfs_featuresSet( self, params, player )
 			RfsFeatures.setRfsQuestsEnabled( on )
 			msg = "RFS quests content: " .. ( on and "ON" or "OFF" )
 		end
+	elseif toggle == "pvp" then
+		local on = not RfsFeatures.pvpEnabled()
+		RfsFeatures.setPvpEnabled( on )
+		msg = "PVP: " .. ( on and "ON" or "OFF" )
 	else
 		return
 	end

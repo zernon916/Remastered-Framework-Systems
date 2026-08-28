@@ -1110,3 +1110,37 @@ function Player.sv_e_rfsDeepSleepHeal( self, params )
 		end
 	end
 end
+
+-- GenSettings PVP: Survival vanilla ignores player→player damage; enable when ON.
+local function rfsPvpEnabled()
+	if type( RfsFeatures ) == "table" and type( RfsFeatures.pvpEnabled ) == "function" then
+		return RfsFeatures.pvpEnabled() == true
+	end
+	return _G.g_rfsPvp == true
+end
+
+function Player.server_onProjectile( self, hitPos, hitTime, hitVelocity, projectileName, attacker, damage, userData, hitNormal, projectileUuid )
+	if type( attacker ) == "Player" and attacker ~= self.player and rfsPvpEnabled() then
+		local dmg = tonumber( damage ) or 0
+		if dmg > 0 then
+			self:sv_takeDamage( dmg, "pvp", projectileUuid )
+		end
+		if self.player.character and self.player.character:isTumbling() and hitVelocity then
+			local n = hitVelocity:normalize()
+			if n then
+				ApplyKnockback( self.player.character, n, 2000 )
+			end
+		end
+	end
+	BasePlayer.server_onProjectile( self, hitPos, hitTime, hitVelocity, projectileName, attacker, damage, userData, hitNormal, projectileUuid )
+end
+
+function Player.server_onMelee( self, hitPos, attacker, damage, power, hitDirection )
+	if type( attacker ) == "Player" and attacker ~= self.player and rfsPvpEnabled() then
+		local dmg = tonumber( damage ) or 0
+		if dmg > 0 then
+			self:sv_takeDamage( dmg, "pvp" )
+		end
+	end
+	BasePlayer.server_onMelee( self, hitPos, attacker, damage, power, hitDirection )
+end

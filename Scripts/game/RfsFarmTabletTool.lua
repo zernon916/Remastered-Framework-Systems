@@ -4,13 +4,14 @@
 RfsFarmTabletTool = class()
 
 local TOOL_UUID = "b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e"
-local HELD_REND = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/GpsDevice_preview.rend"
+local RFS_LID = "29c99287-1213-48c7-9471-19a4a5c12247"
+local LCD_TOOL_PREVIEW = "$CONTENT_" .. RFS_LID .. "/Objects/Renderable/rfs_lcd_tool_drop.rend"
 
 local function applyHeldRenderables( self )
 	if not self.tool then
 		return
 	end
-	local list = { HELD_REND }
+	local list = { LCD_TOOL_PREVIEW }
 	pcall( function() self.tool:setTpRenderables( list ) end )
 	pcall( function() self.tool:setFpRenderables( list ) end )
 end

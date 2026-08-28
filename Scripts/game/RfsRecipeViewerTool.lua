@@ -4,14 +4,14 @@
 RfsRecipeViewerTool = class()
 
 local TOOL_UUID = "f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d"
--- Vanilla Survival small text-sign LCD (same mesh as Inventory LCD small).
-local HELD_REND = "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_small.rend"
+local RFS_LID = "29c99287-1213-48c7-9471-19a4a5c12247"
+local LCD_TOOL_PREVIEW = "$CONTENT_" .. RFS_LID .. "/Objects/Renderable/rfs_lcd_tool_drop.rend"
 
 local function applyHeldRenderables( self )
 	if not self.tool then
 		return
 	end
-	local list = { HELD_REND }
+	local list = { LCD_TOOL_PREVIEW }
 	pcall( function() self.tool:setTpRenderables( list ) end )
 	pcall( function() self.tool:setFpRenderables( list ) end )
 end
@@ -55,4 +55,4 @@ function RfsRecipeViewerTool.client_onEquippedUpdate( self, primaryState, second
 	return false, false
 end
 
-print( "[RFS] RfsRecipeViewerTool loaded (vanilla LCD)" )
+print( "[RFS] RfsRecipeViewerTool loaded (LCD preview rend)" )

@@ -1,0 +1,30 @@
+{
+	"_comment": "Tool drop/held preview — same asset chain as Farm Screen (Objects/Renderable), not Tools/. Single LOD, pack mesh + pack textures.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/rfs_lcd_small.fbx",
+			"maxViewDistance": 1000.0,
+			"subMeshMap": {
+				"screen": {
+					"custom": {
+						"uv0": { "u": 0.5, "v": 0.25 }
+					},
+					"material": "UVAnimDifAsg",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/lcd/obj_interactive_textsign_screen_dif.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/lcd/obj_interactive_textsign_screen_asg.tga",
+						""
+					]
+				},
+				"textsign": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/lcd/obj_interactive_textsign_dif.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/lcd/obj_interactive_textsign_asg.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/lcd/obj_interactive_textsign_nor.tga"
+					]
+				}
+			}
+		}
+	]
+}

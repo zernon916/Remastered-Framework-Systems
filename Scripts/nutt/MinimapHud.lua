@@ -188,6 +188,31 @@ function MinimapHud.sv_bm_destroyLock( self )
 	if self.sv then self.sv.lockPart = nil end
 end
 
+-- GPS tool client queues these; server forwards to Game.lua (tool network context).
+function MinimapHud.sv_n_rfsMapMarker( self, params )
+	sm.event.sendToGame( "sv_e_rfsMapMarker", params )
+end
+
+function MinimapHud.sv_n_rfsMapMarkerGet( self, params )
+	local player = nil
+	pcall( function() player = self.tool:getOwner() end )
+	sm.event.sendToGame( "sv_e_rfsMapMarkerGet", { player = player } )
+end
+
+function MinimapHud.sv_n_rfsGpsPrefsSet( self, params )
+	local player = nil
+	pcall( function() player = self.tool:getOwner() end )
+	params = type( params ) == "table" and params or {}
+	params.player = player
+	sm.event.sendToGame( "sv_e_rfsGpsPrefsSet", params )
+end
+
+function MinimapHud.sv_n_rfsGpsPrefsGet( self, params )
+	local player = nil
+	pcall( function() player = self.tool:getOwner() end )
+	sm.event.sendToGame( "sv_e_rfsGpsPrefsGet", { player = player } )
+end
+
 -- (the GPS grant lives at the top of the server section - sv_ensureGpsTool.
 -- CraftingRecipes/craftbot.json still ships, as a bonus for the custom games
 -- that scan mod recipes themselves.)
@@ -297,10 +322,29 @@ function MinimapHud.cl_init( self )
 	end
 	-- restore the compass icon for a persisted waypoint / home (runs once ready)
 	if self.cl.waypoint or self.cl.baseMarker then self.cl.wantCompassSync = true end
+	g_minimapHud = self                -- SpikeHand cycles debug view modes
+	-- Flush host markers that arrived before this HUD existed (MP join race).
+	pcall( function()
+		if type( Waypoint ) == "table" and Waypoint.flushPending then
+			Waypoint.flushPending( self )
+		end
+	end )
 	-- MP shared markers (host-authoritative) — pull after local file restore
 	pcall( function()
 		if type( Waypoint ) == "table" and Waypoint.requestShared then
 			Waypoint.requestShared()
+		end
+	end )
+	pcall( function()
+		if type( Waypoint ) == "table" and Waypoint.requestGpsPrefs then
+			Waypoint.requestGpsPrefs()
+		end
+	end )
+	pcall( function()
+		local pending = _G.g_rfsGpsPrefsPending
+		if type( pending ) == "table" and type( Waypoint ) == "table" and Waypoint.applyGpsPrefs then
+			Waypoint.applyGpsPrefs( self, pending )
+			_G.g_rfsGpsPrefsPending = nil
 		end
 	end )
 	local okp, poi = pcall(sm.json.open, C .. "/Scripts/nutt/data/poi_names.json")
@@ -311,7 +355,6 @@ function MinimapHud.cl_init( self )
 	else
 		sm.gui.chatMessage("[minimap] atlas index failed to load: " .. tostring(idx))
 	end
-	g_minimapHud = self                -- SpikeHand cycles debug view modes
 	self.cl.debugMode = 0
 	self.cl.build = BUILD              -- shown in the big map title
 	self.cl.version = VERSION
@@ -388,6 +431,11 @@ function MinimapHud.cl_tryLoadTerrain( self )
 		self.cl.worldId = wid
 		self.cl.ready = true
 		Waypoint.loadWorld( self )
+		pcall( function()
+			if type( BigMap ) == "table" and BigMap.ensureViewSize then
+				BigMap.ensureViewSize( self )
+			end
+		end )
 		-- 0851-d: defer HUD widget burst until move or ~2.5s after terrain ready
 		self.cl.deferActive = true
 		self.cl.deferT = 0
@@ -646,6 +694,26 @@ function MinimapHud.cl_buildGui( self )
 			{ ImageTexture = C .. "/Gui/gps_marker_" .. col .. "_b1.png", Visible = false })
 	end
 	self.cl.wpmSet = wpmSet
+	-- Other players (MP): small arrows relative to local center (drawn above wp in gui3)
+	local plySet = {}
+	local plyNmSet = {}
+	local maxP = ( type( Waypoint ) == "table" and Waypoint.MAX_REMOTE_PLAYERS ) or 8
+	local psz = math.max( 8, math.floor( asz * 0.85 ) )
+	self.cl.playerPinSize = psz
+	for i = 1, maxP do
+		plySet[i] = W( "PlyMini_" .. i, "ImageBox", "RotatingSkin", -40, -40, psz, psz, {
+			ImageTexture = C .. "/Gui/arrow.png",
+			RotatingSkinAngle = 0.0,
+			RotatingSkinCenterX = math.floor( psz / 2 ),
+			RotatingSkinCenterY = math.floor( psz / 2 ),
+			Visible = false } )
+		plyNmSet[i] = W( "PlyMiniNm_" .. i, "TextBox", "TextBox", -40, -40, 72, 14, {
+			Caption = "", FontName = "SM_HeaderTiny", TextAlign = "Center",
+			TextShadow = true, TextShadowColour = "0 0 0",
+			Visible = false, NeedMouse = false } )
+	end
+	self.cl.playerPins = plySet
+	self.cl.playerNames = plyNmSet
 
 	local root = W("Root", "Widget", "PanelEmpty", 0, 0, vw, vh)
 	root.Childs = { frame }
@@ -660,6 +728,10 @@ function MinimapHud.cl_buildGui( self )
 		for _, key in ipairs(bezelOrder) do ch[#ch + 1] = bezelSet[key] end
 		ch[#ch + 1] = arrow
 		for _, col in ipairs(Waypoint.COLORS) do ch[#ch + 1] = wpmSet[col] end
+		for i = 1, maxP do
+			ch[#ch + 1] = plySet[i]
+			ch[#ch + 1] = plyNmSet[i]
+		end
 		root3.Childs = ch
 		self.cl.root3 = root3
 	end
@@ -734,7 +806,7 @@ function MinimapHud.cl_rebuildGui( self )
 	c.gui3, c.root3, c.renderErr3 = nil, nil, false
 	c.cells, c.overlays, c.active, c.ovActive = nil, nil, nil, nil
 	c.rim, c.activeName, c.ovName = nil, nil, nil
-	c.bezelSet, c.bezelOrder, c.wpmSet = nil, nil, nil
+	c.bezelSet, c.bezelOrder, c.wpmSet, c.playerPins, c.playerNames = nil, nil, nil, nil, nil
 	c.frameW, c.lastSig, c.lastTileSig, c.lastScrollSig, c.lastSig3, c.buildAge = nil, nil, nil, nil, nil, nil
 	c.rfsRenderT = nil
 	c.baseX, c.baseY = nil, nil
@@ -1027,6 +1099,26 @@ function MinimapHud.client_onUpdate( self, dt )
 		c.wantUnlock = nil
 		pcall(function() self.network:sendToServer("sv_bm_destroyLock") end)
 	end
+	if c.wantMapMarkerSave and c.pendingMapMarker then
+		local payload = c.pendingMapMarker
+		c.wantMapMarkerSave = nil
+		c.pendingMapMarker = nil
+		pcall(function() self.network:sendToServer("sv_n_rfsMapMarker", payload) end)
+	end
+	if c.wantMapMarkerGet then
+		c.wantMapMarkerGet = nil
+		pcall(function() self.network:sendToServer("sv_n_rfsMapMarkerGet", {}) end)
+	end
+	if c.wantGpsPrefsSave and c.pendingGpsPrefs then
+		local payload = c.pendingGpsPrefs
+		c.wantGpsPrefsSave = nil
+		c.pendingGpsPrefs = nil
+		pcall(function() self.network:sendToServer("sv_n_rfsGpsPrefsSet", payload) end)
+	end
+	if c.wantGpsPrefsGet then
+		c.wantGpsPrefsGet = nil
+		pcall(function() self.network:sendToServer("sv_n_rfsGpsPrefsGet", {}) end)
+	end
 
 	-- compass icon sync (waypoint set/cleared/recolored): runs in THIS
 	-- script's own context, throttled; must also run while the big map is
@@ -1055,6 +1147,10 @@ function MinimapHud.client_onUpdate( self, dt )
 	-- waypoints, the compass icon and the big map keep working while hidden.
 	if c.posIdx == 5 then
 		if c.gui ~= nil or c.gui3 ~= nil then self:cl_rebuildGui() end
+		-- Hidden skips cl_buildGui (where vw is normally set) — warm atlas pool anyway.
+		if c.ready and c.atlas then
+			pcall( function() BigMap.prebuildStep( self ) end )
+		end
 		return
 	end
 
@@ -1215,10 +1311,59 @@ function MinimapHud.client_onUpdate( self, dt )
 		wpm.x = c.fx0 + math.floor(RING / 2 + mx - 7 + 0.5)
 		wpm.y = c.fy0 + math.floor(RING / 2 + my - 18 + 0.5)
 	end
+	-- Remote players on MiniMap (relative to local, clamped to rim)
+	if c.playerPins then
+		local psz = c.playerPinSize or 10
+		local idx = 0
+		local maxr = RING / 2 - 8
+		if type( Waypoint ) == "table" and Waypoint.eachRemotePlayer then
+			Waypoint.eachRemotePlayer( function( _p, rpos, dir, displayName )
+				idx = idx + 1
+				local pin = c.playerPins[idx]
+				if not pin then return end
+				local mx = ( rpos.x - pos.x ) / 64 * CELLPX
+				local my = -( rpos.y - pos.y ) / 64 * CELLPX
+				local d = math.sqrt( mx * mx + my * my )
+				if d > maxr and d > 0 then
+					mx, my = mx * maxr / d, my * maxr / d
+				end
+				pin.Visible = true
+				pin.x = c.fx0 + math.floor( RING / 2 + mx - psz / 2 + 0.5 )
+				pin.y = c.fy0 + math.floor( RING / 2 + my - psz / 2 + 0.5 )
+				if dir then
+					pin.RotatingSkinAngle = math.atan2( dir.x, dir.y )
+				end
+				local nm = c.playerNames and c.playerNames[idx]
+				if nm then
+					nm.Caption = tostring( displayName or "Player" )
+					nm.Visible = true
+					nm.x = c.fx0 + math.floor( RING / 2 + mx - 36 + 0.5 )
+					nm.y = c.fy0 + math.floor( RING / 2 + my + psz / 2 - 1 + 0.5 )
+				end
+			end )
+		end
+		for i = idx + 1, #c.playerPins do
+			c.playerPins[i].Visible = false
+			if c.playerNames and c.playerNames[i] then
+				c.playerNames[i].Visible = false
+			end
+		end
+	end
 	if c.bezelSet then
 		for key, w in pairs(c.bezelSet) do
 			w.Visible = (hasWp and key == wpCol) or (not hasWp and key == "idle")
 		end
+	end
+
+	-- Remote players on compass (throttle ~4 Hz)
+	c.rfsPlyCompassT = ( c.rfsPlyCompassT or 0 ) + dt
+	if c.rfsPlyCompassT >= 0.25 then
+		c.rfsPlyCompassT = 0
+		pcall( function()
+			if type( Waypoint ) == "table" and Waypoint.syncRemotePlayersCompass then
+				Waypoint.syncRemotePlayersCompass( self )
+			end
+		end )
 	end
 
 	-- PERF (v31): gui:render(root) marshals the WHOLE tree every call

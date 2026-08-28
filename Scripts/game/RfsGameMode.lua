@@ -296,6 +296,21 @@ function RfsGameMode.setMode( mode )
 	return RfsGameMode.snapshot(), true
 end
 
+-- First GenSettings close without touching mode/hardcore still starts the lock window.
+function RfsGameMode.beginLockOnGenClose()
+	local state = RfsGameMode.state or RfsGameMode.load()
+	if state.selected == true or state.locked == true then
+		return RfsGameMode.snapshot(), false
+	end
+	state.selected = true
+	local now = nowSec()
+	state.lockStartedAt = now
+	state.lockDeadlineAt = now + LOCK_WINDOW_SEC
+	RfsGameMode.needsPrompt = false
+	RfsGameMode.save()
+	return RfsGameMode.snapshot(), true
+end
+
 function RfsGameMode.toggleHardcore()
 	local state = RfsGameMode.state or RfsGameMode.load()
 	if state.locked then

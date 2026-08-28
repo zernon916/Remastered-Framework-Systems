@@ -242,6 +242,30 @@ local function updateBlockOverlay( gui, host )
 	end )
 end
 
+local function placeGameModePanel( gui )
+	-- Default: below top-left minimap (medium size, posIdx 4).
+	local x, y, w, h = 0.019, 0.268, 0.16, 0.024
+	local hud = _G.g_minimapHud
+	local c = hud and hud.cl
+	if c and c.posIdx and c.posIdx ~= 5 and c.fy0 and c.RING then
+		local vw = tonumber( c.vw ) or 1280
+		local vh = tonumber( c.vh ) or 720
+		if vw > 0 and vh > 0 then
+			local gap = 6
+			local panelH = math.max( 14, math.floor( vh * h + 0.5 ) )
+			x = c.fx0 / vw
+			w = math.min( 0.22, math.max( 0.14, c.RING / vw ) )
+			h = panelH / vh
+			if c.posIdx == 3 or c.posIdx == 4 then
+				y = ( c.fy0 + c.RING + gap ) / vh
+			else
+				y = ( c.fy0 - panelH - gap ) / vh
+			end
+		end
+	end
+	pcall( function() gui:setPosition( "RfsGameModePanel", x, y, w, h ) end )
+end
+
 local function updateGameMode( gui )
 	local snap = type( RfsGameMode ) == "table" and RfsGameMode.snapshot and RfsGameMode.snapshot() or nil
 	if type( snap ) ~= "table" or snap.locked == true or snap.countdownActive ~= true then
@@ -255,6 +279,7 @@ local function updateGameMode( gui )
 	if snap.hardcore then
 		label = label .. " Hardcore"
 	end
+	placeGameModePanel( gui )
 	pcall( function()
 		gui:setVisible( "RfsGameModePanel", true )
 		gui:setText( "RfsGameModeText", string.format( "%s locks in %02d:%02d", label, mins, secs ) )

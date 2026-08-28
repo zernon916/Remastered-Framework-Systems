@@ -292,9 +292,18 @@ function RfsSetupGui.bind( host, gui )
 end
 
 function RfsSetupGui.open( host )
-	local okHost, isHost = pcall( function() return sm.isHost end )
-	if not ( okHost and isHost ) then
-		sm.gui.chatMessage( "[RFS] /setup is host-only. Use /menu for personal options." )
+	-- Legacy entry: prefer admin (host) gate used by /setup.
+	local ok = false
+	if type( _G.rfsClientIsAdmin ) == "function" then
+		ok = _G.rfsClientIsAdmin() and true or false
+	elseif type( _G.rfsClientIsHost ) == "function" then
+		ok = _G.rfsClientIsHost() and true or false
+	else
+		local okHost, isHost = pcall( function() return sm.isHost end )
+		ok = okHost and isHost and true or false
+	end
+	if not ok then
+		sm.gui.chatMessage( "[RFS] /setup is host/admin-only. Use /menu for personal options." )
 		return
 	end
 

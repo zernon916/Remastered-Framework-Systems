@@ -165,9 +165,14 @@
 					<Property key="FontName" value="SM_Button"/>
 					<Property key="TextAlign" value="Center"/>
 				</Widget>
+				<Widget type="Button" skin="PrimaryButton" position_real="0.06 0.40 0.88 0.08" name="BtnPvp">
+					<Property key="Caption" value="PVP: OFF"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
 
-				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.42 0.96 0.50" name="FeaturesFooter">
-					<Property key="Caption" value="Feature toggles gate gameplay only. Underground miner/cable default ON (current). Turn OFF to exclude them from hijack. Framework hooks stay on."/>
+				<Widget type="TextBox" skin="TextBox" position_real="0.02 0.52 0.96 0.42" name="FeaturesFooter">
+					<Property key="Caption" value="Feature toggles gate gameplay only. PVP OFF = no player damage. Underground miner/cable default ON. Turn OFF to exclude them from hijack. Framework hooks stay on."/>
 					<Property key="FontName" value="SM_Text"/>
 					<Property key="TextAlign" value="Left Top"/>
 					<Property key="WordWrap" value="true"/>

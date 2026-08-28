@@ -57,6 +57,7 @@ local function defaultsFromPack()
 		streamerChatRelay = false,
 		rfsQuests = true,
 		autoSetupPrompted = false,
+		pvp = false, -- OFF = no player→player damage; ON = melee/spud PVP allowed
 	}
 end
 
@@ -98,6 +99,9 @@ local function applyLoadedTable( cfg, data )
 	if data.autoSetupPrompted ~= nil then
 		cfg.autoSetupPrompted = data.autoSetupPrompted and true or false
 	end
+	if data.pvp ~= nil then
+		cfg.pvp = data.pvp and true or false
+	end
 	return cfg
 end
 
@@ -105,6 +109,7 @@ local function publishGlobals()
 	_G.g_rfsFeatures = RfsFeatures.state
 	_G.g_rfsGenSettings = RfsFeatures.snapshot()
 	_G.g_rfsStreamerMode = RfsFeatures.streamerModeEnabled()
+	_G.g_rfsPvp = RfsFeatures.pvpEnabled()
 end
 
 function RfsFeatures.load( force )
@@ -124,7 +129,7 @@ function RfsFeatures.load( force )
 	RfsFeatures.state = cfg
 	publishGlobals()
 	print( string.format(
-		"[RFS] features loaded cheats=%s(override=%s) hackDevices=%s areaLoader=%s hackableRobots=%s underground=%s streamer=%s cd=%ss announce=%s chatRelay=%s rfsQuests=%s",
+		"[RFS] features loaded cheats=%s(override=%s) hackDevices=%s areaLoader=%s hackableRobots=%s underground=%s streamer=%s cd=%ss announce=%s chatRelay=%s rfsQuests=%s pvp=%s",
 		tostring( RfsFeatures.cheatsEnabled() ),
 		tostring( cfg.cheatsOverride ),
 		tostring( cfg.hackDevices ),
@@ -135,7 +140,8 @@ function RfsFeatures.load( force )
 		tostring( cfg.streamerCooldownSec ),
 		tostring( cfg.streamerAnnounce ),
 		tostring( cfg.streamerChatRelay ),
-		tostring( cfg.rfsQuests )
+		tostring( cfg.rfsQuests ),
+		tostring( cfg.pvp == true )
 	) )
 	return cfg
 end
@@ -153,6 +159,7 @@ function RfsFeatures.save()
 		streamerChatRelay = cfg.streamerChatRelay == true,
 		rfsQuests = cfg.rfsQuests ~= false,
 		autoSetupPrompted = cfg.autoSetupPrompted == true,
+		pvp = cfg.pvp == true,
 	}
 	if cfg.cheatsOverride and cfg.cheats ~= nil then
 		payload.cheats = cfg.cheats and true or false
@@ -180,6 +187,7 @@ function RfsFeatures.snapshot()
 		streamerChatRelay = RfsFeatures.streamerChatRelayEnabled(),
 		rfsQuests = RfsFeatures.rfsQuestsEnabled(),
 		autoSetupPrompted = RfsFeatures.autoSetupPrompted(),
+		pvp = RfsFeatures.pvpEnabled(),
 	}
 end
 
@@ -226,6 +234,9 @@ function RfsFeatures.applySnapshot( data )
 	end
 	if data.autoSetupPrompted ~= nil then
 		cfg.autoSetupPrompted = data.autoSetupPrompted and true or false
+	end
+	if data.pvp ~= nil then
+		cfg.pvp = data.pvp and true or false
 	end
 	RfsFeatures.state = cfg
 	publishGlobals()
@@ -392,6 +403,18 @@ function RfsFeatures.setRfsQuestsEnabled( enabled )
 	return cfg.rfsQuests
 end
 
+function RfsFeatures.pvpEnabled()
+	return RfsFeatures.get().pvp == true
+end
+
+function RfsFeatures.setPvpEnabled( enabled )
+	local cfg = RfsFeatures.get()
+	cfg.pvp = enabled and true or false
+	RfsFeatures.save()
+	_G.g_rfsPvp = cfg.pvp
+	return cfg.pvp
+end
+
 -- Convenience used by Game.lua GenSettings RPC path.
 function RfsFeatures.set( key, value )
 	if key == "cheats" then
@@ -414,6 +437,8 @@ function RfsFeatures.set( key, value )
 		return RfsFeatures.setStreamerChatRelayEnabled( value )
 	elseif key == "rfsQuests" then
 		return RfsFeatures.setRfsQuestsEnabled( value )
+	elseif key == "pvp" then
+		return RfsFeatures.setPvpEnabled( value )
 	end
 	return RfsFeatures.snapshot()
 end
@@ -441,6 +466,8 @@ function RfsFeatures.toggle( key )
 		cur = RfsFeatures.streamerChatRelayEnabled()
 	elseif key == "rfsQuests" then
 		cur = RfsFeatures.rfsQuestsEnabled()
+	elseif key == "pvp" then
+		cur = RfsFeatures.pvpEnabled()
 	else
 		return RfsFeatures.snapshot()
 	end

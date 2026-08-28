@@ -107,6 +107,7 @@ function RfsGenGui.refresh( host )
 	local announce = snap.streamerAnnounce ~= false
 	local chatRelay = snap.streamerChatRelay == true
 	local quests = snap.rfsQuests ~= false
+	local pvp = snap.pvp == true
 
 	local gm, gmLabel, gmStatus = gameModeStrings()
 	local tab = host.cl and host.cl.rfsGenTab or "main"
@@ -117,6 +118,7 @@ function RfsGenGui.refresh( host )
 	gui:setText( "BtnHackableRobots", "Hackable robots: " .. onOff( robots ) )
 	gui:setText( "BtnHackUnderground", "Underground miner/cable: " .. onOff( underground ) )
 	gui:setText( "BtnRfsQuests", "RFS quests content: " .. onOff( quests ) )
+	gui:setText( "BtnPvp", "PVP: " .. onOff( pvp ) )
 	gui:setText( "BtnStreamerMode", "Streamer mode: " .. onOff( streamer ) )
 	gui:setText( "BtnStreamerCooldown", "Vote cooldown: " .. tostring( cooldown ) .. "s" )
 	gui:setText( "BtnStreamerAnnounce", "Vote announce: " .. onOff( announce ) )
@@ -142,6 +144,7 @@ function RfsGenGui.refresh( host )
 		gui:setButtonState( "BtnHackableRobots", robots )
 		gui:setButtonState( "BtnHackUnderground", underground )
 		gui:setButtonState( "BtnRfsQuests", quests )
+		gui:setButtonState( "BtnPvp", pvp )
 		gui:setButtonState( "BtnStreamerMode", streamer )
 		gui:setButtonState( "BtnStreamerAnnounce", announce )
 		gui:setButtonState( "BtnStreamerChatRelay", chatRelay )
@@ -247,6 +250,7 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnHackableRobots", "cl_rfs_genToggleHackableRobots" )
 	gui:setButtonCallback( "BtnHackUnderground", "cl_rfs_genToggleHackUnderground" )
 	gui:setButtonCallback( "BtnRfsQuests", "cl_rfs_genToggleRfsQuests" )
+	gui:setButtonCallback( "BtnPvp", "cl_rfs_genTogglePvp" )
 	gui:setButtonCallback( "BtnStreamerMode", "cl_rfs_genToggleStreamerMode" )
 	gui:setButtonCallback( "BtnStreamerCooldown", "cl_rfs_genCycleStreamerCooldown" )
 	gui:setButtonCallback( "BtnStreamerAnnounce", "cl_rfs_genToggleStreamerAnnounce" )
@@ -254,6 +258,7 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnStreamerAllowlistReload", "cl_rfs_genReloadAllowlist" )
 	gui:setButtonCallback( "BtnStreamerAllowlistCycle", "cl_rfs_genCycleAllowlistUnit" )
 	gui:setButtonCallback( "BtnGameMode", "cl_rfs_genCycleGameMode" )
+	gui:setButtonCallback( "BtnGameHardcore", "cl_rfs_genToggleGameHardcore" )
 	gui:setButtonCallback( "BtnDiscordStartBot", "cl_rfs_genDiscordStartBot" )
 	gui:setButtonCallback( "BtnDiscordStopBot", "cl_rfs_genDiscordStopBot" )
 	gui:setButtonCallback( "QuestRefresh", "cl_rfs_setupQuestRefresh" )
@@ -277,8 +282,19 @@ function RfsGenGui.bind( host, gui )
 end
 
 function RfsGenGui.open( host, tab )
-	local okHost, isHost = pcall( function() return sm.isHost end )
-	if not ( okHost and isHost ) then
+	local isHost = false
+	if type( _G.rfsClientIsHost ) == "function" then
+		isHost = _G.rfsClientIsHost() and true or false
+	else
+		local okHost, v = pcall( function()
+			if type( sm.isHost ) == "function" then
+				return sm.isHost()
+			end
+			return sm.isHost
+		end )
+		isHost = okHost and v and true or false
+	end
+	if not isHost then
 		sm.gui.chatMessage( "[RFS] /gensettings is host-only." )
 		return
 	end

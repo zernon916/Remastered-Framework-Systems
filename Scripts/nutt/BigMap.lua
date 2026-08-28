@@ -14,6 +14,29 @@
 
 BigMap = {}
 
+local function ensureHudViewSize( c )
+	if not c then
+		return
+	end
+	if c.vw and c.vh then
+		return
+	end
+	c.vw, c.vh = 1280, 720
+	pcall( function()
+		local okv, a, b2 = pcall( sm.jsonGui.getViewSize )
+		if okv and type( a ) == "number" then
+			c.vw, c.vh = a, b2 or 720
+		end
+	end )
+end
+
+function BigMap.ensureViewSize( hud )
+	local c = hud and hud.cl
+	if c then
+		ensureHudViewSize( c )
+	end
+end
+
 -- jsonGui ImageTexture / IconMap do not resolve $CONTENT_DATA (blank tiles/icons).
 local CC = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247"
 local NILUUID = "00000000000000000000000000000000"
@@ -446,14 +469,7 @@ function BigMap.prebuildStep(hud)
 	local c = hud.cl
 	if not (c and c.ready and c.atlas) then return end
 	if c.bm and (c.bm.open or c.bm.poolReady) then return end
-	if not c.vw then
-		local okv, a, b2 = pcall(sm.jsonGui.getViewSize)
-		if okv and type(a) == "number" then
-			c.vw, c.vh = a, b2 or 720
-		else
-			c.vw, c.vh = 1280, 720
-		end
-	end
+	ensureHudViewSize( c )
 	BigMap.build(hud, POOL_BUILD_STEP)
 end
 
@@ -591,6 +607,27 @@ function BigMap.build(hud, poolBudget)
 		  RotatingSkinCenterY = math.floor(MARKER / 2), Visible = false,
 		  NeedMouse = false })
 	view.Childs[#view.Childs + 1] = bm.marker
+	-- Other players (MP): smaller arrows, pool capped. Names drawn above house pin.
+	bm.playerMarkers = {}
+	bm.playerNames = {}
+	local PMARK = math.max( 16, math.floor( MARKER * 0.75 ) )
+	bm.playerMarkerSize = PMARK
+	local maxP = ( type( Waypoint ) == "table" and Waypoint.MAX_REMOTE_PLAYERS ) or 8
+	for i = 1, maxP do
+		local pm = W( "BMPly_" .. i, "ImageBox", "RotatingSkin", 0, 0, PMARK, PMARK, {
+			ImageTexture = CC .. "/Gui/arrow.png", RotatingSkinAngle = 0.0,
+			RotatingSkinCenterX = math.floor( PMARK / 2 ),
+			RotatingSkinCenterY = math.floor( PMARK / 2 ),
+			Visible = false, NeedMouse = false } )
+		view.Childs[#view.Childs + 1] = pm
+		bm.playerMarkers[i] = pm
+		local pn = W( "BMPlyNm_" .. i, "TextBox", "TextBox", 0, 0, 96, 18, {
+			Caption = "", FontName = "SM_HeaderTiny", TextAlign = "Center",
+			TextShadow = true, TextShadowColour = "0 0 0",
+			Visible = false, NeedMouse = false } )
+		view.Childs[#view.Childs + 1] = pn
+		bm.playerNames[i] = pn
+	end
 	-- waypoint pins, one per color (Visible-toggled; the active pin is
 	-- CLICKABLE - clicking the pin removes the waypoint, so it keeps
 	-- NeedMouse and routes through the button handler by name)
@@ -939,6 +976,25 @@ function BigMap.build(hud, poolBudget)
 			  RotatingSkinCenterY = math.floor(MARKER / 2),
 			  Visible = false, NeedMouse = false })
 		root2.Childs[#root2.Childs + 1] = bm.oMarker
+		bm.oPlayers = {}
+		bm.oPlayerNames = {}
+		local PMARK = bm.playerMarkerSize or math.max( 16, math.floor( MARKER * 0.75 ) )
+		local maxP = ( bm.playerMarkers and #bm.playerMarkers ) or 8
+		for i = 1, maxP do
+			local op = W( "BMOPly_" .. i, "ImageBox", "RotatingSkin", 0, 0, PMARK, PMARK, {
+				ImageTexture = CC .. "/Gui/arrow.png", RotatingSkinAngle = 0.0,
+				RotatingSkinCenterX = math.floor( PMARK / 2 ),
+				RotatingSkinCenterY = math.floor( PMARK / 2 ),
+				Visible = false, NeedMouse = false } )
+			root2.Childs[#root2.Childs + 1] = op
+			bm.oPlayers[i] = op
+			local onm = W( "BMOPlyNm_" .. i, "TextBox", "TextBox", 0, 0, 96, 18, {
+				Caption = "", FontName = "SM_HeaderTiny", TextAlign = "Center",
+				TextShadow = true, TextShadowColour = "0 0 0",
+				Visible = false, NeedMouse = false } )
+			root2.Childs[#root2.Childs + 1] = onm
+			bm.oPlayerNames[i] = onm
+		end
 		bm.oPins, bm.oGhosts = {}, {}
 		for _, col in ipairs(Waypoint.COLORS) do
 			local p2 = W("BMOWp_" .. col .. bm.gsfx, "ImageBox", "ImageBox", 0, 0, 20, 28,
@@ -1451,6 +1507,17 @@ function BigMap.refill(hud)
 		vc[#vc + 1] = bm.wpGhost[col]
 		if bm.farmPins then vc[#vc + 1] = bm.farmPins[col] end
 	end
+	-- Players + names last = highest draw order (above house / wp).
+	if bm.playerMarkers then
+		for _, pm in ipairs( bm.playerMarkers ) do
+			vc[#vc + 1] = pm
+		end
+	end
+	if bm.playerNames then
+		for _, pn in ipairs( bm.playerNames ) do
+			vc[#vc + 1] = pn
+		end
+	end
 	bm.view.Childs = vc
 	BigMap.syncLegendUi(hud)
 	BigMap.syncPoiUi(hud)
@@ -1465,7 +1532,8 @@ end
 
 function BigMap.open(hud)
 	local c = hud.cl
-	if not (c.ready and c.atlas and c.vw) then return end
+	ensureHudViewSize( c )
+	if not (c.ready and c.atlas) then return end
 	if c.bm and c.bm.open then return end
 	if not BigMap.build(hud, 99999) then return end
 	local bm = c.bm
@@ -1561,6 +1629,39 @@ function BigMap.update(hud, dt, char)
 		local okd, dir = pcall(sm.camera.getDirection)
 		if okd and dir then
 			bm.marker.RotatingSkinAngle = math.atan2(dir.x, dir.y)
+		end
+	end
+	-- Remote players (MP) — above house; names under arrows
+	if bm.playerMarkers then
+		local PMARK = bm.playerMarkerSize or math.max( 16, math.floor( MARKER * 0.75 ) )
+		local idx = 0
+		if type( Waypoint ) == "table" and Waypoint.eachRemotePlayer then
+			Waypoint.eachRemotePlayer( function( _p, pos, dir, displayName )
+				idx = idx + 1
+				local pm = bm.playerMarkers[idx]
+				if not pm then return end
+				local sx = bm.VW / 2 + ( pos.x / 64 - bm.cx ) * px
+				local sy = bm.VH / 2 - ( pos.y / 64 - bm.cy ) * px
+				pm.Visible = true
+				pm.x = math.floor( sx - PMARK / 2 )
+				pm.y = math.floor( sy - PMARK / 2 )
+				if dir then
+					pm.RotatingSkinAngle = math.atan2( dir.x, dir.y )
+				end
+				local pn = bm.playerNames and bm.playerNames[idx]
+				if pn then
+					pn.Caption = tostring( displayName or "Player" )
+					pn.Visible = true
+					pn.x = math.floor( sx - 48 )
+					pn.y = math.floor( sy + PMARK / 2 - 2 )
+				end
+			end )
+		end
+		for i = idx + 1, #bm.playerMarkers do
+			bm.playerMarkers[i].Visible = false
+			if bm.playerNames and bm.playerNames[i] then
+				bm.playerNames[i].Visible = false
+			end
 		end
 	end
 	local wp = hud.cl.waypoint
@@ -1666,6 +1767,22 @@ function BigMap.update(hud, dt, char)
 		end
 		mirror(bm.oMarker, bm.marker, MARKER, MARKER)
 		bm.oMarker.RotatingSkinAngle = bm.marker.RotatingSkinAngle
+		if bm.oPlayers and bm.playerMarkers then
+			local PMARK = bm.playerMarkerSize or math.max( 16, math.floor( MARKER * 0.75 ) )
+			for i, pm in ipairs( bm.playerMarkers ) do
+				local op = bm.oPlayers[i]
+				if op then
+					mirror( op, pm, PMARK, PMARK )
+					op.RotatingSkinAngle = pm.RotatingSkinAngle
+				end
+				local pn = bm.playerNames and bm.playerNames[i]
+				local onm = bm.oPlayerNames and bm.oPlayerNames[i]
+				if onm and pn then
+					onm.Caption = pn.Caption or ""
+					mirror( onm, pn, 96, 18 )
+				end
+			end
+		end
 		for col, p in pairs(bm.wpPins) do mirror(bm.oPins[col], p, 20, 28) end
 		for col, g in pairs(bm.wpGhost) do mirror(bm.oGhosts[col], g, 20, 28) end
 		if doRender then

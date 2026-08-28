@@ -20,20 +20,6 @@
 			"previewRenderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/radio_handheld_preview.rend",
 			"previewRotation": [ 0.707107, 0, 0.707107, 0.707107, 0, -0.707107, 0, 1, 0 ],
 			"script": { "file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsHandheldHackTool.lua", "class": "RfsHandheldHackTool" }
-		},
-		{
-			"name": "RecipeViewer",
-			"uuid": "f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d",
-			"previewRenderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_textsign_small.rend",
-			"previewRotation": [ 1, 0, 0, 0, 0, -1, 0, 1, 0 ],
-			"script": { "file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsRecipeViewerTool.lua", "class": "RfsRecipeViewerTool" }
-		},
-		{
-			"name": "FarmersTablet",
-			"uuid": "b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e",
-			"previewRenderable": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/GpsDevice_preview.rend",
-			"previewRotation": [ 1, 0, 0, 0, 0, -1, 0, 1, 0 ],
-			"script": { "file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Scripts/game/RfsFarmTabletTool.lua", "class": "RfsFarmTabletTool" }
 		}
 	]
 }
