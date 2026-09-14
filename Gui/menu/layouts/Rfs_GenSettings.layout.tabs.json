@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "layout": "Rfs_GenSettings.layout",
+  "inherit": true,
+  "defaultTab": "Main",
+  "tabs": [
+    { "id": "Main", "label": "Main", "buttons": ["TabMain"] },
+    { "id": "GameMode", "label": "GameMode", "buttons": ["TabGameMode"] },
+    { "id": "Features", "label": "Features", "buttons": ["TabFeatures"] },
+    { "id": "Streamer", "label": "Streamer", "buttons": ["TabStreamer"] },
+    { "id": "Discord", "label": "Discord", "buttons": ["TabDiscord"] },
+    { "id": "Quest", "label": "Quest", "buttons": ["TabQuest"] },
+    { "id": "InvSize", "label": "InvSize", "buttons": ["TabInvSize"] },
+    { "id": "Farming", "label": "Farming", "buttons": ["TabFarming"] },
+    { "id": "Version", "label": "Version", "buttons": ["TabVersion"] }
+  ],
+  "shared": ["Root", "MainPanel", "Title", "CloseButton", "Status"],
+  "pages": {
+    "Main": ["MainTab"],
+    "GameMode": ["GameModeTab"],
+    "Features": ["FeaturesTab"],
+    "Streamer": ["StreamerTab"],
+    "Discord": ["DiscordTab"],
+    "Quest": ["QuestTab"],
+    "InvSize": ["InvSizeTab"],
+    "Farming": ["FarmingTab"],
+    "Version": ["VersionTab"]
+  }
+}

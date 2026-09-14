@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "layout": "Rfs_CraftStation.layout",
+  "inherit": true,
+  "defaultTab": "Craft",
+  "tabs": [
+    { "id": "Craft", "label": "Craft", "buttons": ["TabCraft", "ArtTabCraft"] },
+    { "id": "Upgrade", "label": "Upgrade", "buttons": ["TabUpgrade", "ArtTabUpgrade"] }
+  ],
+  "shared": ["Root", "MainPanel", "BgPanel", "ArtLayer", "CloseButton", "ArtClose", "ArtWireless", "ArtWirelessOff", "ArtTabRecycle", "TabRecycle"],
+  "pages": {
+    "Craft": ["PanelCats", "PanelGrid", "PanelQueue", "PanelBottom", "ScrollBar", "SearchEdit", "ArtSearch", "ArtCats", "ArtGrid", "ArtQueue", "Title", "ArtTitle"],
+    "Upgrade": ["ArtUpgrade", "ArtUpgBg"]
+  }
+}

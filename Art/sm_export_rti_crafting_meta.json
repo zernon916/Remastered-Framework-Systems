@@ -1,0 +1,110 @@
+{
+  "blend": "C:\\Coding Projects\\models\\WIP Models\\RTICrafting Station.blend",
+  "fbx": "C:\\Coding Projects\\RemasteredFrameworkSystems\\Objects\\Mesh\\rfs_crafting_station.fbx",
+  "metres_to_sm_blocks": 4.0,
+  "fbx_axes": {
+    "forward": "-Z",
+    "up": "Y"
+  },
+  "centered": true,
+  "mesh_offset": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "source_bounds_blocks": {
+    "minimum": [
+      -3.3277,
+      -2.1502,
+      -2.9119
+    ],
+    "maximum": [
+      3.2323,
+      1.8498,
+      2.0861
+    ],
+    "center_removed": [
+      -0.0477,
+      -0.1502,
+      -0.4129
+    ]
+  },
+  "centered_bounds_blocks": {
+    "minimum": [
+      -3.28,
+      -2.0,
+      -2.499
+    ],
+    "maximum": [
+      3.28,
+      2.0,
+      2.499
+    ]
+  },
+  "size_sm_blocks": {
+    "x_width": 6.56,
+    "y_height": 4.998,
+    "z_depth": 4.0
+  },
+  "pieces": [
+    {
+      "name": "craftingstation_body",
+      "vertices": 1387,
+      "polygons": 969,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "submesh_material": "craftingstation_body"
+    },
+    {
+      "name": "craftingstation_screen",
+      "vertices": 70,
+      "polygons": 45,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "submesh_material": "craftingstation_screen"
+    },
+    {
+      "name": "craftingstation_slider",
+      "vertices": 30,
+      "polygons": 14,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "submesh_material": "craftingstation_slider"
+    },
+    {
+      "name": "submesh_light_01",
+      "vertices": 16,
+      "polygons": 9,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "submesh_material": "submesh_light_01"
+    },
+    {
+      "name": "submesh_light_02",
+      "vertices": 16,
+      "polygons": 9,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "submesh_material": "submesh_light_02"
+    }
+  ],
+  "materials_from_rend": true,
+  "source_faces_modified": false,
+  "known_visible_structure": {
+    "geometry_objects": 1,
+    "vertices": 1519,
+    "polygons": 1046,
+    "submesh_partitions": [
+      "craftingstation_body",
+      "craftingstation_screen",
+      "craftingstation_slider",
+      "submesh_light_01",
+      "submesh_light_02"
+    ]
+  }
+}

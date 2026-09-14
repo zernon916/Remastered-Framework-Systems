@@ -1,0 +1,40 @@
+---
+description: Steam Workshop push SOP for Remastered Framework Survival (3782487760)
+alwaysApply: true
+---
+
+# Steam Workshop push (ask-only)
+
+**Never** steamcmd / Workshop-publish unless the user explicitly asks (“push to steam”, “workshop update”, Phase E).
+
+## Local copy ≠ Steam cloud
+
+Copying to `C:\Steam\steamapps\workshop\content\387990\3782487760` only updates the **local subscribed folder**. It does **not** change the Workshop “last updated” time. Public updates require **SteamCMD** `workshop_build_item`.
+
+## Publish path (fast path)
+
+1. Quit `ScrapMechanic.exe` (do not kill unrelated Steam).
+2. Stage content (MIR Desktop pack → upload folder; exclude junk):
+   - **Src:** `C:\Users\benko\Desktop\RecipeFrameworkSurvival`
+   - **Dest:** `C:\sm\RFS-workshop-upload`
+   - **Exclude:** `.git`, `.cursor`, `Cache`, `node_modules`, `discord-bridge`, `companion_bp`, `_follower_minimap`, Art probes / `tmp_*.png`
+3. If Roaming play pack has `Cache\`, copy it into staging:
+   - `%AppData%\Axolot Games\Scrap Mechanic\User\User_76561198019395152\Mods\RemasteredFrameworkSurvival\Cache` → `C:\sm\RFS-workshop-upload\Cache`
+4. Edit `C:\sm\steamcmd-rfs\workshop_item.vdf`:
+   - `publishedfileid` `3782487760`, `visibility` `0` (Public)
+   - `contentfolder` / `previewfile` under `C:\sm\RFS-workshop-upload`
+   - Update **changenote** to match current `RFS_PACK_STAMP`
+5. Upload (cached login; no password in files):
+   ```
+   C:\Servers\steamcmd\steamcmd.exe +login zernon916 +workshop_build_item C:\sm\steamcmd-rfs\workshop_item.vdf +quit
+   ```
+   Or: `C:\sm\steamcmd-rfs\upload.ps1` / `upload.bat`
+6. Require log line **`Committing update...Success`** (exit 0). If missing, retry — do not claim Steam updated.
+7. After Success: MIR Desktop → Workshop `3782487760`, `C:\sm\RFS`, and Roaming `Mods\RemasteredFrameworkSurvival`; **delete dest `Cache\`** (and User `Cache\` if present). Tell user they can relaunch.
+
+## Do not
+
+- Treat Workshop-folder robocopy alone as a Steam push
+- Upload `discord-bridge/` or DllEdition / `RfsMapDll`
+- Store Steam passwords in repo or scripts
+- Use Mod Tool ContentCompiler as the default path (Prefab Icons Bugsplat); SteamCMD is the SOP

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "layout": "Rfs_RecipeViewer.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "Wireless",
+      "label": "Wireless",
+      "default": "Offline",
+      "options": [
+        { "id": "Online", "label": "ONLINE", "widgets": ["ArtWireless"] },
+        { "id": "Offline", "label": "OFFLINE", "widgets": ["ArtWirelessOff"] }
+      ]
+    }
+  ]
+}

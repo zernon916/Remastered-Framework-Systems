@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+	<!-- RFS: layouts=$CONTENT_DATA/Gui/menu/layouts  images=$CONTENT_DATA/Gui/menu/images -->
+	<!-- Recipe Framework Survival HUD — original DemonsDen126 (clock + compass). Original DemonsDen126 assets. -->
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="RfsHudRoot">
+		<Property key="NeedKey" value="false"/>
+		<Property key="NeedMouse" value="false"/>
+
+		<!-- Clock: just above top-left minimap (posIdx 4, sizeIdx 2: MARGIN+8 fy0, 22% vh ring). -->
+		<Widget type="Widget" skin="ToggleButton" position_real="0.019 0.002 0.12 0.030" name="RfsClockPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsClockText">
+				<Property key="Caption" value="00:00"/>
+				<Property key="TextAlign" value="Center"/>
+				<Property key="TextColour" value="1 1 1"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+
+		<!-- Game Mode countdown: pill directly below the minimap ring (not over it). -->
+		<Widget type="Widget" skin="ToggleButton" position_real="0.019 0.268 0.16 0.024" name="RfsGameModePanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsGameModeText">
+				<Property key="Caption" value="Game Mode locks in 05:00"/>
+				<Property key="TextAlign" value="Center"/>
+				<Property key="TextColour" value="1 0.921569 0.4"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="14"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+
+		<!-- Heading readout: above the vanilla compass bar (top-center). -->
+		<Widget type="Widget" skin="ToggleButton" position_real="0.455 0.006 0.09 0.026" name="RfsCompassPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsCompassText">
+				<Property key="Caption" value="N 0°"/>
+				<Property key="TextAlign" value="Center"/>
+				<Property key="TextColour" value="0.85 0.92 1"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="18"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+
+	<!-- Tool ammo badge: bottom of hotbar slot, centered just above the binding key. -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.19575 0.948 0.0555 0.022" name="RfsAmmoSlot0">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText0">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.25528 0.948 0.0555 0.022" name="RfsAmmoSlot1">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText1">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.31481 0.948 0.0555 0.022" name="RfsAmmoSlot2">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText2">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.37434 0.948 0.0555 0.022" name="RfsAmmoSlot3">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText3">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.43387 0.948 0.0555 0.022" name="RfsAmmoSlot4">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText4">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.49341 0.948 0.0555 0.022" name="RfsAmmoSlot5">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText5">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.55294 0.948 0.0555 0.022" name="RfsAmmoSlot6">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText6">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.61247 0.948 0.0555 0.022" name="RfsAmmoSlot7">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText7">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.67200 0.948 0.0555 0.022" name="RfsAmmoSlot8">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText8">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.73153 0.948 0.0555 0.022" name="RfsAmmoSlot9">
+			<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/><Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsAmmoText9">
+				<Property key="Caption" value=""/><Property key="TextAlign" value="Center"/><Property key="TextColour" value="1 1 0.752941"/>
+				<Property key="FontName" value="SM_NumberSmall"/><Property key="FontHeight" value="24"/>
+				<Property key="TextShadow" value="true"/><Property key="TextShadowColour" value="0 0 0 0.75"/>
+				<Property key="NeedKey" value="false"/><Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+
+		<!-- Block/creation overlay (left-center, away from MiniMap). -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.012 0.42 0.30 0.08" name="RfsOverlayPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 1" name="RfsOverlayText">
+				<Property key="Caption" value=""/>
+				<Property key="TextAlign" value="Left VCenter"/>
+				<Property key="TextColour" value="0.85 1 0.55"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="16"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="WordWrap" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+
+		<!-- Growth timers table (left, under minimap). No world READY text. -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.019 0.165 0.20 0.12" name="RfsGrowPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.04 0.92 0.14" name="RfsGrowTitle">
+				<Property key="Caption" value="GROWING"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+				<Property key="TextColour" value="0.75 1 0.55"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="14"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.04 0.18 0.92 0.78" name="RfsGrowText">
+				<Property key="Caption" value=""/>
+				<Property key="TextAlign" value="Left Top"/>
+				<Property key="TextColour" value="1 1 0.85"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="15"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="WordWrap" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+		</Widget>
+		<!-- Held rechargeable cell charge (above hotbar). Pips, not hash meters. -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.38 0.825 0.24 0.045" name="RfsChargePanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 0.42" name="RfsChargeLabel">
+				<Property key="Caption" value="Charge 0%"/>
+				<Property key="TextAlign" value="Center"/>
+				<Property key="TextColour" value="1 0.9 0.35"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="16"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.05 0.48 0.90 0.48" name="RfsChargeTrack">
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip0" position_real="0.01 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip1" position_real="0.11 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip2" position_real="0.21 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip3" position_real="0.31 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip4" position_real="0.41 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip5" position_real="0.51 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip6" position_real="0.61 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip7" position_real="0.71 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip8" position_real="0.81 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsChargePip9" position_real="0.91 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+		</Widget>
+
+		<!-- Paint ink (centered above the hotbar). Separate from rechargeable cell HUD. -->
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.38 0.846 0.24 0.040" name="RfsPaintPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="Visible" value="false"/>
+			<Widget type="TextBox" skin="TextBox" position_real="0 0 1 0.38" name="RfsPaintLabel">
+				<Property key="Caption" value="Ink 100%"/>
+				<Property key="TextAlign" value="Center"/>
+				<Property key="TextColour" value="0.9 0.95 1"/>
+				<Property key="FontName" value="InventorySearchText"/>
+				<Property key="FontHeight" value="14"/>
+				<Property key="TextShadow" value="true"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+			</Widget>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.02 0.46 0.96 0.48" name="RfsPaintTrack">
+				<Property key="NeedKey" value="false"/>
+				<Property key="NeedMouse" value="false"/>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip0" position_real="0.01 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip1" position_real="0.11 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip2" position_real="0.21 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip3" position_real="0.31 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip4" position_real="0.41 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip5" position_real="0.51 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip6" position_real="0.61 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip7" position_real="0.71 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip8" position_real="0.81 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PropertyIndicator" name="RfsPaintPip9" position_real="0.91 0.1 0.08 0.8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+				</Widget>
+			</Widget>
+		</Widget>
+	</Widget>
+</MyGUI>

@@ -45,19 +45,25 @@ do
 end
 
 -- Nutt posIdx: 1=BL (covers chat) 2=BR (covers ammo) 3=TR 4=TL 5=hidden.
--- Always-on HUD starts upper-left so it does not cover the chat box or ammo.
+-- RFS default corner is TL, but only on first boot — never override saved prefs or pos 5.
 local MINIMAP_TL = 4
-local function pinUpperLeft( self )
+local function pinUpperLeftOnce( self )
 	local c = self.cl
-	if not c then
+	if not c or c._rfsPinTlDone then
 		return
 	end
+	c._rfsPinTlDone = true
 	if c.posIdx == 5 then
-		c.lastPos = MINIMAP_TL
+		c.lastPos = c.lastPos or MINIMAP_TL
 		return
 	end
-	c.posIdx = MINIMAP_TL
-	c.lastPos = MINIMAP_TL
+	if c._rfsGpsPrefsApplied then
+		return
+	end
+	if c.posIdx == 1 and c.lastPos == 1 then
+		c.posIdx = MINIMAP_TL
+		c.lastPos = MINIMAP_TL
+	end
 end
 
 -- Embedding blit: negative ImageCoord height V-flips ResourceImageSet frames
@@ -214,7 +220,7 @@ if g_rfsNuttMap and MinimapHud then
 		if origCreate then
 			origCreate( self )
 		end
-		pinUpperLeft( self )
+		pinUpperLeftOnce( self )
 		if _G then
 			_G.g_minimapHud = g_minimapHud or self
 		end
@@ -224,13 +230,15 @@ if g_rfsNuttMap and MinimapHud then
 	if origInit then
 		function RfsMiniMapTool.cl_init( self )
 			origInit( self )
-			pinUpperLeft( self )
+			pinUpperLeftOnce( self )
 			if _G then
 				_G.g_minimapHud = self
 			end
 			if not self.cl then
 				return
 			end
+			self.cl.wantGpsPrefsGet = true
+			self.cl.wantMapMarkerGet = true
 			if not self.cl.rfsNuttCredit then
 				self.cl.rfsNuttCredit = true
 			end
@@ -240,7 +248,6 @@ if g_rfsNuttMap and MinimapHud then
 	local origBuild = RfsMiniMapTool.cl_buildGui
 	if origBuild then
 		function RfsMiniMapTool.cl_buildGui( self )
-			pinUpperLeft( self )
 			origBuild( self )
 			flipHudTiles( self )
 		end

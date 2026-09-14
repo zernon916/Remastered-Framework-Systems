@@ -1,0 +1,67 @@
+{
+	"_comment": "rfs_farmers_tablet hotbar preview (PNG + FBX, cache-bust v1).",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/rfs_farmers_tablet.fbx",
+			"maxViewDistance": 1000.0,
+			"subMeshMap": {
+				"mat_farmers_tablet_body_black": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/mat_farmers_tablet_body_black.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"mat_farmers_tablet_trim_yellow": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/mat_farmers_tablet_trim_yellow.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"mat_farmers_tablet_screen": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/mat_farmers_tablet_screen.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"mat_farmers_tablet_metal": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/mat_farmers_tablet_metal.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"farmers_tablet_charging_port_recess": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/farmers_tablet_charging_port_recess.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"mat_nameplate_dark": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/mat_nameplate_dark.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				},
+				"mat_name_text_yellow": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/tablets/mat_name_text_yellow.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_asg_paint.tga",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/shared/rfs_nor.tga"
+					]
+				}
+			}
+		}
+	]
+}

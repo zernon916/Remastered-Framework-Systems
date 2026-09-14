@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "layout": "Rfs_BeaconOrders.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "ParkedCommands",
+      "label": "Mode / seed drops",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        {
+          "id": "Shown",
+          "label": "Shown",
+          "widgets": [
+            "ModeDrop0",
+            "ModeDrop1",
+            "ModeDrop2",
+            "ModeDrop3",
+            "ModeDrop4",
+            "ModeDrop5",
+            "ModeDrop6",
+            "ModeDrop7",
+            "SeedDrop0",
+            "SeedDrop1",
+            "SeedDrop2",
+            "SeedDrop3",
+            "SeedDrop4",
+            "SeedDrop5",
+            "SeedDrop6",
+            "SeedDrop7"
+          ]
+        }
+      ]
+    }
+  ]
+}

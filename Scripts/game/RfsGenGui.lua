@@ -3,7 +3,7 @@
 
 RfsGenGui = RfsGenGui or {}
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_GenSettings.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_GenSettings.layout"
 
 local function onOff( v )
 	return v and "ON" or "OFF"
@@ -36,6 +36,43 @@ local function allowlistSummaryText( host )
 		src
 	)
 end
+
+-- Version tab: single source of truth is RFS_VERSION in Game.lua (falls back to parsing RFS_PACK_STAMP)
+local function rfsVersionString()
+	if type( RFS_VERSION ) == "string" and #RFS_VERSION > 0 then
+		return RFS_VERSION
+	end
+	if type( RFS_PACK_STAMP ) == "string" then
+		local v = RFS_PACK_STAMP:match( "pack%s+([%w%-]+)" )
+		if v then
+			return v
+		end
+	end
+	return "unknown"
+end
+
+local VERSION_FEAT_LEFT =
+	"MAP:\n" ..
+	"   Minimap\n" ..
+	"   Biome Map (Using /menu or GPS device)\n" ..
+	"\n" ..
+	"FARMING:\n" ..
+	"   Soil on Dirt\n" ..
+	"   Always Watered\n" ..
+	"   Bot hacking during raids\n" ..
+	"   Fast place and pickup\n" ..
+	"   Farming Tablet (shows what's planted and time left)\n" ..
+	"   Farming Sign (shows time left, E for tablet)"
+
+local VERSION_FEAT_RIGHT =
+	"CRAFTING:\n" ..
+	"   Mobile Crafting Tablet\n" ..
+	"   Custom Crafting Station (coming soon!)\n" ..
+	"\n" ..
+	"OTHER:\n" ..
+	"   Sleep through the night\n" ..
+	"   /menu (player)\n" ..
+	"   /gensettings (hosts all game mode settings)"
 
 local GAME_MODE_HINTS = {
 	easy = "Easy: -33% damage taken, x2 damage output, keep inventory.",
@@ -107,6 +144,8 @@ function RfsGenGui.refresh( host )
 	local announce = snap.streamerAnnounce ~= false
 	local chatRelay = snap.streamerChatRelay == true
 	local quests = snap.rfsQuests ~= false
+	local pvp = snap.pvp == true
+	local raids = snap.raidsEnabled ~= false
 
 	local gm, gmLabel, gmStatus = gameModeStrings()
 	local tab = host.cl and host.cl.rfsGenTab or "main"
@@ -117,6 +156,8 @@ function RfsGenGui.refresh( host )
 	gui:setText( "BtnHackableRobots", "Hackable robots: " .. onOff( robots ) )
 	gui:setText( "BtnHackUnderground", "Underground miner/cable: " .. onOff( underground ) )
 	gui:setText( "BtnRfsQuests", "RFS quests content: " .. onOff( quests ) )
+	gui:setText( "BtnPvp", "PVP: " .. onOff( pvp ) )
+	gui:setText( "BtnRaids", "Raids: " .. onOff( raids ) )
 	gui:setText( "BtnStreamerMode", "Streamer mode: " .. onOff( streamer ) )
 	gui:setText( "BtnStreamerCooldown", "Vote cooldown: " .. tostring( cooldown ) .. "s" )
 	gui:setText( "BtnStreamerAnnounce", "Vote announce: " .. onOff( announce ) )
@@ -135,6 +176,11 @@ function RfsGenGui.refresh( host )
 	gui:setText( "BtnDiscordStartBot", "Start Discord bot" )
 	gui:setText( "BtnDiscordStopBot", "Stop Discord bot" )
 
+	local ver = rfsVersionString()
+	gui:setText( "VerBuild", "Build: " .. ver )
+	gui:setText( "VerFeatLeft", VERSION_FEAT_LEFT )
+	gui:setText( "VerFeatRight", VERSION_FEAT_RIGHT )
+
 	pcall( function()
 		gui:setButtonState( "BtnCheats", cheats )
 		gui:setButtonState( "BtnHackDevices", hackDev )
@@ -142,6 +188,8 @@ function RfsGenGui.refresh( host )
 		gui:setButtonState( "BtnHackableRobots", robots )
 		gui:setButtonState( "BtnHackUnderground", underground )
 		gui:setButtonState( "BtnRfsQuests", quests )
+		gui:setButtonState( "BtnPvp", pvp )
+		gui:setButtonState( "BtnRaids", raids )
 		gui:setButtonState( "BtnStreamerMode", streamer )
 		gui:setButtonState( "BtnStreamerAnnounce", announce )
 		gui:setButtonState( "BtnStreamerChatRelay", chatRelay )
@@ -176,6 +224,7 @@ function RfsGenGui.showTab( host, tab )
 	local quest = t == "quest"
 	local inv = t == "invsize"
 	local farm = t == "farming"
+	local version = t == "version"
 
 	gui:setVisible( "MainTab", main )
 	gui:setVisible( "GameModeTab", gamemode )
@@ -185,6 +234,7 @@ function RfsGenGui.showTab( host, tab )
 	gui:setVisible( "QuestTab", quest )
 	gui:setVisible( "InvSizeTab", inv )
 	gui:setVisible( "FarmingTab", farm )
+	gui:setVisible( "VersionTab", version )
 	pcall( function()
 		gui:setButtonState( "TabMain", main )
 		gui:setButtonState( "TabGameMode", gamemode )
@@ -194,6 +244,7 @@ function RfsGenGui.showTab( host, tab )
 		gui:setButtonState( "TabQuest", quest )
 		gui:setButtonState( "TabInvSize", inv )
 		gui:setButtonState( "TabFarming", farm )
+		gui:setButtonState( "TabVersion", version )
 	end )
 
 	if quest or inv or farm then
@@ -241,12 +292,14 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "TabQuest", "cl_rfs_setupTabQuest" )
 	gui:setButtonCallback( "TabInvSize", "cl_rfs_setupTabInvSize" )
 	gui:setButtonCallback( "TabFarming", "cl_rfs_setupTabFarming" )
+	gui:setButtonCallback( "TabVersion", "cl_rfs_genTabVersion" )
 	gui:setButtonCallback( "BtnCheats", "cl_rfs_genToggleCheats" )
 	gui:setButtonCallback( "BtnHackDevices", "cl_rfs_genToggleHackDevices" )
 	gui:setButtonCallback( "BtnAreaLoader", "cl_rfs_genToggleAreaLoader" )
 	gui:setButtonCallback( "BtnHackableRobots", "cl_rfs_genToggleHackableRobots" )
 	gui:setButtonCallback( "BtnHackUnderground", "cl_rfs_genToggleHackUnderground" )
 	gui:setButtonCallback( "BtnRfsQuests", "cl_rfs_genToggleRfsQuests" )
+	gui:setButtonCallback( "BtnPvp", "cl_rfs_genTogglePvp" )
 	gui:setButtonCallback( "BtnStreamerMode", "cl_rfs_genToggleStreamerMode" )
 	gui:setButtonCallback( "BtnStreamerCooldown", "cl_rfs_genCycleStreamerCooldown" )
 	gui:setButtonCallback( "BtnStreamerAnnounce", "cl_rfs_genToggleStreamerAnnounce" )
@@ -254,6 +307,7 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnStreamerAllowlistReload", "cl_rfs_genReloadAllowlist" )
 	gui:setButtonCallback( "BtnStreamerAllowlistCycle", "cl_rfs_genCycleAllowlistUnit" )
 	gui:setButtonCallback( "BtnGameMode", "cl_rfs_genCycleGameMode" )
+	gui:setButtonCallback( "BtnGameHardcore", "cl_rfs_genToggleGameHardcore" )
 	gui:setButtonCallback( "BtnDiscordStartBot", "cl_rfs_genDiscordStartBot" )
 	gui:setButtonCallback( "BtnDiscordStopBot", "cl_rfs_genDiscordStopBot" )
 	gui:setButtonCallback( "QuestRefresh", "cl_rfs_setupQuestRefresh" )
@@ -273,12 +327,24 @@ function RfsGenGui.bind( host, gui )
 	gui:setButtonCallback( "BtnDirtOnBlocks", "cl_rfs_setupToggleDirtOnBlocks" )
 	gui:setButtonCallback( "BtnFastPlace", "cl_rfs_setupToggleFastPlace" )
 	gui:setButtonCallback( "BtnFastPickup", "cl_rfs_setupToggleFastPickup" )
+	gui:setButtonCallback( "BtnRaids", "cl_rfs_setupToggleRaids" )
 	gui:setOnCloseCallback( "cl_rfs_genClose" )
 end
 
 function RfsGenGui.open( host, tab )
-	local okHost, isHost = pcall( function() return sm.isHost end )
-	if not ( okHost and isHost ) then
+	local isHost = false
+	if type( _G.rfsClientIsHost ) == "function" then
+		isHost = _G.rfsClientIsHost() and true or false
+	else
+		local okHost, v = pcall( function()
+			if type( sm.isHost ) == "function" then
+				return sm.isHost()
+			end
+			return sm.isHost
+		end )
+		isHost = okHost and v and true or false
+	end
+	if not isHost then
 		sm.gui.chatMessage( "[RFS] /gensettings is host-only." )
 		return
 	end

@@ -278,9 +278,15 @@ function RfsHackV1Fight.retarget( self )
 	if not myChar or not sm.exists( myChar ) then
 		return
 	end
-	-- Keep raid smash aborted while held.
-	if self.saved.raider or self.saved.raidPosition or self.saved.raidKey then
-		RfsHackV1Fight.standDown( self )
+	-- Player team while hacked: never smash/target creations. Raid flags stay off.
+	RfsHackV1Fight.standDown( self )
+	if self.target and type( self.target ) == "Shape" then
+		self.target = nil
+	end
+	if self.eventTarget then
+		if type( self.eventTarget ) == "Shape" or isPlayerChar( self.eventTarget ) then
+			self.eventTarget = nil
+		end
 	end
 	local tgt = self.target
 	if tgt and isPlayerChar( tgt ) then
@@ -524,9 +530,15 @@ function RfsHackV1Fight.ensureUnitEnv()
 						RfsHackV1Fight.applyTint( self, self.saved and self.saved.rfsAllyColor or ALLY_TINT_HEX )
 					end
 				end
+				local result
 				if origFU then
-					return origFU( self, dt )
+					result = origFU( self, dt )
 				end
+				-- Re-clamp after vanilla think so raid/shape smash cannot stick.
+				if stolenSelf( self ) then
+					RfsHackV1Fight.retarget( self )
+				end
+				return result
 			end
 		end
 	end

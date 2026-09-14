@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "layout": "Rfs_Menu.layout",
+  "inherit": true,
+  "defaultTab": "Main",
+  "tabs": [
+    { "id": "Main", "label": "Main", "buttons": ["TabMain"] },
+    { "id": "Cheats", "label": "Cheats", "buttons": ["TabCheats"] }
+  ],
+  "shared": ["Root", "MainPanel", "Title", "CloseButton"],
+  "pages": {
+    "Main": ["MainTab"],
+    "Cheats": ["CheatsTab"]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "blend": "C:\\Coding Projects\\models\\WIP Models\\farmers_tablet_nameplate_test.blend",
+  "fbx": "C:\\Coding Projects\\RemasteredFrameworkSystems\\Tools\\rfs_farmers_tablet.fbx",
+  "rend": "C:\\Coding Projects\\RemasteredFrameworkSystems\\Tools\\rfs_farmers_tablet.rend",
+  "size_blocks": [
+    0.2582,
+    2.0,
+    1.254
+  ],
+  "materials": [
+    {
+      "name": "mat_farmers_tablet_body_black",
+      "rgb": [
+        0.012,
+        0.016,
+        0.019
+      ],
+      "texture": "mat_farmers_tablet_body_black.tga"
+    },
+    {
+      "name": "mat_farmers_tablet_trim_yellow",
+      "rgb": [
+        0.92,
+        0.56,
+        0.035
+      ],
+      "texture": "mat_farmers_tablet_trim_yellow.tga"
+    },
+    {
+      "name": "mat_farmers_tablet_screen",
+      "rgb": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "texture": "mat_farmers_tablet_screen.tga"
+    },
+    {
+      "name": "mat_farmers_tablet_metal",
+      "rgb": [
+        0.055,
+        0.065,
+        0.07
+      ],
+      "texture": "mat_farmers_tablet_metal.tga"
+    },
+    {
+      "name": "farmers_tablet_charging_port_recess",
+      "rgb": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "texture": "farmers_tablet_charging_port_recess.tga"
+    },
+    {
+      "name": "mat_nameplate_dark",
+      "rgb": [
+        0.045,
+        0.055,
+        0.06
+      ],
+      "texture": "mat_nameplate_dark.tga"
+    },
+    {
+      "name": "mat_name_text_yellow",
+      "rgb": [
+        1.0,
+        0.6,
+        0.025
+      ],
+      "texture": "mat_name_text_yellow.tga"
+    }
+  ],
+  "vertices": 12004,
+  "polygons": 10734
+}

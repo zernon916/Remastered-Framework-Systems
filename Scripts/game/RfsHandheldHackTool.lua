@@ -1,20 +1,16 @@
 -- RfsHandheldHackTool.lua — player handheld military radio (chance hack, Follow/Defend).
 -- VOLATILE. Not the Hack Beacon station core. Mesh: R&S Military radio (DTry, CC-BY-4.0).
 
+dofile( "$CONTENT_DATA/Scripts/game/RfsHeldTool.lua" )
+
 RfsHandheldHackTool = class()
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_HandheldHack.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_HandheldHack.layout"
 local LOOK = 8
-local HELD_REND = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/radio_handheld_preview.rend"
+local HELD_FP = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/rfs_radio_handheld_held_v1.rend"
+local HELD_TP = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Tools/rfs_radio_handheld_held_tp_v1.rend"
 
-local function applyHeldRenderables( self )
-	if not self.tool then
-		return
-	end
-	local list = { HELD_REND }
-	pcall( function() self.tool:setTpRenderables( list ) end )
-	pcall( function() self.tool:setFpRenderables( list ) end )
-end
+sm.tool.preloadRenderables( { HELD_FP, HELD_TP } )
 
 local function holdingThisTool()
 	local item = nil
@@ -100,11 +96,25 @@ if false then
 end
 
 function RfsHandheldHackTool.client_onCreate( self )
-	applyHeldRenderables( self )
+end
+
+function RfsHandheldHackTool.client_onRefresh( self )
+	self.equipped = true
+	RfsHeldTool.setup( self, HELD_FP, HELD_TP )
 end
 
 function RfsHandheldHackTool.client_onEquip( self )
-	applyHeldRenderables( self )
+	self.equipped = true
+	RfsHeldTool.setup( self, HELD_FP, HELD_TP )
+end
+
+function RfsHandheldHackTool.client_onUnequip( self )
+	self.equipped = false
+	RfsHeldTool.unequip( self )
+end
+
+function RfsHandheldHackTool.client_onUpdate( self, dt )
+	RfsHeldTool.update( self, dt )
 end
 
 function RfsHandheldHackTool.server_onCreate( self )

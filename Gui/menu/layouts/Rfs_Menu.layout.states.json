@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "layout": "Rfs_Menu.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "GrowthOverlay",
+      "label": "Growth overlay",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["BtnGrowthOverlay"] }
+      ]
+    }
+  ]
+}

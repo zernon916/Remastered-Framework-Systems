@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "layout": "Rfs_Setup.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "CheatButtons",
+      "label": "Cheat buttons",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["BtnInventory", "BtnFly", "BtnGod"] }
+      ]
+    },
+    {
+      "id": "FarmingCheats",
+      "label": "Farming cheats",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        {
+          "id": "Shown",
+          "label": "Shown",
+          "widgets": [
+            "BtnInstantFarm",
+            "BtnAlwaysWatered",
+            "BtnDirtOnBlocks",
+            "BtnFastPlace",
+            "BtnFastPickup"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GrowthOverlay",
+      "label": "Growth overlay",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["BtnGrowthOverlay"] }
+      ]
+    }
+  ]
+}

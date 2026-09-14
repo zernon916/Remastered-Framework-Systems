@@ -1530,17 +1530,11 @@ function RfsChemStation.server_onFixedUpdate( self )
 				self.sv.warnedNoPower = true
 				chatTo( self, occ, "[RFS] " .. TITLE .. ": filled. Wire a Battery box or Rechargeable box to heal." )
 			end
-			local nPlayers = 0
-			pcall( function()
-				nPlayers = #( sm.player.getAllPlayers() or {} )
-			end )
 			chatTo( self, occ, "[RFS] " .. TITLE .. ": respawn location set." )
-			if nPlayers <= 1 and type( Time ) == "table" then
+			if type( Time ) == "table" then
 				pcall( function()
 					sm.event.sendToGame( "sv_e_rfsDeepSleepSkip", { healing = true, player = occ } )
 				end )
-			elseif nPlayers > 1 then
-				chatTo( self, occ, "[RFS] " .. TITLE .. ": night skip is solo-only." )
 			end
 		end
 	end
@@ -2230,7 +2224,8 @@ end
 
 
 -- =============================================================================
--- VOLATILE: Solo night skip (formerly RfsDeepSleepTime.lua)
+-- VOLATILE: Night skip to 5 AM (formerly RfsDeepSleepTime.lua).
+-- Solo or MP: one sleeper advances world time for everyone (vote UI stays parked).
 -- =============================================================================
 
 local Time = {}
@@ -2290,8 +2285,9 @@ function Time.isNight( tod )
 	return wrapped >= NIGHT or wrapped < FIVE_AM
 end
 
+-- Kept for callers/debug. Night skip is no longer gated on solo.
 function Time.soloOk()
-	return playerCount() <= 1
+	return true
 end
 
 local function wrappedTod( game )
@@ -2383,12 +2379,6 @@ function Time.skipFromGame( game, params )
 	local fromBed = params.fromBed and true or false
 	local quietFail = params.quietFail and true or false
 	local label = fromBed and "Bed" or "Chemical Regeneration Station"
-	if not Time.soloOk() then
-		if not quietFail then
-			skipChat( game, player, "[RFS] " .. label .. ": night skip is solo-only (vote parked)." )
-		end
-		return false, "mp"
-	end
 	local ticks, nextTod = Time.skipTicks( game )
 	if not ticks or ticks <= 0 or not nextTod then
 		if not quietFail then
@@ -2420,7 +2410,14 @@ function Time.skipFromGame( game, params )
 			} )
 		end
 	end )
-	skipChat( game, player, "[RFS] " .. label .. ": skipped night to 5 AM." )
+	-- Notify every client so MP clients see the same skip (time already applied server-side).
+	local who = ""
+	pcall( function()
+		if player and player.getName then
+			who = " (" .. tostring( player:getName() ) .. ")"
+		end
+	end )
+	skipChat( game, nil, "[RFS] " .. label .. who .. ": skipped night to 5 AM." )
 	return true, ticks
 end
 

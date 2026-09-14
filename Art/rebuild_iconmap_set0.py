@@ -7,7 +7,7 @@ import colorsys
 import os
 import re
 
-ROOT = r"C:\Users\benko\Desktop\RecipeFrameworkSurvival"
+ROOT = r"C:\Coding Projects\RemasteredFrameworkSystems"
 VANILLA_PNG = r"C:\Steam\steamapps\common\Scrap Mechanic\Data\Gui\IconMap.png"
 VANILLA_XML = r"C:\Steam\steamapps\common\Scrap Mechanic\Data\Gui\IconMap.xml"
 SURV_PNG = r"C:\Steam\steamapps\common\Scrap Mechanic\Survival\Gui\IconMapSurvival.png"
@@ -16,6 +16,7 @@ RFS_XML = os.path.join(ROOT, "Gui", "IconMap.xml")
 LID = "29c99287-1213-48c7-9471-19a4a5c12247"
 TEX = "$CONTENT_" + LID + "/Gui/IconMap.png"
 ROW_Y = 864  # vanilla Data IconMap last used row is y=768
+BLUE_ROW_Y = 1024
 
 # Unique unused cells (do not use vanilla (0,96) Thruster / (96,96) Controller).
 RFS_TILES = [
@@ -28,7 +29,8 @@ RFS_TILES = [
     ("f8c2a5e4-1b63-4ed5-9072-63d5e2f0f92b", 576, "sign_s"),
     ("09d3b6f5-2c74-4fe6-a183-74e6f3010a3c", 672, "sign_m"),
     ("1ae4c706-3d85-40f7-b294-85f704121b4d", 768, "sign_xl"),
-    ("3c06e928-5f97-42a9-d4b6-a7f926343d7f", 864, "lcd_s"),
+    # Farm Screen keeps the green small LCD. Tablets have their own tiles.
+    ("c4f8a1b2-3d5e-4f6a-9b7c-8d0e1f2a3b4c", 864, "lcd_s"),
     ("4d17fa39-60a8-43ba-e5c7-b80a37454e80", 960, "lcd_m"),
     ("5e280b4a-71b9-44cb-f6d8-c91b48565f91", 1056, "lcd_xl"),
     ("6f391c5b-82d4-4e17-9a60-c1d5e8f2a4b7", 1152, "pod"),
@@ -42,12 +44,19 @@ RFS_TILES = [
     ("bb1c098e-094a-4b6c-7d08-ea293a4b5c6d", 1920, "radiolock"),
 ]
 
+RFS_EXTRA_TILES = [
+    ("3c06e928-5f97-42a9-d4b6-a7f926343d7f", 0, "lcd_blue_s"),
+    ("b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e", 96, "farmers_tablet"),
+    ("f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d", 192, "mobile_tablet"),
+    ("c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e", 288, "craft_station"),
+]
+
 
 def crop96(im, x, y):
     return im.crop((x, y, x + 96, y + 96))
 
 
-def tint_teal(im):
+def tint_green(im):
     out = im.copy()
     pix = im.load()
     op = out.load()
@@ -61,11 +70,29 @@ def tint_teal(im):
             mn = min(r, g, b)
             if mx - mn < 14:
                 continue
-            hv, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
-            if hv < 0.18 or hv > 0.92:
-                hv = (hv + 0.42) % 1.0
-                nr, ng, nb = colorsys.hsv_to_rgb(hv, min(1.0, s * 1.05), v)
-                op[x, y] = (int(nr * 255), int(ng * 255), int(nb * 255), a)
+            _hv, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+            nr, ng, nb = colorsys.hsv_to_rgb(0.34, min(1.0, s * 1.05), v)
+            op[x, y] = (int(nr * 255), int(ng * 255), int(nb * 255), a)
+    return out
+
+
+def tint_blue(im):
+    out = im.copy()
+    pix = im.load()
+    op = out.load()
+    w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = pix[x, y]
+            if a < 8:
+                continue
+            mx = max(r, g, b)
+            mn = min(r, g, b)
+            if mx - mn < 14:
+                continue
+            _hv, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+            nr, ng, nb = colorsys.hsv_to_rgb(0.60, min(1.0, s * 1.05), v)
+            op[x, y] = (int(nr * 255), int(ng * 255), int(nb * 255), a)
     return out
 
 
@@ -129,6 +156,10 @@ def build_rfs_indices():
         lines.append('\t\t\t<Index name="%s">' % uuid)
         lines.append('\t\t\t\t<Frame point="%d %d"/>' % (x, ROW_Y))
         lines.append("\t\t\t</Index>")
+    for uuid, x, _name in RFS_EXTRA_TILES:
+        lines.append('\t\t\t<Index name="%s">' % uuid)
+        lines.append('\t\t\t\t<Frame point="%d %d"/>' % (x, BLUE_ROW_Y))
+        lines.append("\t\t\t</Index>")
     return "\n".join(lines)
 
 
@@ -137,6 +168,10 @@ def main():
     group_body, used = parse_vanilla_indices(vanilla_xml)
     for _uuid, x, name in RFS_TILES:
         cell = (x, ROW_Y)
+        if cell in used:
+            raise SystemExit("vanilla already uses RFS cell %s %s" % (cell, name))
+    for _uuid, x, name in RFS_EXTRA_TILES:
+        cell = (x, BLUE_ROW_Y)
         if cell in used:
             raise SystemExit("vanilla already uses RFS cell %s %s" % (cell, name))
 
@@ -179,9 +214,10 @@ def main():
         "sign_m": crop96(surv, 2112, 1248),
         "sign_xl": crop96(surv, 2208, 1248),
     }
-    tiles["lcd_s"] = tint_teal(tiles["sign_s"])
-    tiles["lcd_m"] = tint_teal(tiles["sign_m"])
-    tiles["lcd_xl"] = tint_teal(tiles["sign_xl"])
+    tiles["lcd_s"] = tint_green(tiles["sign_s"])
+    tiles["lcd_m"] = tint_green(tiles["sign_m"])
+    tiles["lcd_xl"] = tint_green(tiles["sign_xl"])
+    tiles["lcd_blue_s"] = tint_blue(tiles["sign_s"])
     # Map lock cell was empty on the small sheet; keep a dark GPS-like mark.
     tiles["maplock"] = tiles["gps"].copy()
     aim_path = os.path.join(ROOT, "Art", "icon_aimcore_96.png")
@@ -226,10 +262,28 @@ def main():
             (26, 18, 28, 255),
         ),
     )
+    tiles["farmers_tablet"] = icon_from_file(
+        os.path.join(ROOT, "Art", "icon_farmers_tablet_96.png"),
+        fallback=tiles["lcd_s"],
+    )
+    tiles["mobile_tablet"] = icon_from_file(
+        os.path.join(ROOT, "Art", "icon_mobile_crafting_tablet_96.png"),
+        fallback=tiles["lcd_blue_s"],
+    )
+    tiles["craft_station"] = icon_from_file(
+        os.path.join(ROOT, "Art", "icon_craft_station_96.png"),
+        fallback=Image.new("RGBA", (96, 96), (20, 24, 28, 255)),
+    )
 
     sheet = vanilla.copy()
+    if sheet.height < BLUE_ROW_Y + 96:
+        expanded = Image.new("RGBA", (sheet.width, BLUE_ROW_Y + 96), (0, 0, 0, 0))
+        expanded.paste(sheet, (0, 0))
+        sheet = expanded
     for _uuid, x, name in RFS_TILES:
         sheet.paste(tiles[name], (x, ROW_Y))
+    for _uuid, x, name in RFS_EXTRA_TILES:
+        sheet.paste(tiles[name], (x, BLUE_ROW_Y))
     sheet.save(RFS_PNG, "PNG")
 
     vanilla_group = group_body.rstrip()

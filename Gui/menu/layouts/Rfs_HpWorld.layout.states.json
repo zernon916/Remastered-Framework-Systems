@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "layout": "Rfs_HpWorld.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "HpFill",
+      "label": "HP fill",
+      "default": "Shown",
+      "options": [
+        { "id": "Hidden", "label": "Empty", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["HpFill"] }
+      ]
+    },
+    {
+      "id": "HpEmpty",
+      "label": "HP missing cover",
+      "default": "Full",
+      "options": [
+        { "id": "Full", "label": "Full", "widgets": [] },
+        { "id": "Miss1", "label": "10% missing", "widgets": ["HpEmpty0"] },
+        { "id": "Miss2", "label": "20% missing", "widgets": ["HpEmpty1"] },
+        { "id": "Miss3", "label": "30% missing", "widgets": ["HpEmpty2"] },
+        { "id": "Miss4", "label": "40% missing", "widgets": ["HpEmpty3"] },
+        { "id": "Miss5", "label": "50% missing", "widgets": ["HpEmpty4"] },
+        { "id": "Miss6", "label": "60% missing", "widgets": ["HpEmpty5"] },
+        { "id": "Miss7", "label": "70% missing", "widgets": ["HpEmpty6"] },
+        { "id": "Miss8", "label": "80% missing", "widgets": ["HpEmpty7"] },
+        { "id": "Miss9", "label": "90% missing", "widgets": ["HpEmpty8"] },
+        { "id": "Miss10", "label": "Empty cover", "widgets": ["HpEmpty9"] }
+      ]
+    },
+    {
+      "id": "HpName",
+      "label": "Name",
+      "default": "Shown",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["HpName"] }
+      ]
+    }
+  ]
+}

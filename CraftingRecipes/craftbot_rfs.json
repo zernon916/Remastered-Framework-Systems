@@ -61,5 +61,16 @@
 		"ingredientList": [
 			{ "quantity": 1, "itemId": "8aedf6c2-94e1-4506-89d4-a0227c552f1e" }
 		]
+	},
+	{
+		"_comment": "Crafting Station. 90 Scrap Metal Blocks, 14 Circuit Boards, 15 Component Kits.",
+		"itemId": "c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e",
+		"quantity": 1,
+		"craftTime": 12,
+		"ingredientList": [
+			{ "quantity": 90, "itemId": "1f7ac0bb-ad45-4246-9817-59bdf7f7ab39" },
+			{ "quantity": 14, "itemId": "f152e4df-bc40-44fb-8d20-3b3ff70cdfe3" },
+			{ "quantity": 15, "itemId": "5530e6a0-4748-4926-b134-50ca9ecb9dcf" }
+		]
 	}
 ]

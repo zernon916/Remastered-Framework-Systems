@@ -4892,6 +4892,16 @@ function RfsBotHijack.ensureHooks()
 			end
 			-- Do not isDirty every Select — that serializes saved every think while hacked.
 			RfsBotHijack.standDown( self )
+			-- Player team while hacked: never target or smash player creations.
+			if self.saved then
+				self.saved.destroyShapes = false
+			end
+			if self.target and type( self.target ) == "Shape" then
+				self.target = nil
+			end
+			if self.eventTarget and type( self.eventTarget ) == "Shape" then
+				self.eventTarget = nil
+			end
 			if self.unit and self.unit.character then
 				local hex = normalizeColorHex( ( info and info.allyColor ) or self.saved.rfsAllyColor )
 				if hex and hex ~= self._rfsLastTintHex then

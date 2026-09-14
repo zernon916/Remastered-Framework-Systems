@@ -1,4 +1,4 @@
-﻿{
+{
     "fe8bfeba-850b-4827-9785-10e2468c9c23":  {
                                                  "title":  "Corn",
                                                  "upperCaseTitle":  "CORN",
@@ -33,6 +33,46 @@
                                                               ],
                                                  "description":  "Handheld map tool. Hideout schematic 1 Farmer. Craft: Metal + Circuit + Component + Glass. LMB atlas, RMB MiniMap zoom, Q move/hide MiniMap, R MiniMap size."
                                              },
+    "f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d":  {
+                                                 "title":  "Mobile Crafting Tablet",
+                                                 "upperCaseTitle":  "MOBILE CRAFTING TABLET",
+                                                 "keywords":  [
+                                                                  "recipe",
+                                                                  "craft",
+                                                                  "queue",
+                                                                  "planner",
+                                                                  "tablet",
+                                                                  "lcd",
+                                                                  "tool"
+                                                              ],
+                                                 "description":  "Handheld craft planner (always unlocked). Within range of a Wireless Crafting Station, SEND TO CRAFTER pushes your queued crafts to it."
+                                             },
+    "b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e":  {
+                                                 "title":  "Farmers Tablet",
+                                                 "upperCaseTitle":  "FARMERS TABLET",
+                                                 "keywords":  [
+                                                                  "farm",
+                                                                  "grow",
+                                                                  "soil",
+                                                                  "crop",
+                                                                  "tablet",
+                                                                  "tool"
+                                                              ],
+                                                 "description":  "Handheld farm plot viewer (always unlocked). Same craft cost as the Mobile Crafting Tablet. E: farms within 100 from player-placed soil; gap over 9 cells splits farms. Shows plot letters and average grow times."
+                                             },
+    "c4f8a1b2-3d5e-4f6a-9b7c-8d0e1f2a3b4c":  {
+                                                 "title":  "Farm Screen",
+                                                 "upperCaseTitle":  "FARM SCREEN",
+                                                 "keywords":  [
+                                                                  "farm",
+                                                                  "grow",
+                                                                  "lcd",
+                                                                  "screen",
+                                                                  "tablet",
+                                                                  "soil"
+                                                              ],
+                                                 "description":  "Extra-large wall LCD (always unlocked). Craft: 20 Metal + 10 Glass + 3 Circuit + 1 Component Kit. Face shows nearest farm average grow times. E opens the full Farmers Tablet menu. Optional logic parent gates power."
+                                             },
     "b4e8c1a0-7d2f-4a91-9c3e-29f1a8d6b5e7":  {
                                                  "title":  "Hack Beacon",
                                                  "upperCaseTitle":  "HACK BEACON",
@@ -45,6 +85,19 @@
                                                                   "raid"
                                                               ],
                                                  "description":  "Hacks up to 4 nearby bots within 30 blocks. Short-term control (8 seconds). Only activates during raids.\n\nWire upgrades to the beacon:\nâ€¢ Radio Battery Brick â€” +10 range, +1 bot (max 1)\nâ€¢ Radio Antenna â€” +10 range each (max 2)\nâ€¢ Radio Lock â€” +3 bots, +3 seconds hold (max 1)\n\nWire Battery or Recharge (electricity); optional logic switch. Hideout schematic 10 Farmers."
+                                             },
+    "c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e":  {
+                                                 "title":  "Crafting Station",
+                                                 "upperCaseTitle":  "CRAFTING STATION",
+                                                 "keywords":  [
+                                                                  "craft",
+                                                                  "craftbot",
+                                                                  "station",
+                                                                  "crafter",
+                                                                  "rfs",
+                                                                  "compact"
+                                                              ],
+                                                 "description":  "Compact Craftbot station. Craft: 90 Scrap Metal Blocks, 14 Circuit Boards, 15 Component Kits. Full Craftbot crafting UI. Input −X, output +X. Paintable metal body."
                                              },
     "e7b1f4d3-0a52-4dc4-cf61-52c4d1e9e81a":  {
                                                  "title":  "Area Loader",

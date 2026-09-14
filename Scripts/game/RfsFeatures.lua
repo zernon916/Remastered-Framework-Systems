@@ -57,6 +57,8 @@ local function defaultsFromPack()
 		streamerChatRelay = false,
 		rfsQuests = true,
 		autoSetupPrompted = false,
+		pvp = false, -- OFF = no player→player damage; ON = melee/spud PVP allowed
+		raidsEnabled = true, -- false = no new crop raids; turning OFF also cancels raids in progress
 	}
 end
 
@@ -98,6 +100,12 @@ local function applyLoadedTable( cfg, data )
 	if data.autoSetupPrompted ~= nil then
 		cfg.autoSetupPrompted = data.autoSetupPrompted and true or false
 	end
+	if data.pvp ~= nil then
+		cfg.pvp = data.pvp and true or false
+	end
+	if data.raidsEnabled ~= nil then
+		cfg.raidsEnabled = data.raidsEnabled and true or false
+	end
 	return cfg
 end
 
@@ -105,6 +113,7 @@ local function publishGlobals()
 	_G.g_rfsFeatures = RfsFeatures.state
 	_G.g_rfsGenSettings = RfsFeatures.snapshot()
 	_G.g_rfsStreamerMode = RfsFeatures.streamerModeEnabled()
+	_G.g_rfsPvp = RfsFeatures.pvpEnabled()
 end
 
 function RfsFeatures.load( force )
@@ -124,7 +133,7 @@ function RfsFeatures.load( force )
 	RfsFeatures.state = cfg
 	publishGlobals()
 	print( string.format(
-		"[RFS] features loaded cheats=%s(override=%s) hackDevices=%s areaLoader=%s hackableRobots=%s underground=%s streamer=%s cd=%ss announce=%s chatRelay=%s rfsQuests=%s",
+		"[RFS] features loaded cheats=%s(override=%s) hackDevices=%s areaLoader=%s hackableRobots=%s underground=%s streamer=%s cd=%ss announce=%s chatRelay=%s rfsQuests=%s pvp=%s raids=%s",
 		tostring( RfsFeatures.cheatsEnabled() ),
 		tostring( cfg.cheatsOverride ),
 		tostring( cfg.hackDevices ),
@@ -135,7 +144,9 @@ function RfsFeatures.load( force )
 		tostring( cfg.streamerCooldownSec ),
 		tostring( cfg.streamerAnnounce ),
 		tostring( cfg.streamerChatRelay ),
-		tostring( cfg.rfsQuests )
+		tostring( cfg.rfsQuests ),
+		tostring( cfg.pvp == true ),
+		tostring( cfg.raidsEnabled ~= false )
 	) )
 	return cfg
 end
@@ -153,6 +164,8 @@ function RfsFeatures.save()
 		streamerChatRelay = cfg.streamerChatRelay == true,
 		rfsQuests = cfg.rfsQuests ~= false,
 		autoSetupPrompted = cfg.autoSetupPrompted == true,
+		pvp = cfg.pvp == true,
+		raidsEnabled = cfg.raidsEnabled ~= false,
 	}
 	if cfg.cheatsOverride and cfg.cheats ~= nil then
 		payload.cheats = cfg.cheats and true or false
@@ -180,6 +193,8 @@ function RfsFeatures.snapshot()
 		streamerChatRelay = RfsFeatures.streamerChatRelayEnabled(),
 		rfsQuests = RfsFeatures.rfsQuestsEnabled(),
 		autoSetupPrompted = RfsFeatures.autoSetupPrompted(),
+		pvp = RfsFeatures.pvpEnabled(),
+		raidsEnabled = RfsFeatures.raidsEnabled(),
 	}
 end
 
@@ -226,6 +241,12 @@ function RfsFeatures.applySnapshot( data )
 	end
 	if data.autoSetupPrompted ~= nil then
 		cfg.autoSetupPrompted = data.autoSetupPrompted and true or false
+	end
+	if data.pvp ~= nil then
+		cfg.pvp = data.pvp and true or false
+	end
+	if data.raidsEnabled ~= nil then
+		cfg.raidsEnabled = data.raidsEnabled and true or false
 	end
 	RfsFeatures.state = cfg
 	publishGlobals()
@@ -294,6 +315,28 @@ function RfsFeatures.setHackUndergroundBotsEnabled( enabled )
 	cfg.hackUndergroundBots = enabled and true or false
 	RfsFeatures.save()
 	return cfg.hackUndergroundBots
+end
+
+-- Raids: world-persisted gate for vanilla crop-triggered raids.
+-- Vanilla RaidManager.sv_detectCrop early-returns when the shared global
+-- g_disableRaids is truthy. RfsFeatures is dofile'd into the Game sandbox
+-- (same Lua environment as RaidManager), so the flag is published there.
+function RfsFeatures.raidsEnabled()
+	return RfsFeatures.get().raidsEnabled ~= false
+end
+
+function RfsFeatures.setRaidsEnabled( enabled )
+	local cfg = RfsFeatures.get()
+	cfg.raidsEnabled = enabled and true or false
+	RfsFeatures.save()
+	RfsFeatures.applyRaidsGate()
+	return cfg.raidsEnabled
+end
+
+-- Re-apply the persisted flag to vanilla's session global (after load/refresh).
+function RfsFeatures.applyRaidsGate()
+	_G.g_disableRaids = not RfsFeatures.raidsEnabled()
+	return _G.g_disableRaids
 end
 
 function RfsFeatures.streamerModeEnabled()
@@ -392,6 +435,18 @@ function RfsFeatures.setRfsQuestsEnabled( enabled )
 	return cfg.rfsQuests
 end
 
+function RfsFeatures.pvpEnabled()
+	return RfsFeatures.get().pvp == true
+end
+
+function RfsFeatures.setPvpEnabled( enabled )
+	local cfg = RfsFeatures.get()
+	cfg.pvp = enabled and true or false
+	RfsFeatures.save()
+	_G.g_rfsPvp = cfg.pvp
+	return cfg.pvp
+end
+
 -- Convenience used by Game.lua GenSettings RPC path.
 function RfsFeatures.set( key, value )
 	if key == "cheats" then
@@ -404,6 +459,8 @@ function RfsFeatures.set( key, value )
 		return RfsFeatures.setHackableRobotsEnabled( value )
 	elseif key == "hackUndergroundBots" then
 		return RfsFeatures.setHackUndergroundBotsEnabled( value )
+	elseif key == "raidsEnabled" then
+		return RfsFeatures.setRaidsEnabled( value )
 	elseif key == "streamerMode" then
 		return RfsFeatures.setStreamerModeEnabled( value )
 	elseif key == "streamerCooldownSec" then
@@ -414,6 +471,8 @@ function RfsFeatures.set( key, value )
 		return RfsFeatures.setStreamerChatRelayEnabled( value )
 	elseif key == "rfsQuests" then
 		return RfsFeatures.setRfsQuestsEnabled( value )
+	elseif key == "pvp" then
+		return RfsFeatures.setPvpEnabled( value )
 	end
 	return RfsFeatures.snapshot()
 end
@@ -430,6 +489,8 @@ function RfsFeatures.toggle( key )
 		cur = RfsFeatures.hackableRobotsEnabled()
 	elseif key == "hackUndergroundBots" then
 		cur = RfsFeatures.hackUndergroundBotsEnabled()
+	elseif key == "raidsEnabled" then
+		cur = RfsFeatures.raidsEnabled()
 	elseif key == "streamerMode" then
 		cur = RfsFeatures.streamerModeEnabled()
 	elseif key == "streamerCooldownSec" then
@@ -441,6 +502,8 @@ function RfsFeatures.toggle( key )
 		cur = RfsFeatures.streamerChatRelayEnabled()
 	elseif key == "rfsQuests" then
 		cur = RfsFeatures.rfsQuestsEnabled()
+	elseif key == "pvp" then
+		cur = RfsFeatures.pvpEnabled()
 	else
 		return RfsFeatures.snapshot()
 	end

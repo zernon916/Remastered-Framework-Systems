@@ -483,6 +483,17 @@ local function pickupOne( entry, carry )
 		if not shape or not sm.exists( shape ) then
 			return false
 		end
+		local loose = false
+		pcall( function()
+			local body = shape:getBody()
+			if body and body:isDynamic() then
+				local shapes = body:getShapes()
+				loose = type( shapes ) == "table" and #shapes == 1
+			end
+		end )
+		if not loose then
+			return false
+		end
 		if not carryAdd( carry, entry.uuid, 1 ) then
 			return false
 		end

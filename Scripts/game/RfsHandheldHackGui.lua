@@ -2,7 +2,7 @@
 
 RfsHandheldHackGui = RfsHandheldHackGui or {}
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_HandheldHack.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_HandheldHack.layout"
 
 local function closeGui( host )
 	host.cl = host.cl or {}

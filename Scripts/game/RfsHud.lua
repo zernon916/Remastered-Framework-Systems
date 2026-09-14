@@ -3,7 +3,7 @@
 -- Original clock + compass HUD implementation.
 -- Tool ammo readout restored here: this always-on HUD sits on the default HUD layer
 -- and hides the engine weapon ammo number, so we draw remaining ammo ourselves.
--- Phase 6 Map (Nutt): MiniMap uses the upper-left corner (off chat); ammo stays lower-right.
+-- Ammo sits on the selected hotbar action slot (outlined). Hidden while seated (vehicle later).
 
 pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsRecharge.lua" )
@@ -11,7 +11,7 @@ end )
 
 RfsHud = RfsHud or {}
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_Hud.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_Hud.layout"
 local CARDINALS = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" }
 
 -- Vanilla Survival tool UUIDs → ammo item UUID (spudgun/gatling/shotgun = potatoes).
@@ -48,7 +48,51 @@ local function compassFromDirection( dir )
 	return string.format( "%s %d°", CARDINALS[idx], math.floor( deg + 0.5 ) % 360 )
 end
 
+local HOTBAR_SLOTS = 10
+
+local function hideAllAmmoSlots( gui )
+	for i = 0, HOTBAR_SLOTS - 1 do
+		pcall( function() gui:setVisible( "RfsAmmoSlot" .. i, false ) end )
+		-- Legacy corner panel name (pre-hotbar layout).
+		pcall( function() gui:setVisible( "RfsAmmoPanel", false ) end )
+	end
+end
+
+local function playerInVehicle()
+	local seated = false
+	pcall( function()
+		local player = sm.localPlayer.getPlayer()
+		local char = player and player.character
+		if char and sm.exists( char ) and char.getLockingInteractable then
+			local ia = char:getLockingInteractable()
+			seated = ia ~= nil and sm.exists( ia )
+		end
+	end )
+	return seated
+end
+
+local function selectedHotbarSlotIndex()
+	local slot = 0
+	pcall( function()
+		slot = tonumber( sm.localPlayer.getSelectedHotbarSlot() ) or 0
+	end )
+	slot = math.floor( slot )
+	-- Survival hotbar indices are 0..9. If a build returns 1..10, normalize.
+	if slot == HOTBAR_SLOTS then
+		slot = HOTBAR_SLOTS - 1
+	elseif slot > HOTBAR_SLOTS - 1 then
+		slot = slot % HOTBAR_SLOTS
+	elseif slot < 0 then
+		slot = 0
+	end
+	return slot
+end
+
 local function updateAmmo( gui )
+	hideAllAmmoSlots( gui )
+	if playerInVehicle() then
+		return
+	end
 	local ammoUuid = nil
 	pcall( function()
 		local item = sm.localPlayer.getActiveItem()
@@ -57,7 +101,6 @@ local function updateAmmo( gui )
 		end
 	end )
 	if not ammoUuid then
-		pcall( function() gui:setVisible( "RfsAmmoPanel", false ) end )
 		return
 	end
 	local count = 0
@@ -67,9 +110,10 @@ local function updateAmmo( gui )
 			count = sm.container.totalQuantity( inv, ammoUuid ) or 0
 		end
 	end )
+	local slot = selectedHotbarSlotIndex()
 	pcall( function()
-		gui:setVisible( "RfsAmmoPanel", true )
-		gui:setText( "RfsAmmoText", tostring( count ) )
+		gui:setVisible( "RfsAmmoSlot" .. slot, true )
+		gui:setText( "RfsAmmoText" .. slot, tostring( count ) )
 	end )
 end
 
@@ -181,6 +225,11 @@ local function updatePaintBar( gui )
 	end
 end
 
+local function updateGrowTable( gui )
+	-- Plant timer HUD retired — Farmers Tablet owns grow times.
+	pcall( function() gui:setVisible( "RfsGrowPanel", false ) end )
+end
+
 local function updateBlockOverlay( gui, host )
 	local text = host and host.cl and host.cl.rfsBlockHud
 	if type( text ) ~= "string" or text == "" then
@@ -191,6 +240,30 @@ local function updateBlockOverlay( gui, host )
 		gui:setVisible( "RfsOverlayPanel", true )
 		gui:setText( "RfsOverlayText", text )
 	end )
+end
+
+local function placeGameModePanel( gui )
+	-- Default: below top-left minimap (medium size, posIdx 4).
+	local x, y, w, h = 0.019, 0.268, 0.16, 0.024
+	local hud = _G.g_minimapHud
+	local c = hud and hud.cl
+	if c and c.posIdx and c.posIdx ~= 5 and c.fy0 and c.RING then
+		local vw = tonumber( c.vw ) or 1280
+		local vh = tonumber( c.vh ) or 720
+		if vw > 0 and vh > 0 then
+			local gap = 6
+			local panelH = math.max( 14, math.floor( vh * h + 0.5 ) )
+			x = c.fx0 / vw
+			w = math.min( 0.22, math.max( 0.14, c.RING / vw ) )
+			h = panelH / vh
+			if c.posIdx == 3 or c.posIdx == 4 then
+				y = ( c.fy0 + c.RING + gap ) / vh
+			else
+				y = ( c.fy0 - panelH - gap ) / vh
+			end
+		end
+	end
+	pcall( function() gui:setPosition( "RfsGameModePanel", x, y, w, h ) end )
 end
 
 local function updateGameMode( gui )
@@ -206,6 +279,7 @@ local function updateGameMode( gui )
 	if snap.hardcore then
 		label = label .. " Hardcore"
 	end
+	placeGameModePanel( gui )
 	pcall( function()
 		gui:setVisible( "RfsGameModePanel", true )
 		gui:setText( "RfsGameModeText", string.format( "%s locks in %02d:%02d", label, mins, secs ) )
@@ -217,7 +291,7 @@ function RfsHud.ensure( host )
 	if host.cl.rfsHud then
 		return host.cl.rfsHud
 	end
-	-- Middle layer keeps clock/compass/ammo above the MiniMap ring HUD.
+	-- Middle layer keeps clock/compass/hotbar-ammo above the MiniMap ring HUD.
 	local ok, gui = pcall( sm.gui.createGuiFromLayout, LAYOUT, false, {
 		isHud = true,
 		isInteractive = false,
@@ -237,7 +311,7 @@ function RfsHud.ensure( host )
 	end
 	host.cl.rfsHud = gui
 	pcall( function() gui:open() end )
-	print( "[RFS] HUD opened (clock + compass + ammo)" )
+	print( "[RFS] HUD opened (clock + compass + hotbar ammo)" )
 	return gui
 end
 
@@ -246,6 +320,13 @@ function RfsHud.update( host )
 	if not gui then
 		return
 	end
+
+	-- Hide RFS HUD while Farmers Tablet (or similar fullscreen tool UI) is open.
+	if _G.g_rfsFarmTabletOpen == true then
+		pcall( function() gui:setHidden( true ) end )
+		return
+	end
+	pcall( function() gui:setHidden( false ) end )
 
 	local clock = "00:00"
 	pcall( function()
@@ -278,4 +359,5 @@ function RfsHud.update( host )
 	updateGameMode( gui )
 	updateChargeBar( gui )
 	updatePaintBar( gui )
+	updateGrowTable( gui )
 end

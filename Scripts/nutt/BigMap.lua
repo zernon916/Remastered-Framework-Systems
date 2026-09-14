@@ -14,6 +14,29 @@
 
 BigMap = {}
 
+local function ensureHudViewSize( c )
+	if not c then
+		return
+	end
+	if c.vw and c.vh then
+		return
+	end
+	c.vw, c.vh = 1280, 720
+	pcall( function()
+		local okv, a, b2 = pcall( sm.jsonGui.getViewSize )
+		if okv and type( a ) == "number" then
+			c.vw, c.vh = a, b2 or 720
+		end
+	end )
+end
+
+function BigMap.ensureViewSize( hud )
+	local c = hud and hud.cl
+	if c then
+		ensureHudViewSize( c )
+	end
+end
+
 -- jsonGui ImageTexture / IconMap do not resolve $CONTENT_DATA (blank tiles/icons).
 local CC = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247"
 local NILUUID = "00000000000000000000000000000000"
@@ -31,7 +54,7 @@ local MINSCALE, MAXSCALE = 8, 110
 local DEFAULT_SCALE = 16
 local MARKER = 22
 local POILABELS = 24
-local BM_UI_REV = 19
+local BM_UI_REV = 26
 local LEGEND_W = 188
 local INFO_W = 188
 local POI_ICON_CAP = 256
@@ -196,7 +219,9 @@ local TIERS = {
 -- SOLID map paints WhiteSkin flats (Xaero-ish). Atlas cell pools only for
 -- non-solid fallback. dims = legend filter; shades = hillshade.
 local POOLCAP = {
-	{ per = 200, roads = 40, dims = 1600, flats = 2400, shades = 2400 },
+	-- Keep total widgets near the known-good ~6k range (dr flood broke at ~10k).
+	{ per = 200, roads = 500, dims = 1200, flats = 1600, shades = 1200,
+	  tiles = 1800 },
 }
 local POOL_BUILD_STEP = 96
 local DRAGEND = 0.25
@@ -319,10 +344,14 @@ function BigMap.queuePoolBuild(hud, firstOf)
 	bm.pools = {}
 	bm.widgetByName = bm.widgetByName or {}
 	local solid = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
+	local useTiles = solid and RfsBiomeMap.TILES
+	local roadPaint = solid and RfsBiomeMap.ROADS
 	for ti, T in ipairs(TIERS) do
 		local pool = {
 			byRes = {}, roads = {}, dims = {}, flats = {}, shades = {},
-			used = {}, roadsUsed = 0, dimsUsed = 0, flatsUsed = 0, shadesUsed = 0
+			tiles = {},
+			used = {}, roadsUsed = 0, dimsUsed = 0, flatsUsed = 0, shadesUsed = 0,
+			tilesUsed = 0,
 		}
 		bm.pools[ti] = pool
 		if solid then
@@ -334,6 +363,16 @@ function BigMap.queuePoolBuild(hud, firstOf)
 			end
 			for i = 1, ( POOLCAP[ti].dims or 0 ) do
 				bm.poolQueue[#bm.poolQueue + 1] = { kind = "dim", ti = ti, T = T, i = i }
+			end
+			if useTiles then
+				for i = 1, ( POOLCAP[ti].tiles or 0 ) do
+					bm.poolQueue[#bm.poolQueue + 1] = { kind = "tile", ti = ti, T = T, i = i }
+				end
+			end
+			if roadPaint then
+				for i = 1, ( POOLCAP[ti].roads or 0 ) do
+					bm.poolQueue[#bm.poolQueue + 1] = { kind = "road", ti = ti, T = T, i = i }
+				end
 			end
 		else
 			for res, first in pairs(firstOf[T.tier]) do
@@ -399,6 +438,16 @@ function BigMap.flushPoolBuild(hud, budget)
 			bm.view.Childs[#bm.view.Childs + 1] = cw
 			lst[q.i] = cw
 			bm.widgetByName[cw.Name] = cw
+		elseif q.kind == "tile" then
+			local cw = W( "bmtile" .. ti .. "_" .. q.i, "ImageBox", "ImageBox",
+				0, 0, T.px, T.px, {
+					ImageTexture = CC .. "/Gui/MapTiles/SolidMe.png",
+					Colour = "1 1 1",
+					Visible = false, NeedToolTip = true,
+					onClick = "cl_bm_cell", onDrag = "cl_bm_curs", onToolTip = "cl_bm_hover" })
+			bm.view.Childs[#bm.view.Childs + 1] = cw
+			pool.tiles[q.i] = cw
+			bm.widgetByName[cw.Name] = cw
 		else
 			local ov = W("bmo" .. ti .. "_" .. q.i, "ImageBox", "ImageBox",
 				0, 0, T.px, T.px,
@@ -420,14 +469,7 @@ function BigMap.prebuildStep(hud)
 	local c = hud.cl
 	if not (c and c.ready and c.atlas) then return end
 	if c.bm and (c.bm.open or c.bm.poolReady) then return end
-	if not c.vw then
-		local okv, a, b2 = pcall(sm.jsonGui.getViewSize)
-		if okv and type(a) == "number" then
-			c.vw, c.vh = a, b2 or 720
-		else
-			c.vw, c.vh = 1280, 720
-		end
-	end
+	ensureHudViewSize( c )
 	BigMap.build(hud, POOL_BUILD_STEP)
 end
 
@@ -565,6 +607,27 @@ function BigMap.build(hud, poolBudget)
 		  RotatingSkinCenterY = math.floor(MARKER / 2), Visible = false,
 		  NeedMouse = false })
 	view.Childs[#view.Childs + 1] = bm.marker
+	-- Other players (MP): smaller arrows, pool capped. Names drawn above house pin.
+	bm.playerMarkers = {}
+	bm.playerNames = {}
+	local PMARK = math.max( 16, math.floor( MARKER * 0.75 ) )
+	bm.playerMarkerSize = PMARK
+	local maxP = ( type( Waypoint ) == "table" and Waypoint.MAX_REMOTE_PLAYERS ) or 8
+	for i = 1, maxP do
+		local pm = W( "BMPly_" .. i, "ImageBox", "RotatingSkin", 0, 0, PMARK, PMARK, {
+			ImageTexture = CC .. "/Gui/arrow.png", RotatingSkinAngle = 0.0,
+			RotatingSkinCenterX = math.floor( PMARK / 2 ),
+			RotatingSkinCenterY = math.floor( PMARK / 2 ),
+			Visible = false, NeedMouse = false } )
+		view.Childs[#view.Childs + 1] = pm
+		bm.playerMarkers[i] = pm
+		local pn = W( "BMPlyNm_" .. i, "TextBox", "TextBox", 0, 0, 96, 18, {
+			Caption = "", FontName = "SM_HeaderTiny", TextAlign = "Center",
+			TextShadow = true, TextShadowColour = "0 0 0",
+			Visible = false, NeedMouse = false } )
+		view.Childs[#view.Childs + 1] = pn
+		bm.playerNames[i] = pn
+	end
 	-- waypoint pins, one per color (Visible-toggled; the active pin is
 	-- CLICKABLE - clicking the pin removes the waypoint, so it keeps
 	-- NeedMouse and routes through the button handler by name)
@@ -913,6 +976,25 @@ function BigMap.build(hud, poolBudget)
 			  RotatingSkinCenterY = math.floor(MARKER / 2),
 			  Visible = false, NeedMouse = false })
 		root2.Childs[#root2.Childs + 1] = bm.oMarker
+		bm.oPlayers = {}
+		bm.oPlayerNames = {}
+		local PMARK = bm.playerMarkerSize or math.max( 16, math.floor( MARKER * 0.75 ) )
+		local maxP = ( bm.playerMarkers and #bm.playerMarkers ) or 8
+		for i = 1, maxP do
+			local op = W( "BMOPly_" .. i, "ImageBox", "RotatingSkin", 0, 0, PMARK, PMARK, {
+				ImageTexture = CC .. "/Gui/arrow.png", RotatingSkinAngle = 0.0,
+				RotatingSkinCenterX = math.floor( PMARK / 2 ),
+				RotatingSkinCenterY = math.floor( PMARK / 2 ),
+				Visible = false, NeedMouse = false } )
+			root2.Childs[#root2.Childs + 1] = op
+			bm.oPlayers[i] = op
+			local onm = W( "BMOPlyNm_" .. i, "TextBox", "TextBox", 0, 0, 96, 18, {
+				Caption = "", FontName = "SM_HeaderTiny", TextAlign = "Center",
+				TextShadow = true, TextShadowColour = "0 0 0",
+				Visible = false, NeedMouse = false } )
+			root2.Childs[#root2.Childs + 1] = onm
+			bm.oPlayerNames[i] = onm
+		end
 		bm.oPins, bm.oGhosts = {}, {}
 		for _, col in ipairs(Waypoint.COLORS) do
 			local p2 = W("BMOWp_" .. col .. bm.gsfx, "ImageBox", "ImageBox", 0, 0, 20, 28,
@@ -993,6 +1075,7 @@ function BigMap.refill(hud)
 	pool.dimsUsed = 0
 	pool.flatsUsed = 0
 	pool.shadesUsed = 0
+	pool.tilesUsed = 0
 	bm.clickMap = {}
 	bm.placed = {}
 	bm.refillCx, bm.refillCy = bm.cx, bm.cy
@@ -1003,7 +1086,17 @@ function BigMap.refill(hud)
 	local y1 = math.ceil(bm.cy + VH / (2 * px)) + 1
 	local skipped = 0
 	local solid = type( RfsBiomeMap ) == "table" and RfsBiomeMap.SOLID
+	local roadPaint = solid and RfsBiomeMap.ROADS
+	local useTiles = solid and RfsBiomeMap.TILES and px >= ( RfsBiomeMap.TILE_MIN_PX or 18 )
+	local td = hud.cl.td
 	local filt = bm.legendFilter
+	local function cellDimmed( id, wx, wy )
+		if filt == nil then return false end
+		if type( RfsBiomeMap ) == "table" and RfsBiomeMap.cellMatchesLegend then
+			return not RfsBiomeMap.cellMatchesLegend( filt, td, wx, wy, id )
+		end
+		return id ~= filt
+	end
 	local function edgeX(wx) return math.floor(VW / 2 + (wx - bm.cx) * px + 0.5) end
 	local function edgeY(wy) return math.floor(VH / 2 - (wy - bm.cy) * px + 0.5) end
 
@@ -1036,7 +1129,7 @@ function BigMap.refill(hud)
 			sh.width = w + 1; sh.height = h + 1
 			bm.placed[#bm.placed + 1] = { w = sh, wx = wx, wy = wy, ww = ww, wh = wh, dim = true }
 		end
-		if filt ~= nil and id ~= filt and pool.dims and pool.dimsUsed < #pool.dims then
+		if filt ~= nil and cellDimmed( id, wx, wy ) and pool.dims and pool.dimsUsed < #pool.dims then
 			pool.dimsUsed = pool.dimsUsed + 1
 			local ov = pool.dims[pool.dimsUsed]
 			ov.Visible = true
@@ -1066,6 +1159,83 @@ function BigMap.refill(hud)
 		cw.width = w + 1; cw.height = h + 1
 		bm.clickMap[cw.Name] = { x = wx, y = wy }
 		placeOverlays( id, sx, sy, w, h, wx, wy, ww, wh )
+		return true
+	end
+
+	local function takeFlat()
+		if not pool.flats or pool.flatsUsed >= #pool.flats then return nil end
+		pool.flatsUsed = pool.flatsUsed + 1
+		local cw = pool.flats[pool.flatsUsed]
+		if cw and cw.Name == bm.pinName then
+			if pool.flatsUsed >= #pool.flats then return nil end
+			pool.flatsUsed = pool.flatsUsed + 1
+			cw = pool.flats[pool.flatsUsed]
+		end
+		return cw
+	end
+
+	local function assignRoadOverlay( sx, sy, w, h, wx, wy, roadMask )
+		roadMask = math.floor( tonumber( roadMask ) or 0 ) % 16
+		if roadMask == 0 then return end
+		if not pool.roads or pool.roadsUsed >= #pool.roads then return end
+		pool.roadsUsed = pool.roadsUsed + 1
+		local ov = pool.roads[pool.roadsUsed]
+		ov.Visible = true
+		ov.x = sx
+		ov.y = sy
+		ov.width = w + 1
+		ov.height = h + 1
+		ov.ImageName = "road_" .. roadMask
+		bm.placed[#bm.placed + 1] = { w = ov, wx = wx, wy = wy, ww = 1, wh = 1, dim = true }
+	end
+
+	local function paintSolidCell( paintId, sx, sy, w, h, wx, wy, ww, wh, ids )
+		ww = ww or 1
+		wh = wh or 1
+		local biomeId = ids[wy][wx]
+		local roadMask = ( roadPaint and biomeId ~= 0 ) and RfsBiomeMap.roadMask( td, wx, wy ) or 0
+		if useTiles and pool.tiles and pool.tilesUsed < #pool.tiles then
+			local path = RfsBiomeMap.tileTexture( ids, wx, wy, x0, x1, y0, y1 )
+			if path then
+				pool.tilesUsed = pool.tilesUsed + 1
+				local cw = pool.tiles[pool.tilesUsed]
+				if cw and cw.Name == bm.pinName then
+					if pool.tilesUsed >= #pool.tiles then return false end
+					pool.tilesUsed = pool.tilesUsed + 1
+					cw = pool.tiles[pool.tilesUsed]
+				end
+				bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, ww = ww, wh = wh }
+				cw.Visible = true
+				cw.ImageTexture = path
+				cw.Colour = "1 1 1"
+				cw.Alpha = 1
+				cw.x = sx
+				cw.y = sy
+				cw.width = w + 1
+				cw.height = h + 1
+				bm.clickMap[cw.Name] = { x = wx, y = wy }
+				placeOverlays( biomeId, sx, sy, w, h, wx, wy, ww, wh )
+				if roadMask ~= 0 then
+					assignRoadOverlay( sx, sy, w, h, wx, wy, roadMask )
+				end
+				return true
+			end
+		end
+		local cw = takeFlat()
+		if not cw then return false end
+		bm.placed[#bm.placed + 1] = { w = cw, wx = wx, wy = wy, ww = ww, wh = wh }
+		cw.Visible = true
+		cw.Colour = RfsBiomeMap.colorForId( paintId )
+		cw.Alpha = 1
+		bm.clickMap[cw.Name] = { x = wx, y = wy }
+		cw.x = sx
+		cw.y = sy
+		cw.width = w + 1
+		cw.height = h + 1
+		placeOverlays( biomeId, sx, sy, w, h, wx, wy, ww, wh )
+		if roadMask ~= 0 then
+			assignRoadOverlay( sx, sy, w, h, wx, wy, roadMask )
+		end
 		return true
 	end
 
@@ -1100,12 +1270,15 @@ function BigMap.refill(hud)
 
 	local atlas = hud.cl.atlas
 	if solid then
-		-- Cap merge size so coastlines stay jagged (Xaero feel), not huge slabs.
+		local perCell = useTiles
 		local maxSide = 1
-		if px < 10 then maxSide = 5
-		elseif px < 14 then maxSide = 3
-		elseif px < 22 then maxSide = 2
+		if not perCell then
+			if px < 10 then maxSide = 5
+			elseif px < 14 then maxSide = 3
+			elseif px < 22 then maxSide = 2
+			end
 		end
+		local roadFilt = filt == ( RfsBiomeMap.ROAD_LEGEND_ID or 11 )
 		local ids = {}
 		for wy = y0, y1 do
 			local row = {}
@@ -1114,16 +1287,33 @@ function BigMap.refill(hud)
 				row[wx] = RfsBiomeMap.cellId( hud.cl.td, wx, wy )
 			end
 		end
-		-- Land next to water → coast strip (sandy), then lakes/shores paint blue.
 		RfsBiomeMap.applyCoast( ids, x0, x1, y0, y1 )
+		local function overlayRoadsRect( wx0, wy0, wx1, wy1 )
+			if not roadPaint then return end
+			for y = wy0, wy1 do
+				for x = wx0, wx1 do
+					if ids[y][x] ~= 0 then
+						local rm = RfsBiomeMap.roadMask( td, x, y )
+						if rm ~= 0 then
+							local csx = edgeX( x )
+							local csy = edgeY( y + 1 )
+							local cw = edgeX( x + 1 ) - csx
+							local ch = edgeY( y ) - csy
+							assignRoadOverlay( csx, csy, cw, ch, x, y, rm )
+						end
+					end
+				end
+			end
+		end
 		local visited = {}
 		local function vkey( wx, wy ) return wy * 65536 + wx end
 		for wy = y0, y1 do
 			for wx = x0, x1 do
 				if not visited[vkey( wx, wy )] then
 					local id = ids[wy][wx]
-					-- Open ocean: leave to blue backdrop (saves draw pool).
-					if id == 0 and RfsBiomeMap.isOpenOcean( ids, wx, wy, x0, x1, y0, y1 ) then
+					if roadFilt and RfsBiomeMap.roadMask( td, wx, wy ) == 0 then
+						visited[vkey( wx, wy )] = true
+					elseif id == 0 and RfsBiomeMap.isOpenOcean( ids, wx, wy, x0, x1, y0, y1 ) then
 						visited[vkey( wx, wy )] = true
 					else
 						local x2 = wx
@@ -1153,7 +1343,17 @@ function BigMap.refill(hud)
 						local sy = edgeY( wy + wh )
 						local w = edgeX( wx + ww ) - sx
 						local h = edgeY( wy ) - sy
-						if not assignFlat( id, sx, sy, w, h, wx, wy, ww, wh ) then
+						local paintId = id
+						local done
+						if perCell then
+							done = paintSolidCell( paintId, sx, sy, w, h, wx, wy, ww, wh, ids )
+						else
+							done = assignFlat( paintId, sx, sy, w, h, wx, wy, ww, wh )
+							if done and roadPaint and id ~= 0 then
+								overlayRoadsRect( wx, wy, x2, y2 )
+							end
+						end
+						if not done then
 							skipped = skipped + 1
 						end
 					end
@@ -1209,6 +1409,8 @@ function BigMap.refill(hud)
 		for i = fu + 1, #(p.flats or {}) do p.flats[i].Visible = false end
 		local su = (ti == bm.tierIdx) and (pool.shadesUsed or 0) or 0
 		for i = su + 1, #(p.shades or {}) do p.shades[i].Visible = false end
+		local tu = (ti == bm.tierIdx) and (pool.tilesUsed or 0) or 0
+		for i = tu + 1, #(p.tiles or {}) do p.tiles[i].Visible = false end
 	end
 	-- No POI text soup on the map — names live in the MARKERS list.
 	for i = 1, #bm.poiLabels do bm.poiLabels[i].Visible = false end
@@ -1283,6 +1485,9 @@ function BigMap.refill(hud)
 	for i = 1, (pool.flatsUsed or 0) do
 		if pool.flats[i] ~= pinW then vc[#vc + 1] = pool.flats[i] end
 	end
+	for i = 1, (pool.tilesUsed or 0) do
+		if pool.tiles[i] ~= pinW then vc[#vc + 1] = pool.tiles[i] end
+	end
 	for res, lst in pairs(pool.byRes) do
 		for i = 1, (pool.used[res] or 0) do
 			if lst[i] ~= pinW then vc[#vc + 1] = lst[i] end
@@ -1302,6 +1507,17 @@ function BigMap.refill(hud)
 		vc[#vc + 1] = bm.wpGhost[col]
 		if bm.farmPins then vc[#vc + 1] = bm.farmPins[col] end
 	end
+	-- Players + names last = highest draw order (above house / wp).
+	if bm.playerMarkers then
+		for _, pm in ipairs( bm.playerMarkers ) do
+			vc[#vc + 1] = pm
+		end
+	end
+	if bm.playerNames then
+		for _, pn in ipairs( bm.playerNames ) do
+			vc[#vc + 1] = pn
+		end
+	end
 	bm.view.Childs = vc
 	BigMap.syncLegendUi(hud)
 	BigMap.syncPoiUi(hud)
@@ -1316,7 +1532,8 @@ end
 
 function BigMap.open(hud)
 	local c = hud.cl
-	if not (c.ready and c.atlas and c.vw) then return end
+	ensureHudViewSize( c )
+	if not (c.ready and c.atlas) then return end
 	if c.bm and c.bm.open then return end
 	if not BigMap.build(hud, 99999) then return end
 	local bm = c.bm
@@ -1412,6 +1629,39 @@ function BigMap.update(hud, dt, char)
 		local okd, dir = pcall(sm.camera.getDirection)
 		if okd and dir then
 			bm.marker.RotatingSkinAngle = math.atan2(dir.x, dir.y)
+		end
+	end
+	-- Remote players (MP) — above house; names under arrows
+	if bm.playerMarkers then
+		local PMARK = bm.playerMarkerSize or math.max( 16, math.floor( MARKER * 0.75 ) )
+		local idx = 0
+		if type( Waypoint ) == "table" and Waypoint.eachRemotePlayer then
+			Waypoint.eachRemotePlayer( function( _p, pos, dir, displayName )
+				idx = idx + 1
+				local pm = bm.playerMarkers[idx]
+				if not pm then return end
+				local sx = bm.VW / 2 + ( pos.x / 64 - bm.cx ) * px
+				local sy = bm.VH / 2 - ( pos.y / 64 - bm.cy ) * px
+				pm.Visible = true
+				pm.x = math.floor( sx - PMARK / 2 )
+				pm.y = math.floor( sy - PMARK / 2 )
+				if dir then
+					pm.RotatingSkinAngle = math.atan2( dir.x, dir.y )
+				end
+				local pn = bm.playerNames and bm.playerNames[idx]
+				if pn then
+					pn.Caption = tostring( displayName or "Player" )
+					pn.Visible = true
+					pn.x = math.floor( sx - 48 )
+					pn.y = math.floor( sy + PMARK / 2 - 2 )
+				end
+			end )
+		end
+		for i = idx + 1, #bm.playerMarkers do
+			bm.playerMarkers[i].Visible = false
+			if bm.playerNames and bm.playerNames[i] then
+				bm.playerNames[i].Visible = false
+			end
 		end
 	end
 	local wp = hud.cl.waypoint
@@ -1517,6 +1767,22 @@ function BigMap.update(hud, dt, char)
 		end
 		mirror(bm.oMarker, bm.marker, MARKER, MARKER)
 		bm.oMarker.RotatingSkinAngle = bm.marker.RotatingSkinAngle
+		if bm.oPlayers and bm.playerMarkers then
+			local PMARK = bm.playerMarkerSize or math.max( 16, math.floor( MARKER * 0.75 ) )
+			for i, pm in ipairs( bm.playerMarkers ) do
+				local op = bm.oPlayers[i]
+				if op then
+					mirror( op, pm, PMARK, PMARK )
+					op.RotatingSkinAngle = pm.RotatingSkinAngle
+				end
+				local pn = bm.playerNames and bm.playerNames[i]
+				local onm = bm.oPlayerNames and bm.oPlayerNames[i]
+				if onm and pn then
+					onm.Caption = pn.Caption or ""
+					mirror( onm, pn, 96, 18 )
+				end
+			end
+		end
 		for col, p in pairs(bm.wpPins) do mirror(bm.oPins[col], p, 20, 28) end
 		for col, g in pairs(bm.wpGhost) do mirror(bm.oGhosts[col], g, 20, 28) end
 		if doRender then

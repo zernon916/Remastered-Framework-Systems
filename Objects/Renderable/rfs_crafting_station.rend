@@ -1,0 +1,79 @@
+{
+	"_comment": "RTI Crafting Station. Body/screen/slider/lamps are one skinned mesh. Lamps use SkelAnimDifAsgNor (solid green top / red bottom). UV-anim needs 0-1 cell UVs; these lamps still sit on the body atlas.",
+	"lodList": [
+		{
+			"animationList": [
+				{
+					"file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/ani_rfs_crafting_station_int_slider.dae",
+					"looping": false,
+					"name": "int_slider"
+				},
+				{
+					"file": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/ani_rfs_crafting_station_int_screen_rotate.dae",
+					"looping": false,
+					"name": "int_screen_rotate"
+				}
+			],
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Mesh/rfs_crafting_station.dae",
+			"subMeshMap": {
+				"craftingstation_body": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_nor.png"
+					]
+				},
+				"craftingstation_screen": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_screen_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_nor.png"
+					]
+				},
+				"craftingstation_slider": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_nor.png"
+					]
+				},
+				"submesh_light_01": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light01_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_nor.png"
+					]
+				},
+				"submesh_light_01-material": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light01_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_nor.png"
+					]
+				},
+				"submesh_light_02": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light02_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_nor.png"
+					]
+				},
+				"submesh_light_02-material": {
+					"material": "SkelAnimDifAsgNor",
+					"textureList": [
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light02_dif.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_asg.png",
+						"$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/Textures/craftstation/craftingstation_light_nor.png"
+					]
+				}
+			},
+			"maxViewDistance": 1000.0
+		}
+	]
+}

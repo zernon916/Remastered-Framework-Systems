@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "layout": "Rfs_CraftStation.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "Wireless",
+      "label": "Wireless",
+      "default": "Online",
+      "options": [
+        { "id": "Online", "label": "ONLINE", "widgets": ["ArtWireless"] },
+        { "id": "Offline", "label": "OFFLINE", "widgets": ["ArtWirelessOff"] }
+      ]
+    },
+    {
+      "id": "Upgrade1",
+      "label": "Upgrade 1 tag",
+      "default": "Done",
+      "options": [
+        { "id": "Locked", "label": "LOCKED", "widgets": ["ArtUpgLock0"] },
+        { "id": "Available", "label": "UPGRADE", "widgets": ["ArtUpgBtn0"] },
+        { "id": "Done", "label": "UPGRADED", "widgets": ["ArtUpgDone0"] }
+      ]
+    },
+    {
+      "id": "Upgrade2",
+      "label": "Upgrade 2 tag",
+      "default": "Available",
+      "options": [
+        { "id": "Locked", "label": "LOCKED", "widgets": ["ArtUpgLock1"] },
+        { "id": "Available", "label": "UPGRADE", "widgets": ["ArtUpgBtn1"] },
+        { "id": "Done", "label": "UPGRADED", "widgets": ["ArtUpgDone1"] }
+      ]
+    },
+    {
+      "id": "Upgrade3",
+      "label": "Upgrade 3 tag",
+      "default": "Locked",
+      "options": [
+        { "id": "Locked", "label": "LOCKED", "widgets": ["ArtUpgLock2"] },
+        { "id": "Available", "label": "UPGRADE", "widgets": ["ArtUpgBtn2"] },
+        { "id": "Done", "label": "UPGRADED", "widgets": ["ArtUpgDone2"] }
+      ]
+    },
+    {
+      "id": "Upgrade4",
+      "label": "Upgrade 4 tag",
+      "default": "Locked",
+      "options": [
+        { "id": "Locked", "label": "LOCKED", "widgets": ["ArtUpgLock3"] },
+        { "id": "Available", "label": "UPGRADE", "widgets": ["ArtUpgBtn3"] },
+        { "id": "Done", "label": "UPGRADED", "widgets": ["ArtUpgDone3"] }
+      ]
+    },
+    {
+      "id": "UpgradeLegacy",
+      "label": "Old upgrade art",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        {
+          "id": "Legacy",
+          "label": "Show leftover",
+          "widgets": [
+            "ArtUpgHex",
+            "ArtUpgStats",
+            "ArtUpgSide",
+            "ArtUpgKit",
+            "ArtBtnUpgrade",
+            "ArtUpgSlot0",
+            "ArtUpgSlot1",
+            "ArtUpgSlot2",
+            "ArtUpgSlot3",
+            "ArtUpgSlot4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "RecipePreview",
+      "label": "Selected recipe",
+      "default": "None",
+      "options": [
+        { "id": "None", "label": "None", "widgets": [] },
+        {
+          "id": "Selected",
+          "label": "Selected",
+          "widgets": ["SelectedIcon", "IngIcon0", "IngIcon1", "IngIcon2", "IngIcon3"]
+        }
+      ]
+    },
+    {
+      "id": "SpeedArt",
+      "label": "Speed bar art",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["ArtSpeed"] }
+      ]
+    }
+  ]
+}

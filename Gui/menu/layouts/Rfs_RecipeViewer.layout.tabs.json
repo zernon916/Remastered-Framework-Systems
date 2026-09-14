@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "layout": "Rfs_RecipeViewer.layout",
+  "inherit": true,
+  "defaultTab": "Recipes",
+  "tabs": [
+    { "id": "Recipes", "label": "Recipes", "buttons": ["TabRecipes", "ArtTabRecipes"] },
+    { "id": "Queue", "label": "Queue", "buttons": ["TabQueue", "ArtTabQueue"] }
+  ],
+  "shared": [
+    "Root", "MainPanel", "BgPanel", "ArtTitle", "ArtClose", "CloseButton",
+    "ArtWireless", "ArtWirelessOff", "ArtStationBadge", "ArtHint",
+    "PanelRecipes", "ArtSlots", "PanelCells", "PanelQueue", "ArtQRows", "PanelQHits",
+    "PanelSelected", "PanelAmount", "BtnAddQueue", "BtnSend", "BtnPair", "BtnClear"
+  ],
+  "pages": {
+    "Recipes": [],
+    "Queue": []
+  }
+}

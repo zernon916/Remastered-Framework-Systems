@@ -1,0 +1,70 @@
+{
+	"_comment": "Pack-local textsign mesh (CG drops need $CONTENT_ lid mesh, not $SURVIVAL_DATA). DifAsgNor only.",
+	"lodList": [
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/rfs_lcd_small.fbx",
+			"minViewSize": 75,
+			"subMeshMap": {
+				"screen": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_asg.tga"
+					]
+				},
+				"textsign": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_nor.tga"
+					]
+				}
+			}
+		},
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/rfs_lcd_small_lod1.fbx",
+			"minViewSize": 20,
+			"subMeshMap": {
+				"screen": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_asg.tga"
+					]
+				},
+				"textsign": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_nor.tga"
+					]
+				}
+			}
+		},
+		{
+			"mesh": "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Objects/rfs_lcd_small_lod2.fbx",
+			"subMeshMap": {
+				"screen": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_screen_asg.tga"
+					]
+				},
+				"textsign": {
+					"material": "DifAsgNor",
+					"textureList": [
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_dif.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_asg.tga",
+						"$SURVIVAL_DATA/Objects/Textures/interactive/obj_interactive_textsign_nor.tga"
+					]
+				}
+			}
+		}
+	]
+}

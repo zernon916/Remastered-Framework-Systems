@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "layout": "Rfs_Hud.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "AmmoSlot",
+      "label": "Ammo slot",
+      "default": "None",
+      "options": [
+        { "id": "None", "label": "None", "widgets": [] },
+        { "id": "Slot0", "label": "Slot 0", "widgets": ["RfsAmmoSlot0"] },
+        { "id": "Slot1", "label": "Slot 1", "widgets": ["RfsAmmoSlot1"] },
+        { "id": "Slot2", "label": "Slot 2", "widgets": ["RfsAmmoSlot2"] },
+        { "id": "Slot3", "label": "Slot 3", "widgets": ["RfsAmmoSlot3"] },
+        { "id": "Slot4", "label": "Slot 4", "widgets": ["RfsAmmoSlot4"] },
+        { "id": "Slot5", "label": "Slot 5", "widgets": ["RfsAmmoSlot5"] },
+        { "id": "Slot6", "label": "Slot 6", "widgets": ["RfsAmmoSlot6"] },
+        { "id": "Slot7", "label": "Slot 7", "widgets": ["RfsAmmoSlot7"] },
+        { "id": "Slot8", "label": "Slot 8", "widgets": ["RfsAmmoSlot8"] },
+        { "id": "Slot9", "label": "Slot 9", "widgets": ["RfsAmmoSlot9"] }
+      ]
+    },
+    {
+      "id": "ChargePanel",
+      "label": "Charge meter",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["RfsChargePanel"] }
+      ]
+    },
+    {
+      "id": "PaintPanel",
+      "label": "Paint meter",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["RfsPaintPanel"] }
+      ]
+    },
+    {
+      "id": "GrowPanel",
+      "label": "Grow panel",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["RfsGrowPanel"] }
+      ]
+    },
+    {
+      "id": "OverlayPanel",
+      "label": "Block overlay",
+      "default": "Hidden",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["RfsOverlayPanel"] }
+      ]
+    },
+    {
+      "id": "GameModePanel",
+      "label": "Game mode",
+      "default": "Shown",
+      "options": [
+        { "id": "Hidden", "label": "Hidden", "widgets": [] },
+        { "id": "Shown", "label": "Shown", "widgets": ["RfsGameModePanel"] }
+      ]
+    }
+  ]
+}

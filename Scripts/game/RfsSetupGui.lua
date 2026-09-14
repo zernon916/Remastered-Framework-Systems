@@ -4,7 +4,7 @@
 
 RfsSetupGui = RfsSetupGui or {}
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_Setup.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_Setup.layout"
 local QUEST_ROWS = 6
 
 local function flyOn()
@@ -163,6 +163,8 @@ function RfsSetupGui.refreshFarming( host )
 	local dirt = ( host.cl and host.cl.rfsDirtOnBlocks ) or ( _G.g_rfsDirtOnBlocks == true )
 	local fastPlace = ( host.cl and host.cl.rfsFastPlace ) or ( _G.g_rfsFastPlace == true )
 	local fastPickup = ( host.cl and host.cl.rfsFastPickup ) or ( _G.g_rfsFastPickup == true )
+	local snapRf = ( type( RfsFeatures ) == "table" and RfsFeatures.snapshot and RfsFeatures.snapshot() ) or {}
+	local raids = snapRf.raidsEnabled ~= false
 
 	pcall( function()
 		gui:setVisible( "BtnInstantFarm", cheats )
@@ -178,11 +180,13 @@ function RfsSetupGui.refreshFarming( host )
 	gui:setText( "BtnDirtOnBlocks", "Dirt on blocks: " .. ( dirt and "ON" or "OFF" ) )
 	gui:setText( "BtnFastPlace", "Fast place: " .. ( fastPlace and "ON" or "OFF" ) )
 	gui:setText( "BtnFastPickup", "Fast pickup: " .. ( fastPickup and "ON" or "OFF" ) )
+	gui:setText( "BtnRaids", "Raids: " .. ( raids and "ON" or "OFF" ) )
 	pcall( function()
 		gui:setButtonState( "BtnAlwaysWatered", watered )
 		gui:setButtonState( "BtnDirtOnBlocks", dirt )
 		gui:setButtonState( "BtnFastPlace", fastPlace )
 		gui:setButtonState( "BtnFastPickup", fastPickup )
+		gui:setButtonState( "BtnRaids", raids )
 	end )
 
 	local lines = {
@@ -191,6 +195,7 @@ function RfsSetupGui.refreshFarming( host )
 		"Dirt on blocks: Soil Bag may place on body/lift tops (not only terrain). Harvestable stays world-fixed.",
 		"Fast place: LMB drag rectangle batch soil placement (terrain follow or flat block/lift tops; release to place).",
 		"Fast pickup: RMB drag rectangle batch soil pickup (red rect; soil bag, empty hand, or block).",
+		"Raids: OFF blocks new crop-triggered raids and cancels any raid in progress (host world flag, saves with world).",
 		"Growth Time overlay is a personal preference — use /menu (not /setup).",
 		"Growbeds / wild farmables unchanged. Toggles save with the world (sm.storage).",
 	}
@@ -199,11 +204,12 @@ function RfsSetupGui.refreshFarming( host )
 	end
 	gui:setText( "FarmingStatus", table.concat( lines, "\n" ) )
 	gui:setText( "Status", string.format(
-		"Farming | watered=%s | dirtBlocks=%s | fastPlace=%s | fastPickup=%s",
+		"Farming | watered=%s | dirtBlocks=%s | fastPlace=%s | fastPickup=%s | raids=%s",
 		watered and "ON" or "OFF",
 		dirt and "ON" or "OFF",
 		fastPlace and "ON" or "OFF",
-		fastPickup and "ON" or "OFF"
+		fastPickup and "ON" or "OFF",
+		raids and "ON" or "OFF"
 	) )
 end
 
@@ -292,9 +298,18 @@ function RfsSetupGui.bind( host, gui )
 end
 
 function RfsSetupGui.open( host )
-	local okHost, isHost = pcall( function() return sm.isHost end )
-	if not ( okHost and isHost ) then
-		sm.gui.chatMessage( "[RFS] /setup is host-only. Use /menu for personal options." )
+	-- Legacy entry: prefer admin (host) gate used by /setup.
+	local ok = false
+	if type( _G.rfsClientIsAdmin ) == "function" then
+		ok = _G.rfsClientIsAdmin() and true or false
+	elseif type( _G.rfsClientIsHost ) == "function" then
+		ok = _G.rfsClientIsHost() and true or false
+	else
+		local okHost, isHost = pcall( function() return sm.isHost end )
+		ok = okHost and isHost and true or false
+	end
+	if not ok then
+		sm.gui.chatMessage( "[RFS] /setup is host/admin-only. Use /menu for personal options." )
 		return
 	end
 

@@ -13,6 +13,12 @@ pcall( function() dofile( "$CONTENT_DATA/Scripts/game/RfsHealthBars.lua" ) end )
 
 Player = class( SurvivalPlayer )
 
+pcall( function()
+	if type( RfsHandheldLcd ) == "table" and RfsHandheldLcd.ensurePlayerActionHooks then
+		RfsHandheldLcd.ensurePlayerActionHooks()
+	end
+end )
+
 local RFS_MAP_LOCK_UUID = sm.uuid.new( "9a1528a6-acd2-44db-8050-b2f493362191" )
 local RFS_MAP_HEIGHT = 1200
 local RFS_MAP_DEFAULT_ZOOM = 200
@@ -290,12 +296,13 @@ function Player.cl_rfs_releaseFromPod( self, params )
 end
 
 function Player.sv_rfs_toggleGrowthOverlay( self )
-	local enabled = RfsFarming.togglePlayerGrowthOverlay( self.player )
+	-- Growth Time HUD retired — force off.
+	RfsFarming.setPlayerGrowthOverlay( self.player, false )
 	self.sv = self.sv or {}
-	self.sv.rfsGrowthOverlay = enabled
+	self.sv.rfsGrowthOverlay = false
 	self.network:sendToClient( self.player, "cl_rfs_growthOverlayState", {
-		enabled = enabled,
-		msg = "Growth Time overlay: " .. ( enabled and "ON" or "OFF" ),
+		enabled = false,
+		msg = "Growth Time HUD removed — use Farmers Tablet",
 	} )
 end
 
@@ -1108,4 +1115,38 @@ function Player.sv_e_rfsDeepSleepHeal( self, params )
 			end )
 		end
 	end
+end
+
+-- GenSettings PVP: Survival vanilla ignores player→player damage; enable when ON.
+local function rfsPvpEnabled()
+	if type( RfsFeatures ) == "table" and type( RfsFeatures.pvpEnabled ) == "function" then
+		return RfsFeatures.pvpEnabled() == true
+	end
+	return _G.g_rfsPvp == true
+end
+
+function Player.server_onProjectile( self, hitPos, hitTime, hitVelocity, projectileName, attacker, damage, userData, hitNormal, projectileUuid )
+	if type( attacker ) == "Player" and attacker ~= self.player and rfsPvpEnabled() then
+		local dmg = tonumber( damage ) or 0
+		if dmg > 0 then
+			self:sv_takeDamage( dmg, "pvp", projectileUuid )
+		end
+		if self.player.character and self.player.character:isTumbling() and hitVelocity then
+			local n = hitVelocity:normalize()
+			if n then
+				ApplyKnockback( self.player.character, n, 2000 )
+			end
+		end
+	end
+	BasePlayer.server_onProjectile( self, hitPos, hitTime, hitVelocity, projectileName, attacker, damage, userData, hitNormal, projectileUuid )
+end
+
+function Player.server_onMelee( self, hitPos, attacker, damage, power, hitDirection )
+	if type( attacker ) == "Player" and attacker ~= self.player and rfsPvpEnabled() then
+		local dmg = tonumber( damage ) or 0
+		if dmg > 0 then
+			self:sv_takeDamage( dmg, "pvp" )
+		end
+	end
+	BasePlayer.server_onMelee( self, hitPos, attacker, damage, power, hitDirection )
 end

@@ -1,0 +1,60 @@
+{
+  "blend": "C:\\Coding Projects\\models\\WIP Models\\Crafting_Station_SM.blend",
+  "fbx": "C:\\Coding Projects\\RemasteredFrameworkSystems\\Objects\\Mesh\\rfs_crafting_station.fbx",
+  "scale": 1.0,
+  "recentered": false,
+  "exported_objects": [
+    {
+      "name": "craftingstation_body",
+      "verts": 1432,
+      "faces": 1003,
+      "materials": [
+        "craftingstation_SM"
+      ]
+    },
+    {
+      "name": "craftingstation_slider",
+      "verts": 30,
+      "faces": 14,
+      "materials": [
+        "craftingstation_SM"
+      ]
+    },
+    {
+      "name": "craftingstation_slider",
+      "verts": 30,
+      "faces": 14,
+      "materials": [
+        "craftingstation_SM"
+      ]
+    },
+    {
+      "name": "craftingstation_body.001",
+      "verts": 64,
+      "faces": 43,
+      "materials": [
+        "MONITOR"
+      ]
+    }
+  ],
+  "size_m": [
+    4.2129,
+    2.5499,
+    1.3236
+  ],
+  "size_sm_blocks": [
+    16.852,
+    5.295,
+    10.2
+  ],
+  "min_world": [
+    -2.9842,
+    -1.315,
+    -0.7377
+  ],
+  "max_world": [
+    1.2287,
+    1.2349,
+    0.5859
+  ]
+}

@@ -1,0 +1,1944 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MyGUI type="Layout" version="3.2.0">
+	<!-- RFS: layouts=$CONTENT_DATA/Gui/menu/layouts  images=$CONTENT_DATA/Gui/menu/images -->
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+		<Property key="NeedKey" value="false"/>
+		<Property key="NeedMouse" value="false"/>
+		<Property key="InheritsPick" value="true"/>
+
+		<Widget type="Widget" skin="PanelEmpty" position_real="0.03 0.025 0.94 0.95" name="MainPanel">
+			<Property key="NeedKey" value="false"/>
+			<Property key="NeedMouse" value="false"/>
+			<Property key="InheritsPick" value="true"/>
+
+			<Widget type="ImageBox" skin="ImageBox" position_real="0 0 1 1" name="BgPanel">
+				<Property key="NeedMouse" value="false"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="InheritsPick" value="true"/>
+				<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/rfs_craftstation_bg.png"/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0 1 1" name="ArtUpgBg">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgrade_panel_bg.png"/>
+				</Widget>
+
+			<Widget type="Widget" skin="PanelEmpty" position_real="-0.000887 -0.002924 1 1" name="ArtLayer">
+				<Property key="NeedMouse" value="false"/>
+				<Property key="NeedKey" value="false"/>
+				<Property key="InheritsPick" value="true"/>
+								<Widget type="ImageBox" skin="ImageBox" position_real="0.94 0.014 0.04 0.05" name="ArtClose">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_cancel.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.297 -0.031 0.359 0.101" name="ArtTitle">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/top_header_full.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.200 0.078 0.145 0.058" name="ArtTabCraft">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/tab_craft_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.530 0.078 0.165 0.058" name="ArtTabUpgrade">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/tab_upgrades_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.234 0.13 0.325 0.058" name="ArtSearch">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/search.png"/>
+				</Widget>
+				<Widget type="Widget" skin="PanelEmpty" position_real="0.132 0.208 0.598 0.504" name="ArtGrid">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="InheritsPick" value="false"/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.015 0.118 0.21" name="ArtCell0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.13 0.01 0.118 0.21" name="ArtCell1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.258 0.01 0.118 0.21" name="ArtCell2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.386 0.01 0.118 0.21" name="ArtCell3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.514 0.01 0.118 0.21" name="ArtCell4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.642 0.01 0.118 0.21" name="ArtCell5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.77 0.01 0.118 0.21" name="ArtCell6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.002 0.24 0.118 0.21" name="ArtCell7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.13 0.24 0.118 0.21" name="ArtCell8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.258 0.24 0.118 0.21" name="ArtCell9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.386 0.24 0.118 0.21" name="ArtCell10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.514 0.24 0.118 0.21" name="ArtCell11">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.642 0.24 0.118 0.21" name="ArtCell12">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.77 0.24 0.118 0.21" name="ArtCell13">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.002 0.47 0.118 0.21" name="ArtCell14">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.13 0.47 0.118 0.21" name="ArtCell15">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.258 0.47 0.118 0.21" name="ArtCell16">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.386 0.47 0.118 0.21" name="ArtCell17">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.514 0.47 0.118 0.21" name="ArtCell18">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.642 0.47 0.118 0.21" name="ArtCell19">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.77 0.47 0.118 0.21" name="ArtCell20">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.002 0.7 0.118 0.21" name="ArtCell21">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.13 0.7 0.118 0.21" name="ArtCell22">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.258 0.7 0.118 0.21" name="ArtCell23">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.386 0.7 0.118 0.21" name="ArtCell24">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.514 0.7 0.118 0.21" name="ArtCell25">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.642 0.7 0.118 0.21" name="ArtCell26">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.77 0.7 0.118 0.21" name="ArtCell27">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				</Widget>
+				<Widget type="Widget" skin="PanelEmpty" position_real="0.755 0.148 0.218 0.564" name="ArtQueue">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.07 0.155 0.14" name="ArtQIcon0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.52 0.07" name="ArtQTrack0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_track.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.052 0.07" name="ArtQFill0_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.207 0.098 0.058 0.094" name="ArtQKnob0_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.104 0.07" name="ArtQFill0_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.259 0.098 0.058 0.094" name="ArtQKnob0_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.156 0.07" name="ArtQFill0_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.311 0.098 0.058 0.094" name="ArtQKnob0_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.208 0.07" name="ArtQFill0_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.363 0.098 0.058 0.094" name="ArtQKnob0_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.26 0.07" name="ArtQFill0_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.415 0.098 0.058 0.094" name="ArtQKnob0_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.312 0.07" name="ArtQFill0_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.467 0.098 0.058 0.094" name="ArtQKnob0_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.364 0.07" name="ArtQFill0_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.519 0.098 0.058 0.094" name="ArtQKnob0_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.416 0.07" name="ArtQFill0_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.571 0.098 0.058 0.094" name="ArtQKnob0_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.468 0.07" name="ArtQFill0_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.623 0.098 0.058 0.094" name="ArtQKnob0_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.11 0.52 0.07" name="ArtQFill0_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.675 0.098 0.058 0.094" name="ArtQKnob0_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.845 0.08 0.1 0.12" name="ArtQCancel0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_cancel.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.23 0.155 0.14" name="ArtQIcon1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.52 0.07" name="ArtQTrack1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_track.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.052 0.07" name="ArtQFill1_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.207 0.258 0.058 0.094" name="ArtQKnob1_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.104 0.07" name="ArtQFill1_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.259 0.258 0.058 0.094" name="ArtQKnob1_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.156 0.07" name="ArtQFill1_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.311 0.258 0.058 0.094" name="ArtQKnob1_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.208 0.07" name="ArtQFill1_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.363 0.258 0.058 0.094" name="ArtQKnob1_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.26 0.07" name="ArtQFill1_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.415 0.258 0.058 0.094" name="ArtQKnob1_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.312 0.07" name="ArtQFill1_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.467 0.258 0.058 0.094" name="ArtQKnob1_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.364 0.07" name="ArtQFill1_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.519 0.258 0.058 0.094" name="ArtQKnob1_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.416 0.07" name="ArtQFill1_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.571 0.258 0.058 0.094" name="ArtQKnob1_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.468 0.07" name="ArtQFill1_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.623 0.258 0.058 0.094" name="ArtQKnob1_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.27 0.52 0.07" name="ArtQFill1_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.675 0.258 0.058 0.094" name="ArtQKnob1_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.845 0.24 0.1 0.12" name="ArtQCancel1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_cancel.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.39 0.155 0.14" name="ArtQIcon2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.52 0.07" name="ArtQTrack2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_track.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.052 0.07" name="ArtQFill2_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.207 0.418 0.058 0.094" name="ArtQKnob2_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.104 0.07" name="ArtQFill2_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.259 0.418 0.058 0.094" name="ArtQKnob2_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.156 0.07" name="ArtQFill2_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.311 0.418 0.058 0.094" name="ArtQKnob2_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.208 0.07" name="ArtQFill2_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.363 0.418 0.058 0.094" name="ArtQKnob2_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.26 0.07" name="ArtQFill2_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.415 0.418 0.058 0.094" name="ArtQKnob2_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.312 0.07" name="ArtQFill2_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.467 0.418 0.058 0.094" name="ArtQKnob2_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.364 0.07" name="ArtQFill2_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.519 0.418 0.058 0.094" name="ArtQKnob2_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.416 0.07" name="ArtQFill2_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.571 0.418 0.058 0.094" name="ArtQKnob2_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.468 0.07" name="ArtQFill2_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.623 0.418 0.058 0.094" name="ArtQKnob2_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.43 0.52 0.07" name="ArtQFill2_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.675 0.418 0.058 0.094" name="ArtQKnob2_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.845 0.4 0.1 0.12" name="ArtQCancel2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_cancel.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.55 0.155 0.14" name="ArtQIcon3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.52 0.07" name="ArtQTrack3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_track.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.052 0.07" name="ArtQFill3_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.207 0.578 0.058 0.094" name="ArtQKnob3_1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.104 0.07" name="ArtQFill3_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.259 0.578 0.058 0.094" name="ArtQKnob3_2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.156 0.07" name="ArtQFill3_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.311 0.578 0.058 0.094" name="ArtQKnob3_3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.208 0.07" name="ArtQFill3_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.363 0.578 0.058 0.094" name="ArtQKnob3_4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.26 0.07" name="ArtQFill3_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.415 0.578 0.058 0.094" name="ArtQKnob3_5">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.312 0.07" name="ArtQFill3_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.467 0.578 0.058 0.094" name="ArtQKnob3_6">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.364 0.07" name="ArtQFill3_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.519 0.578 0.058 0.094" name="ArtQKnob3_7">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.416 0.07" name="ArtQFill3_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.571 0.578 0.058 0.094" name="ArtQKnob3_8">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.468 0.07" name="ArtQFill3_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.623 0.578 0.058 0.094" name="ArtQKnob3_9">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.185 0.59 0.52 0.07" name="ArtQFill3_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_fill.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.675 0.578 0.058 0.094" name="ArtQKnob3_10">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_knob.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.845 0.56 0.1 0.12" name="ArtQCancel3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_cancel.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.02 0.8 0.22 0.17" name="ArtView0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/num_1_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.265 0.8 0.22 0.17" name="ArtView1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/num_2_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.51 0.8 0.22 0.17" name="ArtView2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/num_3_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.755 0.8 0.22 0.17" name="ArtView3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/num_4_off.png"/>
+				</Widget>
+				</Widget>
+				<Widget type="Widget" skin="PanelEmpty" position_real="0.035 0.208 0.102 0.444" name="ArtCats">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="-0.046716 0.138958 0.907 0.145" name="ArtCatAll">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/pill_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="-0.047 0.280439 0.907 0.145" name="ArtCatTool">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/pill_tools_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="-0.047 0.420439 0.907 0.145" name="ArtCatBlock">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/pill_blocks_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="-0.047 0.560439 0.907 0.145" name="ArtCatInteractive">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/pill_interactive_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="-0.047 0.700439 0.907 0.145" name="ArtCatPart">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/pill_parts_off.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="-0.047 0.840439 0.907 0.145" name="ArtCatConsumable">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/pill_consumable_off.png"/>
+				</Widget>
+				</Widget>
+				<Widget type="Widget" skin="PanelEmpty" position_real="0.035 0.13 1.204 0.839" name="ArtUpgrade">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.268 0.0 0.214 0.084" name="ArtUpgHeader">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/header_station_upgrades.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.051 0.136 0.147 0.557" name="ArtUpgCard0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgrade_card_1_gold.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.225 0.136 0.147 0.557" name="ArtUpgCard1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgrade_card_2_regular.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.394 0.136 0.147 0.557" name="ArtUpgCard2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgrade_card_3_regular.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.567 0.136 0.147 0.557" name="ArtUpgCard3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgrade_card_4_regular.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.066 0.566 0.118 0.084" name="ArtUpgBtn0">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_upgrade_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.066 0.566 0.118 0.084" name="ArtUpgLock0">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.063 0.561 0.125 0.093" name="ArtUpgDone0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgraded_tag.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.24 0.57 0.118 0.084" name="ArtUpgBtn1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_upgrade_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.24 0.57 0.118 0.084" name="ArtUpgLock1">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.24 0.57 0.118 0.084" name="ArtUpgDone1">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgraded_tag.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.409 0.561 0.118 0.084" name="ArtUpgBtn2">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_upgrade_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.409 0.561 0.118 0.084" name="ArtUpgLock2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.409 0.561 0.118 0.084" name="ArtUpgDone2">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgraded_tag.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.048 0.845 0.25 0.139" name="ArtUpgFooter">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/status_current_capacity.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.582 0.561 0.118 0.084" name="ArtUpgBtn3">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_upgrade_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.582 0.57 0.118 0.084" name="ArtUpgLock3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.582 0.57 0.118 0.084" name="ArtUpgDone3">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/upgraded_tag.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.232 0.845 0.252 0.141" name="ArtUpgTablets">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/status_connected_tablets.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.468 0.845 0.26 0.141" name="ArtUpgCraftSpeed">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/status_craft_speed.png"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.4 0.859 0.105 0.112" name="TabletsLabel">
+					<Property key="Caption" value="0 / 4"/>
+					<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.603 0.851 0.107 0.109" name="UpgSpeedLabel">
+					<Property key="Caption" value="100%"/>
+					<Property key="FontName" value="SM_HeaderLarge_Wide"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.721 0.093 0.278" name="ArtUpgHex">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/panel_hex.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.107 0.721 0.681 0.279" name="ArtUpgStats">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/panel_wide.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.599 0.02897 0.168 0.553" name="ArtUpgSide">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/panel_slot.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.642 0.153 0.083 0.163" name="ArtUpgKit">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.619 0.424 0.125 0.102" name="ArtBtnUpgrade">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_upgrade_on.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.00451 0.133 0.091 0.184" name="ArtUpgSlot0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.105 0.133 0.091 0.184" name="ArtUpgSlot1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.205 0.133 0.091 0.184" name="ArtUpgSlot2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.305 0.133 0.091 0.184" name="ArtUpgSlot3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.405 0.133 0.091 0.184" name="ArtUpgSlot4">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_locked.png"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.055224 0.548051 0.132887 0.111141" name="UpgSlot0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.23232 0.560849 0.132887 0.111141" name="UpgSlot1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.401292 0.56663 0.133878 0.112455" name="UpgSlot2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.574327 0.55734 0.132887 0.111141" name="UpgSlot3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.909756 0.132921 0.090244 0.182823" name="UpgSlot4">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Property key="Visible" value="false"/>
+				</Widget>
+			</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.004 0 0.173 0.047" name="ArtWireless">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/status_wireless_online.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.004 0 0.173 0.047" name="ArtWirelessOff">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/status_wireless_offline.png"/>
+				</Widget>
+			</Widget>
+							<Widget type="Button" skin="PanelEmpty" position_real="0.94 0.014 0.04 0.05" name="CloseButton">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+							<Widget type="Button" skin="PanelEmpty" position_real="0.200 0.078 0.145 0.058" name="TabCraft">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+							<Widget type="Button" skin="PanelEmpty" position_real="0.530 0.078 0.165 0.058" name="TabUpgrade">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+			<Widget type="TextBox" skin="TextBox" position_real="0.097 0.145 0.230 0.046" name="StatusLine">
+				<Property key="Visible" value="false"/>
+				<Property key="Caption" value="WIRELESS: OFFLINE"/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="TextAlign" value="Left VCenter"/>
+			</Widget>
+			<Widget type="EditBox" skin="EditBox" position_real="0.274 0.145 0.27 0.031" name="SearchEdit">
+				<Property key="Caption" value=""/>
+				<Property key="FontName" value="SM_Text"/>
+				<Property key="NeedKey" value="true"/>
+			</Widget>
+
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.132 0.208 0.598 0.504" name="PanelGrid">
+				<Property key="NeedMouse" value="false"/>
+				<Property key="InheritsPick" value="true"/>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.002 0.01 0.118 0.21" name="Cell0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon0">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.13 0.01 0.118 0.21" name="Cell1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon1">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.258 0.01 0.118 0.21" name="Cell2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon2">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.386 0.01 0.118 0.21" name="Cell3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon3">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.514 0.01 0.118 0.21" name="Cell4">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon4">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.642 0.01 0.118 0.21" name="Cell5">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon5">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.77 0.01 0.118 0.21" name="Cell6">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon6">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.002 0.24 0.118 0.21" name="Cell7">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon7">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.13 0.24 0.118 0.21" name="Cell8">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon8">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.258 0.24 0.118 0.21" name="Cell9">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon9">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.386 0.24 0.118 0.21" name="Cell10">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon10">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.514 0.24 0.118 0.21" name="Cell11">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon11">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.642 0.24 0.118 0.21" name="Cell12">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon12">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.77 0.24 0.118 0.21" name="Cell13">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon13">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.002 0.47 0.118 0.21" name="Cell14">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon14">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.13 0.47 0.118 0.21" name="Cell15">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon15">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.258 0.47 0.118 0.21" name="Cell16">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon16">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.386 0.47 0.118 0.21" name="Cell17">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon17">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.514 0.47 0.118 0.21" name="Cell18">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon18">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.642 0.47 0.118 0.21" name="Cell19">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon19">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.77 0.47 0.118 0.21" name="Cell20">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon20">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.002 0.7 0.118 0.21" name="Cell21">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon21">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.13 0.7 0.118 0.21" name="Cell22">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon22">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.258 0.7 0.118 0.21" name="Cell23">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon23">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.386 0.7 0.118 0.21" name="Cell24">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon24">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.514 0.7 0.118 0.21" name="Cell25">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon25">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.642 0.7 0.118 0.21" name="Cell26">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon26">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+
+				<Widget type="Button" skin="PanelEmpty" position_real="0.77 0.7 0.118 0.21" name="Cell27">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+					<Widget type="ImageBox" skin="ImageBox" position_real="0.14 0.12 0.72 0.72" name="Icon27">
+						<Property key="NeedMouse" value="false"/>
+						<Property key="NeedKey" value="false"/>
+						<Property key="ImageKeepAspect" value="true"/>
+					</Widget>
+				</Widget>
+			</Widget>
+
+			<Widget type="ScrollBar" skin="InventoryVSlider" position_real="0.732 0.169 0.022 0.504" name="ScrollBar">
+				<Property key="NeedMouse" value="true"/>
+				<Property key="Range" value="101"/>
+				<Property key="RangePosition" value="0"/>
+			</Widget>
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.755 0.148 0.218 0.564" name="PanelQueue">
+				<Property key="NeedMouse" value="false"/>
+				<Property key="InheritsPick" value="true"/>
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.000 1.00 0.055" name="QueueTitle">
+					<Property key="Caption" value="ACTIVE QUEUE"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.018 0.088 0.118 0.105" name="QItem0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="ProgressBar" skin="CraftbotProgressBar" position_real="0.185 0.118 0.520 0.050" name="QBar0">
+					<Property key="Range" value="100"/>
+					<Property key="RangePosition" value="0"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.715 0.07 0.125 0.140" name="QCount0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.845 0.08 0.1 0.12" name="QCancel0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.018 0.248 0.118 0.105" name="QItem1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="ProgressBar" skin="CraftbotProgressBar" position_real="0.185 0.278 0.520 0.050" name="QBar1">
+					<Property key="Range" value="100"/>
+					<Property key="RangePosition" value="0"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.715 0.23 0.125 0.140" name="QCount1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.845 0.24 0.1 0.12" name="QCancel1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.018 0.408 0.118 0.105" name="QItem2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="ProgressBar" skin="CraftbotProgressBar" position_real="0.185 0.438 0.520 0.050" name="QBar2">
+					<Property key="Range" value="100"/>
+					<Property key="RangePosition" value="0"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.715 0.39 0.125 0.140" name="QCount2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.845 0.4 0.1 0.12" name="QCancel2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.018 0.568 0.118 0.105" name="QItem3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="ProgressBar" skin="CraftbotProgressBar" position_real="0.185 0.598 0.520 0.050" name="QBar3">
+					<Property key="Range" value="100"/>
+					<Property key="RangePosition" value="0"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.715 0.55 0.125 0.140" name="QCount3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.845 0.56 0.1 0.12" name="QCancel3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.02 0.8 0.22 0.17" name="ViewSlot0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.265 0.8 0.22 0.17" name="ViewSlot1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.51 0.8 0.22 0.17" name="ViewSlot2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.755 0.8 0.22 0.17" name="ViewSlot3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="ScrollBar" skin="InventoryVSlider" position_real="0.960 0.070 0.030 0.630" name="QueueScrollBar">
+					<Property key="Range" value="1"/>
+					<Property key="RangePosition" value="0"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.00 0.720 1.00 0.055" name="ViewLabel">
+					<Property key="Caption" value="MOBILE TABLETS"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Left VCenter"/>
+				</Widget>
+			</Widget>
+
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.035 0.73 0.917 0.22" name="PanelBottom">
+				<Property key="NeedMouse" value="false"/>
+				<Property key="InheritsPick" value="true"/>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0 0.135662 0.073988 0.774425" name="ArtSelected">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.091986 0.15803 0.056991 0.523898" name="ArtIng0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.155976 0.15803 0.056991 0.523898" name="ArtIng1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.219966 0.15803 0.056991 0.523898" name="ArtIng2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.283957 0.15803 0.056991 0.523898" name="ArtIng3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/slot_frame.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.530919 0.354168 0.028995 0.205601" name="ArtMinus">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_minus.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.607908 0.354168 0.028995 0.205601" name="ArtPlus">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="true"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_plus.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.39094 0.744726 0.256961 0.251196" name="ArtSpeed">
+					<Property key="Visible" value="false"/>
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/bar_track.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.748886 0.567513 0.250962 0.283886" name="ArtBtnCraft">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="true"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/btn_addqueue.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.749 0.800 0.251 0.175" name="ArtTabRecycle">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="InheritsPick" value="false"/>
+					<Property key="ImageKeepAspect" value="false"/>
+					<Property key="ImageTexture" value="$CONTENT_DATA/Gui/menu/images/craftstation/tab_recycle_steel.png"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.010754 0.227 0.053 0.568" name="SelectedIcon">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.099 0.227 0.044 0.386" name="IngIcon0">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.093 0.75 0.056 0.25" name="IngHave0">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_NumberTiny"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.163 0.227 0.044 0.386" name="IngIcon1">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.156 0.75 0.056 0.25" name="IngHave1">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_NumberTiny"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.226 0.227 0.044 0.386" name="IngIcon2">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.22 0.75 0.056 0.25" name="IngHave2">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_NumberTiny"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="ImageBox" skin="ImageBox" position_real="0.29 0.227 0.044 0.386" name="IngIcon3">
+					<Property key="NeedMouse" value="false"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="ImageKeepAspect" value="true"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.284 0.75 0.056 0.25" name="IngHave3">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_NumberTiny"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedMouse" value="false"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.355 0 0.225 0.182" name="SelectedName">
+					<Property key="Caption" value="Select a recipe"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.531 0.355 0.029 0.205" name="BtnMinus">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="EditBox" skin="EditBox" position_real="0.564 0.355 0.037 0.182" name="QtyEdit">
+					<Property key="Caption" value="1"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+					<Property key="NeedKey" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.608 0.355 0.029 0.205" name="BtnPlus">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="TextBox" skin="TextBox" position_real="0.391 0.512 0.257 0.198" name="SpeedLabel">
+					<Property key="Caption" value="CRAFT SPEED  LOCKED"/>
+					<Property key="FontName" value="SM_Text"/>
+					<Property key="TextAlign" value="Center"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.749 0.568 0.251 0.216" name="BtnCraft">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="0.749 0.800 0.251 0.175" name="TabRecycle">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="ScrollBar" skin="InventoryHSlider" position_real="0.391 0.744 0.257 0.25" name="SpeedBar">
+					<Property key="Range" value="101"/>
+					<Property key="RangePosition" value="0"/>
+					<Property key="NeedKey" value="false"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+			</Widget>
+
+			
+
+			<Widget type="Widget" skin="PanelEmpty" position_real="0.03 0.2 0.102 0.46" name="PanelCats">
+				<Property key="NeedMouse" value="false"/>
+				<Property key="InheritsPick" value="true"/>
+				<Widget type="Button" skin="PanelEmpty" position_real="-0.0044 0.152119 0.927 0.136" name="CatAll">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="-0.002 0.288136 0.927 0.136" name="CatTool">
+					<Property key="Caption" value=""/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="-0.002 0.423729 0.927 0.136" name="CatBlock">
+					<Property key="Caption" value="BLOCKS"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="-0.002 0.559322 0.927 0.136" name="CatInteractive">
+					<Property key="Caption" value="INTERACTIVE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="-0.002 0.694915 0.927 0.136" name="CatPart">
+					<Property key="Caption" value="PARTS"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+				<Widget type="Button" skin="PanelEmpty" position_real="-0.002 0.830508 0.927 0.136" name="CatConsumable">
+					<Property key="Caption" value="CONSUMABLE"/>
+					<Property key="FontName" value="SM_Button"/>
+					<Property key="NeedMouse" value="true"/>
+				</Widget>
+			</Widget>
+			</Widget>
+		</Widget>
+	</Widget>
+</MyGUI>

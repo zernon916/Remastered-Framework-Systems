@@ -1,0 +1,44 @@
+{
+  "plus": {
+    "n": 294,
+    "best": {
+      "score": 106.0,
+      "annulus": 106,
+      "inner": 0,
+      "x": 2.823,
+      "y": 0.5,
+      "z": 0.0
+    },
+    "as_shapeset_no_remap": {
+      "x": 2.823,
+      "y": 0.5,
+      "z": 0.0
+    },
+    "as_shapeset_yz_swap": {
+      "x": 2.823,
+      "y": 0.0,
+      "z": 0.5
+    }
+  },
+  "minus": {
+    "n": 276,
+    "best": {
+      "score": 136.0,
+      "annulus": 136,
+      "inner": 0,
+      "x": -2.771,
+      "y": 0.625,
+      "z": 0.0
+    },
+    "as_shapeset_no_remap": {
+      "x": -2.771,
+      "y": 0.625,
+      "z": 0.0
+    },
+    "as_shapeset_yz_swap": {
+      "x": -2.771,
+      "y": 0.0,
+      "z": 0.625
+    }
+  }
+}

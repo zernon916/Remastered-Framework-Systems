@@ -460,6 +460,18 @@ local function pickupOne( entry, container )
 		if not shape or not sm.exists( shape ) then
 			return false
 		end
+		-- Loose world drops only. Static or multi-shape bodies are player builds.
+		local loose = false
+		pcall( function()
+			local body = shape:getBody()
+			if body and body:isDynamic() then
+				local shapes = body:getShapes()
+				loose = type( shapes ) == "table" and #shapes == 1
+			end
+		end )
+		if not loose then
+			return false
+		end
 		local ok = false
 		if type( RfsBotInventory ) == "table" and RfsBotInventory.collect then
 			ok = RfsBotInventory.collect( container, entry.uuid, 1 )

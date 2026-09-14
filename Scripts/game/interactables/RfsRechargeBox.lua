@@ -14,8 +14,8 @@ RfsRechargeBox.connectIcon = "electrical"
 RfsRechargeBox.connectIconScale = 0.75
 
 local RFS_CG = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247"
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_RechargeBox.layout"
-local LAYOUT_CG = RFS_CG .. "/Gui/Layouts/Rfs_RechargeBox.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_RechargeBox.layout"
+local LAYOUT_CG = RFS_CG .. "/Gui/menu/layouts/Rfs_RechargeBox.layout"
 local function rfsDofile( rel )
 	local paths = { RFS_CG .. "/" .. rel, "$CONTENT_DATA/" .. rel }
 	for _, p in ipairs( paths ) do

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "layout": "Rfs_FarmTablet.layout",
+  "inherit": true,
+  "sets": [
+    {
+      "id": "Prev",
+      "label": "PREV",
+      "default": "Off",
+      "options": [
+        { "id": "Off", "label": "Dark", "widgets": ["ArtPrev"] },
+        { "id": "On", "label": "Yellow", "widgets": ["ArtPrevOn"] }
+      ]
+    },
+    {
+      "id": "Next",
+      "label": "NEXT",
+      "default": "Off",
+      "options": [
+        { "id": "Off", "label": "Dark", "widgets": ["ArtNext"] },
+        { "id": "On", "label": "Yellow", "widgets": ["ArtNextOn"] }
+      ]
+    },
+    {
+      "id": "Refresh",
+      "label": "REFRESH",
+      "default": "On",
+      "options": [
+        { "id": "On", "label": "Yellow", "widgets": ["ArtRefresh"] },
+        { "id": "Off", "label": "Dark", "widgets": ["ArtRefreshOff"] }
+      ]
+    }
+  ]
+}

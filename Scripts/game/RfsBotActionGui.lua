@@ -4,7 +4,7 @@
 
 RfsBotActionGui = RfsBotActionGui or {}
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_BotAction.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_BotAction.layout"
 
 local function closeGui( host )
 	host.cl = host.cl or {}

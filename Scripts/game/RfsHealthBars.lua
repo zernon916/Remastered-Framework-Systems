@@ -4,8 +4,8 @@
 
 RfsHealthBars = RfsHealthBars or {}
 
-local LAYOUT = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/Layouts/Rfs_HpWorld.layout"
-local LAYOUT_FALLBACK = "$CONTENT_DATA/Gui/Layouts/Rfs_HpWorld.layout"
+local LAYOUT = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/menu/layouts/Rfs_HpWorld.layout"
+local LAYOUT_FALLBACK = "$CONTENT_DATA/Gui/menu/layouts/Rfs_HpWorld.layout"
 local SEND_EVERY = 20
 local ICON_W = 160
 -- Short canvas = less vertical world stretch when walking in (bar/name stay tight).

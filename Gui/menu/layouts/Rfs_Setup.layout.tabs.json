@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "layout": "Rfs_Setup.layout",
+  "inherit": true,
+  "defaultTab": "Main",
+  "tabs": [
+    { "id": "Main", "label": "Main", "buttons": ["TabMain"] },
+    { "id": "Quest", "label": "Quest", "buttons": ["TabQuest"] },
+    { "id": "InvSize", "label": "InvSize", "buttons": ["TabInvSize"] },
+    { "id": "Farming", "label": "Farming", "buttons": ["TabFarming"] }
+  ],
+  "shared": ["Root", "MainPanel", "Title", "CloseButton", "Status"],
+  "pages": {
+    "Main": ["MainTab"],
+    "Quest": ["QuestTab"],
+    "InvSize": ["InvSizeTab"],
+    "Farming": ["FarmingTab"]
+  }
+}

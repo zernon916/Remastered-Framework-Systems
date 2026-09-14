@@ -15,7 +15,7 @@ pcall( function()
 	dofile( "$CONTENT_DATA/Scripts/game/RfsFarming.lua" )
 end )
 
-local LAYOUT = "$CONTENT_DATA/Gui/Layouts/Rfs_BeaconOrders.layout"
+local LAYOUT = "$CONTENT_DATA/Gui/menu/layouts/Rfs_BeaconOrders.layout"
 local ROWS = 8
 local SCROLL_STEP = 1 -- one ally row per wheel/button tick
 -- Brief settle after destroy-on-close before recreate (AlarmClock destroys every close).
