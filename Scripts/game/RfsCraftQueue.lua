@@ -258,6 +258,51 @@ function RfsCraftQueue.listKnownRecipes()
 	return out
 end
 
+-- Every Craftbot / craftbot_rfs recipe row (ignores unlock). Used by chest filters.
+function RfsCraftQueue.listAllCraftbotRecipes()
+	local out, seen = {}, {}
+	local sets = g_craftingRecipeSets or {}
+	local ordered = {}
+	for setName, set in pairs( sets ) do
+		local name = tostring( setName or "" )
+		if name == "craftbot_rfs_mods" or string.match( name, "^craftbot_" ) then
+			ordered[#ordered + 1] = { name = name, set = set }
+		end
+	end
+	table.sort( ordered, function( a, b )
+		return a.name < b.name
+	end )
+	for _, entry in ipairs( ordered ) do
+		local list = entry.set and entry.set.recipesByIndex
+		if type( list ) ~= "table" and entry.set then
+			list = {}
+			for _, r in pairs( entry.set.recipes or {} ) do
+				list[#list + 1] = r
+			end
+		end
+		if type( list ) == "table" then
+			for _, r in ipairs( list ) do
+				if type( r ) == "table" and r.itemId then
+					local id = tostring( r.itemId )
+					if not seen[id] then
+						seen[id] = true
+						out[#out + 1] = {
+							itemId = id,
+							name = itemDisplayName( id ),
+							quantity = tonumber( r.quantity ) or 1,
+							category = RfsCraftQueue.itemCategory( id ),
+						}
+					end
+				end
+			end
+		end
+	end
+	table.sort( out, function( a, b )
+		return tostring( a.name ) < tostring( b.name )
+	end )
+	return out
+end
+
 local function countInContainer( container, uuidStr )
 	local n = 0
 	pcall( function()

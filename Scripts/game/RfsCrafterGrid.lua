@@ -24,6 +24,13 @@ local SCHEMATIC_LOCKED = {
 	["8b513e7d-a4f6-4039-bc82-e3f70a4b6d9e"] = true, -- Rechargeable Battery, 1 Farmer
 	["9c624f8e-b507-414a-cd93-f4081b5c7eaf"] = true, -- Rechargeable Battery Box, 2 Farmers
 }
+-- Unlock when "The Mechanic Station" quest completes (Build a Craftbot).
+local QUEST_MECHANIC_UNLOCKS = {
+	"c8d7e6f5-a4b3-42c1-9d0e-8f7a6b5c4d3e", -- Crafting Station
+	"f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d", -- Mobile Crafting Tablet
+	"b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e", -- Farmers Tablet
+}
+local QUEST_MECHANIC_NAME = "quest_mechanicstation"
 local RFS_LID = "29c99287-1213-48c7-9471-19a4a5c12247"
 local CG_ROOT = "$CONTENT_" .. RFS_LID
 local CG_CRAFTBOT = CG_ROOT .. "/CraftingRecipes/craftbot.json"
@@ -128,10 +135,49 @@ local function schematicLockSet()
 	for id, _ in pairs( SCHEMATIC_LOCKED ) do
 		locks[id] = true
 	end
+	for _, id in ipairs( QUEST_MECHANIC_UNLOCKS ) do
+		locks[tostring( id )] = true
+	end
 	for id, _ in pairs( _G.g_extraHideoutSchematicUnlocks or {} ) do
 		locks[tostring( id )] = true
 	end
 	return locks
+end
+
+--- Unlock Crafting Station + crafting/farm tablets after Mechanic Station quest.
+--- Safe to call often; RecipeManager only notifies on first unlock.
+function RfsCrafterGrid.sv_unlockMechanicStationRewards( hideUnlock )
+	if type( QuestManager ) ~= "table" or type( QuestManager.Sv_IsQuestComplete ) ~= "function" then
+		return 0
+	end
+	local done = false
+	pcall( function()
+		done = QuestManager.Sv_IsQuestComplete( QUEST_MECHANIC_NAME ) == true
+	end )
+	if not done then
+		return 0
+	end
+	if type( RecipeManager ) ~= "table" or type( RecipeManager.Sv_UnlockRecipe ) ~= "function" then
+		return 0
+	end
+	local n = 0
+	for _, id in ipairs( QUEST_MECHANIC_UNLOCKS ) do
+		local already = false
+		pcall( function()
+			if RecipeManager.Sv_IsUnlocked then
+				already = RecipeManager.Sv_IsUnlocked( id ) == true
+			end
+		end )
+		if not already then
+			local ok = pcall( function()
+				RecipeManager.Sv_UnlockRecipe( id, hideUnlock == true )
+			end )
+			if ok then
+				n = n + 1
+			end
+		end
+	end
+	return n
 end
 
 function RfsCrafterGrid.installRecipeSet( scan )

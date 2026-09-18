@@ -306,7 +306,7 @@ function Player.sv_rfs_toggleGrowthOverlay( self )
 	} )
 end
 
--- Legacy no-op (corn stacking is native itemStack now).
+-- Legacy no-op (stack/place is shapeset itemStack).
 function Player.sv_rfs_placeCornStack( self, params )
 end
 

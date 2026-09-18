@@ -1,0 +1,74 @@
+{
+	"_comment": "Hijack both Large Chest UUIDs (plain + vacuum craft). Same Survival mesh/ports; RfsChest adds U filters + powered vacuum/sort.",
+	"partList": [
+		{
+			"uuid": "ad35f7e6-af8f-40fa-aef4-77d827ac8a8a",
+			"name": "obj_container_chest",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_chest.rend",
+			"color": "df7f01",
+			"box": { "x": 5, "y": 3, "z": 4 },
+			"rotationSet": "PropFullMinusNegY",
+			"physicsMaterial": "Mechanical",
+			"flammable": false,
+			"showInInventory": false,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 4,
+				"durability": 6,
+				"friction": 4
+			},
+			"pipe": {
+				"type": "Container",
+				"openings": [
+					{ "side": "-X", "x": -2.5, "y": 0, "z": -0.5 },
+					{ "side": "+X", "x": 2.5, "y": 0, "z": -0.5 },
+					{ "side": "+Y", "x": 0.0, "y": 1.5, "z": -0.5 }
+				]
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsChest",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsChest.lua",
+				"data": {
+					"slots": 30
+				}
+			}
+		},
+		{
+			"uuid": "e9efc008-8fae-4391-9ad1-6a62dbab5760",
+			"name": "obj_container_chest_looting",
+			"renderable": "$SURVIVAL_DATA/Objects/Renderable/interactive/obj_interactive_chest.rend",
+			"color": "df7f01",
+			"box": { "x": 5, "y": 3, "z": 4 },
+			"rotationSet": "PropFullMinusNegY",
+			"physicsMaterial": "Mechanical",
+			"flammable": false,
+			"ratings": {
+				"buoyancy": 6,
+				"density": 5,
+				"durability": 6,
+				"friction": 4
+			},
+			"pipe": {
+				"type": "Container",
+				"openings": [
+					{ "side": "-X", "x": -2.5, "y": 0, "z": -0.5 },
+					{ "side": "+X", "x": 2.5, "y": 0, "z": -0.5 },
+					{ "side": "+Y", "x": 0.0, "y": 1.5, "z": -0.5 }
+				]
+			},
+			"restrictions": {
+				"usable": true
+			},
+			"scripted": {
+				"classname": "RfsChest",
+				"filename": "$CONTENT_DATA/Scripts/game/interactables/RfsChest.lua",
+				"data": {
+					"slots": 30
+				}
+			}
+		}
+	]
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- WorldIcon: up to 7 filtered-item icons in a row (matches Active0-6). -->
+<MyGUI type="Layout" version="3.2.0">
+	<!-- RFS: layouts=$CONTENT_DATA/Gui/menu/layouts  images=$CONTENT_DATA/Gui/menu/images -->
+	<Widget type="Widget" skin="PanelEmpty" position_real="0 0 1 1" name="Root">
+		<Property key="NeedKey" value="false"/>
+		<Property key="NeedMouse" value="false"/>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.010 0.10 0.128 0.80" name="Icon0">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.150 0.10 0.128 0.80" name="Icon1">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.290 0.10 0.128 0.80" name="Icon2">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.430 0.10 0.128 0.80" name="Icon3">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.570 0.10 0.128 0.80" name="Icon4">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.710 0.10 0.128 0.80" name="Icon5">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+		<Widget type="ImageBox" skin="ImageBox" position_real="0.850 0.10 0.128 0.80" name="Icon6">
+			<Property key="NeedMouse" value="false"/><Property key="NeedKey" value="false"/><Property key="ImageKeepAspect" value="true"/>
+		</Widget>
+	</Widget>
+	<CodeGeneratorSettings />
+</MyGUI>

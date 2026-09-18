@@ -27,6 +27,7 @@ local FALLBACK = {
 
 local CHEST_FALLBACK = {
 	obj_container_chest = "ad35f7e6-af8f-40fa-aef4-77d827ac8a8a",
+	obj_container_chest_looting = "e9efc008-8fae-4391-9ad1-6a62dbab5760",
 	obj_container_smallchest = "fcfae5e2-1df9-47d8-bb9a-30bec9b5b1f5",
 	obj_container_tinychest = "7527cf2e-1705-4214-9d07-3dc374957e25",
 	obj_container_XXL_chest = "9601f2ca-9552-48b0-afc1-b0f200461114",

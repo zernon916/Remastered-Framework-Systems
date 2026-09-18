@@ -109,7 +109,7 @@
 		]
 	},
 	{
-		"_comment": "Mobile Crafting Tablet handheld (always unlocked). 1 Metal + 1 Circuit + 1 Glass.",
+		"_comment": "Mobile Crafting Tablet handheld. Unlocks when quest_mechanicstation (Build a Craftbot) completes. 1 Metal + 1 Circuit + 1 Glass.",
 		"itemId": "f0e9d8c7-b6a5-4321-9c8d-7e6f5a4b3c2d",
 		"quantity": 1,
 		"craftTime": 8,
@@ -120,7 +120,7 @@
 		]
 	},
 	{
-		"_comment": "Farmers Tablet handheld (always unlocked). Same cost as Recipe Planner. Plot map + avg grow times.",
+		"_comment": "Farmers Tablet handheld. Unlocks when quest_mechanicstation (Build a Craftbot) completes. Same cost as Recipe Planner. Plot map + avg grow times.",
 		"itemId": "b7c8d9e0-1f2a-4b3c-8d5e-6f7a8b9c0d1e",
 		"quantity": 1,
 		"craftTime": 8,

@@ -283,5 +283,29 @@
                                                                   "hack"
                                                               ],
                                                  "description":  "Hack Beacon upgrade. Wire to the beacon (logic or electricity). +3 bot capacity and +3 seconds hold time. Only 1 Lock per beacon. Miner shop schematic."
+                                             },
+    "e9efc008-8fae-4391-9ad1-6a62dbab5760":  {
+                                                 "title":  "Large Chest",
+                                                 "upperCaseTitle":  "LARGE CHEST",
+                                                 "keywords":  [
+                                                                  "chest",
+                                                                  "storage",
+                                                                  "filter",
+                                                                  "vacuum",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "RFS: E opens storage. U sets item filters (empty = accept all). Powered vacuum picks up loot into this chest or a connected filtered match; skips loot no connected chest can store."
+                                             },
+    "ad35f7e6-af8f-40fa-aef4-77d827ac8a8a":  {
+                                                 "title":  "Large Chest",
+                                                 "upperCaseTitle":  "LARGE CHEST",
+                                                 "keywords":  [
+                                                                  "chest",
+                                                                  "storage",
+                                                                  "filter",
+                                                                  "vacuum",
+                                                                  "rfs"
+                                                              ],
+                                                 "description":  "RFS: E opens storage. U sets item filters (empty = accept all). Connect a logic trigger for vacuum + sort into connected filtered chests."
 	}
 }

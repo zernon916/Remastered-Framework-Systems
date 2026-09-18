@@ -10,6 +10,8 @@ dofile( "$CONTENT_DATA/Scripts/game/RfsCraftQueue.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCraftQueueHost.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCraftStationNet.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsCraftStationGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsChestFilterGui.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/RfsChestFilterWorld.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsRecipeViewerGui.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarmSoilOwners.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/RfsFarmTablet.lua" )
@@ -54,6 +56,7 @@ dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsDeepSleepPod.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsSolarPanel.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsRechargeBox.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsCraftStation.lua" )
+dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsChest.lua" )
 dofile( "$CONTENT_DATA/Scripts/game/interactables/RfsRechargeBox.lua" )
 -- Aim Core parked as B&P: C:\Users\benko\Desktop\mods\AimCore (not in Custom Game).
 dofile( "$CONTENT_DATA/Scripts/game/ModRecipeScan.lua" )
@@ -80,7 +83,7 @@ RecipeFrameworkSurvival.defaultInventorySize = 40
 
 -- Build id for logs / deploy verify (not dumped into player chat).
 -- Bump RFS_VERSION for each build — stamp + /gensettings VERSION tab follow automatically.
-RFS_VERSION = "0854-hw"
+RFS_VERSION = "0854-je"
  RFS_PACK_STAMP = "[RFS] pack " .. RFS_VERSION .. " / version tab + features list"
 -- Join welcome every save load (after chat GUI exists). Prefer rfsPostJoinChat().
 RFS_JOIN_CHAT = "Thanks for choosing RFS as your gamemode."
@@ -92,7 +95,6 @@ local function rfsPostJoinChat( self )
 	end
 	-- Chat GUI is missing during client_onCreate; only mark posted on success.
 	local ok = pcall( function()
-		sm.gui.chatMessage( RFS_PACK_STAMP )
 		sm.gui.chatMessage( "Thanks for choosing RFS as your gamemode." )
 		sm.gui.chatMessage( "/menu - options  |  /gensettings - host settings  |  /help - commands" )
 	end )
@@ -804,6 +806,14 @@ function RecipeFrameworkSurvival.server_onFixedUpdate( self, timeStep )
 	end )
 	-- 0851-r: farm/oil ally jobs parked (RfsBotOrders.sv_think is a no-op).
 	local tick = sm.game.getCurrentTick()
+	-- Crafting Station + tablets unlock when "The Mechanic Station" (Build a Craftbot) is done.
+	if ( tick % 40 ) == 0 then
+		pcall( function()
+			if type( RfsCrafterGrid ) == "table" and RfsCrafterGrid.sv_unlockMechanicStationRewards then
+				RfsCrafterGrid.sv_unlockMechanicStationRewards( false )
+			end
+		end )
+	end
 	-- Hack v1: Game sandbox sees g_raidManager; beacon sandbox does not. Publish probe.
 	if ( tick % 16 ) == 0 then
 		pcall( function()
@@ -1851,8 +1861,7 @@ function RecipeFrameworkSurvival.sv_e_rfsPickupSoilBatch( self, params )
 	RfsSoilPlacement.sv_pickupSoilBatchForPlayer( player, params )
 end
 
--- Corn Force Build uses native shapeset itemStack (no Game arm/place RPC).
--- Legacy RPCs kept as no-ops so old clients do not error.
+-- Legacy corn RPCs (no-ops). Stack/place is shapeset itemStack.
 function RecipeFrameworkSurvival.sv_e_rfsArmCornStack( self, params )
 end
 
@@ -3947,6 +3956,16 @@ function RecipeFrameworkSurvival.sv_rfs_completeQuest( self, params, player )
 
 	-- Survival CompleteQuest reward path (schematics / logs / additional item popups).
 	local schematicCount, logCount, otherCount = rfsGrantQuestRewards( self, name )
+	if name == "quest_mechanicstation" then
+		pcall( function()
+			if type( RfsCrafterGrid ) == "table" and RfsCrafterGrid.sv_unlockMechanicStationRewards then
+				local n = RfsCrafterGrid.sv_unlockMechanicStationRewards( false )
+				if n > 0 then
+					rfsMsg( self, "Unlocked Crafting Station + tablets (" .. tostring( n ) .. ")" )
+				end
+			end
+		end )
+	end
 
 	-- Tutorial ??? mechanic station: vanilla grants log mid-quest (not via quest rewards) and
 	-- highlights it so the logbook waypoint can be set. Cheat DONE skips those stages.

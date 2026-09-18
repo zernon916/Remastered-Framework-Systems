@@ -1,5 +1,5 @@
 {
-	"shapeSetList": [
+	"shapeSetList" : [ 
 		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_overrides.shapeset",
 		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_traders.shapeset",
 		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_hack.shapeset",
@@ -10,6 +10,7 @@
 		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_deepsleep.shapeset",
 		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_solar.shapeset",
 		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_radio.shapeset",
-		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_craftstation.shapeset"
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_craftstation.shapeset",
+		"$CONTENT_DATA/Objects/Database/ShapeSets/rfs_chests.shapeset"
 	]
 }

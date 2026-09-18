@@ -1,4 +1,4 @@
--- RfsHealthBars.lua — 2D WorldIconGui HP bars (pips) + name.
+-- RfsHealthBars.lua — 2D WorldIconGui Minecraft-style HP icon row + name.
 -- Keep GUI alive; engine setRequireLineOfSight handles walls.
 -- Only open icons within SHOW_DIST so stream-in works (don't exhaust GUI slots at load).
 
@@ -6,11 +6,12 @@ RfsHealthBars = RfsHealthBars or {}
 
 local LAYOUT = "$CONTENT_29c99287-1213-48c7-9471-19a4a5c12247/Gui/menu/layouts/Rfs_HpWorld.layout"
 local LAYOUT_FALLBACK = "$CONTENT_DATA/Gui/menu/layouts/Rfs_HpWorld.layout"
+local IMG_BASE = "$CONTENT_DATA/Gui/menu/images/"
 local SEND_EVERY = 20
-local ICON_W = 160
--- Short canvas = less vertical world stretch when walking in (bar/name stay tight).
-local ICON_H = 44
-local EMPTY_N = 10
+-- Wide enough for up to 10 side-by-side pips.
+local ICON_W = 220
+local ICON_H = 48
+local PIP_N = 10
 local SHOW_DIST = 56
 local WORLD_UP = sm.vec3.new( 0, 0, 1 )
 
@@ -91,6 +92,7 @@ local function destroyGui( self )
 		pcall( function() gui:destroy() end )
 	end
 	self.cl.rfsHpGui = nil
+	self.cl.rfsHpPipSkins = nil
 	-- Legacy cleanup
 	local function kill( fx )
 		pcall( function()
@@ -151,30 +153,65 @@ local function ensureGui( self )
 		created:open()
 	end )
 	self.cl.rfsHpGui = created
+	self.cl.rfsHpPipSkins = nil
 	return created
 end
 
--- Green is a fixed full-track rect. Missing HP = one black cover on the right.
--- Pip segments used to AA/breathe with distance and look like the fill was expanding.
-local function applyFill( gui, frac, color )
-	frac = math.max( 0, math.min( 1, tonumber( frac ) or 0 ) )
-	local showFill = frac > 0.001
+-- Always up to 10 icons: each pip = 10% of that unit's max HP.
+-- Damage hides icons from the right (Minecraft-style).
+local function pipCounts( hp, maxhp )
+	hp = math.max( 0, tonumber( hp ) or 0 )
+	maxhp = math.max( 0, tonumber( maxhp ) or 0 )
+	if maxhp <= 0 then
+		return 0, 0
+	end
+	local pipsMax = PIP_N
+	local filled = 0
+	if hp > 0 then
+		filled = math.min( pipsMax, math.max( 1, math.ceil( ( hp / maxhp ) * pipsMax ) ) )
+	end
+	return pipsMax, filled
+end
+
+-- Stable nut/bolt or steak/milk per pip index (does not reshuffle on damage).
+local function pipSkinPath( animal, pipIndex, seed )
+	seed = tonumber( seed ) or 0
+	local pick = ( seed + pipIndex * 17 + ( animal and 3 or 0 ) ) % 2
+	local file
+	if animal then
+		file = ( pick == 0 ) and "hp_steak.png" or "hp_milk.png"
+	else
+		file = ( pick == 0 ) and "hp_nut.png" or "hp_bolt.png"
+	end
+	return IMG_BASE .. file
+end
+
+local function applyPips( self, gui, hp, maxhp, animal )
+	local _, filled = pipCounts( hp, maxhp )
+	local seed = 0
 	pcall( function()
-		gui:setVisible( "HpFill", showFill )
+		local char = self.character
+		if char and char.id then
+			seed = tonumber( char.id ) or 0
+		end
 	end )
-	if showFill and color then
-		pcall( function()
-			gui:setColor( "HpFill", color )
-		end )
+	local skins = self.cl.rfsHpPipSkins
+	local animalKey = animal and 1 or 0
+	if type( skins ) ~= "table" or skins.animal ~= animalKey or skins.seed ~= seed then
+		skins = { animal = animalKey, seed = seed, paths = {} }
+		for i = 0, PIP_N - 1 do
+			skins.paths[i] = pipSkinPath( animal, i, seed )
+		end
+		self.cl.rfsHpPipSkins = skins
 	end
-	local empty = 1 - frac
-	local step = 0
-	if empty > 0.001 then
-		step = math.max( 1, math.min( EMPTY_N, math.floor( empty * EMPTY_N + 0.5 ) ) )
-	end
-	for i = 0, EMPTY_N - 1 do
-		local name = "HpEmpty" .. tostring( i )
-		local on = ( step > 0 ) and ( i == ( step - 1 ) )
+	for i = 0, PIP_N - 1 do
+		local name = "HpPip" .. tostring( i )
+		local on = i < filled
+		if on then
+			pcall( function()
+				gui:setImage( name, skins.paths[i] )
+			end )
+		end
 		pcall( function()
 			gui:setVisible( name, on )
 		end )
@@ -184,7 +221,7 @@ end
 local function barHeight( character )
 	local h = 0.85
 	pcall( function()
-		-- getHeight() is the top of the capsule. Black-line target is just above the back,
+		-- getHeight() is the top of the capsule. Target just above the back,
 		-- ~halfway up — not head+padding (that put the billboard near the compass).
 		local full = character:getHeight() or 1.2
 		h = full * 0.52
@@ -210,8 +247,13 @@ function RfsHealthBars.cl_apply( self, data )
 	local frac = tonumber( data.frac ) or ( hp / maxhp )
 	frac = math.max( 0, math.min( 1, frac ) )
 	local ally = data.ally and true or false
+	local animal = data.animal and true or false
 	local label = tostring( data.label or ( self.cl.rfsHp and self.cl.rfsHp.label ) or "" )
-	self.cl.rfsHp = { hp = hp, maxhp = maxhp, frac = frac, ally = ally, label = label }
+	-- Preserve animal from prior push if a frac-only damage update omitted it.
+	if data.animal == nil and self.cl.rfsHp and self.cl.rfsHp.animal then
+		animal = true
+	end
+	self.cl.rfsHp = { hp = hp, maxhp = maxhp, frac = frac, ally = ally, animal = animal, label = label }
 
 	local char = self.character
 	if not char or not sm.exists( char ) then
@@ -233,8 +275,7 @@ function RfsHealthBars.cl_apply( self, data )
 	if not withinShowDist( pos ) then
 		if self.cl.rfsHpGui then
 			destroyGui( self )
-			-- destroyGui clears rfsHp nil? No — we only clear gui fields. Keep rfsHp.
-			self.cl.rfsHp = { hp = hp, maxhp = maxhp, frac = frac, ally = ally, label = label }
+			self.cl.rfsHp = { hp = hp, maxhp = maxhp, frac = frac, ally = ally, animal = animal, label = label }
 		end
 		return
 	end
@@ -248,7 +289,7 @@ function RfsHealthBars.cl_apply( self, data )
 		gui:setWorldPosition( pos, world )
 	end )
 
-	applyFill( gui, frac, color )
+	applyPips( self, gui, hp, maxhp, animal )
 
 	if showName == "" or not namesEnabled() then
 		pcall( function()
@@ -291,9 +332,16 @@ local function wrapCharacter( cls )
 			local frac = params and tonumber( params.damage )
 			if frac then
 				local prev = self.cl and self.cl.rfsHp
+				local maxhp = prev and tonumber( prev.maxhp ) or 1
+				if maxhp <= 0 then
+					maxhp = 1
+				end
+				-- Vanilla damage param is remaining HP fraction (0..1).
+				local hp = frac * maxhp
 				RfsHealthBars.cl_apply( self, {
-					hp = frac, maxhp = 1, frac = frac,
+					hp = hp, maxhp = maxhp, frac = frac,
 					ally = prev and prev.ally or false,
+					animal = prev and prev.animal or false,
 					label = prev and prev.label or "",
 				} )
 			end
@@ -384,6 +432,7 @@ local function pushHp( self, className )
 			maxhp = maxhp,
 			frac = hp / maxhp,
 			ally = unitKindAlly( self, className ),
+			animal = ANIMAL[className] and true or false,
 			label = unitLabel( self, className ),
 		} )
 	end )
@@ -438,4 +487,4 @@ function RfsHealthBars.ensureHooks()
 	end
 end
 
-print( "[RFS] RfsHealthBars loaded (2D WorldIcon fixed fill + engine LOS)" )
+print( "[RFS] RfsHealthBars loaded (10% HP pips + engine LOS)" )

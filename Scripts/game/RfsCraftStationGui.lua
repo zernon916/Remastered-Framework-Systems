@@ -441,7 +441,7 @@ local function refreshGrid( station )
 	end
 	local cat = station.cl.csCategory or CAT_ALL
 	local catArt = {
-		all = { on = "pill_on.png", off = "pill_blank_off.png" },
+		all = { on = "pill_all_on.png", off = "pill_all_off.png" },
 		tool = { on = "pill_tools_on.png", off = "pill_tools_off.png" },
 		block = { on = "pill_blocks_on.png", off = "pill_blocks_off.png" },
 		interactive = { on = "pill_interactive_on.png", off = "pill_interactive_off.png" },
@@ -862,7 +862,7 @@ local function applyBg( gui )
 		setKitImage( gui, "ArtIng" .. i, "slot_frame.png" )
 		setKitImage( gui, "ArtView" .. i, "num_" .. ( i + 1 ) .. "_off.png" )
 	end
-	setKitImage( gui, "ArtCatAll", "pill_on.png" )
+	setKitImage( gui, "ArtCatAll", "pill_all_on.png" )
 	setKitImage( gui, "ArtCatTool", "pill_tools_off.png" )
 	setKitImage( gui, "ArtCatBlock", "pill_blocks_off.png" )
 	setKitImage( gui, "ArtCatInteractive", "pill_interactive_off.png" )
